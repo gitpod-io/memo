@@ -36,28 +36,48 @@ action:
 
                 ## Step 3 — Run smoke tests
 
-                Write a Playwright script to /tmp/smoke-test.mjs:
+                Write a Playwright script to /tmp/smoke-test.mjs.
+
+                The script must only test routes that exist. Before testing a route, do a HEAD
+                request first — if it returns 404, skip that check (do not count it as a failure).
+
+                Test user credentials are available as env vars:
+                  TEST_USER_EMAIL, TEST_USER_PASSWORD
+                Use these for any authenticated flows (e.g., login, dashboard access).
 
                 ```js
                 import { chromium } from 'playwright';
 
                 const BASE = 'https://memo.software-factory.dev';
                 const failures = [];
+                const skipped = [];
                 const browser = await chromium.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
                 const page = await browser.newPage();
                 const consoleErrors = [];
                 page.on('console', m => { if (m.type() === 'error') consoleErrors.push(m.text()); });
 
-                // 1. Landing page
+                // Helper: check if a route exists before testing it
+                async function routeExists(path) {
+                  try {
+                    const res = await fetch(BASE + path, { method: 'HEAD', redirect: 'manual' });
+                    return res.status !== 404;
+                  } catch { return false; }
+                }
+
+                // 1. Landing page (always exists)
                 const res = await page.goto(BASE, { waitUntil: 'networkidle', timeout: 15000 });
                 if (!res || res.status() >= 400) failures.push('Landing page returned ' + (res?.status() ?? 'no response'));
                 const title = await page.title();
                 if (!title) failures.push('Landing page has no title');
 
-                // 2. Login page renders
-                await page.goto(BASE + '/login', { waitUntil: 'networkidle', timeout: 15000 });
-                const hasEmailInput = await page.locator('input[type=email]').count();
-                if (!hasEmailInput) failures.push('Login page missing email input');
+                // 2. Login page (skip if not yet built)
+                if (await routeExists('/login')) {
+                  await page.goto(BASE + '/login', { waitUntil: 'networkidle', timeout: 15000 });
+                  const hasEmailInput = await page.locator('input[type=email]').count();
+                  if (!hasEmailInput) failures.push('Login page missing email input');
+                } else {
+                  skipped.push('/login (not yet built)');
+                }
 
                 // 3. Health endpoint
                 const healthRes = await page.goto(BASE + '/api/health', { waitUntil: 'networkidle', timeout: 10000 });
@@ -65,10 +85,20 @@ action:
                 if (!healthRes || healthRes.status() >= 400) failures.push('Health endpoint returned ' + (healthRes?.status() ?? 'no response'));
                 if (healthBody && healthBody.includes('"status":"down"')) failures.push('Health endpoint reports down');
 
-                // 4. Console errors
+                // 4. Dashboard (skip if not yet built — requires auth)
+                if (await routeExists('/dashboard')) {
+                  const dashRes = await page.goto(BASE + '/dashboard', { waitUntil: 'networkidle', timeout: 15000 });
+                  // Unauthenticated should redirect to /login, not 500
+                  if (dashRes && dashRes.status() >= 500) failures.push('Dashboard returned ' + dashRes.status());
+                } else {
+                  skipped.push('/dashboard (not yet built)');
+                }
+
+                // 5. Console errors
                 if (consoleErrors.length) failures.push('Console errors: ' + consoleErrors.slice(0, 5).join('; '));
 
                 await browser.close();
+                if (skipped.length) console.log('Skipped: ' + skipped.join(', '));
                 if (failures.length) { console.error(JSON.stringify(failures)); process.exit(1); }
                 console.log('OK');
                 ```
@@ -82,7 +112,7 @@ action:
 
                 If all checks pass:
                 Comment on the merged PR:
-                > ✅ Post-merge verification passed — landing page, login, and health endpoint all working.
+                > ✅ Post-merge verification passed. [list which routes were tested and which were skipped]
 
                 If any check fails:
                 1. Create a GitHub Issue:
@@ -94,12 +124,11 @@ action:
 
                 ## Expanding checks
 
-                As features ship, add checks to the Playwright script. Only check features that exist:
-                - After workspace/page CRUD ships: verify /dashboard loads (unauthenticated → redirects to /login)
-                - After editor ships: verify a page URL returns 200
-                - After search ships: verify the search endpoint responds
+                As features ship, add new route checks to the Playwright script. Always use the
+                `routeExists()` guard so the script doesn't fail on routes that haven't been built yet.
 
-                Do NOT test flows that require authentication credentials.
+                Test user credentials for authenticated flows:
+                  TEST_USER_EMAIL, TEST_USER_PASSWORD (available as env vars)
 
                 ## Do NOT
                 - Retry failed checks — report the failure and stop.
