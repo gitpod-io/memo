@@ -6,6 +6,7 @@ triggers:
             projectIds:
                 - 019d8bf4-1ded-7317-be2f-555e8fb55ff9
       pullRequest:
+        webhookId: 019d8d97-eb6e-70c4-a97d-25952abbc5a7
         events:
             - PULL_REQUEST_EVENT_MERGED
     - context:
@@ -94,7 +95,9 @@ action:
 
                 Before coding, decide:
                 - **Database**: does this need a new table, new columns, or new RLS policies?
-                  If yes, create the migration first: `supabase migration new <name>`
+                  If yes, create the migration file first in `supabase/migrations/` with a UTC
+                  timestamp prefix: `YYYYMMDDHHmmss_<name>.sql` (e.g. `20260414200000_add_pages_table.sql`).
+                  Use the current UTC time — never reuse or backdate timestamps.
                 - **API**: does this need new API routes? Follow the existing pattern in `src/app/api/`.
                 - **Components**: which existing components can be reused? What new ones are needed?
                   Check `src/components/ui/` (shadcn) before building anything custom.

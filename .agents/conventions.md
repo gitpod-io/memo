@@ -232,13 +232,38 @@ Pattern: wrap in try/catch, return structured JSON with appropriate status codes
 
 ## Database Migrations
 
+Create migration files manually in `supabase/migrations/` with a UTC timestamp prefix:
+
 ```bash
-supabase migration new <descriptive-name>
-# Creates: supabase/migrations/<timestamp>_<name>.sql
-# Write SQL in that file
-# Always include RLS policies in the same migration
-# Auto-applied on merge to main via Supabase GitHub integration
+# Format: YYYYMMDDHHmmss_<descriptive_name>.sql
+# Use the current UTC time when creating the file.
+# Example (created at 2026-04-14 20:00:00 UTC):
+touch supabase/migrations/20260414200000_add_pages_table.sql
 ```
+
+```sql
+-- supabase/migrations/20260414200000_add_pages_table.sql
+create table pages (
+  id uuid primary key default gen_random_uuid(),
+  workspace_id uuid not null references workspaces(id) on delete cascade,
+  title text not null default '',
+  created_at timestamptz not null default now()
+);
+
+-- Always include RLS policies in the same migration
+alter table pages enable row level security;
+
+create policy "workspace members can read pages"
+  on pages for select
+  using (workspace_id in (
+    select workspace_id from members where user_id = auth.uid()
+  ));
+```
+
+Rules:
+- Timestamp must be current UTC time — never reuse or backdate timestamps.
+- One migration per logical change (table + its RLS policies together).
+- Auto-applied on merge to main via the deploy-migrations CI workflow.
 
 ## Testing
 
