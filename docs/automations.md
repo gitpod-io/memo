@@ -401,7 +401,9 @@ Before writing anything, understand the current codebase:
 
 Before coding, decide:
 - **Database**: does this need a new table, new columns, or new RLS policies?
-  If yes, create the migration first: `supabase migration new <name>`
+  If yes, create the migration file first in `supabase/migrations/` with a UTC
+  timestamp prefix: `YYYYMMDDHHmmss_<name>.sql` (e.g. `20260414200000_add_pages_table.sql`).
+  Use the current UTC time — never reuse or backdate timestamps.
 - **API**: does this need new API routes? Follow the existing pattern in `src/app/api/`.
 - **Components**: which existing components can be reused? What new ones are needed?
   Check `src/components/ui/` (shadcn) before building anything custom.
@@ -696,7 +698,8 @@ For infra/config bugs:
 9. Fix the root cause. Do NOT fix symptoms.
    - Follow every convention in AGENTS.md without exception.
    - Add a regression test that would have caught this bug.
-   - For database changes: create a Supabase migration via `supabase migration new <name>`.
+   - For database changes: create a migration file in `supabase/migrations/` with a UTC
+     timestamp prefix: `YYYYMMDDHHmmss_<name>.sql` (use current UTC time).
 10. Run the full CI check locally: `pnpm lint && pnpm typecheck && pnpm test`
 11. Fix any errors before proceeding.
 
