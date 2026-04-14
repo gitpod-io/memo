@@ -1,0 +1,78 @@
+name: Deploy Migrations
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link Supabase project
+        run: supabase link --project-ref $SUPABASE_PROJECT_ID
+
+      - name: Deploy migrations
+        run: supabase db push
+
+      - name: Verify critical tables exist
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          tables=(page_versions collections collection_views collection_rows comments)
+          failed=()
+          for table in "${tables[@]}"; do
+            body=$(curl -s \
+              "${SUPABASE_URL}/rest/v1/${table}?limit=1" \
+              -H "apikey: ${SUPABASE_KEY}" \
+              -H "Authorization: Bearer ${SUPABASE_KEY}" 2>&1)
+            if echo "$body" | grep -q "PGRST205"; then
+              echo "MISSING: $table — $body"
+              failed+=("$table")
+            else
+              echo "OK: $table"
+            fi
+          done
+
+          # Verify critical columns exist by selecting them explicitly.
+          # PGRST204 means the column is absent from the schema cache.
+          columns=(
+            "pages:is_private"
+            "pages:cover"
+            "pages:share_token"
+          )
+          for entry in "${columns[@]}"; do
+            table="${entry%%:*}"
+            column="${entry##*:}"
+            body=$(curl -s \
+              "${SUPABASE_URL}/rest/v1/${table}?select=${column}&limit=1" \
+              -H "apikey: ${SUPABASE_KEY}" \
+              -H "Authorization: Bearer ${SUPABASE_KEY}" 2>&1)
+            if echo "$body" | grep -qE "PGRST(204|205)"; then
+              echo "MISSING COLUMN: ${table}.${column} — $body"
+              failed+=("${table}.${column}}")
+            else
+              echo "OK: ${table}.${column}"
+            fi
+          done
+
+          if [ ${#failed[@]} -gt 0 ]; then
+            echo "Missing from schema cache: ${failed[*]}"
+            exit 1
+          fi
