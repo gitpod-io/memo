@@ -35,7 +35,7 @@ metrics/           → Daily/weekly metrics snapshots
 - Named exports only. No default exports.
 - Conventional commits: `feat|fix|chore|docs|test|refactor(scope): description`
 - PRs with type `feat` or `fix` must reference an issue: `Closes #N`. Chore PRs (metrics, docs, deps) do not require an issue.
-- Database changes require a migration file in `supabase/migrations/` with timestamp prefix: `YYYYMMDDHHmmss_<name>.sql` (use current UTC time, e.g. `20260414200000_add_pages_table.sql`)
+- Database changes require a migration: `npx supabase migration new <name>`
 - Environment variables: `NEXT_PUBLIC_` prefix only for browser-safe values.
 
 ## Testing

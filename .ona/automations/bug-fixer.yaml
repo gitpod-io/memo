@@ -99,8 +99,7 @@ action:
                 9. Fix the root cause. Do NOT fix symptoms.
                    - Follow every convention in AGENTS.md without exception.
                    - Add a regression test that would have caught this bug.
-                   - For database changes: create a migration file in `supabase/migrations/` with a UTC
-                     timestamp prefix: `YYYYMMDDHHmmss_<name>.sql` (use current UTC time).
+                   - For database changes: `npx supabase migration new <name>`
                 10. Run the full CI check locally: `pnpm lint && pnpm typecheck && pnpm test`
                 11. Fix any errors before proceeding.
 
