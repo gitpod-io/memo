@@ -19,11 +19,10 @@ src/components/ui/ → shadcn/ui components (do not edit)
 src/lib/           → Utilities, types, constants
 src/lib/supabase/  → Supabase clients (client.ts, server.ts, proxy.ts)
 supabase/migrations/ → Database migrations
-.agents/           → Agent knowledge base (architecture, conventions, plans)
-.ona/automations/  → Automation YAML definitions
+.agents/           → Agent knowledge base (architecture, conventions, design, plans)
+.ona/              → Automation definitions and skills
 docs/              → Product spec, decisions
 metrics/           → Daily/weekly metrics snapshots
-scripts/           → Utility scripts (tweet posting, etc.)
 ```
 
 ## Rules
@@ -45,18 +44,23 @@ scripts/           → Utility scripts (tweet posting, etc.)
 - Integration tests: API routes
 - E2E (Playwright): critical user flows, new pages
 - Skip tests for trivial layout-only components
-- Run before pushing: `npm run lint && npm run typecheck && npm run test`
+- Run before pushing: `pnpm lint && pnpm typecheck && pnpm test`
 
 ## Backlog
 
-Issues use labels for status and priority:
+Issues use labels for status, priority, and flags:
 - Status: `status:backlog`, `status:in-progress`, `status:in-review`, `status:done`
 - Priority: `priority:1` (foundation), `priority:2` (features), `priority:3` (polish)
+- Type: `bug`, `feature`, `enhancement`, `chore`, `performance`
+- Flag: `needs-human` — permanently excludes the issue from all automation queues
 - Query: `gh issue list --label "status:backlog" --label "priority:1" --state open`
+
+Label lifecycle: `status:backlog` → `status:in-progress` → `status:in-review` → `status:done`
 
 ## Where to Find Details
 
 - Architecture and data flow: `.agents/architecture.md`
+- Design spec (colors, typography, spacing, components, interactions): `.agents/design.md`
 - Coding patterns and conventions: `.agents/conventions.md`
 - Quality status per domain: `.agents/quality.md`
 - Active plans: `.agents/plans/active/`
