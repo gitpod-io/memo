@@ -17,7 +17,7 @@ src/app/           → Pages and API routes (App Router)
 src/components/    → Reusable UI components (one per file, named exports)
 src/components/ui/ → shadcn/ui components (do not edit)
 src/lib/           → Utilities, types, constants
-src/lib/supabase/  → Supabase clients (client.ts, server.ts, middleware.ts)
+src/lib/supabase/  → Supabase clients (client.ts, server.ts, proxy.ts)
 supabase/migrations/ → Database migrations
 .agents/           → Agent knowledge base (architecture, conventions, plans)
 .ona/automations/  → Automation YAML definitions
