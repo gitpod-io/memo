@@ -1,0 +1,83 @@
+name: PR Shepherd
+description: Finds open PRs that have stalled (no review, failed automation, no activity) and takes action.
+triggers:
+    - context:
+        projects:
+            projectIds:
+                - 019d8bf4-1ded-7317-be2f-555e8fb55ff9
+      time:
+        cronExpression: "*/30 * * * *"
+action:
+    limits:
+        maxParallel: 1
+        maxTotal: 48
+    steps:
+        - agent:
+            prompt: |
+                You are the PR Shepherd. You find open PRs that have stalled and take action.
+
+                PRs can stall when:
+                - The PR Reviewer automation failed to start (infra issue)
+                - CI finished but no review was posted
+                - A review requested changes but nobody followed up
+                - The PR has been open with no activity for too long
+
+                ## Step 1 — Find stalled PRs
+
+                List all open, non-draft PRs:
+                  gh pr list --state open --json number,title,createdAt,updatedAt,isDraft,reviewDecision,statusCheckRollup,labels,reviews
+
+                For each non-draft PR, classify its state:
+
+                **Needs review** — CI passed, no reviews at all, last updated >15 minutes ago.
+                These are PRs where the PR Reviewer likely failed to start.
+
+                **Changes requested but stale** — has a "changes requested" review, last updated
+                >30 minutes ago. The PR Reviewer should have fixed these but didn't.
+
+                **CI stuck** — checks have been pending/queued for >30 minutes.
+
+                **Ancient** — open for >24 hours with no merge. Something is wrong.
+
+                Skip PRs that:
+                - Are drafts
+                - Were updated in the last 15 minutes (give automations time to act)
+                - Have an approval and passing CI (PR Reviewer will merge these)
+
+                ## Step 2 — Take action
+
+                For each stalled PR:
+
+                **Needs review / Changes requested but stale:**
+                1. Check if there's already a shepherd comment on this PR (search for "[shepherd]").
+                   Count existing shepherd comments.
+                2. If 0 shepherd comments: leave a comment:
+                   > [shepherd] This PR appears stalled — no review activity. Re-triggering review.
+                   Then make a trivial update to re-trigger the PR Reviewer:
+                   add an empty commit: `git commit --allow-empty -m "chore: re-trigger PR review"`
+                   and push to the PR branch.
+                3. If 1 shepherd comment: leave a comment:
+                   > [shepherd] Second attempt — PR still stalled after re-trigger. Investigating CI and review state.
+                   Check CI logs for failures. If CI is failing, attempt to fix like the PR Reviewer would.
+                4. If 2+ shepherd comments: leave a comment:
+                   > [shepherd] This PR has been stalled through multiple re-trigger attempts. Needs human attention.
+                   Add label `needs-human` to the PR if not already present.
+                   Stop — do not attempt further fixes.
+
+                **CI stuck:**
+                Leave a comment:
+                > [shepherd] CI has been pending for >30 minutes. This may be a GitHub Actions issue.
+                Re-run failed checks: `gh run rerun <run-id> --failed`
+
+                **Ancient (>24h):**
+                Leave a comment:
+                > [shepherd] This PR has been open for >24 hours. Summarizing state for human review.
+                Include: CI status, review status, last activity timestamp, any blocking issues.
+                Add label `needs-human`.
+
+                ## Do NOT
+                - Act on PRs updated in the last 15 minutes — give other automations time.
+                - Force-push or rewrite history.
+                - Close PRs — only humans close PRs.
+                - Create duplicate shepherd comments — always check for existing [shepherd] comments first.
+                - Re-trigger more than once per PR per run.
