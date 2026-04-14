@@ -21,7 +21,7 @@ application backed by Supabase for persistence, auth, and realtime.
 │  │     ┌────────▼────────┐          │     │   │
 │  │     │  Supabase SSR   │◄─────────┘     │   │
 │  │     │  (client/server │                │   │
-│  │     │   /middleware)   │                │   │
+│  │     │   /proxy)        │                │   │
 │  │     └────────┬────────┘                │   │
 │  └──────────────┼────────────────────────┘   │
 └─────────────────┼────────────────────────────┘

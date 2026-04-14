@@ -18,7 +18,7 @@ export async function createClient() {
             );
           } catch {
             // setAll is called from Server Components where cookies can't be set.
-            // This can be ignored if middleware refreshes the session.
+            // This can be ignored if the proxy refreshes the session.
           }
         },
       },
