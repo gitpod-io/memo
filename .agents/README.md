@@ -1,12 +1,23 @@
 # Agent Knowledge Base
 
 This directory is the system of record for agent context. AGENTS.md in the repo root
-is the entry point — it points here for details.
+is the entry point and routing table — it points here for details.
 
-| File | Purpose | Updated by |
+Agents: start with AGENTS.md, then read the relevant file here before working.
+
+## Contents
+
+| File | Purpose | When to read |
 |---|---|---|
-| `architecture.md` | System architecture, component map, data flow | After structural changes |
-| `conventions.md` | Detailed coding patterns with examples | After new patterns emerge |
-| `quality.md` | Quality grades per domain | Automation Auditor (weekly) |
-| `plans/active/` | Current sprint plans | Feature Planner |
-| `plans/completed/` | Done plans | Moved here when complete |
+| `architecture.md` | System design, data model, component map | Before making structural changes or adding new features |
+| `conventions.md` | Coding patterns with examples | Before writing any new code |
+| `quality.md` | Quality grades per domain, known gaps | When deciding what to improve |
+| `plans/active/` | Current feature plans | Before picking up work |
+| `plans/completed/` | Done plans (context on past decisions) | When you need to understand why something was built a certain way |
+
+## How to update these files
+
+- `architecture.md` — update when adding new system components, changing data model, or making infrastructure decisions
+- `conventions.md` — update when a new coding pattern emerges that should be replicated, or when an anti-pattern is discovered
+- `quality.md` — updated weekly by the Automation Auditor, or manually after significant changes
+- Plans move from `active/` to `completed/` when all issues in the plan are closed
