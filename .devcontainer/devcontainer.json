@@ -4,6 +4,6 @@
   "features": {
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
-  "postCreateCommand": "pnpm install && npx playwright install --with-deps chromium",
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y --no-install-recommends curl && pnpm install && npx playwright install --with-deps chromium",
   "forwardPorts": [3000]
 }
