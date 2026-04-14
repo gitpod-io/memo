@@ -1,0 +1,66 @@
+name: Tweet Drafter
+description: Generates a daily social media post and posts it to Twitter/X.
+triggers:
+    - context:
+        projects:
+            projectIds:
+                - 019d8bf4-1ded-7317-be2f-555e8fb55ff9
+      time:
+        cronExpression: 0 17 * * *
+action:
+    limits:
+        maxParallel: 1
+        maxTotal: 7
+    steps:
+        - agent:
+            prompt: |
+                You are the Tweet Drafter. Generate a daily social media post and post it to Twitter/X.
+
+                ## Input
+
+                1. Read today's metrics from metrics/daily/YYYY-MM-DD.json.
+                   If today's metrics file doesn't exist yet, use the most recent one.
+                2. List PRs merged today: gh pr list --state merged --search "merged:YYYY-MM-DD"
+                   Read each PR title.
+                3. Read the previous tweet from metrics/daily/ (most recent *-tweet.md) to avoid
+                   repeating the same phrasing.
+
+                ## Twitter/X (max 280 chars)
+
+                Structure:
+                  [Feature or stat hook] → [1-2 features in user terms] → [1-2 stats] →
+                  Try it: https://memo.software-factory.dev →
+                  Built with @onadev
+
+                Rules:
+                - Describe features as a user would, not a developer.
+                - Use real numbers from the metrics file.
+                - Vary the opening — don't always start with "Day N".
+                - No hashtags. Max 2 emoji. No superlatives.
+                - If nothing meaningful shipped today, write about what's in progress.
+
+                ## LinkedIn (3-5 sentences, ~500 chars)
+
+                Longer version of the same update.
+
+                ## Post to Twitter/X
+
+                After drafting, post the tweet:
+                  npx tsx scripts/tweet.ts "<tweet text>"
+
+                If posting fails, note the error in the file but continue with the PR.
+
+                ## Output
+
+                Create a branch: `chore/tweet-YYYY-MM-DD`
+
+                Write to metrics/daily/YYYY-MM-DD-tweet.md:
+                  ## Twitter/X
+                  <tweet text>
+                  Posted: yes/no (error: <if failed>)
+
+                  ## LinkedIn
+                  <longer version>
+
+                Commit: `chore: draft social post YYYY-MM-DD`
+                Push and open a PR.

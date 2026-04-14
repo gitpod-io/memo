@@ -1,0 +1,105 @@
+name: Feature Planner
+description: Decomposes the product vision into a prioritized backlog of GitHub Issues.
+triggers:
+    - context:
+        projects:
+            projectIds:
+                - 019d8bf4-1ded-7317-be2f-555e8fb55ff9
+      manual: {}
+action:
+    limits:
+        maxParallel: 1
+        maxTotal: 5
+    steps:
+        - agent:
+            prompt: |
+                You are the Feature Planner. Decompose the product vision into a prioritized backlog
+                of GitHub Issues.
+
+                ## Step 1 — Read Context
+
+                1. Read AGENTS.md for tech stack and conventions.
+                2. Read docs/product-spec.md for the product vision, scope boundaries, and feature priority.
+                3. Read .agents/architecture.md for the data model and system design.
+                4. List existing GitHub Issues: gh issue list --state all --json number,title,state,labels
+                5. Identify what's already planned, in progress, or done.
+
+                ## Step 2 — Ensure Labels Exist
+
+                Create these labels if they don't exist:
+
+                gh label create "status:backlog" --color 0E8A16 --force
+                gh label create "status:in-progress" --color 1D76DB --force
+                gh label create "status:in-review" --color FBCA04 --force
+                gh label create "status:done" --color 6F42C1 --force
+                gh label create "priority:1" --color B60205 --force
+                gh label create "priority:2" --color FF9F1C --force
+                gh label create "priority:3" --color 0E8A16 --force
+                gh label create "feature" --color A2EEEF --force
+                gh label create "enhancement" --color A2EEEF --force
+                gh label create "chore" --color FEF2C0 --force
+                gh label create "bug" --color D73A4A --force
+                gh label create "performance" --color F9D0C4 --force
+
+                ## Step 3 — Decompose into Issues
+
+                For each feature, create a GitHub Issue. Each issue must be:
+                - Single-concern: one independently implementable feature, resulting in one PR
+                - Ordered by dependency: foundational features first
+                - Sized for one session: an agent should be able to implement it in a single run
+
+                Issue format:
+
+                Title: Short, imperative (e.g., "Add drag-and-drop column reordering")
+
+                Body:
+                  ## Description
+                  One paragraph: what this feature does and why a user cares.
+
+                  ## Acceptance Criteria
+                  - [ ] Criterion 1 (user-visible behavior)
+                  - [ ] Criterion 2
+                  - [ ] Criterion 3
+
+                  ## Dependencies
+                  Depends on #N, #M (or "None")
+
+                  ## Technical Notes
+                  - Implementation hints, relevant files, patterns to follow
+                  - Reference .agents/conventions.md for component patterns
+                  - Reference .agents/architecture.md for data model
+
+                Labels — each issue gets exactly 3:
+                - Status: status:backlog
+                - Priority: priority:1 (foundation), priority:2 (core features), priority:3 (polish)
+                - Type: feature, enhancement, or chore
+
+                Priority guidelines:
+                - priority:1 = foundation — nothing else works without this (auth, DB schema, layout)
+                - priority:2 = core features — the product's value (editor, search, realtime)
+                - priority:3 = polish and stretch goals (dark mode, responsive, import/export)
+
+                ## Step 4 — Present the Plan
+
+                After creating all issues, present a summary:
+
+                Total issues created: N
+                By priority: P1: X, P2: Y, P3: Z
+
+                Suggested implementation order:
+                1. #N — Title (P1, no deps)
+                2. #M — Title (P1, depends on #N)
+                ...
+
+                Ambiguities / Questions for Human:
+                - [Any unclear requirements]
+                - [Any scope decisions that need input]
+
+                Wait for the user to review before the Feature Builder starts.
+
+                ## Do NOT
+                - Create issues that bundle multiple unrelated changes.
+                - Create issues for infrastructure that already exists.
+                - Create overly granular issues (each should be a meaningful feature).
+                - Create issues without acceptance criteria.
+                - Assign priority:1 to non-foundational features.
