@@ -27,6 +27,9 @@ Vercel → hosting, preview deploys per PR, production deploys on merge
 
 ## Data Model
 
+No database migrations exist yet. The schema below is the planned target model.
+Create migrations in `supabase/migrations/` as features are implemented.
+
 ```
 workspace
   ├── has many: members (user_id + role)
@@ -66,6 +69,7 @@ src/
 ├── app/                    # Next.js App Router
 │   ├── layout.tsx          # Root layout (Geist fonts, global styles)
 │   ├── page.tsx            # Landing page
+│   ├── manifest.ts         # PWA manifest (name, icons, display mode)
 │   ├── global-error.tsx    # Sentry error boundary
 │   └── api/
 │       └── health/route.ts # Health check endpoint (DB connectivity)
@@ -76,6 +80,12 @@ src/
 │       └── proxy.ts        # Session refresh logic (updateSession)
 ├── proxy.ts                # Root proxy — calls updateSession, skips static/health routes
 └── instrumentation.ts      # Sentry server/edge init (register + onRequestError)
+
+Root config files:
+├── instrumentation-client.ts  # Sentry client init (replay, route transitions)
+├── sentry.server.config.ts    # Sentry server SDK config
+├── sentry.edge.config.ts      # Sentry edge SDK config
+└── sentry.client.config.ts    # Sentry client SDK config
 ```
 
 ## Observability
