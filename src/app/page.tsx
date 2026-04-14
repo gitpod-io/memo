@@ -1,6 +1,6 @@
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-white dark:bg-zinc-950">
+    <main className="flex min-h-screen flex-col items-center justify-center p-8">
       <div className="max-w-2xl text-center space-y-6">
         <h1 className="text-5xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
           Memo

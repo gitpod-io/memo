@@ -77,8 +77,8 @@ src/
 │   └── supabase/
 │       ├── client.ts       # Browser client
 │       ├── server.ts       # Server component client
-│       └── middleware.ts   # Session refresh
-├── middleware.ts            # Root middleware (Supabase session)
+│       └── proxy.ts        # Session refresh
+├── proxy.ts                 # Root proxy (Supabase session, Next.js 16 convention)
 └── instrumentation.ts      # Sentry server/edge init
 ```
 
