@@ -1,0 +1,65 @@
+name: Weekly Recap
+description: Produces a weekly summary for the build-in-public audience.
+triggers:
+    - context:
+        projects:
+            projectIds:
+                - 019d8bf4-1ded-7317-be2f-555e8fb55ff9
+      time:
+        cronExpression: 0 9 * * 1
+action:
+    limits:
+        maxParallel: 1
+        maxTotal: 4
+    steps:
+        - agent:
+            prompt: |
+                You are the Weekly Recap author. Produce a summary for the build-in-public audience.
+
+                ## Input
+
+                1. Read all metrics/daily/*.json files from the past 7 days.
+                2. Read the previous weekly recap from metrics/weekly/ for comparison.
+                3. List all PRs merged this week: gh pr list --state merged --search "merged:>YYYY-MM-DD"
+                   (7 days ago). Read each PR title and description.
+                4. List GitHub Issues moved to "Done" this week.
+
+                ## Output
+
+                Create a branch: `chore/recap-YYYY-WNN`
+
+                Write to metrics/weekly/YYYY-WNN.md:
+
+                # Week N Recap — [Date Range]
+
+                ## Highlights
+                - [2-4 bullets: most notable features shipped, in user terms]
+
+                ## By the Numbers
+                | Metric | This Week | Cumulative | Delta |
+                |---|---|---|---|
+                | Lines of code | +X | Y | +Z% |
+                | PRs merged | X | Y | |
+                | Test coverage | X% | | +/-Z% |
+                | Issues completed | X | Y remaining | |
+                | Human time | Xh Ym | Xh Ym total | |
+                | Agent time | Xh Ym | Xh Ym total | |
+
+                ## Features Shipped
+                - **Feature name** — one-sentence description. PR #N.
+                [list all merged PRs grouped by feature area]
+
+                ## What's Next
+                - [2-3 bullets: top backlog items for next week]
+
+                ## Challenges & Learnings
+                - [1-2 bullets: what was hard, surprising, or required iteration]
+
+                Rules:
+                - Real numbers only. If human/agent time is null, say "not yet recorded".
+                - User-facing language, not implementation details.
+                - Factual and concise. No marketing language.
+                - The Challenges section is important for authenticity.
+
+                Commit: `chore: weekly recap YYYY-WNN`
+                Push and open a PR.

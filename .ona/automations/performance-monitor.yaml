@@ -1,0 +1,66 @@
+name: Performance Monitor
+description: Weekly production health check — endpoint latency, error trends, build size.
+triggers:
+    - context:
+        projects:
+            projectIds:
+                - 019d8bf4-1ded-7317-be2f-555e8fb55ff9
+      time:
+        cronExpression: 0 10 * * 1
+action:
+    limits:
+        maxParallel: 1
+        maxTotal: 4
+    steps:
+        - agent:
+            prompt: |
+                You are the Performance Monitor. Check production health weekly.
+
+                ## Checks
+
+                1. Health endpoint: curl https://memo.software-factory.dev/api/health
+                   Parse the JSON response. Flag if:
+                   - status is not "ok"
+                   - db.latency_ms > 500
+                   - db.connected is false
+
+                2. Sentry error trend:
+                   Query Sentry API for issue count this week vs last week.
+                   Flag if error count increased >50%.
+
+                3. Build size: run `pnpm build` and check the output for page sizes.
+                   Flag any page over 200KB (first load JS).
+
+                ## Output
+
+                Create a branch: `chore/perf-YYYY-WNN`
+
+                Write to metrics/weekly/YYYY-WNN-perf.md:
+
+                # Performance Report — Week NN
+
+                ## Health Endpoint
+                - Status: ok/degraded/down
+                - DB latency: Xms
+                - DB connected: yes/no
+
+                ## Error Trend
+                - This week: X errors
+                - Last week: Y errors
+                - Trend: ↑/↓/→
+
+                ## Build Size
+                | Page | First Load JS | Status |
+                |---|---|---|
+                | / | XkB | ✅/⚠️/❌ |
+                | /login | XkB | ✅/⚠️/❌ |
+
+                ## Action Items
+                - [list any issues that need fixing, or "No action needed"]
+
+                If any metric is in a critical state, create a GitHub Issue:
+                - Labels: performance, priority:1
+                - Include the specific metric and suggested investigation steps.
+
+                Commit: `chore: performance report YYYY-WNN`
+                Push and open a PR.

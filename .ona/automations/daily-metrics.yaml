@@ -1,0 +1,58 @@
+name: Daily Metrics
+description: Collects daily project stats and opens a chore PR.
+triggers:
+    - context:
+        projects:
+            projectIds:
+                - 019d8bf4-1ded-7317-be2f-555e8fb55ff9
+      time:
+        cronExpression: 0 9 * * *
+action:
+    limits:
+        maxParallel: 1
+        maxTotal: 7
+    steps:
+        - agent:
+            prompt: |
+                You are the Metrics Collector. Gather daily project stats, commit them, and open a PR.
+
+                ## Data Collection (on latest main)
+
+                1. Lines of code: run `npx cloc src/ --json`. Extract total and by-language.
+                2. File count: count files in src/ excluding node_modules, .next, test files.
+                3. PRs today: use gh pr list to count opened and merged today, and currently open.
+                4. Test coverage: run `pnpm test -- --coverage --reporter=json` and extract percentage.
+                   If coverage is not configured, set to null.
+                5. CI pass rate: use `gh run list --limit 20 --json conclusion` and calculate success %.
+                6. GitHub Issues: use gh issue list with label filters to count issues per status.
+                7. Commits today: `git log --oneline --since="today" | wc -l`
+
+                ## Output
+
+                Create a branch: `chore/metrics-YYYY-MM-DD`
+
+                Create `metrics/daily/YYYY-MM-DD.json`:
+                {
+                  "date": "YYYY-MM-DD",
+                  "loc": { "total": N, "delta": N, "by_language": { "TypeScript": N } },
+                  "files": { "total": N, "delta": N },
+                  "prs": { "opened_today": N, "merged_today": N, "currently_open": N },
+                  "commits_today": N,
+                  "test_coverage_pct": N,
+                  "ci_pass_rate_pct": N,
+                  "issues": { "backlog": N, "in_progress": N, "in_review": N, "done": N },
+                  "human_minutes": null,
+                  "agent_minutes": null
+                }
+
+                For delta fields, read yesterday's file from metrics/daily/. If none exists, delta = total.
+                human_minutes and agent_minutes are null — filled manually.
+
+                ## Commit and PR
+
+                1. Commit: `chore: daily metrics snapshot YYYY-MM-DD`
+                2. Push the branch.
+                3. Open a PR:
+                   - Title: `chore: daily metrics snapshot YYYY-MM-DD`
+                   - Body: summary of today's stats
+                4. The PR Reviewer will auto-merge chore PRs.
