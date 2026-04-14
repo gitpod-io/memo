@@ -31,9 +31,16 @@
     "eslint-config-next": "16.2.3",
     "jsdom": "^29.0.2",
     "playwright": "^1.59.1",
+    "supabase": "^2.91.1",
     "tailwindcss": "^4",
     "twitter-api-v2": "^1.29.0",
     "typescript": "^5",
     "vitest": "^4.1.4"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "supabase",
+      "@sentry/cli"
+    ]
   }
 }

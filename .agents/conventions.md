@@ -232,13 +232,10 @@ Pattern: wrap in try/catch, return structured JSON with appropriate status codes
 
 ## Database Migrations
 
-Create migration files manually in `supabase/migrations/` with a UTC timestamp prefix:
-
 ```bash
-# Format: YYYYMMDDHHmmss_<descriptive_name>.sql
-# Use the current UTC time when creating the file.
-# Example (created at 2026-04-14 20:00:00 UTC):
-touch supabase/migrations/20260414200000_add_pages_table.sql
+npx supabase migration new <descriptive-name>
+# Creates: supabase/migrations/<YYYYMMDDHHmmss>_<name>.sql
+# The CLI generates the correct UTC timestamp prefix automatically.
 ```
 
 ```sql
@@ -261,7 +258,7 @@ create policy "workspace members can read pages"
 ```
 
 Rules:
-- Timestamp must be current UTC time — never reuse or backdate timestamps.
+- Always use `npx supabase migration new` — never create migration files manually.
 - One migration per logical change (table + its RLS policies together).
 - Auto-applied on merge to main via the deploy-migrations CI workflow.
 
