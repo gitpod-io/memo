@@ -24,8 +24,10 @@ action:
                    - db.latency_ms > 500
                    - db.connected is false
 
-                2. Sentry error trend:
-                   Query Sentry API for issue count this week vs last week.
+                2. Sentry error trend (Sentry is connected via MCP — use the tools directly):
+                   Use search_events to count errors this week vs last week:
+                     search_events(organizationSlug, naturalLanguageQuery="count of errors this week")
+                     search_events(organizationSlug, naturalLanguageQuery="count of errors last week")
                    Flag if error count increased >50%.
 
                 3. Build size: run `pnpm build` and check the output for page sizes.
