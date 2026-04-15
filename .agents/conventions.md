@@ -117,6 +117,29 @@ The `updateSession` function in `src/lib/supabase/proxy.ts` creates a server cli
 that reads cookies from the request and writes refreshed cookies to the response.
 It calls `supabase.auth.getUser()` to trigger the refresh.
 
+## Environment Variable Guards
+
+Route handlers and server utilities that use Supabase must guard against missing
+env vars before calling `createClient()`. Without the guard, `createServerClient`
+receives `undefined` and throws, which can crash the route or produce misleading
+error responses (e.g., health endpoint reporting "down" instead of "not configured").
+
+The proxy already does this — route handlers must follow the same pattern:
+
+```typescript
+if (
+  !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+) {
+  // Return a graceful response instead of crashing
+  return NextResponse.json({ status: "ok", db: { connected: false, message: "not configured" } });
+}
+```
+
+Apply this guard in any route handler that calls `createClient()` and must remain
+functional even when Supabase is not yet configured (e.g., health checks, public
+status endpoints).
+
 ## Component Patterns
 
 ### Server Component (default)
