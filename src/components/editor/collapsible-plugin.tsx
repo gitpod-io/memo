@@ -79,16 +79,29 @@ export function CollapsiblePlugin(): null {
 
   // Handle toggle open/close via DOM events on <details>
   useEffect(() => {
-    return editor.registerMutationListener(
+    const cleanupMap = new Map<string, () => void>();
+
+    const unregister = editor.registerMutationListener(
       CollapsibleContainerNode,
       (mutations) => {
         for (const [nodeKey, mutation] of mutations) {
-          if (mutation === "destroyed") continue;
+          if (mutation === "destroyed") {
+            const cleanup = cleanupMap.get(nodeKey);
+            if (cleanup) {
+              cleanup();
+              cleanupMap.delete(nodeKey);
+            }
+            continue;
+          }
 
-          const dom = editor.getElementByKey(nodeKey) as HTMLDetailsElement | null;
+          // Skip if already listening
+          if (cleanupMap.has(nodeKey)) continue;
+
+          const dom = editor.getElementByKey(
+            nodeKey
+          ) as HTMLDetailsElement | null;
           if (!dom) continue;
 
-          // Listen for toggle events on the <details> element
           const handleToggle = () => {
             editor.update(() => {
               const node = $getNodeByKey(nodeKey);
@@ -99,9 +112,18 @@ export function CollapsiblePlugin(): null {
           };
 
           dom.addEventListener("toggle", handleToggle);
+          cleanupMap.set(nodeKey, () =>
+            dom.removeEventListener("toggle", handleToggle)
+          );
         }
       }
     );
+
+    return () => {
+      unregister();
+      cleanupMap.forEach((cleanup) => cleanup());
+      cleanupMap.clear();
+    };
   }, [editor]);
 
   return null;

@@ -69,7 +69,7 @@ export function CalloutPlugin(): null {
 
           const emoji = node.getEmoji();
 
-          // Check if emoji span already exists
+          // querySelector returns Element | null; safe to narrow because we create this span ourselves
           let emojiSpan = dom.querySelector(
             ".callout-emoji"
           ) as HTMLSpanElement | null;
