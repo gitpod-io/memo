@@ -6,6 +6,18 @@ export async function GET() {
   let dbStatus = "ok";
   let dbLatency = 0;
 
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  ) {
+    // Supabase is not configured — report as unconfigured rather than down
+    return NextResponse.json({
+      status: "ok",
+      db: { connected: false, latency_ms: 0, reason: "not_configured" },
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   try {
     const supabase = await createClient();
     const { error } = await supabase
