@@ -29,6 +29,17 @@ import { SlashCommandPlugin } from "@/components/editor/slash-command-plugin";
 import { FloatingToolbarPlugin } from "@/components/editor/floating-toolbar-plugin";
 import { FloatingLinkEditorPlugin } from "@/components/editor/floating-link-editor-plugin";
 import { CodeHighlightPlugin } from "@/components/editor/code-highlight-plugin";
+import { DraggableBlockPlugin } from "@/components/editor/draggable-block-plugin";
+import { ImageNode } from "@/components/editor/image-node";
+import { ImagePlugin } from "@/components/editor/image-plugin";
+import { CalloutNode } from "@/components/editor/callout-node";
+import { CalloutPlugin } from "@/components/editor/callout-plugin";
+import {
+  CollapsibleContainerNode,
+  CollapsibleTitleNode,
+  CollapsibleContentNode,
+} from "@/components/editor/collapsible-node";
+import { CollapsiblePlugin } from "@/components/editor/collapsible-plugin";
 import { createClient } from "@/lib/supabase/client";
 
 const SAVE_DEBOUNCE_MS = 500;
@@ -144,6 +155,11 @@ export function Editor({ pageId, initialContent, editorRef }: EditorProps) {
       CodeHighlightNode,
       LinkNode,
       HorizontalRuleNode,
+      ImageNode,
+      CalloutNode,
+      CollapsibleContainerNode,
+      CollapsibleTitleNode,
+      CollapsibleContentNode,
     ],
     onError: (error: Error) => {
       Sentry.captureException(error);
@@ -179,6 +195,9 @@ export function Editor({ pageId, initialContent, editorRef }: EditorProps) {
         <ClickableLinkPlugin />
         <HorizontalRulePlugin />
         <CodeHighlightPlugin />
+        <ImagePlugin />
+        <CalloutPlugin />
+        <CollapsiblePlugin />
         {editorRef && <EditorRefPlugin editorRef={editorRef} />}
         <OnChangePlugin
           onChange={handleChange}
@@ -189,6 +208,7 @@ export function Editor({ pageId, initialContent, editorRef }: EditorProps) {
           <>
             <FloatingToolbarPlugin anchorElem={floatingAnchorElem} />
             <FloatingLinkEditorPlugin anchorElem={floatingAnchorElem} />
+            <DraggableBlockPlugin anchorElem={floatingAnchorElem} />
           </>
         )}
       </LexicalComposer>

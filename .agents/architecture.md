@@ -98,24 +98,28 @@ Pin to a specific version to avoid breaking changes.
 
 ### Custom plugins (referencing playground)
 
-| Plugin | Playground reference | Complexity |
+| Plugin | Playground reference | Status |
 |---|---|---|
-| ComponentPickerPlugin (slash commands) | `plugins/ComponentPickerPlugin` | Medium |
-| DraggableBlockPlugin (drag-and-drop) | `plugins/DraggableBlockPlugin` | High |
-| FloatingTextFormatToolbarPlugin | `plugins/FloatingTextFormatToolbarPlugin` | High |
-| FloatingLinkEditorPlugin | `plugins/FloatingLinkEditorPlugin` | Medium |
-| ImagesExtension | `plugins/ImagesExtension` | High |
-| CodeHighlightExtension | `plugins/CodeHighlightExtension` | Medium |
-| CollapsibleExtension (toggle blocks) | `plugins/CollapsibleExtension` | Medium |
-| ToolbarPlugin (top toolbar) | `plugins/ToolbarPlugin` | High |
+| SlashCommandPlugin (slash commands) | `plugins/ComponentPickerPlugin` | ✅ Implemented |
+| DraggableBlockPlugin (drag-and-drop) | `plugins/DraggableBlockPlugin` | ✅ Implemented |
+| FloatingToolbarPlugin | `plugins/FloatingTextFormatToolbarPlugin` | ✅ Implemented |
+| FloatingLinkEditorPlugin | `plugins/FloatingLinkEditorPlugin` | ✅ Implemented |
+| ImagePlugin | `plugins/ImagesExtension` | ✅ Implemented |
+| CodeHighlightPlugin | `plugins/CodeHighlightExtension` | ✅ Implemented |
+| CalloutPlugin | N/A (custom) | ✅ Implemented |
+| CollapsiblePlugin (toggle blocks) | `plugins/CollapsibleExtension` | ✅ Implemented |
+| ToolbarPlugin (top toolbar) | `plugins/ToolbarPlugin` | Deferred |
 
 ### Custom nodes
 
-| Node | Type | Purpose |
-|---|---|---|
-| ImageNode | DecoratorNode | Image display with caption, resize handles |
-| CalloutNode | ElementNode | Callout/alert block with emoji + text |
-| DividerNode | HorizontalRuleNode (`@lexical/extension`) | Horizontal divider |
+| Node | Type | Purpose | Status |
+|---|---|---|---|
+| ImageNode | DecoratorNode | Image display with caption | ✅ Implemented |
+| CalloutNode | ElementNode | Callout/alert block with emoji + colored bg | ✅ Implemented |
+| CollapsibleContainerNode | ElementNode | `<details>` wrapper for toggle blocks | ✅ Implemented |
+| CollapsibleTitleNode | ElementNode | `<summary>` title for toggle blocks | ✅ Implemented |
+| CollapsibleContentNode | ElementNode | Content area for toggle blocks | ✅ Implemented |
+| DividerNode | HorizontalRuleNode (`@lexical/react`) | Horizontal divider | ✅ Built-in |
 
 ### Skipped plugins (not needed for MVP)
 
@@ -177,11 +181,18 @@ src/
 │   ├── editor/                  # Lexical block editor
 │   │   ├── editor.tsx               # Main editor: LexicalComposer, plugins, auto-save to Supabase
 │   │   ├── theme.ts                 # EditorThemeClasses mapping Lexical nodes to Tailwind classes
-│   │   ├── slash-command-plugin.tsx  # "/" typeahead: paragraph, h1-h3, lists, code, quote, divider
+│   │   ├── slash-command-plugin.tsx  # "/" typeahead: paragraph, h1-h3, lists, code, quote, divider, image, callout, toggle
 │   │   ├── floating-toolbar-plugin.tsx # Selection toolbar: bold, italic, underline, strikethrough, code, link
 │   │   ├── floating-link-editor-plugin.tsx # Link preview/edit/remove popover (⌘+K)
 │   │   ├── code-highlight-plugin.tsx # Registers Prism-based syntax highlighting for code blocks
-│   │   └── markdown-utils.ts        # Markdown ↔ Lexical conversion (export/import/download/parse)
+│   │   ├── markdown-utils.ts        # Markdown ↔ Lexical conversion (export/import/download/parse)
+│   │   ├── draggable-block-plugin.tsx # Drag handle + drop indicator for block reordering
+│   │   ├── image-node.tsx           # ImageNode (DecoratorNode) with caption support
+│   │   ├── image-plugin.tsx         # Image upload to Supabase Storage, file drop handling
+│   │   ├── callout-node.tsx         # CalloutNode (ElementNode) with emoji + variant
+│   │   ├── callout-plugin.tsx       # Callout insert command + emoji rendering
+│   │   ├── collapsible-node.tsx     # CollapsibleContainer/Title/Content nodes (<details>/<summary>)
+│   │   └── collapsible-plugin.tsx   # Collapsible insert command + toggle handling
 │   ├── page-title.tsx           # Inline-editable page title (saves on blur/Enter)
 │   ├── page-view-client.tsx     # Client wrapper for page view (holds editor ref, renders title + menu + editor)
 │   ├── page-menu.tsx            # Page "..." dropdown: export as markdown, import markdown
