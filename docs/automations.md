@@ -1008,7 +1008,7 @@ Structure varies by slot:
 
 Always end with:
   https://memo.software-factory.dev
-  Built with @onadev
+  Built with @ona_hq
 
 Rules:
 - Describe features as a user would, not a developer.
