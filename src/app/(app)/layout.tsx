@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { SignOutButton } from "@/components/auth/sign-out-button";
+import { AppShell } from "@/components/sidebar/app-shell";
 
 export default async function AppLayout({
   children,
@@ -16,12 +16,19 @@ export default async function AppLayout({
     redirect("/sign-in");
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name, email")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const displayName =
+    profile?.display_name || user.user_metadata?.display_name || "User";
+  const email = profile?.email || user.email || "";
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-end border-b border-white/[0.06] px-4 py-2">
-        <SignOutButton />
-      </header>
-      <main className="flex-1">{children}</main>
-    </div>
+    <AppShell displayName={displayName} email={email}>
+      {children}
+    </AppShell>
   );
 }
