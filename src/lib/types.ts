@@ -44,6 +44,15 @@ export interface WorkspaceInvite {
   created_at: string;
 }
 
+// Joined types for member queries
+export interface MemberWithProfile extends Member {
+  profiles: Pick<Profile, "email" | "display_name" | "avatar_url">;
+}
+
+export interface WorkspaceInviteWithInviter extends WorkspaceInvite {
+  profiles: Pick<Profile, "display_name">;
+}
+
 export interface Page {
   id: string;
   workspace_id: string;
