@@ -1,4 +1,8 @@
 -- Full-text search on pages: extract text from Lexical JSON, build tsvector, index with GIN.
+--
+-- All functions are explicitly created in the public schema so that
+-- cross-function calls resolve correctly regardless of the session's
+-- search_path (Supabase migration runners may use a non-public default).
 
 -- =============================================================================
 -- 1. Function to extract plain text from Lexical editor JSON
@@ -7,7 +11,7 @@
 -- type = "text" under a "text" key. This function recursively walks the
 -- JSON tree and concatenates all text values separated by spaces.
 
-create or replace function extract_text_from_lexical(content jsonb)
+create or replace function public.extract_text_from_lexical(content jsonb)
 returns text
 language plpgsql
 immutable
@@ -32,14 +36,14 @@ begin
   if children is not null and jsonb_typeof(children) = 'array' then
     for child in select jsonb_array_elements(children)
     loop
-      result := result || extract_text_from_lexical(child);
+      result := result || public.extract_text_from_lexical(child);
     end loop;
   end if;
 
   -- Lexical wraps content in { root: { children: [...] } }
   -- Handle the root wrapper
   if content ? 'root' then
-    result := result || extract_text_from_lexical(content -> 'root');
+    result := result || public.extract_text_from_lexical(content -> 'root');
   end if;
 
   return result;
@@ -51,7 +55,7 @@ $$;
 -- =============================================================================
 -- Title gets weight A (highest), content text gets weight B.
 
-create or replace function page_search_vector(title text, content jsonb)
+create or replace function public.page_search_vector(title text, content jsonb)
 returns tsvector
 language plpgsql
 immutable
@@ -69,15 +73,15 @@ $$;
 -- 3. Generated column on pages table
 -- =============================================================================
 
-alter table pages
+alter table public.pages
   add column search_vector tsvector
-  generated always as (page_search_vector(title, content)) stored;
+  generated always as (public.page_search_vector(title, content)) stored;
 
 -- =============================================================================
 -- 4. GIN index for fast full-text search
 -- =============================================================================
 
-create index pages_search_idx on pages using gin (search_vector);
+create index pages_search_idx on public.pages using gin (search_vector);
 
 -- =============================================================================
 -- 5. Search function — called via supabase.rpc('search_pages', ...)
@@ -85,7 +89,7 @@ create index pages_search_idx on pages using gin (search_vector);
 -- Returns matching pages within a workspace, ranked by relevance.
 -- Includes a text snippet from the content for display in search results.
 
-create or replace function search_pages(
+create or replace function public.search_pages(
   query text,
   ws_id uuid,
   result_limit integer default 20
