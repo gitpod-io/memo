@@ -46,7 +46,8 @@ workspaces
         ├── parent_id → pages.id (nullable, enables nesting)
         ├── content: jsonb (Lexical editor state — NOT a separate blocks table)
         ├── position: integer (ordering among siblings)
-        └── created_by → profiles.id
+        ├── created_by → profiles.id
+        └── search_vector: tsvector (generated, title weight A + content text weight B, GIN indexed)
 
 Sign-up flow (atomic, via DB trigger):
   1. auth.users row created by Supabase Auth
@@ -70,7 +71,7 @@ Sign-up flow (atomic, via DB trigger):
 | Session management | Next.js 16 proxy (not middleware) | `src/proxy.ts` with `updateSession` — Next.js 16 convention replacing middleware |
 | Floating UI | `@floating-ui/react` | Positioning for slash command menu, floating toolbar, link editor (same as Lexical playground) |
 | Image storage | Supabase Storage | Bucket for uploaded images, public URL stored in ImageNode |
-| Full-text search | PostgreSQL `tsvector` + `tsquery` | Generated column or trigger on page title + extracted content text |
+| Full-text search | PostgreSQL `tsvector` + `tsquery` | Generated column on pages combining title (weight A) + extracted content text (weight B), GIN index, `search_pages` RPC |
 
 ## Lexical Editor — Implementation Plan
 
@@ -158,7 +159,8 @@ src/
 │   │       ├── page.tsx    # /[workspaceSlug] — workspace home (page list or empty state)
 │   │       └── [pageId]/page.tsx  # /[workspaceSlug]/[pageId] — page with title + editor placeholder
 │   └── api/
-│       └── health/route.ts # Health check endpoint (DB connectivity)
+│       ├── health/route.ts # Health check endpoint (DB connectivity)
+│       └── search/route.ts # Full-text search (GET ?q=&workspace_id=) → calls search_pages RPC
 ├── components/
 │   ├── auth/
 │   │   ├── oauth-buttons.tsx    # GitHub + Google buttons (disabled, "coming soon" tooltip)
@@ -169,6 +171,7 @@ src/
 │   │   ├── sidebar-context.tsx  # React context for sidebar open/close state + ⌘+\ shortcut
 │   │   ├── workspace-switcher.tsx # Dropdown listing all workspaces, create workspace trigger
 │   │   ├── create-workspace-dialog.tsx # Dialog for creating a new workspace
+│   │   ├── page-search.tsx      # Full-text search input + results dropdown (debounced, 300ms)
 │   │   ├── page-tree.tsx        # Hierarchical page tree with CRUD, drag-and-drop, nest/unnest
 │   │   └── user-menu.tsx        # User dropdown with settings link + sign-out
 │   ├── editor/                  # Lexical block editor

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/sheet";
 import { useSidebar } from "@/components/sidebar/sidebar-context";
 import { WorkspaceSwitcher } from "@/components/sidebar/workspace-switcher";
+import { PageSearch } from "@/components/sidebar/page-search";
 import { PageTree } from "@/components/sidebar/page-tree";
 import { UserMenu } from "@/components/sidebar/user-menu";
 
@@ -27,6 +28,8 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col gap-2 p-2">
       <WorkspaceSwitcher userId={userId} />
+      <Separator className="bg-white/[0.06]" />
+      <PageSearch />
       <Separator className="bg-white/[0.06]" />
       <PageTree userId={userId} />
       <Separator className="bg-white/[0.06]" />
