@@ -79,9 +79,9 @@ action:
                 - priority:2 = core features — the product's value (editor, search, realtime)
                 - priority:3 = polish and stretch goals (dark mode, responsive, import/export)
 
-                ## Step 4 — Present the Plan
+                ## Step 4 — Finalize
 
-                After creating all issues, present a summary:
+                After creating all issues, log a summary (do NOT wait for user input — this runs as an unattended automation):
 
                 Total issues created: N
                 By priority: P1: X, P2: Y, P3: Z
@@ -91,11 +91,8 @@ action:
                 2. #M — Title (P1, depends on #N)
                 ...
 
-                Ambiguities / Questions for Human:
-                - [Any unclear requirements]
-                - [Any scope decisions that need input]
-
-                Wait for the user to review before the Feature Builder starts.
+                If there are ambiguities or scope questions, create a GitHub Issue labeled
+                "needs-human" with the questions so a human can address them asynchronously.
 
                 ## Do NOT
                 - Create issues that bundle multiple unrelated changes.
