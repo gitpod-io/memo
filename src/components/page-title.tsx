@@ -29,12 +29,15 @@ export function PageTitle({ pageId, initialTitle }: PageTitleProps) {
       const trimmed = value.trim();
       if (trimmed === lastSavedRef.current) return;
 
-      lastSavedRef.current = trimmed;
       const supabase = createClient();
-      await supabase
+      const { error } = await supabase
         .from("pages")
         .update({ title: trimmed })
         .eq("id", pageId);
+
+      if (!error) {
+        lastSavedRef.current = trimmed;
+      }
     },
     [pageId]
   );
