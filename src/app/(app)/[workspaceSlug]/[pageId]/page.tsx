@@ -33,6 +33,7 @@ export default async function PageView({
     notFound();
   }
 
+  // Supabase types jsonb columns as Json | null; narrow to Lexical's serialized state
   const initialContent = page.content as SerializedEditorState | null;
 
   return (

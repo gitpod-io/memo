@@ -1,6 +1,6 @@
 "use client";
 
-import type { JSX } from "react";
+import type { JSX, ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
@@ -219,7 +219,7 @@ function ToolbarButton({
   active: boolean;
   onClick: () => void;
   label: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <button

@@ -18,6 +18,7 @@ import { CodeNode, CodeHighlightNode } from "@lexical/code";
 import { LinkNode } from "@lexical/link";
 import { HorizontalRuleNode } from "@lexical/react/LexicalHorizontalRuleNode";
 import type { EditorState, SerializedEditorState } from "lexical";
+import * as Sentry from "@sentry/nextjs";
 import { editorTheme } from "@/components/editor/theme";
 import { SlashCommandPlugin } from "@/components/editor/slash-command-plugin";
 import { FloatingToolbarPlugin } from "@/components/editor/floating-toolbar-plugin";
@@ -42,9 +43,9 @@ function validateUrl(url: string): boolean {
 }
 
 export function Editor({ pageId, initialContent }: EditorProps) {
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
-    "idle"
-  );
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedRef = useRef<string>(
     initialContent ? JSON.stringify(initialContent) : ""
@@ -82,7 +83,8 @@ export function Editor({ pageId, initialContent }: EditorProps) {
           lastSavedRef.current = serialized;
           setSaveStatus("saved");
         } else {
-          setSaveStatus("idle");
+          Sentry.captureException(error);
+          setSaveStatus("error");
         }
       }, SAVE_DEBOUNCE_MS);
     },
@@ -97,10 +99,14 @@ export function Editor({ pageId, initialContent }: EditorProps) {
     };
   }, []);
 
-  // Reset "saved" indicator after 2 seconds
+  // Reset "saved" indicator after 2 seconds; retry save on error after 3 seconds
   useEffect(() => {
     if (saveStatus === "saved") {
       const timer = setTimeout(() => setSaveStatus("idle"), 2000);
+      return () => clearTimeout(timer);
+    }
+    if (saveStatus === "error") {
+      const timer = setTimeout(() => setSaveStatus("idle"), 5000);
       return () => clearTimeout(timer);
     }
   }, [saveStatus]);
@@ -119,7 +125,7 @@ export function Editor({ pageId, initialContent }: EditorProps) {
       HorizontalRuleNode,
     ],
     onError: (error: Error) => {
-      console.error("Lexical error:", error);
+      Sentry.captureException(error);
     },
     editorState: initialContent
       ? JSON.stringify(initialContent)
@@ -167,6 +173,9 @@ export function Editor({ pageId, initialContent }: EditorProps) {
       <div className="mt-2 h-5 text-xs text-muted-foreground">
         {saveStatus === "saving" && "Saving..."}
         {saveStatus === "saved" && "Saved"}
+        {saveStatus === "error" && (
+          <span className="text-destructive">Save failed</span>
+        )}
       </div>
     </div>
   );
