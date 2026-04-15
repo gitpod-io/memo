@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { LogOut, Settings, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -19,11 +19,18 @@ interface UserMenuProps {
 
 export function UserMenu({ displayName, email }: UserMenuProps) {
   const router = useRouter();
+  const params = useParams<{ workspaceSlug?: string }>();
 
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/sign-in");
+  }
+
+  function handleSettings() {
+    if (params.workspaceSlug) {
+      router.push(`/${params.workspaceSlug}/settings`);
+    }
   }
 
   return (
@@ -46,7 +53,7 @@ export function UserMenu({ displayName, email }: UserMenuProps) {
           <p className="text-xs text-muted-foreground">{email}</p>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={handleSettings}>
           <Settings className="h-4 w-4" />
           Settings
         </DropdownMenuItem>
