@@ -54,11 +54,11 @@ jobs:
 
       - name: Reset staging DB to clean state
         if: steps.check-secrets.outputs.skip == 'false'
-        run: supabase db reset --linked
+        run: supabase db reset --linked --yes
 
       - name: Push migrations to staging
         if: steps.check-secrets.outputs.skip == 'false'
-        run: supabase db push
+        run: supabase db push --yes
 
   # ---------------------------------------------------------------------------
   # Production deploy: runs on push to main
@@ -84,7 +84,7 @@ jobs:
         run: supabase link --project-ref $SUPABASE_PROJECT_ID
 
       - name: Deploy migrations
-        run: supabase db push
+        run: supabase db push --yes
 
       - name: Verify critical tables exist
         env:
