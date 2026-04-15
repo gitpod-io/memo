@@ -15,7 +15,7 @@ jobs:
   # PR check: reset staging DB then push migrations for real execution
   # ---------------------------------------------------------------------------
   staging:
-    if: github.event_name == 'pull_request' && secrets.SUPABASE_STAGING_PROJECT_ID != ''
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     # Only one staging validation at a time — later PRs queue behind earlier ones
     concurrency:
@@ -28,20 +28,36 @@ jobs:
       SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_STAGING_PROJECT_ID }}
 
     steps:
+      - name: Check staging secrets are configured
+        id: check-secrets
+        run: |
+          if [ -z "$SUPABASE_PROJECT_ID" ] || [ -z "$SUPABASE_DB_PASSWORD" ]; then
+            echo "⚠️ Staging secrets not configured — skipping migration validation."
+            echo "Add SUPABASE_STAGING_PROJECT_ID and SUPABASE_STAGING_DB_PASSWORD repository secrets to enable."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v6
+        if: steps.check-secrets.outputs.skip == 'false'
 
       # supabase/setup-cli@v1 still targets node20; keep FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 until they ship a node24 version
       - uses: supabase/setup-cli@v1
+        if: steps.check-secrets.outputs.skip == 'false'
         with:
           version: latest
 
       - name: Link staging project
+        if: steps.check-secrets.outputs.skip == 'false'
         run: supabase link --project-ref $SUPABASE_PROJECT_ID
 
       - name: Reset staging DB to clean state
+        if: steps.check-secrets.outputs.skip == 'false'
         run: supabase db reset --linked
 
       - name: Push migrations to staging
+        if: steps.check-secrets.outputs.skip == 'false'
         run: supabase db push
 
   # ---------------------------------------------------------------------------
