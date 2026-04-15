@@ -203,7 +203,7 @@ export function FloatingLinkEditorPlugin({
           />
           <button
             type="button"
-            className="flex h-6 w-6 items-center justify-center text-muted-foreground hover:text-foreground"
+            className="flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center text-muted-foreground hover:text-foreground"
             onClick={handleSave}
             aria-label="Save link"
           >
@@ -211,7 +211,7 @@ export function FloatingLinkEditorPlugin({
           </button>
           <button
             type="button"
-            className="flex h-6 w-6 items-center justify-center text-muted-foreground hover:text-foreground"
+            className="flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center text-muted-foreground hover:text-foreground"
             onClick={() => {
               setIsEditing(false);
               setEditedUrl(linkUrl);
@@ -233,7 +233,7 @@ export function FloatingLinkEditorPlugin({
           </a>
           <button
             type="button"
-            className="flex h-6 w-6 items-center justify-center text-muted-foreground hover:text-foreground"
+            className="flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center text-muted-foreground hover:text-foreground"
             onClick={() => window.open(linkUrl, "_blank", "noopener")}
             aria-label="Open link"
           >
@@ -241,7 +241,7 @@ export function FloatingLinkEditorPlugin({
           </button>
           <button
             type="button"
-            className="flex h-6 w-6 items-center justify-center text-muted-foreground hover:text-foreground"
+            className="flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center text-muted-foreground hover:text-foreground"
             onClick={() => setIsEditing(true)}
             aria-label="Edit link"
           >
@@ -249,7 +249,7 @@ export function FloatingLinkEditorPlugin({
           </button>
           <button
             type="button"
-            className="flex h-6 w-6 items-center justify-center text-destructive hover:text-destructive/80"
+            className="flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center text-destructive hover:text-destructive/80"
             onClick={handleRemove}
             aria-label="Remove link"
           >

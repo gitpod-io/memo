@@ -34,6 +34,21 @@ Dark mode only. Use oklch values via CSS variables — same hue family as softwa
 | `--accent` | `oklch(0.60 0.06 248)` | Links, selected items, focus rings |
 | `--destructive` | `oklch(0.55 0.2 25)` | Delete actions, error states |
 
+### Syntax Highlighting Tokens
+
+Used in the Lexical editor code block theme (`src/components/editor/theme.ts`).
+
+| Token | Value | Usage |
+|---|---|---|
+| `--code-keyword` | `oklch(0.65 0.12 300)` | Keywords, operators (purple) |
+| `--code-string` | `oklch(0.70 0.12 150)` | Strings, chars, selectors (green) |
+| `--code-constant` | `oklch(0.65 0.15 25)` | Booleans, numbers, constants, tags (red-orange) |
+| `--code-type` | `oklch(0.75 0.08 80)` | Class names, type annotations (yellow) |
+| `--code-builtin` | `oklch(0.70 0.08 200)` | Built-in functions and types (cyan) |
+
+Tokens that already map to existing colors: `text-primary` for functions/properties/attrs,
+`text-muted-foreground` for comments/punctuation, `text-destructive` for deleted text.
+
 Rules:
 - No color outside this token set without updating this file first.
 - Accent color is used sparingly — selected sidebar item, focused input, links. Not decorative.

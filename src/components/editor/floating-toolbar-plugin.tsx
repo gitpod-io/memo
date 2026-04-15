@@ -224,7 +224,7 @@ function ToolbarButton({
   return (
     <button
       type="button"
-      className={`flex h-7 w-7 items-center justify-center text-sm ${
+      className={`flex h-11 w-11 sm:h-7 sm:w-7 items-center justify-center text-sm ${
         active
           ? "bg-white/[0.08] text-foreground"
           : "text-muted-foreground hover:bg-white/[0.04] hover:text-foreground"
