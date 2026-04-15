@@ -142,7 +142,13 @@ Each feature maps to one or more GitHub Issues. Phases map to priority labels:
 4. **Workspace CRUD** — create additional workspaces (up to 2 beyond personal, 3 total), workspace settings (name, slug), workspace switcher (personal always first), delete workspace (non-personal only). _Depends on: #3 (App shell)._
 5. **Pages CRUD** — create, list, read, update, delete pages. Sidebar page tree with nesting. Reorder and nest/unnest pages. Route: `(app)/[workspaceSlug]/[pageId]/page.tsx`. _Depends on: #4 (Workspace CRUD)._
 6. **Lexical editor — core** — editor with paragraph, headings, lists, code blocks, blockquotes, divider. Slash command menu (ComponentPickerPlugin). Floating text format toolbar (FloatingTextFormatToolbarPlugin). Floating link editor (FloatingLinkEditorPlugin). Auto-save to Supabase (debounced). _Depends on: #5 (Pages CRUD)._
-7. **Lexical editor — enhancements** — drag-and-drop block reordering (DraggableBlockPlugin), image upload via Supabase Storage (ImagesExtension), callout blocks (CalloutNode), toggle/collapsible blocks (CollapsibleExtension), keyboard shortcuts. _Depends on: #6 (Lexical editor — core)._
+7. **Lexical editor — enhancements** — extends the core editor with advanced block interactions:
+   - **Drag-and-drop** (DraggableBlockPlugin): 6-dot grip handle visible on block hover, 2px accent drop indicator, blocks at 50% opacity while dragging. Reference: `playground/plugins/DraggableBlockPlugin`.
+   - **Image blocks** (ImagesExtension): upload images to Supabase Storage bucket, display inline with optional caption, max-width 100%. Custom `ImageNode` (DecoratorNode) stores the public URL. Reference: `playground/plugins/ImagesExtension`.
+   - **Callout blocks** (CalloutNode): `bg-muted p-4` container with emoji on the left and rich text on the right. Custom `CalloutNode` (ElementNode). Add to slash command menu.
+   - **Toggle/collapsible blocks** (CollapsibleExtension): expandable container with a disclosure triangle and summary text. Reference: `playground/plugins/CollapsibleExtension`. Add to slash command menu.
+   - **Keyboard shortcuts**: ⌘+B (bold), ⌘+I (italic), ⌘+U (underline), ⌘+K (link), ⌘+Z (undo), ⌘+Shift+Z (redo). Display shortcut hints in toolbar tooltips and slash command menu items. Detect OS for ⌘ vs Ctrl.
+   _Depends on: #6 (Lexical editor — core)._
 
 ### Phase 3: Features (`priority:3`)
 
