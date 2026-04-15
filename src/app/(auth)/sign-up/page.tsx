@@ -70,7 +70,7 @@ export default function SignUpPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
+        <CardTitle className="text-2xl font-semibold">Create an account</CardTitle>
         <CardDescription>
           Enter your details to get started with Memo.
         </CardDescription>
