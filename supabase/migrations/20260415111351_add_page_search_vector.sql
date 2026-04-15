@@ -60,7 +60,7 @@ as $$
 begin
   return (
     setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
-    setweight(to_tsvector('english', coalesce(extract_text_from_lexical(content), '')), 'B')
+    setweight(to_tsvector('english', coalesce(public.extract_text_from_lexical(content), '')), 'B')
   );
 end;
 $$;
@@ -132,7 +132,7 @@ begin
       p.icon,
       ts_headline(
         'english',
-        coalesce(p.title, '') || ' ' || coalesce(extract_text_from_lexical(p.content), ''),
+        coalesce(p.title, '') || ' ' || coalesce(public.extract_text_from_lexical(p.content), ''),
         tsquery_val,
         'StartSel=<<, StopSel=>>, MaxWords=35, MinWords=15, MaxFragments=1'
       ) as snippet,
