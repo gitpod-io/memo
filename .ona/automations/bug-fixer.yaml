@@ -5,14 +5,6 @@ triggers:
         projects:
             projectIds:
                 - 019d8bf4-1ded-7317-be2f-555e8fb55ff9
-      pullRequest:
-        webhookId: 019d8d97-eb6e-70c4-a97d-25952abbc5a7
-        events:
-            - PULL_REQUEST_EVENT_MERGED
-    - context:
-        projects:
-            projectIds:
-                - 019d8bf4-1ded-7317-be2f-555e8fb55ff9
       time:
         cronExpression: "*/10 * * * *"
     - context:
