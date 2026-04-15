@@ -51,15 +51,20 @@ action:
 
                 2. Find the next bug to fix. Query in priority order:
                    ```
-                   gh issue list --label "bug" --label "priority:1" --state open --json number,title,body,labels \
+                   gh issue list --label "bug" --label "status:backlog" --label "priority:1" --state open --json number,title,body,labels \
                      --jq '[.[] | select(.labels | map(.name) | contains(["needs-human"]) | not)] | sort_by(.number) | .[0]'
                    ```
-                   If no priority:1 bugs, try priority:2, then priority:3, then any open bug with no priority label:
+                   If no priority:1 bugs, try priority:2, then priority:3, then any open bug with
+                   `status:backlog` and no priority label:
                    ```
-                   gh issue list --label "bug" --state open --json number,title,body,labels \
-                     --jq '[.[] | select(.labels | map(.name) | (contains(["needs-human"]) or contains(["status:in-progress"]) or contains(["status:in-review"]) or contains(["status:done"])) | not)] | sort_by(.number) | .[0]'
+                   gh issue list --label "bug" --label "status:backlog" --state open --json number,title,body,labels \
+                     --jq '[.[] | select(.labels | map(.name) | contains(["needs-human"]) | not)] | sort_by(.number) | .[0]'
                    ```
                    If no eligible bug issues, stop — do nothing. This is expected, not a failure.
+
+                   CRITICAL: Only pick issues labeled `status:backlog`. NEVER pick up an issue that is
+                   `status:in-progress`, `status:in-review`, or `status:done` — even if it appears
+                   stalled, abandoned, or has no PR. Another automation or human owns it.
 
                 3. Check if the issue already has an open linked PR. Use two checks (GitHub search has indexing lag):
                    a) Check for a branch matching the naming convention:
