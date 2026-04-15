@@ -107,6 +107,18 @@ as $$
 declare
   tsquery_val tsquery;
 begin
+  -- Verify the caller is a member of the target workspace.
+  -- Without this check, any authenticated user could search any workspace
+  -- because security definer bypasses RLS.
+  if not exists (
+    select 1 from public.members m
+    where m.workspace_id = ws_id
+      and m.user_id = auth.uid()
+  ) then
+    raise exception 'Not a member of this workspace'
+      using errcode = '42501'; -- insufficient_privilege
+  end if;
+
   -- Convert the user query to a tsquery, handling multi-word input
   -- plainto_tsquery handles plain text without requiring special syntax
   tsquery_val := plainto_tsquery('english', query);
