@@ -66,10 +66,17 @@ action:
                    If no priority:1 issues, try priority:2, then priority:3.
                    If no backlog issues at all, stop — do nothing. This is expected, not a failure.
 
+                   CRITICAL: Only pick issues labeled `status:backlog`. NEVER pick up an issue that is
+                   `status:in-progress`, `status:in-review`, or `status:done` — even if it appears
+                   stalled, abandoned, or has no PR. Another automation or human owns it. If every
+                   backlog issue has unsatisfied dependencies, stop. Do NOT rationalize picking up
+                   a non-backlog issue.
+
                 4. Read the issue body. Check the "Dependencies" section.
                    For each dependency (e.g., "Depends on #N"), check:
-                   gh issue view N --json state --jq '.state'
-                   If any dependency is still open, skip this issue and try the next one.
+                   gh issue view N --json state,labels --jq '{state: .state, labels: [.labels[].name]}'
+                   A dependency is satisfied when its state is "closed" OR it has label "status:done".
+                   If any dependency is not satisfied, skip this issue and try the next one.
                    If no issues have satisfied dependencies, stop — do nothing.
 
                 ## Implementation
