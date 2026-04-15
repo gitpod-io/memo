@@ -41,12 +41,12 @@ export function AppSidebar(props: AppSidebarProps) {
   if (isMobile) {
     return (
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTitle className="sr-only">Navigation</SheetTitle>
         <SheetContent
           side="left"
           className="w-60 bg-muted p-0"
           showCloseButton={false}
         >
+          <SheetTitle className="sr-only">Navigation</SheetTitle>
           <SidebarContent {...props} />
         </SheetContent>
       </Sheet>
