@@ -28,8 +28,7 @@ Vercel → hosting, preview deploys per PR, production deploys on merge
 
 ## Data Model
 
-No database migrations exist yet. The schema below is the planned target model.
-Create migrations in `supabase/migrations/` as features are implemented.
+The foundational schema is implemented in `supabase/migrations/20260415092907_create_schema.sql`.
 See `docs/product-spec.md` → Data Model for the full column-level schema.
 
 ```
