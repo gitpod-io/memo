@@ -229,7 +229,7 @@ Each block is a full-width element with consistent vertical spacing.
 ### Toolbar
 
 - Floating toolbar appears on text selection.
-- Items: bold, italic, underline, strikethrough, code, link, color.
+- Items: bold, italic, underline, strikethrough, code, link.
 - Icon-only buttons, 28px square, `gap-0.5`.
 - `bg-popover border border-white/[0.06] shadow-md p-1`. Sharp corners.
 
