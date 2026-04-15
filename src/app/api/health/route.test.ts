@@ -32,7 +32,7 @@ describe("GET /api/health", () => {
 
     expect(body.status).toBe("ok");
     expect(body.db.connected).toBe(false);
-    expect(body.db.message).toBe("not configured");
+    expect(body.db.reason).toBe("not_configured");
     expect(mockedCreateClient).not.toHaveBeenCalled();
 
     // Restore
@@ -50,7 +50,7 @@ describe("GET /api/health", () => {
 
     expect(body.status).toBe("ok");
     expect(body.db.connected).toBe(false);
-    expect(body.db.message).toBe("not configured");
+    expect(body.db.reason).toBe("not_configured");
     expect(mockedCreateClient).not.toHaveBeenCalled();
 
     // Restore
