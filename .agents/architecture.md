@@ -144,7 +144,7 @@ Auto-save: debounce 500ms on editor change → write to Supabase
 src/
 ├── app/                    # Next.js App Router
 │   ├── layout.tsx          # Root layout (JetBrains Mono font, TooltipProvider)
-│   ├── page.tsx            # Landing page
+│   ├── page.tsx            # Landing page (redirects authenticated users to workspace)
 │   ├── manifest.ts         # PWA manifest (name, icons, display mode)
 │   ├── global-error.tsx    # Sentry error boundary
 │   ├── globals.css         # Tailwind v4 theme — dark-only oklch tokens, --radius: 0
@@ -153,7 +153,7 @@ src/
 │   │   ├── sign-in/page.tsx # /sign-in — email/password form
 │   │   └── sign-up/page.tsx # /sign-up — display name + email/password form
 │   ├── (app)/              # Authenticated route group
-│   │   ├── layout.tsx      # Auth guard (redirects to /sign-in if no session), sign-out button
+│   │   ├── layout.tsx      # Auth guard, fetches profile, renders AppShell
 │   │   └── [workspaceSlug]/
 │   │       └── page.tsx    # /[workspaceSlug] — workspace home (placeholder)
 │   └── api/
@@ -162,11 +162,21 @@ src/
 │   ├── auth/
 │   │   ├── oauth-buttons.tsx    # GitHub + Google buttons (disabled, "coming soon" tooltip)
 │   │   └── sign-out-button.tsx  # Sign-out button (clears session, redirects to /sign-in)
+│   ├── sidebar/             # App shell sidebar components
+│   │   ├── app-shell.tsx        # Client wrapper: SidebarProvider + sidebar + main layout
+│   │   ├── app-sidebar.tsx      # Sidebar (desktop: collapsible aside, mobile: Sheet)
+│   │   ├── sidebar-context.tsx  # React context for sidebar open/close state + ⌘+\ shortcut
+│   │   ├── workspace-switcher.tsx # Workspace name display (placeholder — functional in #27)
+│   │   ├── page-tree.tsx        # Page list placeholder (functional in #28)
+│   │   └── user-menu.tsx        # User dropdown with sign-out
 │   └── ui/                 # shadcn/ui components (base-nova style, base-ui primitives)
 │       ├── button.tsx
 │       ├── card.tsx
+│       ├── dropdown-menu.tsx
 │       ├── input.tsx
 │       ├── label.tsx
+│       ├── separator.tsx
+│       ├── sheet.tsx
 │       └── tooltip.tsx
 ├── lib/
 │   ├── utils.ts            # cn() utility (clsx + tailwind-merge)
