@@ -177,8 +177,11 @@ src/
 │   │   ├── slash-command-plugin.tsx  # "/" typeahead: paragraph, h1-h3, lists, code, quote, divider
 │   │   ├── floating-toolbar-plugin.tsx # Selection toolbar: bold, italic, underline, strikethrough, code, link
 │   │   ├── floating-link-editor-plugin.tsx # Link preview/edit/remove popover (⌘+K)
-│   │   └── code-highlight-plugin.tsx # Registers Prism-based syntax highlighting for code blocks
+│   │   ├── code-highlight-plugin.tsx # Registers Prism-based syntax highlighting for code blocks
+│   │   └── markdown-utils.ts        # Markdown ↔ Lexical conversion (export/import/download/parse)
 │   ├── page-title.tsx           # Inline-editable page title (saves on blur/Enter)
+│   ├── page-view-client.tsx     # Client wrapper for page view (holds editor ref, renders title + menu + editor)
+│   ├── page-menu.tsx            # Page "..." dropdown: export as markdown, import markdown
 │   ├── workspace-home.tsx       # Workspace home: page list or empty state with create CTA
 │   ├── workspace-settings-form.tsx # Edit workspace name/slug, delete workspace
 │   ├── members/             # Workspace member management components
@@ -249,7 +252,8 @@ src/
 │   │   ├── slash-command-plugin.tsx    # "/" typeahead menu for inserting block types
 │   │   ├── floating-toolbar-plugin.tsx # Selection toolbar: bold, italic, underline, strikethrough, code, link
 │   │   ├── floating-link-editor-plugin.tsx # Link preview/edit/remove popover
-│   │   └── code-highlight-plugin.tsx  # Registers Prism-based code highlighting
+│   │   ├── code-highlight-plugin.tsx  # Registers Prism-based code highlighting
+│   │   └── markdown-utils.ts         # Markdown ↔ Lexical conversion utilities
 │   ├── sidebar/            # Sidebar, page tree, workspace switcher
 │   └── ...                 # Feature-specific components
 ├── lib/

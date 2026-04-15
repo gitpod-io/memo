@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { PageTitle } from "@/components/page-title";
-import { Editor } from "@/components/editor/editor";
+import { PageViewClient } from "@/components/page-view-client";
 import type { SerializedEditorState } from "lexical";
 
 export default async function PageView({
@@ -11,6 +10,14 @@ export default async function PageView({
 }) {
   const { workspaceSlug, pageId } = await params;
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    notFound();
+  }
 
   const { data: workspace } = await supabase
     .from("workspaces")
@@ -37,15 +44,13 @@ export default async function PageView({
   const initialContent = page.content as SerializedEditorState | null;
 
   return (
-    <div className="mx-auto max-w-3xl p-6">
-      <PageTitle key={page.id} pageId={page.id} initialTitle={page.title} />
-      <div className="mt-4">
-        <Editor
-          key={page.id}
-          pageId={page.id}
-          initialContent={initialContent}
-        />
-      </div>
-    </div>
+    <PageViewClient
+      pageId={page.id}
+      pageTitle={page.title}
+      initialContent={initialContent}
+      workspaceId={workspace.id}
+      workspaceSlug={workspaceSlug}
+      userId={user.id}
+    />
   );
 }

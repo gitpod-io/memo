@@ -471,6 +471,52 @@ Content auto-saves via debounced `OnChangePlugin`. The save flow:
 All `@lexical/*` packages are pinned to the same version (currently 0.31.0).
 Always update them together to avoid version mismatches.
 
+### Markdown conversion
+
+Markdown import/export uses `@lexical/markdown` with a shared transformer list defined
+in `src/components/editor/markdown-utils.ts`. The `MARKDOWN_TRANSFORMERS` array must
+stay in sync with the editor's registered node types — when adding a new block type,
+add its transformer here too.
+
+```typescript
+import { MARKDOWN_TRANSFORMERS } from "@/components/editor/markdown-utils";
+import { $convertToMarkdownString, $convertFromMarkdownString } from "@lexical/markdown";
+
+// Export: inside editor.getEditorState().read()
+const markdown = $convertToMarkdownString(MARKDOWN_TRANSFORMERS);
+
+// Import: inside editor.update() or via parseMarkdownToEditorState() for headless conversion
+$convertFromMarkdownString(markdown, MARKDOWN_TRANSFORMERS, root, true);
+```
+
+For headless conversion (no mounted editor), use `parseMarkdownToEditorState(markdown)`
+which creates a temporary editor, runs the conversion, and returns `SerializedEditorState`.
+
+### Exposing the editor instance
+
+When components outside `<LexicalComposer>` need access to the editor (e.g., page menu
+for markdown export), pass an `editorRef` prop to the `Editor` component. The internal
+`EditorRefPlugin` captures the editor instance into the ref.
+
+```typescript
+const editorRef = useRef<LexicalEditor | null>(null);
+<Editor editorRef={editorRef} ... />
+// Later: editorRef.current?.getEditorState().read(() => { ... });
+```
+
+### Toast notifications
+
+Use `sonner` for toast notifications. The `<Toaster>` is mounted in the root layout.
+
+```typescript
+import { toast } from "sonner";
+
+toast.error("Something went wrong", { duration: 8000 });
+```
+
+Per design spec: toasts use `rounded-sm`, position bottom-right. Only show toasts for
+errors, async completions, and destructive actions with undo — not for routine actions.
+
 ## This file evolves
 
 When you discover a new pattern that should be replicated, or an anti-pattern that
