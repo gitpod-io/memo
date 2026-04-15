@@ -16,12 +16,13 @@ export default async function InviteAcceptPage({
   const { token } = await params;
   const supabase = await createClient();
 
-  // Look up the invite by token
-  const { data: invite } = await supabase
-    .from("workspace_invites")
-    .select("*, workspaces(name, slug)")
-    .eq("token", token)
-    .maybeSingle();
+  // Look up the invite by token via security definer function.
+  // Works for both anon and authenticated users.
+  const { data: invites } = await supabase.rpc("get_invite_by_token", {
+    invite_token: token,
+  });
+
+  const invite = invites?.[0] ?? null;
 
   if (!invite) {
     return (
@@ -39,8 +40,6 @@ export default async function InviteAcceptPage({
   }
 
   if (invite.accepted_at) {
-    // Supabase join returns the relation as an opaque type; cast is unavoidable
-    const ws = invite.workspaces as unknown as { name: string; slug: string };
     return (
       <Card>
         <CardHeader>
@@ -48,7 +47,7 @@ export default async function InviteAcceptPage({
             Already accepted
           </CardTitle>
           <CardDescription>
-            This invite to {ws?.name} has already been accepted.
+            This invite to {invite.workspace_name} has already been accepted.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -70,9 +69,6 @@ export default async function InviteAcceptPage({
     );
   }
 
-  // Supabase join returns the relation as an opaque type; cast is unavoidable
-  const ws = invite.workspaces as unknown as { name: string; slug: string };
-
   // Check if the current user is authenticated
   const {
     data: { user },
@@ -82,7 +78,7 @@ export default async function InviteAcceptPage({
     <Card>
       <CardHeader>
         <CardTitle className="text-2xl font-semibold">
-          Join {ws?.name}
+          Join {invite.workspace_name}
         </CardTitle>
         <CardDescription>
           You&apos;ve been invited to join as {invite.role === "admin" ? "an" : "a"}{" "}
@@ -91,12 +87,9 @@ export default async function InviteAcceptPage({
       </CardHeader>
       <CardContent>
         <InviteAccept
-          token={token}
           inviteId={invite.id}
-          workspaceId={invite.workspace_id}
-          workspaceSlug={ws?.slug ?? ""}
+          workspaceSlug={invite.workspace_slug ?? ""}
           email={invite.email}
-          role={invite.role}
           isAuthenticated={!!user}
           userEmail={user?.email ?? null}
         />

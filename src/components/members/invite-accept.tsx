@@ -5,25 +5,19 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import type { InviteRole } from "@/lib/types";
 
 interface InviteAcceptProps {
-  token: string;
   inviteId: string;
-  workspaceId: string;
   workspaceSlug: string;
   email: string;
-  role: InviteRole;
   isAuthenticated: boolean;
   userEmail: string | null;
 }
 
 export function InviteAccept({
   inviteId,
-  workspaceId,
   workspaceSlug,
   email,
-  role,
   isAuthenticated,
   userEmail,
 }: InviteAcceptProps) {
@@ -76,50 +70,21 @@ export function InviteAccept({
 
     const supabase = createClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setError("You must be signed in to accept this invite.");
-      setAccepting(false);
-      return;
-    }
-
-    // Insert the member row
-    const { error: memberError } = await supabase.from("members").insert({
-      workspace_id: workspaceId,
-      user_id: user.id,
-      role,
-      joined_at: new Date().toISOString(),
+    // Use the security definer RPC which atomically marks the invite as
+    // accepted and inserts the member with the correct role from the invite.
+    const { error: acceptError } = await supabase.rpc("accept_invite", {
+      invite_id: inviteId,
     });
 
-    if (memberError) {
-      // If already a member, treat as success
-      if (memberError.message.includes("duplicate key")) {
-        // Mark invite as accepted anyway
-        await supabase
-          .from("workspace_invites")
-          .update({ accepted_at: new Date().toISOString() })
-          .eq("id", inviteId);
-
+    if (acceptError) {
+      // Duplicate key means already a member — treat as success
+      if (acceptError.message.includes("duplicate key")) {
         router.push(`/${workspaceSlug}`);
         return;
       }
-      setError(memberError.message);
+      setError(acceptError.message);
       setAccepting(false);
       return;
-    }
-
-    // Mark the invite as accepted
-    const { error: acceptError } = await supabase
-      .from("workspace_invites")
-      .update({ accepted_at: new Date().toISOString() })
-      .eq("id", inviteId);
-
-    if (acceptError) {
-      // Member was already created, so redirect anyway
-      console.error("Failed to mark invite as accepted:", acceptError.message);
     }
 
     router.push(`/${workspaceSlug}`);
