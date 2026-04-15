@@ -18,7 +18,7 @@ action:
 
                 ## Data Collection (on latest main)
 
-                1. Lines of code: run `npx cloc src/ --json`. Extract total and by-language.
+                1. Lines of code: run `npx cloc src/ supabase/migrations/ --json`. Extract total and by-language.
                 2. File count: count files in src/ excluding node_modules, .next, test files.
                 3. PRs today: use gh pr list to count opened and merged today, and currently open.
                 4. Test coverage: run `pnpm test -- --coverage --reporter=json` and extract percentage.
@@ -34,16 +34,31 @@ action:
                 Create `metrics/daily/YYYY-MM-DD.json`:
                 {
                   "date": "YYYY-MM-DD",
+                  "day_number": N,
                   "loc": { "total": N, "delta": N, "by_language": { "TypeScript": N } },
                   "files": { "total": N, "delta": N },
-                  "prs": { "opened_today": N, "merged_today": N, "currently_open": N },
-                  "commits_today": N,
+                  "prs": { "total": N, "delta": N, "currently_open": N },
+                  "commits": { "total": N, "delta": N },
                   "test_coverage_pct": N,
                   "ci_pass_rate_pct": N,
                   "issues": { "backlog": N, "in_progress": N, "in_review": N, "done": N },
                   "human_minutes": null,
                   "agent_minutes": null
                 }
+
+                Day 1 was 2026-04-13. Calculate day_number from that.
+
+                All top-level numeric fields are CUMULATIVE TOTALS, not daily counts:
+                - loc.total: total lines of code in src/ right now
+                - files.total: total files in src/ right now
+                - prs.total: total PRs merged since project start (gh pr list --state merged --json mergedAt | count all)
+                - commits.total: total commits on main (git rev-list --count HEAD)
+
+                The "delta" field is today's change vs yesterday's total:
+                - loc.delta = loc.total - yesterday's loc.total
+                - files.delta = files.total - yesterday's files.total
+                - prs.delta = PRs merged today only
+                - commits.delta = commits made today only
 
                 For delta fields, read yesterday's file from metrics/daily/. If none exists, delta = total.
                 human_minutes and agent_minutes are null — filled manually.

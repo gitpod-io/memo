@@ -50,6 +50,17 @@ action:
                 5. Read previous tweets from metrics/daily/ (most recent *-tweet.md files) to avoid
                    repeating the same phrasing or stats.
 
+                ## Metrics usage in tweets
+
+                The metrics JSON contains both cumulative totals and daily deltas.
+                In tweets, use the DAILY DELTA numbers (the "delta" fields) for progress updates:
+                - prs.delta for "N PRs merged today"
+                - commits.delta for "N commits today"
+                - loc.delta for "N lines added today"
+
+                You may reference totals for milestone-style tweets (e.g., "500 total LOC"),
+                but day-to-day progress tweets should use deltas.
+
                 ## Day counting
 
                 Day 1 was 2026-04-13 (project setup). Calculate the current day number from that.
