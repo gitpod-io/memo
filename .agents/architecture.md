@@ -140,22 +140,41 @@ Auto-save: debounce 500ms on editor change → write to Supabase
 
 ## Component Map
 
-Current state (infrastructure only — no product features yet):
-
 ```
 src/
 ├── app/                    # Next.js App Router
-│   ├── layout.tsx          # Root layout (currently Geist fonts — will switch to JetBrains Mono)
+│   ├── layout.tsx          # Root layout (JetBrains Mono font, TooltipProvider)
 │   ├── page.tsx            # Landing page
 │   ├── manifest.ts         # PWA manifest (name, icons, display mode)
 │   ├── global-error.tsx    # Sentry error boundary
+│   ├── globals.css         # Tailwind v4 theme — dark-only oklch tokens, --radius: 0
+│   ├── (auth)/             # Unauthenticated route group
+│   │   ├── layout.tsx      # Centered card layout for auth pages
+│   │   ├── sign-in/page.tsx # /sign-in — email/password form
+│   │   └── sign-up/page.tsx # /sign-up — display name + email/password form
+│   ├── (app)/              # Authenticated route group
+│   │   ├── layout.tsx      # Auth guard (redirects to /sign-in if no session), sign-out button
+│   │   └── [workspaceSlug]/
+│   │       └── page.tsx    # /[workspaceSlug] — workspace home (placeholder)
 │   └── api/
 │       └── health/route.ts # Health check endpoint (DB connectivity)
+├── components/
+│   ├── auth/
+│   │   ├── oauth-buttons.tsx    # GitHub + Google buttons (disabled, "coming soon" tooltip)
+│   │   └── sign-out-button.tsx  # Sign-out button (clears session, redirects to /sign-in)
+│   └── ui/                 # shadcn/ui components (base-nova style, base-ui primitives)
+│       ├── button.tsx
+│       ├── card.tsx
+│       ├── input.tsx
+│       ├── label.tsx
+│       └── tooltip.tsx
 ├── lib/
+│   ├── utils.ts            # cn() utility (clsx + tailwind-merge)
+│   ├── types.ts            # Database entity types
 │   └── supabase/
 │       ├── client.ts       # Browser client (createBrowserClient)
 │       ├── server.ts       # Server component client (createServerClient + cookies)
-│       └── proxy.ts        # Session refresh logic (updateSession)
+│       └── proxy.ts        # Session refresh + auth redirect logic (updateSession)
 ├── proxy.ts                # Root proxy — calls updateSession, skips static/health routes
 └── instrumentation.ts      # Sentry server/edge init (register + onRequestError)
 
@@ -163,7 +182,8 @@ Root config files:
 ├── instrumentation-client.ts  # Sentry client init (replay, route transitions)
 ├── sentry.server.config.ts    # Sentry server SDK config
 ├── sentry.edge.config.ts      # Sentry edge SDK config
-└── sentry.client.config.ts    # Sentry client SDK config
+├── sentry.client.config.ts    # Sentry client SDK config
+└── components.json            # shadcn/ui config (base-nova style, Tailwind v4)
 ```
 
 Planned structure (added as features are built):

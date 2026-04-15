@@ -284,6 +284,71 @@ Rules:
 - No `as` casts unless unavoidable (add a comment explaining why)
 - Prefer interfaces for object shapes, types for unions/intersections
 
+## shadcn/ui (base-nova style)
+
+This project uses shadcn/ui v4 with the `base-nova` style, which uses `@base-ui/react`
+primitives instead of Radix. Key differences from older shadcn:
+
+### Tooltip composition
+
+base-ui's `TooltipTrigger` does NOT support `asChild`. Use the `render` prop instead:
+
+```typescript
+// ✅ Correct — base-ui render prop
+<TooltipTrigger
+  render={<Button variant="outline" disabled />}
+>
+  Button label
+</TooltipTrigger>
+
+// ❌ Wrong — asChild does not exist on base-ui primitives
+<TooltipTrigger asChild>
+  <Button>...</Button>
+</TooltipTrigger>
+```
+
+### Button primitives
+
+Buttons use `@base-ui/react/button` internally. The `Button` component accepts
+`ButtonPrimitive.Props & VariantProps<typeof buttonVariants>`.
+
+## Auth Flow
+
+### Route protection (two layers)
+
+1. **Proxy layer** (`src/lib/supabase/proxy.ts`): optimistic redirect — unauthenticated
+   users on non-public routes get redirected to `/sign-in`. Public routes: `/`, `/sign-in`,
+   `/sign-up`, `/invite/*`.
+2. **Layout layer** (`src/app/(app)/layout.tsx`): authoritative check — server component
+   calls `supabase.auth.getUser()` and redirects if no user. This is the security boundary.
+
+### Post-auth redirect
+
+After sign-in or sign-up, the client fetches the user's workspace membership to get
+the workspace slug, then redirects to `/{workspaceSlug}`. The query joins `members`
+with `workspaces` to get the slug in one call:
+
+```typescript
+const { data: membership } = await supabase
+  .from("members")
+  .select("workspace_id, workspaces(slug)")
+  .eq("user_id", user.id)
+  .limit(1)
+  .maybeSingle();
+```
+
+### Sign-up data
+
+Pass `display_name` in `signUp` options so the `handle_new_user` trigger can use it:
+
+```typescript
+await supabase.auth.signUp({
+  email,
+  password,
+  options: { data: { display_name: displayName } },
+});
+```
+
 ## This file evolves
 
 When you discover a new pattern that should be replicated, or an anti-pattern that

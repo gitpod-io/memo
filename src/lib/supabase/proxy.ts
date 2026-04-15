@@ -1,6 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+// Routes that unauthenticated users can access
+const PUBLIC_ROUTES = ["/sign-in", "/sign-up", "/invite"];
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -25,6 +28,21 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const pathname = request.nextUrl.pathname;
+  const isPublicRoute =
+    pathname === "/" ||
+    PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
+
+  // Unauthenticated users trying to access protected routes → redirect to sign-in
+  if (!user && !isPublicRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/sign-in";
+    return NextResponse.redirect(url);
+  }
+
   return supabaseResponse;
 }
