@@ -181,16 +181,26 @@ src/
 │   ├── page-title.tsx           # Inline-editable page title (saves on blur/Enter)
 │   ├── workspace-home.tsx       # Workspace home: page list or empty state with create CTA
 │   ├── workspace-settings-form.tsx # Edit workspace name/slug, delete workspace
+│   ├── members/             # Workspace member management components
+│   │   ├── members-page.tsx       # Client orchestrator: member list + invite form + pending invites
+│   │   ├── member-list.tsx        # Table of members with role badges, role change, remove
+│   │   ├── invite-form.tsx        # Email + role invite form (admin/owner only)
+│   │   ├── invite-accept.tsx      # Client component for accepting an invite token
+│   │   ├── pending-invite-list.tsx # Table of pending invites with revoke action
+│   │   └── role-select.tsx        # Role picker dropdown (owner/admin/member)
 │   └── ui/                 # shadcn/ui components (base-nova style, base-ui primitives)
 │       ├── alert-dialog.tsx
+│       ├── badge.tsx
 │       ├── button.tsx
 │       ├── card.tsx
 │       ├── dialog.tsx
 │       ├── dropdown-menu.tsx
 │       ├── input.tsx
 │       ├── label.tsx
+│       ├── select.tsx
 │       ├── separator.tsx
 │       ├── sheet.tsx
+│       ├── table.tsx
 │       └── tooltip.tsx
 ├── lib/
 │   ├── utils.ts            # cn() utility (clsx + tailwind-merge)
@@ -219,7 +229,7 @@ src/
 │   ├── (auth)/                        # Unauthenticated routes
 │   │   ├── sign-in/page.tsx           # /sign-in
 │   │   ├── sign-up/page.tsx           # /sign-up
-│   │   └── invite/[token]/page.tsx    # /invite/[token]
+│   │   └── invite/[token]/page.tsx    # /invite/[token] — invite accept flow
 │   ├── (app)/                         # Authenticated routes
 │   │   ├── layout.tsx                 # App shell (sidebar + main content), passes userId
 │   │   └── [workspaceSlug]/
@@ -227,7 +237,7 @@ src/
 │   │       ├── [pageId]/page.tsx      # /[workspaceSlug]/[pageId] (page view + Lexical editor)
 │   │       └── settings/
 │   │           ├── page.tsx           # /[workspaceSlug]/settings (name, slug, delete)
-│   │           └── members/page.tsx   # /[workspaceSlug]/settings/members — planned
+│   │           └── members/page.tsx   # /[workspaceSlug]/settings/members
 │   └── api/
 │       ├── health/                    # Existing
 │       └── ...                        # Additional API routes as needed

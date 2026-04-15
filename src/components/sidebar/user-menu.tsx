@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { LogOut, Settings, User } from "lucide-react";
+import { LogOut, Settings, User, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +33,12 @@ export function UserMenu({ displayName, email }: UserMenuProps) {
     }
   }
 
+  function handleMembers() {
+    if (params.workspaceSlug) {
+      router.push(`/${params.workspaceSlug}/settings/members`);
+    }
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -56,6 +62,10 @@ export function UserMenu({ displayName, email }: UserMenuProps) {
         <DropdownMenuItem onClick={handleSettings}>
           <Settings className="h-4 w-4" />
           Settings
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleMembers}>
+          <Users className="h-4 w-4" />
+          Members
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
