@@ -70,13 +70,13 @@ action:
                 const title = await page.title();
                 if (!title) failures.push('Landing page has no title');
 
-                // 2. Login page (skip if not yet built)
-                if (await routeExists('/login')) {
-                  await page.goto(BASE + '/login', { waitUntil: 'networkidle', timeout: 15000 });
+                // 2. Sign-in page
+                if (await routeExists('/sign-in')) {
+                  await page.goto(BASE + '/sign-in', { waitUntil: 'networkidle', timeout: 15000 });
                   const hasEmailInput = await page.locator('input[type=email]').count();
-                  if (!hasEmailInput) failures.push('Login page missing email input');
+                  if (!hasEmailInput) failures.push('Sign-in page missing email input');
                 } else {
-                  skipped.push('/login (not yet built)');
+                  skipped.push('/sign-in (not yet built)');
                 }
 
                 // 3. Health endpoint
@@ -94,8 +94,77 @@ action:
                   skipped.push('/dashboard (not yet built)');
                 }
 
-                // 5. Console errors
-                if (consoleErrors.length) failures.push('Console errors: ' + consoleErrors.slice(0, 5).join('; '));
+                // 5. Console errors (unauthenticated)
+                if (consoleErrors.length) failures.push('Console errors (unauth): ' + consoleErrors.slice(0, 5).join('; '));
+
+                // --- Authenticated flow ---
+                const EMAIL = process.env.TEST_USER_EMAIL;
+                const PASSWORD = process.env.TEST_USER_PASSWORD;
+
+                if (EMAIL && PASSWORD) {
+                  // 6. Sign in via the login form
+                  const authPage = await browser.newPage();
+                  const authErrors = [];
+                  authPage.on('console', m => { if (m.type() === 'error') authErrors.push(m.text()); });
+
+                  try {
+                    await authPage.goto(BASE + '/sign-in', { waitUntil: 'networkidle', timeout: 15000 });
+                    await authPage.fill('input[type="email"]', EMAIL);
+                    await authPage.fill('input[type="password"]', PASSWORD);
+                    await authPage.click('button[type="submit"]');
+                    // Wait for redirect away from sign-in (lands on /{workspaceSlug})
+                    await authPage.waitForURL(url => !url.pathname.includes('/sign-in'), { timeout: 15000 });
+
+                    const postLoginUrl = authPage.url();
+                    const postLoginRes = authPage.context().pages().length; // sanity
+                    if (postLoginUrl.includes('/sign-in')) {
+                      failures.push('Login did not redirect — still on /sign-in');
+                    } else {
+                      // 7. Workspace page loaded successfully
+                      const wsStatus = await authPage.evaluate(() => document.readyState);
+                      if (wsStatus !== 'complete') failures.push('Workspace page did not fully load');
+
+                      // 8. Navigate to a page (editor) via sidebar button
+                      // The sidebar uses button elements for page navigation, not links.
+                      // Page buttons contain a relative timestamp (e.g. "Test Page\n21m ago").
+                      const pageButtons = authPage.locator('button').filter({ hasText: /ago/ });
+                      const pageBtnCount = await pageButtons.count();
+
+                      if (pageBtnCount > 0) {
+                        await pageButtons.first().click();
+                        // Wait for URL to change from /{workspace} to /{workspace}/{pageId}
+                        await authPage.waitForURL(
+                          url => url.pathname.split('/').filter(Boolean).length >= 2,
+                          { timeout: 10000 }
+                        ).catch(() => {});
+
+                        const editorUrl = authPage.url();
+                        if (editorUrl.includes('/sign-in')) {
+                          failures.push('Editor page redirected to sign-in (auth lost)');
+                        } else if (new URL(editorUrl).pathname.split('/').filter(Boolean).length < 2) {
+                          skipped.push('Page button click did not navigate to editor route');
+                        } else {
+                          // Check the editor container rendered
+                          const editorEl = await authPage.locator('[data-lexical-editor], [role="textbox"], [contenteditable="true"]').count();
+                          if (editorEl === 0) {
+                            skipped.push('Editor element not found on page (may not be implemented yet)');
+                          }
+                        }
+                      } else {
+                        skipped.push('No page buttons found in workspace to test editor route');
+                      }
+                    }
+
+                    // 9. Console errors (authenticated)
+                    if (authErrors.length) failures.push('Console errors (auth): ' + authErrors.slice(0, 5).join('; '));
+                  } catch (authErr) {
+                    failures.push('Authenticated flow error: ' + authErr.message);
+                  }
+
+                  await authPage.close();
+                } else {
+                  skipped.push('Authenticated routes (TEST_USER_EMAIL / TEST_USER_PASSWORD not set)');
+                }
 
                 await browser.close();
                 if (skipped.length) console.log('Skipped: ' + skipped.join(', '));
