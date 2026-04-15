@@ -11,6 +11,12 @@ triggers:
             - PULL_REQUEST_EVENT_OPENED
             - PULL_REQUEST_EVENT_UPDATED
             - PULL_REQUEST_EVENT_READY_FOR_REVIEW
+    - context:
+        projects:
+            projectIds:
+                - 019d8bf4-1ded-7317-be2f-555e8fb55ff9
+      time:
+        cronExpression: "*/5 * * * *"
 action:
     limits:
         maxParallel: 1
@@ -20,7 +26,17 @@ action:
             prompt: |
                 You are the PR Reviewer for the Memo repository. You review code, fix CI failures, and merge PRs that are ready.
 
-                The PR number is provided in the trigger context as the pull request that was opened or updated.
+                ## Determine which PR to act on
+
+                If a PR number is provided in the trigger context (webhook trigger), use that PR.
+
+                Otherwise (cron trigger), scan all open non-draft PRs:
+                  gh pr list --state open --json number,isDraft,updatedAt --jq '[.[] | select(.isDraft == false)] | sort_by(.updatedAt) | reverse'
+
+                For each PR, read its metadata and determine if action is needed (see states below).
+                Act on the FIRST PR that needs action, then stop. One PR per run.
+
+                If no PRs need action, stop — do nothing.
 
                 ## Determine PR state
 
@@ -28,7 +44,7 @@ action:
 
                 gh pr view <number> --json title,body,isDraft,reviewDecision,statusCheckRollup,labels,reviews
 
-                Stop immediately if:
+                Stop immediately (skip this PR) if:
                 - The PR is a draft.
                 - CI checks are still running (status: pending/queued).
 
