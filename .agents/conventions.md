@@ -404,6 +404,7 @@ await supabase.auth.signUp({
 });
 ```
 
+<<<<<<< HEAD
 ## Lexical Editor Plugins
 
 Editor plugins live in `src/components/editor/`. Each plugin is a separate file with
@@ -516,6 +517,27 @@ toast.error("Something went wrong", { duration: 8000 });
 
 Per design spec: toasts use `rounded-sm`, position bottom-right. Only show toasts for
 errors, async completions, and destructive actions with undo — not for routine actions.
+
+## Supabase RPC (database functions)
+
+When a query requires features not available through the Supabase query builder
+(e.g., `ts_rank`, `ts_headline`, complex joins with computed columns), create a
+PostgreSQL function and call it via `supabase.rpc()`.
+
+```typescript
+// Calling an RPC function from a route handler
+const { data, error } = await supabase.rpc("search_pages", {
+  query: "search term",
+  ws_id: workspaceId,
+  result_limit: 20,
+});
+```
+
+Rules:
+- Define the function in a migration with `security definer` and `set search_path = ''`.
+- Use `stable` for read-only functions, `volatile` for mutations.
+- Keep the function focused — one purpose per function.
+- Return a `table(...)` type for multi-row results so the client gets typed arrays.
 
 ## This file evolves
 
