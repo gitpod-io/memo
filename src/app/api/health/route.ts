@@ -10,9 +10,10 @@ export async function GET() {
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||
     !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
   ) {
+    // Supabase is not configured — report as unconfigured rather than down
     return NextResponse.json({
       status: "ok",
-      db: { connected: false, latency_ms: 0, message: "not configured" },
+      db: { connected: false, latency_ms: 0, reason: "not_configured" },
       timestamp: new Date().toISOString(),
     });
   }

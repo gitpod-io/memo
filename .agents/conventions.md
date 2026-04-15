@@ -132,7 +132,7 @@ if (
   !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 ) {
   // Return a graceful response instead of crashing
-  return NextResponse.json({ status: "ok", db: { connected: false, message: "not configured" } });
+  return NextResponse.json({ status: "ok", db: { connected: false, reason: "not_configured" } });
 }
 ```
 
@@ -224,6 +224,18 @@ export async function GET() {
   let dbStatus = "ok";
   let dbLatency = 0;
 
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  ) {
+    // Supabase is not configured — report as unconfigured rather than down
+    return NextResponse.json({
+      status: "ok",
+      db: { connected: false, latency_ms: 0, reason: "not_configured" },
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   try {
     const supabase = await createClient();
     const { error } = await supabase
@@ -252,6 +264,26 @@ export async function GET() {
 ```
 
 Pattern: wrap in try/catch, return structured JSON with appropriate status codes.
+
+### Guarding Supabase env vars in API routes
+
+API route handlers that use the Supabase client must check that env vars are present
+before calling `createClient()`. The non-null assertion (`!`) on `process.env` values
+does not throw when the value is `undefined` — it silently passes `undefined` to the
+Supabase client, which then throws at request time.
+
+```typescript
+// ✅ Correct — guard before using the client
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
+  return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+}
+const supabase = await createClient();
+
+// ❌ Wrong — createClient() uses non-null assertions that don't protect against undefined
+const supabase = await createClient(); // throws at request time if env vars are missing
+```
+
+The proxy (`src/proxy.ts`) already follows this pattern. All API routes must do the same.
 
 ## Database Migrations
 
