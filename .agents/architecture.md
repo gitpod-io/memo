@@ -166,12 +166,16 @@ src/
 │   │   ├── app-shell.tsx        # Client wrapper: SidebarProvider + sidebar + main layout
 │   │   ├── app-sidebar.tsx      # Sidebar (desktop: collapsible aside, mobile: Sheet)
 │   │   ├── sidebar-context.tsx  # React context for sidebar open/close state + ⌘+\ shortcut
-│   │   ├── workspace-switcher.tsx # Workspace name display (placeholder — functional in #27)
+│   │   ├── workspace-switcher.tsx # Dropdown listing all workspaces, create workspace trigger
+│   │   ├── create-workspace-dialog.tsx # Dialog for creating a new workspace
 │   │   ├── page-tree.tsx        # Page list placeholder (functional in #28)
-│   │   └── user-menu.tsx        # User dropdown with sign-out
+│   │   └── user-menu.tsx        # User dropdown with settings link + sign-out
+│   ├── workspace-settings-form.tsx # Edit workspace name/slug, delete workspace
 │   └── ui/                 # shadcn/ui components (base-nova style, base-ui primitives)
+│       ├── alert-dialog.tsx
 │       ├── button.tsx
 │       ├── card.tsx
+│       ├── dialog.tsx
 │       ├── dropdown-menu.tsx
 │       ├── input.tsx
 │       ├── label.tsx
@@ -181,6 +185,7 @@ src/
 ├── lib/
 │   ├── utils.ts            # cn() utility (clsx + tailwind-merge)
 │   ├── types.ts            # Database entity types
+│   ├── workspace.ts        # Workspace utilities: slug generation, validation, limits
 │   └── supabase/
 │       ├── client.ts       # Browser client (createBrowserClient)
 │       ├── server.ts       # Server component client (createServerClient + cookies)
@@ -206,13 +211,13 @@ src/
 │   │   ├── sign-up/page.tsx           # /sign-up
 │   │   └── invite/[token]/page.tsx    # /invite/[token]
 │   ├── (app)/                         # Authenticated routes
-│   │   ├── layout.tsx                 # App shell (sidebar + main content)
+│   │   ├── layout.tsx                 # App shell (sidebar + main content), passes userId
 │   │   └── [workspaceSlug]/
 │   │       ├── page.tsx               # /[workspaceSlug] (workspace home)
-│   │       ├── [pageId]/page.tsx      # /[workspaceSlug]/[pageId] (editor)
+│   │       ├── [pageId]/page.tsx      # /[workspaceSlug]/[pageId] (editor) — planned
 │   │       └── settings/
-│   │           ├── page.tsx           # /[workspaceSlug]/settings
-│   │           └── members/page.tsx   # /[workspaceSlug]/settings/members
+│   │           ├── page.tsx           # /[workspaceSlug]/settings (name, slug, delete)
+│   │           └── members/page.tsx   # /[workspaceSlug]/settings/members — planned
 │   └── api/
 │       ├── health/                    # Existing
 │       └── ...                        # Additional API routes as needed

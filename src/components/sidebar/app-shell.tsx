@@ -1,41 +1,27 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { SidebarProvider } from "@/components/sidebar/sidebar-context";
 import { AppSidebar, SidebarToggle } from "@/components/sidebar/app-sidebar";
 import type { ReactNode } from "react";
 
 interface AppShellProps {
+  userId: string;
   displayName: string;
   email: string;
   children: ReactNode;
 }
 
-export function AppShell({ displayName, email, children }: AppShellProps) {
-  const params = useParams<{ workspaceSlug?: string }>();
-  const [workspaceName, setWorkspaceName] = useState("");
-
-  useEffect(() => {
-    if (!params.workspaceSlug) return;
-
-    const supabase = createClient();
-    supabase
-      .from("workspaces")
-      .select("name")
-      .eq("slug", params.workspaceSlug)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) setWorkspaceName(data.name);
-      });
-  }, [params.workspaceSlug]);
-
+export function AppShell({
+  userId,
+  displayName,
+  email,
+  children,
+}: AppShellProps) {
   return (
     <SidebarProvider>
       <div className="flex h-screen overflow-hidden">
         <AppSidebar
-          workspaceName={workspaceName || "Workspace"}
+          userId={userId}
           displayName={displayName}
           email={email}
         />

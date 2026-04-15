@@ -14,19 +14,19 @@ import { PageTree } from "@/components/sidebar/page-tree";
 import { UserMenu } from "@/components/sidebar/user-menu";
 
 interface AppSidebarProps {
-  workspaceName: string;
+  userId: string;
   displayName: string;
   email: string;
 }
 
 function SidebarContent({
-  workspaceName,
+  userId,
   displayName,
   email,
 }: AppSidebarProps) {
   return (
     <div className="flex h-full flex-col gap-2 p-2">
-      <WorkspaceSwitcher workspaceName={workspaceName} />
+      <WorkspaceSwitcher userId={userId} />
       <Separator className="bg-white/[0.06]" />
       <PageTree />
       <Separator className="bg-white/[0.06]" />
