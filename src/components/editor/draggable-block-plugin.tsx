@@ -19,8 +19,8 @@ const DRAG_DATA_FORMAT = "application/x-memo-drag-block";
 const DRAGGABLE_BLOCK_MENU_CLASSNAME = "memo-draggable-block-menu";
 const DROP_INDICATOR_CLASSNAME = "memo-drop-indicator";
 
-// Distance from left edge of editor to show drag handle
-const HANDLE_LEFT_OFFSET = -28;
+// Position drag handle within the anchor's left padding (anchor has pl-8 = 32px)
+const HANDLE_LEFT_OFFSET = 0;
 // Vertical dead zone — mouse must be within this distance of a block to show handle
 const HANDLE_DEAD_ZONE = 4;
 
@@ -140,8 +140,12 @@ export function DraggableBlockPlugin({
     [anchorElem, editor]
   );
 
-  const handleMouseLeave = useCallback(() => {
+  const handleMouseLeave = useCallback((event: MouseEvent) => {
     if (menuRef.current && !isDraggingRef.current) {
+      // Don't hide if the mouse moved to the drag handle itself
+      const relatedTarget = event.relatedTarget as HTMLElement | null;
+      if (relatedTarget && isOnMenu(relatedTarget)) return;
+
       menuRef.current.style.opacity = "0";
       targetBlockElemRef.current = null;
     }
@@ -155,6 +159,21 @@ export function DraggableBlockPlugin({
       anchorElem.removeEventListener("mouseleave", handleMouseLeave);
     };
   }, [anchorElem, handleMouseMove, handleMouseLeave]);
+
+  const handleMenuMouseLeave = useCallback(
+    (event: React.MouseEvent) => {
+      if (isDraggingRef.current) return;
+      // Don't hide if the mouse moved back into the anchor element
+      const relatedTarget = event.relatedTarget as HTMLElement | null;
+      if (relatedTarget && anchorElem.contains(relatedTarget)) return;
+
+      if (menuRef.current) {
+        menuRef.current.style.opacity = "0";
+        targetBlockElemRef.current = null;
+      }
+    },
+    [anchorElem]
+  );
 
   const handleDragStart = useCallback(
     (event: React.DragEvent) => {
@@ -304,6 +323,7 @@ export function DraggableBlockPlugin({
         draggable
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
+        onMouseLeave={handleMenuMouseLeave}
         aria-label="Drag to reorder block"
         role="button"
         tabIndex={0}

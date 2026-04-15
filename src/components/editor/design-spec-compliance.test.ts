@@ -34,6 +34,18 @@ describe("callout-plugin design spec compliance", () => {
   });
 });
 
+describe("editor anchor element", () => {
+  const source = readSource("./editor.tsx");
+
+  it("anchor div has left padding for drag handle area", () => {
+    // The anchor element must extend left so the drag handle (portaled inside)
+    // stays within its bounds and receives mouse events.
+    expect(source).toMatch(/ref={onFloatingAnchorRef}[^>]*>/);
+    expect(source).toContain("pl-8");
+    expect(source).toContain("-ml-8");
+  });
+});
+
 describe("draggable-block-plugin design spec compliance", () => {
   const source = readSource("./draggable-block-plugin.tsx");
 
