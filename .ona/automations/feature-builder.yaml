@@ -139,8 +139,13 @@ action:
                 2. For each criterion, confirm your implementation satisfies it.
                    If a criterion cannot be verified locally (e.g., "works on mobile"), note it in the PR.
                 3. Run the full CI check: `pnpm lint && pnpm typecheck && pnpm test`
-                4. Fix any errors before proceeding.
-                5. If any acceptance criterion is NOT met, either fix it or explain in the PR body
+                4. If the feature involves interactive UI (drag-and-drop, floating toolbars/menus,
+                   multi-step flows), write E2E tests in `e2e/` using Playwright. Use the auth
+                   fixture from `e2e/fixtures/auth.ts` for authenticated tests. See
+                   `.agents/conventions.md` → Testing → Playwright for patterns.
+                5. Run E2E tests: `pnpm test:e2e`
+                6. Fix any errors before proceeding.
+                7. If any acceptance criterion is NOT met, either fix it or explain in the PR body
                    why it was descoped (and create a follow-up issue if needed).
 
                 ## Update Knowledge Base

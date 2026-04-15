@@ -40,11 +40,36 @@ metrics/           → Daily/weekly metrics snapshots
 
 ## Testing
 
-- Unit tests: utility functions, non-trivial logic
-- Integration tests: API routes
-- E2E (Playwright): critical user flows, new pages
+- Unit tests (Vitest): utility functions, non-trivial logic, API route handlers
+- Integration tests (Vitest): API routes with mocked Supabase
+- E2E tests (Playwright): interactive features, critical user flows, new pages
+- Static analysis tests (Vitest): design spec compliance checks on source code
 - Skip tests for trivial layout-only components
-- Run before pushing: `pnpm lint && pnpm typecheck && pnpm test`
+
+### When to write E2E tests
+
+- Drag-and-drop (editor blocks, sidebar pages)
+- Floating UI (toolbars, menus, popovers that appear/disappear based on user action)
+- Multi-step flows (auth, page creation, workspace switching)
+- Any feature where the bug would only manifest in a real browser (not jsdom)
+
+### When unit tests are sufficient
+
+- Pure functions and utilities
+- API route handlers (mock Supabase)
+- Data transformations (markdown conversion, tree building)
+- Component rendering without complex interaction
+
+### E2E test location
+
+- Config: `playwright.config.ts`
+- Tests: `e2e/` directory
+- Auth fixture: `e2e/fixtures/auth.ts` — provides `authenticatedPage` for tests needing login
+- Authenticated tests require `TEST_USER_EMAIL` and `TEST_USER_PASSWORD` env vars
+
+### Running tests
+
+- Run before pushing: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e`
 
 ## Backlog
 

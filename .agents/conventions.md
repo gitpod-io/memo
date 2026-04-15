@@ -319,11 +319,59 @@ Rules:
 
 ## Testing
 
+### Vitest (unit / integration / static analysis)
+
 - Unit tests go next to the file they test: `foo.test.ts` alongside `foo.ts`
 - Use Vitest: `import { describe, it, expect } from 'vitest'`
 - API route tests: test the route handler directly
 - Skip tests for components that are just layout/styling with no logic
-- Run before pushing: `pnpm lint && pnpm typecheck && pnpm test`
+
+### Playwright (E2E)
+
+E2E tests live in `e2e/` at the project root. Config: `playwright.config.ts`.
+
+```typescript
+// Unauthenticated test — uses base Playwright test
+import { test, expect } from "@playwright/test";
+
+test("sign-in page renders", async ({ page }) => {
+  await page.goto("/sign-in");
+  await expect(page.locator('input[type="email"]')).toBeVisible();
+});
+```
+
+```typescript
+// Authenticated test — uses the auth fixture
+import { test, expect } from "./fixtures/auth";
+
+test("editor loads on page", async ({ authenticatedPage: page }) => {
+  // authenticatedPage is already logged in
+  const editor = page.locator('[contenteditable="true"]');
+  await expect(editor).toBeVisible({ timeout: 10_000 });
+});
+```
+
+#### Selector conventions
+
+- Prefer `getByRole`, `getByLabel`, `getByText` over CSS selectors
+- For editor elements: `[contenteditable="true"]`, `[data-lexical-editor]`
+- For drag handles: `.memo-draggable-block-menu`
+- For floating UI: `[role="toolbar"]`, `[role="option"]`
+- Use `.filter({ hasText: ... })` to narrow generic selectors
+
+#### Test structure
+
+- One `describe` block per feature area
+- Use `test.beforeEach` for common navigation (e.g., opening a page)
+- Use `test.skip(true, "reason")` when preconditions aren't met (no pages, no button)
+- Timeouts: 10s for page loads, 3s for UI elements, 2s for state changes
+
+#### Running
+
+- All tests: `pnpm test:e2e`
+- Single file: `pnpm test:e2e -- e2e/editor-drag.spec.ts`
+- Authenticated tests require `TEST_USER_EMAIL` and `TEST_USER_PASSWORD` env vars
+- Run before pushing: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e`
 
 ## Imports
 

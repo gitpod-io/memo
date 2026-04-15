@@ -102,9 +102,15 @@ action:
                 9. Fix the root cause. Do NOT fix symptoms.
                    - Follow every convention in AGENTS.md without exception.
                    - Add a regression test that would have caught this bug.
+                     For interaction bugs (drag-and-drop, floating UI, hover states, multi-step
+                     flows), add a Playwright E2E test in `e2e/`. Use the auth fixture from
+                     `e2e/fixtures/auth.ts` for authenticated tests. See `.agents/conventions.md`
+                     → Testing → Playwright for patterns.
+                     For logic/data bugs, add a Vitest unit or integration test.
                    - For database changes: `npx supabase migration new <name>`
                 10. Run the full CI check locally: `pnpm lint && pnpm typecheck && pnpm test`
-                11. Fix any errors before proceeding.
+                11. Run E2E tests: `pnpm test:e2e`
+                12. Fix any errors before proceeding.
 
                 ## Update Knowledge Base
 

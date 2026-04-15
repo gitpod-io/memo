@@ -172,7 +172,7 @@ export function Editor({ pageId, initialContent, editorRef }: EditorProps) {
   return (
     <div className="relative">
       <LexicalComposer initialConfig={initialConfig}>
-        <div className="relative" ref={onFloatingAnchorRef}>
+        <div className="relative -ml-8 pl-8" ref={onFloatingAnchorRef}>
           <RichTextPlugin
             contentEditable={
               <ContentEditable

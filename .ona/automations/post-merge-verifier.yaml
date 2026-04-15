@@ -34,7 +34,16 @@ action:
 
                 Wait 90 seconds for Vercel to deploy the merge to production.
 
-                ## Step 3 — Run smoke tests
+                ## Step 3 — Run E2E test suite
+
+                First, run the project's E2E test suite against the live site:
+                  BASE_URL=https://memo.software-factory.dev pnpm test:e2e
+
+                If E2E tests fail, include the failures in the report (Step 4).
+                If E2E tests pass, still run the ad-hoc smoke tests below for routes
+                not yet covered by the E2E suite.
+
+                ## Step 3b — Run ad-hoc smoke tests
 
                 Write a Playwright script to /tmp/smoke-test.mjs.
 
