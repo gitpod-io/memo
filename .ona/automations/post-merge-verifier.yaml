@@ -118,7 +118,7 @@ action:
                 1. Create a GitHub Issue:
                    - Title: `bug: UI regression after PR #<number> — <first failure>`
                    - Body: list all failures, include the PR number and title for context
-                   - Labels: `bug`, `priority:1`
+                   - Labels: `bug`, `priority:1`, `status:backlog`
                 2. Comment on the merged PR:
                    > ❌ Post-merge verification failed. See #<new-issue-number>.
 
