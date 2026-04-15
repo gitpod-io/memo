@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PageTitle } from "@/components/page-title";
+import { Editor } from "@/components/editor/editor";
+import type { SerializedEditorState } from "lexical";
 
 export default async function PageView({
   params,
@@ -31,13 +33,18 @@ export default async function PageView({
     notFound();
   }
 
+  // Supabase types jsonb columns as Json | null; narrow to Lexical's serialized state
+  const initialContent = page.content as SerializedEditorState | null;
+
   return (
     <div className="mx-auto max-w-3xl p-6">
       <PageTitle key={page.id} pageId={page.id} initialTitle={page.title} />
       <div className="mt-4">
-        <p className="text-sm text-muted-foreground">
-          Type &apos;/&apos; for commands
-        </p>
+        <Editor
+          key={page.id}
+          pageId={page.id}
+          initialContent={initialContent}
+        />
       </div>
     </div>
   );

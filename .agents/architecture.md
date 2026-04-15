@@ -171,6 +171,13 @@ src/
 │   │   ├── create-workspace-dialog.tsx # Dialog for creating a new workspace
 │   │   ├── page-tree.tsx        # Hierarchical page tree with CRUD, drag-and-drop, nest/unnest
 │   │   └── user-menu.tsx        # User dropdown with settings link + sign-out
+│   ├── editor/                  # Lexical block editor
+│   │   ├── editor.tsx               # Main editor: LexicalComposer, plugins, auto-save to Supabase
+│   │   ├── theme.ts                 # EditorThemeClasses mapping Lexical nodes to Tailwind classes
+│   │   ├── slash-command-plugin.tsx  # "/" typeahead: paragraph, h1-h3, lists, code, quote, divider
+│   │   ├── floating-toolbar-plugin.tsx # Selection toolbar: bold, italic, underline, strikethrough, code, link
+│   │   ├── floating-link-editor-plugin.tsx # Link preview/edit/remove popover (⌘+K)
+│   │   └── code-highlight-plugin.tsx # Registers Prism-based syntax highlighting for code blocks
 │   ├── page-title.tsx           # Inline-editable page title (saves on blur/Enter)
 │   ├── workspace-home.tsx       # Workspace home: page list or empty state with create CTA
 │   ├── workspace-settings-form.tsx # Edit workspace name/slug, delete workspace
@@ -217,7 +224,7 @@ src/
 │   │   ├── layout.tsx                 # App shell (sidebar + main content), passes userId
 │   │   └── [workspaceSlug]/
 │   │       ├── page.tsx               # /[workspaceSlug] (workspace home)
-│   │       ├── [pageId]/page.tsx      # /[workspaceSlug]/[pageId] (page view + editor placeholder)
+│   │       ├── [pageId]/page.tsx      # /[workspaceSlug]/[pageId] (page view + Lexical editor)
 │   │       └── settings/
 │   │           ├── page.tsx           # /[workspaceSlug]/settings (name, slug, delete)
 │   │           └── members/page.tsx   # /[workspaceSlug]/settings/members — planned
@@ -227,6 +234,12 @@ src/
 ├── components/
 │   ├── ui/                 # shadcn/ui components
 │   ├── editor/             # Lexical editor + plugins
+│   │   ├── editor.tsx                 # Main editor: LexicalComposer + all plugins + auto-save
+│   │   ├── theme.ts                   # Lexical EditorThemeClasses (Tailwind classes for all node types)
+│   │   ├── slash-command-plugin.tsx    # "/" typeahead menu for inserting block types
+│   │   ├── floating-toolbar-plugin.tsx # Selection toolbar: bold, italic, underline, strikethrough, code, link
+│   │   ├── floating-link-editor-plugin.tsx # Link preview/edit/remove popover
+│   │   └── code-highlight-plugin.tsx  # Registers Prism-based code highlighting
 │   ├── sidebar/            # Sidebar, page tree, workspace switcher
 │   └── ...                 # Feature-specific components
 ├── lib/
