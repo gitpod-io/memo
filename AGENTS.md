@@ -57,12 +57,34 @@ Issues use labels for status, priority, and flags:
 
 Label lifecycle: `status:backlog` → `status:in-progress` → `status:in-review` → `status:done`
 
+## Automations
+
+This repo is operated by a pipeline of Ona automations. Each is defined in `.ona/automations/<name>.yaml` and registered in the Ona automation registry (IDs tracked in `.ona/skills/automation-manager/references/registry.md`).
+
+| Automation | Role |
+|---|---|
+| Feature Planner | Decomposes product spec into GitHub Issues |
+| Feature Builder | Picks next backlog issue, implements it, opens a PR |
+| Bug Fixer | Picks open bugs and fixes them |
+| PR Reviewer | Reviews PRs, fixes CI failures, merges when ready |
+| PR Shepherd | Resolves merge conflicts, closes duplicates, unstalls blocked PRs |
+| Post-Merge Verifier | Validates production after merge |
+| UI Verifier | Checks UI changes against design spec |
+| Incident Responder | Reacts to Sentry alerts |
+| Performance Monitor | Tracks performance regressions |
+| Automation Auditor | Detects drift between YAML files and live registrations |
+| Daily Metrics / Weekly Recap | Snapshots project health |
+
+To modify an automation: edit the YAML, then register the change with `ona ai automation update <id> <yaml-path>`. See the `automation-manager` skill for the full workflow.
+
 ## Where to Find Details
 
 - Architecture and data flow: `.agents/architecture.md`
 - Design spec (colors, typography, spacing, components, interactions): `.agents/design.md`
 - Coding patterns and conventions: `.agents/conventions.md`
 - Quality status per domain: `.agents/quality.md`
+- Automation definitions: `.ona/automations/`
+- Automation registry (YAML ↔ Ona ID mapping): `.ona/skills/automation-manager/references/registry.md`
 - Active plans: `.agents/plans/active/`
 - Completed plans: `.agents/plans/completed/`
 - Product specification: `docs/product-spec.md`

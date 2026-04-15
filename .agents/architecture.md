@@ -265,6 +265,21 @@ src/
 └── ...
 ```
 
+## Automation Pipeline
+
+The repo is operated by Ona automations defined in `.ona/automations/*.yaml`. The core pipeline:
+
+```
+Feature Planner → creates GitHub Issues from product spec
+Feature Builder → implements issues, opens PRs
+PR Reviewer     → reviews code, fixes CI, merges PRs
+PR Shepherd     → resolves merge conflicts, closes duplicates, unstalls PRs
+```
+
+Supporting automations: Bug Fixer, Post-Merge Verifier, UI Verifier, Incident Responder, Performance Monitor, Automation Auditor, Daily Metrics, Weekly Recap.
+
+Each YAML file maps to a live Ona registration. IDs are tracked in `.ona/skills/automation-manager/references/registry.md`. Editing a YAML without running `ona ai automation update` has no effect on the live automation.
+
 ## Observability
 
 - **Sentry client**: session replay (10% normal, 100% on error), route transition tracking
