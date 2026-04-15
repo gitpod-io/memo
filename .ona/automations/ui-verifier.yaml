@@ -94,7 +94,7 @@ action:
                   1. Create a GitHub Issue:
                      - Title: `bug: UI does not match design spec after PR #<number>`
                      - Body: list each violation with the file, line, what's wrong, and what the design spec says
-                     - Labels: `bug`, `priority:2`
+                     - Labels: `bug`, `priority:2`, `status:backlog`
                   2. Comment on the merged PR:
                      > ⚠️ UI verification found design spec violations. See #<issue-number>.
 

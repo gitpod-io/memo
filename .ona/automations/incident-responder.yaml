@@ -48,8 +48,8 @@ action:
                    - Title: fix: <description>
                    - Body: Sentry issue link, root cause analysis, what was fixed, test added.
                      Must include `Closes #N` referencing a GitHub issue. If no GitHub issue exists
-                     for this error, create one first with label `bug`.
-                   - Labels: bug
+                     for this error, create one first with labels `bug`, `status:backlog`.
+                   - Labels: bug, status:backlog
                 9. Use update_issue to mark the Sentry issue as resolved.
 
                 ## Low-severity
