@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
@@ -17,7 +18,11 @@ import { ListNode, ListItemNode } from "@lexical/list";
 import { CodeNode, CodeHighlightNode } from "@lexical/code";
 import { LinkNode } from "@lexical/link";
 import { HorizontalRuleNode } from "@lexical/react/LexicalHorizontalRuleNode";
-import type { EditorState, SerializedEditorState } from "lexical";
+import type {
+  EditorState,
+  LexicalEditor,
+  SerializedEditorState,
+} from "lexical";
 import * as Sentry from "@sentry/nextjs";
 import { editorTheme } from "@/components/editor/theme";
 import { SlashCommandPlugin } from "@/components/editor/slash-command-plugin";
@@ -31,6 +36,7 @@ const SAVE_DEBOUNCE_MS = 500;
 interface EditorProps {
   pageId: string;
   initialContent: SerializedEditorState | null;
+  editorRef?: React.MutableRefObject<LexicalEditor | null>;
 }
 
 function validateUrl(url: string): boolean {
@@ -42,7 +48,22 @@ function validateUrl(url: string): boolean {
   }
 }
 
-export function Editor({ pageId, initialContent }: EditorProps) {
+function EditorRefPlugin({
+  editorRef,
+}: {
+  editorRef: React.MutableRefObject<LexicalEditor | null>;
+}): null {
+  const [editor] = useLexicalComposerContext();
+  useEffect(() => {
+    editorRef.current = editor;
+    return () => {
+      editorRef.current = null;
+    };
+  }, [editor, editorRef]);
+  return null;
+}
+
+export function Editor({ pageId, initialContent, editorRef }: EditorProps) {
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
@@ -158,6 +179,7 @@ export function Editor({ pageId, initialContent }: EditorProps) {
         <ClickableLinkPlugin />
         <HorizontalRulePlugin />
         <CodeHighlightPlugin />
+        {editorRef && <EditorRefPlugin editorRef={editorRef} />}
         <OnChangePlugin
           onChange={handleChange}
           ignoreSelectionChange
