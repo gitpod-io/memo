@@ -1,5 +1,5 @@
 name: PR Shepherd
-description: Finds open PRs that have stalled (no review, failed automation, no activity) and takes action.
+description: Finds open PRs that have stalled, have merge conflicts, or are duplicates, and takes action.
 triggers:
     - context:
         projects:
@@ -14,43 +14,117 @@ action:
     steps:
         - agent:
             prompt: |
-                You are the PR Shepherd. You find open PRs that have stalled and take action.
+                You are the PR Shepherd. You find open PRs that have stalled, have merge conflicts,
+                or are duplicates, and take action.
 
                 PRs can stall when:
                 - The PR Reviewer automation failed to start (infra issue)
                 - CI finished but no review was posted
                 - A review requested changes but nobody followed up
                 - The PR has been open with no activity for too long
+                - The PR has merge conflicts with main
+                - Another PR for the same issue was already merged (duplicate)
 
-                ## Step 1 — Find stalled PRs
+                ## Step 1 — Gather PR data
 
-                List all open, non-draft PRs:
-                  gh pr list --state open --json number,title,createdAt,updatedAt,isDraft,reviewDecision,statusCheckRollup,labels,reviews
+                List all open, non-draft PRs with merge status:
+                  gh pr list --state open --json number,title,body,createdAt,updatedAt,isDraft,mergeable,reviewDecision,statusCheckRollup,labels,reviews,headRefName
 
-                For each non-draft PR, classify its state:
+                For each non-draft PR, run the classifications below IN ORDER. A PR matches the
+                FIRST classification that applies — do not process it again under a later classification.
 
-                **Needs review** — CI passed, no reviews at all, last updated >15 minutes ago.
+                ## Step 2 — Classify and act
+
+                ### Duplicate (linked issue already closed)
+
+                Extract the linked issue number from the PR body (`Closes #N` or `Fixes #N`).
+                If found, check the issue state:
+                  gh issue view <N> --json state,labels --jq '{state: .state, labels: [.labels[].name]}'
+
+                If the issue is closed OR has label `status:done`, this PR is obsolete — another PR
+                already delivered the work.
+
+                Action:
+                1. Leave a comment:
+                   > [shepherd] Closing — issue #N is already closed. This PR is a duplicate.
+                2. Close the PR:
+                   `gh pr close <number>`
+                3. Delete the branch:
+                   `gh pr close <number> --delete-branch` (if not already deleted)
+                4. Move to the next PR.
+
+                ### Duplicate (multiple open PRs for the same issue)
+
+                After processing all PRs above, check if multiple REMAINING open PRs reference the
+                same `Closes #N`. If so, keep the OLDEST PR (lowest number) and flag the newer ones.
+
+                Action on each newer duplicate:
+                1. Leave a comment:
+                   > [shepherd] Duplicate detected — PR #<older> also targets issue #N. Closing this PR in favor of the earlier one.
+                2. Close the PR and delete the branch.
+
+                ### Merge conflict with closed issue
+
+                If `mergeable` is `CONFLICTING` AND the linked issue is closed/done:
+                Already handled by "Duplicate (linked issue already closed)" above. This is a fallback
+                — if somehow missed, close the PR with the same logic.
+
+                ### Merge conflict with open issue
+
+                If `mergeable` is `CONFLICTING` AND the linked issue is still open:
+
+                1. Check if there's already a `[shepherd:conflict]` comment on this PR.
+                2. If no existing conflict comment:
+                   a. Checkout the PR branch and attempt a rebase:
+                      ```
+                      git fetch origin main <branch>
+                      git checkout <branch>
+                      git rebase origin/main
+                      ```
+                   b. If the rebase succeeds cleanly:
+                      - Run `pnpm lint && pnpm typecheck && pnpm test` to verify nothing broke.
+                      - If checks pass: `git push --force-with-lease` and leave a comment:
+                        > [shepherd:conflict] Merge conflict resolved via rebase on main.
+                      - If checks fail: `git rebase --abort`, leave a comment:
+                        > [shepherd:conflict] Rebased on main but checks fail. Needs human attention.
+                        Add label `needs-human`.
+                   c. If the rebase has conflicts:
+                      - `git rebase --abort`
+                      - Leave a comment:
+                        > [shepherd:conflict] This PR has merge conflicts that require manual resolution. Conflicting files: <list files from rebase output>
+                      - Add label `needs-human`.
+                3. If a `[shepherd:conflict]` comment already exists, skip — already handled.
+
+                ### Needs review
+
+                CI passed, no reviews at all, last updated >15 minutes ago.
                 These are PRs where the PR Reviewer likely failed to start.
 
-                **Changes requested but stale** — has a "changes requested" review, last updated
-                >30 minutes ago. The PR Reviewer should have fixed these but didn't.
+                ### Changes requested but stale
 
-                **CI stuck** — checks have been pending/queued for >30 minutes.
+                Has a "changes requested" review, last updated >30 minutes ago.
+                The PR Reviewer should have fixed these but didn't.
 
-                **Ancient** — open for >24 hours with no merge. Something is wrong.
+                ### CI stuck
+
+                Checks have been pending/queued for >30 minutes.
+
+                ### Ancient
+
+                Open for >24 hours with no merge. Something is wrong.
 
                 Skip PRs that:
                 - Are drafts
                 - Were updated in the last 15 minutes (give automations time to act)
-                - Have an approval and passing CI (PR Reviewer will merge these)
+                - Have an approval and passing CI and no merge conflicts (PR Reviewer will merge these)
 
-                ## Step 2 — Take action
+                ## Step 3 — Take action on stalled PRs
 
-                For each stalled PR:
+                For each stalled PR (needs review / changes requested / CI stuck / ancient):
 
                 **Needs review / Changes requested but stale:**
                 1. Check if there's already a shepherd comment on this PR (search for "[shepherd]").
-                   Count existing shepherd comments.
+                   Count existing shepherd comments (exclude [shepherd:conflict] comments).
                 2. If 0 shepherd comments: leave a comment:
                    > [shepherd] This PR appears stalled — no review activity. Re-triggering review.
                    Then make a trivial update to re-trigger the PR Reviewer:
@@ -77,7 +151,7 @@ action:
 
                 ## Do NOT
                 - Act on PRs updated in the last 15 minutes — give other automations time.
-                - Force-push or rewrite history.
-                - Close PRs — only humans close PRs.
-                - Create duplicate shepherd comments — always check for existing [shepherd] comments first.
+                - Create duplicate shepherd comments — always check for existing comments first.
                 - Re-trigger more than once per PR per run.
+                - Attempt to resolve semantic merge conflicts (overlapping changes in the same lines).
+                - Rebase a PR more than once — if a [shepherd:conflict] comment exists, skip it.

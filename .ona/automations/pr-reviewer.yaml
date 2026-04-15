@@ -42,11 +42,13 @@ action:
 
                 Read the PR metadata:
 
-                gh pr view <number> --json title,body,isDraft,reviewDecision,statusCheckRollup,labels,reviews
+                gh pr view <number> --json title,body,isDraft,mergeable,reviewDecision,statusCheckRollup,labels,reviews
 
                 Stop immediately (skip this PR) if:
                 - The PR is a draft.
                 - CI checks are still running (status: pending/queued).
+                - The PR has merge conflicts (`mergeable` is `CONFLICTING`). The PR Shepherd
+                  handles conflict resolution — do not attempt to review or merge conflicted PRs.
 
                 Otherwise, take exactly ONE of the following actions based on the PR's current state.
 
@@ -113,7 +115,10 @@ action:
 
                 ## C. CI is passing, ready to merge → Merge
 
-                Requires: all CI checks passing AND no open "changes requested" reviews.
+                Requires: all CI checks passing AND no open "changes requested" reviews
+                AND `mergeable` is not `CONFLICTING`.
+
+                If the PR has merge conflicts, skip it — the PR Shepherd will handle resolution.
 
                 Chore PRs (title starts with `chore:`, `docs:`, or `refactor:`):
                   gh pr merge <number> --squash --delete-branch
