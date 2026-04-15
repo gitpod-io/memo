@@ -404,6 +404,73 @@ await supabase.auth.signUp({
 });
 ```
 
+## Lexical Editor Plugins
+
+Editor plugins live in `src/components/editor/`. Each plugin is a separate file with
+a single named export. Plugins are composed inside the `<LexicalComposer>` in `editor.tsx`.
+
+### Plugin pattern
+
+```typescript
+"use client";
+
+import { useEffect } from "react";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+
+export function MyPlugin(): null {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    // Register listeners, commands, transforms
+    return () => { /* cleanup */ };
+  }, [editor]);
+
+  return null;
+}
+```
+
+### Floating UI pattern
+
+Floating elements (toolbar, link editor, slash menu) use `@floating-ui/react` for
+positioning and `createPortal` to render into the editor's anchor element:
+
+```typescript
+import { createPortal } from "react-dom";
+import { computePosition, offset, flip, shift } from "@floating-ui/react";
+
+// Position relative to selection or DOM node
+computePosition(virtualEl, floatingEl, {
+  placement: "top",
+  middleware: [offset(8), flip(), shift({ padding: 8 })],
+}).then(({ x, y }) => {
+  floatingEl.style.left = `${x}px`;
+  floatingEl.style.top = `${y}px`;
+});
+
+// Render via portal into the editor's anchor div
+return createPortal(<div>...</div>, anchorElem);
+```
+
+### Auto-save pattern
+
+Content auto-saves via debounced `OnChangePlugin`. The save flow:
+1. `OnChangePlugin` fires on every editor state change (selection changes ignored)
+2. Serialize: `editorState.toJSON()` → compare with last saved JSON string
+3. If changed, debounce 500ms, then write to `pages.content` via Supabase client
+4. Track save status: `"idle" | "saving" | "saved"` — display below editor
+
+### Adding new block types
+
+1. Register the node class in `editor.tsx` → `initialConfig.nodes`
+2. Add theme classes in `theme.ts` if the node uses themed CSS classes
+3. Add a `SlashCommandOption` entry in `slash-command-plugin.tsx`
+4. If the block needs a Lexical plugin (e.g., `ListPlugin`), add it inside `<LexicalComposer>`
+
+### Lexical package versions
+
+All `@lexical/*` packages are pinned to the same version (currently 0.31.0).
+Always update them together to avoid version mismatches.
+
 ## This file evolves
 
 When you discover a new pattern that should be replicated, or an anti-pattern that
