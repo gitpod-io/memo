@@ -15,7 +15,7 @@ jobs:
   # PR check: reset staging DB then push migrations for real execution
   # ---------------------------------------------------------------------------
   staging:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && secrets.SUPABASE_STAGING_PROJECT_ID != ''
     runs-on: ubuntu-latest
     # Only one staging validation at a time — later PRs queue behind earlier ones
     concurrency:
