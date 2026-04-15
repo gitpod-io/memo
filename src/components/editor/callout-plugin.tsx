@@ -76,7 +76,7 @@ export function CalloutPlugin(): null {
 
           if (!emojiSpan) {
             emojiSpan = document.createElement("span");
-            emojiSpan.className = "callout-emoji select-none text-base shrink-0";
+            emojiSpan.className = "callout-emoji select-none text-lg shrink-0";
             emojiSpan.contentEditable = "false";
             dom.insertBefore(emojiSpan, dom.firstChild);
           }
