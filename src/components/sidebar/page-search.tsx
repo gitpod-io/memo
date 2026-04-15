@@ -228,7 +228,7 @@ export function PageSearch() {
         {query && (
           <button
             onClick={handleClear}
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-1.5 text-muted-foreground hover:text-foreground"
             aria-label="Clear search"
           >
             <X className="h-3.5 w-3.5" />
@@ -243,8 +243,16 @@ export function PageSearch() {
           className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] overflow-y-auto border border-white/[0.06] bg-muted rounded-sm shadow-md"
         >
           {loading && results.length === 0 && (
-            <div className="px-3 py-4 text-center text-xs text-muted-foreground">
-              Searching…
+            <div className="flex flex-col">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex flex-col gap-1 px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 shrink-0 bg-white/[0.08] animate-pulse" />
+                    <div className="h-3.5 w-32 bg-white/[0.08] animate-pulse" />
+                  </div>
+                  <div className="h-3 w-48 bg-white/[0.08] animate-pulse ml-6" />
+                </div>
+              ))}
             </div>
           )}
 
