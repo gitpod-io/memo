@@ -111,6 +111,7 @@ export function WorkspaceSettingsForm({
       .eq("user_id", userId)
       .limit(10);
 
+    // Supabase join returns the relation as an opaque type; casts are unavoidable
     const personal = membership?.find((m) => {
       const ws = m.workspaces as unknown as { slug: string; is_personal: boolean };
       return ws?.is_personal;

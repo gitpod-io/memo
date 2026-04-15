@@ -36,6 +36,7 @@ export function WorkspaceSwitcher({ userId }: WorkspaceSwitcherProps) {
         .eq("user_id", userId);
 
       if (memberships) {
+        // Supabase join returns the relation as an opaque type; cast is unavoidable
         const ws = memberships
           .map((m) => m.workspaces as unknown as Workspace)
           .filter(Boolean);
@@ -73,6 +74,7 @@ export function WorkspaceSwitcher({ userId }: WorkspaceSwitcherProps) {
             variant="ghost"
             className="w-full justify-between gap-2 px-2"
             size="sm"
+            aria-label="Switch workspace"
           />
         }
       >
