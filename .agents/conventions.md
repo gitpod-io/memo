@@ -373,6 +373,29 @@ test("editor loads on page", async ({ authenticatedPage: page }) => {
 - Authenticated tests require `TEST_USER_EMAIL` and `TEST_USER_PASSWORD` env vars
 - Run before pushing: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e`
 
+## PR Workflow
+
+### Issue-first rule
+
+For `feat` or `fix` PRs, create (or find) a GitHub issue before opening the PR.
+
+```bash
+# Create the issue with status:in-progress so automations don't pick it up
+gh issue create --title "Short description" \
+  --body "## Problem\n\n...\n\n## Acceptance Criteria\n\n- [ ] ..." \
+  --label "feature,status:in-progress"
+
+# Reference it in the PR description
+# First line of PR body: Closes #N
+```
+
+### Label safety
+
+- Use `status:in-progress` on issues you are actively working on.
+- Use `status:backlog` only for issues intended for automation pickup (Feature Builder, Bug Fixer).
+- Never label an issue `status:backlog` if you plan to work on it yourself — the Feature Builder or Bug Fixer may claim it first.
+- Chore PRs (metrics, docs, deps) do not require an issue.
+
 ## Imports
 
 - Use `@/` path alias for all project imports

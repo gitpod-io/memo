@@ -19,7 +19,7 @@ src/components/ui/ → shadcn/ui components (do not edit)
 src/lib/           → Utilities, types, constants
 src/lib/supabase/  → Supabase clients (client.ts, server.ts, proxy.ts)
 supabase/migrations/ → Database migrations
-.agents/           → Agent knowledge base (architecture, conventions, design, plans)
+.agents/           → Agent knowledge base (architecture, conventions, design)
 .ona/              → Automation definitions and skills
 docs/              → Product spec, decisions
 metrics/           → Daily/weekly metrics snapshots
@@ -35,6 +35,7 @@ metrics/           → Daily/weekly metrics snapshots
 - Named exports only. No default exports.
 - Conventional commits: `feat|fix|chore|docs|test|refactor(scope): description`
 - PRs with type `feat` or `fix` must reference an issue: `Closes #N`. Chore PRs (metrics, docs, deps) do not require an issue.
+- **Issue-first workflow:** Before creating a `feat` or `fix` PR, create a GitHub issue first (or find an existing one). Label it `status:in-progress` immediately. Add `Closes #N` to the PR description. This prevents the PR Reviewer from blocking the merge.
 - Database changes require a migration: `npx supabase migration new <name>`
 - Environment variables: `NEXT_PUBLIC_` prefix only for browser-safe values.
 
@@ -82,14 +83,18 @@ Issues use labels for status, priority, and flags:
 
 Label lifecycle: `status:backlog` → `status:in-progress` → `status:in-review` → `status:done`
 
+### Label rules to avoid automation conflicts
+
+- `status:backlog` — **only** for issues you want automations (Feature Builder, Bug Fixer) to pick up. These automations poll for `status:backlog` issues on a cron schedule.
+- `status:in-progress` — use when creating an issue for work you are already doing. This prevents automations from picking it up.
+- Never create an issue with `status:backlog` if you intend to work on it yourself — use `status:in-progress` instead.
+
 ## Where to Find Details
 
 - Architecture and data flow: `.agents/architecture.md`
 - Design spec (colors, typography, spacing, components, interactions): `.agents/design.md`
 - Coding patterns and conventions: `.agents/conventions.md`
 - Quality status per domain: `.agents/quality.md`
-- Active plans: `.agents/plans/active/`
-- Completed plans: `.agents/plans/completed/`
 - Product specification: `docs/product-spec.md`
 
 ## Next.js
