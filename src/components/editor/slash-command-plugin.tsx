@@ -34,8 +34,14 @@ import {
   Quote,
   Minus,
   Type,
+  ImageIcon,
+  MessageSquare,
+  ChevronRight,
 } from "lucide-react";
 import type { JSX, ReactElement } from "react";
+import { openImagePicker } from "@/components/editor/image-plugin";
+import { INSERT_CALLOUT_COMMAND } from "@/components/editor/callout-plugin";
+import { INSERT_COLLAPSIBLE_COMMAND } from "@/components/editor/collapsible-plugin";
 
 class SlashCommandOption extends MenuOption {
   title: string;
@@ -173,6 +179,27 @@ export function SlashCommandPlugin(): JSX.Element | null {
         icon: <Minus className="h-5 w-5" />,
         onSelect: () => {
           editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined);
+        },
+      }),
+      new SlashCommandOption("Image", {
+        description: "Upload an image",
+        icon: <ImageIcon className="h-5 w-5" />,
+        onSelect: () => {
+          openImagePicker(editor);
+        },
+      }),
+      new SlashCommandOption("Callout", {
+        description: "Highlighted info block",
+        icon: <MessageSquare className="h-5 w-5" />,
+        onSelect: () => {
+          editor.dispatchCommand(INSERT_CALLOUT_COMMAND, {});
+        },
+      }),
+      new SlashCommandOption("Toggle", {
+        description: "Collapsible section",
+        icon: <ChevronRight className="h-5 w-5" />,
+        onSelect: () => {
+          editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined);
         },
       }),
     ];

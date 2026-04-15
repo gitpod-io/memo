@@ -467,6 +467,46 @@ Content auto-saves via debounced `OnChangePlugin`. The save flow:
 3. Add a `SlashCommandOption` entry in `slash-command-plugin.tsx`
 4. If the block needs a Lexical plugin (e.g., `ListPlugin`), add it inside `<LexicalComposer>`
 
+### Custom node pattern (ElementNode)
+
+Custom block nodes extend `ElementNode`. Each node file exports the class, a `$create*`
+factory, and a `$is*` type guard. Nodes must implement `exportJSON()` and `importJSON()`
+for persistence. Use `$applyNodeReplacement` in factory functions.
+
+```typescript
+export class MyNode extends ElementNode {
+  static getType(): string { return "my-node"; }
+  static clone(node: MyNode): MyNode { /* ... */ }
+  static importJSON(serialized: SerializedMyNode): MyNode { /* ... */ }
+  exportJSON(): SerializedMyNode { /* ... */ }
+  createDOM(): HTMLElement { /* ... */ }
+  updateDOM(): boolean { return false; }
+}
+
+export function $createMyNode(): MyNode {
+  return $applyNodeReplacement(new MyNode());
+}
+
+export function $isMyNode(node: LexicalNode | null | undefined): node is MyNode {
+  return node instanceof MyNode;
+}
+```
+
+### Custom node pattern (DecoratorNode)
+
+DecoratorNodes render React components via `decorate()`. Used for rich blocks like
+images that need interactive UI. The component receives the editor instance and node
+key for updates.
+
+### Custom plugin + command pattern
+
+Each custom block type has a paired plugin file that:
+1. Defines an `INSERT_*_COMMAND` via `createCommand()`
+2. Registers the command handler in a `useEffect`
+3. Optionally uses `registerMutationListener` for DOM-level behavior (e.g., emoji rendering)
+
+The slash command menu imports the command and dispatches it on selection.
+
 ### Lexical package versions
 
 All `@lexical/*` packages are pinned to the same version (currently 0.31.0).
