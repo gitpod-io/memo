@@ -183,6 +183,9 @@ export function DraggableBlockPlugin({
       // Set drag image
       const dragImage = target.cloneNode(true) as HTMLElement;
       dragImage.style.opacity = "0.5";
+      dragImage.style.transform = "scale(1.02)";
+      dragImage.style.boxShadow =
+        "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
       dragImage.style.position = "absolute";
       dragImage.style.top = "-1000px";
       document.body.appendChild(dragImage);
@@ -191,6 +194,9 @@ export function DraggableBlockPlugin({
 
       draggingBlockElemRef.current = target;
       target.style.opacity = "0.5";
+      target.style.transform = "scale(1.02)";
+      target.style.boxShadow =
+        "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)";
     },
     [editor]
   );
@@ -199,6 +205,8 @@ export function DraggableBlockPlugin({
     isDraggingRef.current = false;
     if (draggingBlockElemRef.current) {
       draggingBlockElemRef.current.style.opacity = "1";
+      draggingBlockElemRef.current.style.transform = "";
+      draggingBlockElemRef.current.style.boxShadow = "";
       draggingBlockElemRef.current = null;
     }
     if (dropIndicatorRef.current) {
@@ -292,7 +300,7 @@ export function DraggableBlockPlugin({
       {/* Drag handle */}
       <div
         ref={menuRef}
-        className={`${DRAGGABLE_BLOCK_MENU_CLASSNAME} absolute z-10 cursor-grab opacity-0 transition-opacity duration-100 active:cursor-grabbing`}
+        className={`${DRAGGABLE_BLOCK_MENU_CLASSNAME} absolute z-10 cursor-grab opacity-0 active:cursor-grabbing`}
         draggable
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
