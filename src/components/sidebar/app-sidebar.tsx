@@ -28,7 +28,7 @@ function SidebarContent({
     <div className="flex h-full flex-col gap-2 p-2">
       <WorkspaceSwitcher userId={userId} />
       <Separator className="bg-white/[0.06]" />
-      <PageTree />
+      <PageTree userId={userId} />
       <Separator className="bg-white/[0.06]" />
       <UserMenu displayName={displayName} email={email} />
     </div>

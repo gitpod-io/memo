@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { WorkspaceHome } from "@/components/workspace-home";
 
 export default async function WorkspacePage({
   params,
@@ -8,6 +9,10 @@ export default async function WorkspacePage({
 }) {
   const { workspaceSlug } = await params;
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { data: workspace } = await supabase
     .from("workspaces")
@@ -19,14 +24,18 @@ export default async function WorkspacePage({
     notFound();
   }
 
+  const { data: pages } = await supabase
+    .from("pages")
+    .select("id, title, parent_id, position, icon, updated_at")
+    .eq("workspace_id", workspace.id)
+    .is("parent_id", null)
+    .order("position", { ascending: true });
+
   return (
-    <div className="flex flex-col items-center justify-center p-6">
-      <div className="max-w-2xl space-y-4 text-center">
-        <h1 className="text-2xl font-semibold">{workspace.name}</h1>
-        <p className="text-sm text-muted-foreground">
-          Your workspace is ready. Pages and editor coming soon.
-        </p>
-      </div>
-    </div>
+    <WorkspaceHome
+      workspace={workspace}
+      pages={pages ?? []}
+      userId={user?.id ?? ""}
+    />
   );
 }
