@@ -169,11 +169,16 @@ action:
 
                 ### Merge
 
-                Chore PRs (title starts with `chore:`, `docs:`, or `refactor:`):
+                Classify the PR by its title prefix to determine merge requirements:
+
+                **Infrastructure PRs** (title starts with `chore:`, `docs:`, `refactor:`, or
+                has scope `(automations)` like `fix(automations):` — these are config/infra
+                changes that do not require a linked issue):
                   gh pr merge <number> --squash --delete-branch
                 Stop.
 
-                Feature/fix PRs:
+                **Feature/fix PRs** (title starts with `feat:` or `fix:` without an
+                infrastructure scope):
 
                 1. Check the PR body for `Closes #N` or `Fixes #N`.
                    - If missing or the referenced issue doesn't exist, leave a comment:
