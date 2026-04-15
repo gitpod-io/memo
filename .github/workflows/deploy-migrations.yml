@@ -11,14 +11,21 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  dry-run:
+  # ---------------------------------------------------------------------------
+  # PR check: reset staging DB then push migrations for real execution
+  # ---------------------------------------------------------------------------
+  staging:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    # Only one staging validation at a time — later PRs queue behind earlier ones
+    concurrency:
+      group: staging-migrations
+      cancel-in-progress: false
 
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_STAGING_PROJECT_ID }}
 
     steps:
       - uses: actions/checkout@v6
@@ -28,12 +35,18 @@ jobs:
         with:
           version: latest
 
-      - name: Link Supabase project
+      - name: Link staging project
         run: supabase link --project-ref $SUPABASE_PROJECT_ID
 
-      - name: Dry-run migrations
-        run: supabase db push --dry-run
+      - name: Reset staging DB to clean state
+        run: supabase db reset --linked
 
+      - name: Push migrations to staging
+        run: supabase db push
+
+  # ---------------------------------------------------------------------------
+  # Production deploy: runs on push to main
+  # ---------------------------------------------------------------------------
   deploy:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
