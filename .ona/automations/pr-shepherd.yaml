@@ -81,18 +81,37 @@ action:
                       git checkout <branch>
                       git rebase origin/main
                       ```
-                   b. If the rebase succeeds cleanly:
+                   b. If the rebase succeeds cleanly (no conflicts):
                       - Run `pnpm lint && pnpm typecheck && pnpm test` to verify nothing broke.
                       - If checks pass: `git push --force-with-lease` and leave a comment:
                         > [shepherd:conflict] Merge conflict resolved via rebase on main.
                       - If checks fail: `git rebase --abort`, leave a comment:
                         > [shepherd:conflict] Rebased on main but checks fail. Needs human attention.
                         Add label `needs-human`.
-                   c. If the rebase has conflicts:
-                      - `git rebase --abort`
-                      - Leave a comment:
-                        > [shepherd:conflict] This PR has merge conflicts that require manual resolution. Conflicting files: <list files from rebase output>
-                      - Add label `needs-human`.
+                   c. If the rebase has conflicts, ATTEMPT TO RESOLVE THEM before giving up:
+                      - List conflicting files: `git diff --name-only --diff-filter=U`
+                      - For each conflicting file, read the conflict markers and determine if the
+                        resolution is obvious:
+                        - **Additive conflicts** (both sides added new lines at the same insertion
+                          point, but the content doesn't overlap): keep both additions. This is the
+                          most common conflict type in this repo — e.g., both sides added new entries
+                          to a list, new imports, new plugin registrations, or new lines in a doc.
+                        - **Non-overlapping edits** (each side changed different parts of the same
+                          hunk): keep both changes.
+                        - **Genuine semantic conflicts** (both sides modified the same lines with
+                          incompatible intent): do NOT attempt to resolve. Abort.
+                      - Edit each conflicting file to remove conflict markers with the correct
+                        resolution. Then `git add <file>`.
+                      - After resolving all files, continue the rebase:
+                        `GIT_EDITOR=true git rebase --continue`
+                      - If additional commits also conflict, repeat the resolution process.
+                      - After the rebase completes, run `pnpm lint && pnpm typecheck && pnpm test`.
+                      - If all checks pass: `git push --force-with-lease` and leave a comment:
+                        > [shepherd:conflict] Merge conflicts resolved and rebased on main.
+                      - If checks fail OR you could not resolve a conflict (genuine semantic
+                        conflict): `git rebase --abort`, leave a comment:
+                        > [shepherd:conflict] This PR has merge conflicts that require manual resolution. Conflicting files: <list files>
+                        Add label `needs-human`.
                 3. If a `[shepherd:conflict]` comment already exists, skip — already handled.
 
                 ### Needs review
@@ -153,5 +172,6 @@ action:
                 - Act on PRs updated in the last 15 minutes — give other automations time.
                 - Create duplicate shepherd comments — always check for existing comments first.
                 - Re-trigger more than once per PR per run.
-                - Attempt to resolve semantic merge conflicts (overlapping changes in the same lines).
+                - Attempt to resolve genuine semantic conflicts (both sides changed the same lines
+                  with incompatible intent). Additive and non-overlapping conflicts ARE safe to resolve.
                 - Rebase a PR more than once — if a [shepherd:conflict] comment exists, skip it.
