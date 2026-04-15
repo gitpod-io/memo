@@ -1,41 +1,56 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { SidebarProvider } from "@/components/sidebar/sidebar-context";
 import { AppSidebar, SidebarToggle } from "@/components/sidebar/app-sidebar";
+import type { Workspace } from "@/lib/types";
 import type { ReactNode } from "react";
 
 interface AppShellProps {
   displayName: string;
   email: string;
+  userId: string;
   children: ReactNode;
 }
 
-export function AppShell({ displayName, email, children }: AppShellProps) {
+export function AppShell({
+  displayName,
+  email,
+  userId,
+  children,
+}: AppShellProps) {
   const params = useParams<{ workspaceSlug?: string }>();
-  const [workspaceName, setWorkspaceName] = useState("");
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
 
-  useEffect(() => {
-    if (!params.workspaceSlug) return;
-
+  const loadWorkspaces = useCallback(() => {
     const supabase = createClient();
     supabase
-      .from("workspaces")
-      .select("name")
-      .eq("slug", params.workspaceSlug)
-      .maybeSingle()
+      .from("members")
+      .select("workspace_id, workspaces(*)")
+      .eq("user_id", userId)
       .then(({ data }) => {
-        if (data) setWorkspaceName(data.name);
+        if (data) {
+          const ws = data
+            .map((m) => m.workspaces as unknown as Workspace)
+            .filter(Boolean);
+          setWorkspaces(ws);
+        }
       });
-  }, [params.workspaceSlug]);
+  }, [userId]);
+
+  useEffect(() => {
+    loadWorkspaces();
+  }, [loadWorkspaces, params.workspaceSlug]);
 
   return (
     <SidebarProvider>
       <div className="flex h-screen overflow-hidden">
         <AppSidebar
-          workspaceName={workspaceName || "Workspace"}
+          workspaces={workspaces}
+          currentSlug={params.workspaceSlug}
+          userId={userId}
           displayName={displayName}
           email={email}
         />

@@ -27,7 +27,7 @@ export default async function AppLayout({
   const email = profile?.email || user.email || "";
 
   return (
-    <AppShell displayName={displayName} email={email}>
+    <AppShell displayName={displayName} email={email} userId={user.id}>
       {children}
     </AppShell>
   );

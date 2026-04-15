@@ -155,7 +155,9 @@ src/
 │   ├── (app)/              # Authenticated route group
 │   │   ├── layout.tsx      # Auth guard, fetches profile, renders AppShell
 │   │   └── [workspaceSlug]/
-│   │       └── page.tsx    # /[workspaceSlug] — workspace home (placeholder)
+│   │       ├── page.tsx    # /[workspaceSlug] — workspace home (placeholder)
+│   │       └── settings/
+│   │           └── page.tsx # /[workspaceSlug]/settings — edit name/slug, delete workspace
 │   └── api/
 │       └── health/route.ts # Health check endpoint (DB connectivity)
 ├── components/
@@ -166,12 +168,17 @@ src/
 │   │   ├── app-shell.tsx        # Client wrapper: SidebarProvider + sidebar + main layout
 │   │   ├── app-sidebar.tsx      # Sidebar (desktop: collapsible aside, mobile: Sheet)
 │   │   ├── sidebar-context.tsx  # React context for sidebar open/close state + ⌘+\ shortcut
-│   │   ├── workspace-switcher.tsx # Workspace name display (placeholder — functional in #27)
+│   │   ├── workspace-switcher.tsx # Workspace dropdown: list, switch, create
+│   │   ├── create-workspace-dialog.tsx # Dialog for creating a new workspace
 │   │   ├── page-tree.tsx        # Page list placeholder (functional in #28)
 │   │   └── user-menu.tsx        # User dropdown with sign-out
+│   ├── workspace/           # Workspace feature components
+│   │   └── workspace-settings-form.tsx # Edit name/slug, delete workspace (client)
 │   └── ui/                 # shadcn/ui components (base-nova style, base-ui primitives)
+│       ├── alert-dialog.tsx
 │       ├── button.tsx
 │       ├── card.tsx
+│       ├── dialog.tsx
 │       ├── dropdown-menu.tsx
 │       ├── input.tsx
 │       ├── label.tsx
@@ -181,6 +188,7 @@ src/
 ├── lib/
 │   ├── utils.ts            # cn() utility (clsx + tailwind-merge)
 │   ├── types.ts            # Database entity types
+│   ├── workspace-utils.ts  # Slug generation, validation, workspace constants
 │   └── supabase/
 │       ├── client.ts       # Browser client (createBrowserClient)
 │       ├── server.ts       # Server component client (createServerClient + cookies)
