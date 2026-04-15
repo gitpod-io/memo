@@ -66,7 +66,7 @@ export default function SignInPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl font-bold">Sign in to Memo</CardTitle>
+        <CardTitle className="text-2xl font-semibold">Sign in to Memo</CardTitle>
         <CardDescription>
           Enter your email and password to continue.
         </CardDescription>
