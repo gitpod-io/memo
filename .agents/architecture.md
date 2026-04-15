@@ -155,7 +155,8 @@ src/
 │   ├── (app)/              # Authenticated route group
 │   │   ├── layout.tsx      # Auth guard, fetches profile, renders AppShell
 │   │   └── [workspaceSlug]/
-│   │       └── page.tsx    # /[workspaceSlug] — workspace home (placeholder)
+│   │       ├── page.tsx    # /[workspaceSlug] — workspace home (page list or empty state)
+│   │       └── [pageId]/page.tsx  # /[workspaceSlug]/[pageId] — page with title + editor placeholder
 │   └── api/
 │       └── health/route.ts # Health check endpoint (DB connectivity)
 ├── components/
@@ -168,8 +169,10 @@ src/
 │   │   ├── sidebar-context.tsx  # React context for sidebar open/close state + ⌘+\ shortcut
 │   │   ├── workspace-switcher.tsx # Dropdown listing all workspaces, create workspace trigger
 │   │   ├── create-workspace-dialog.tsx # Dialog for creating a new workspace
-│   │   ├── page-tree.tsx        # Page list placeholder (functional in #28)
+│   │   ├── page-tree.tsx        # Hierarchical page tree with CRUD, drag-and-drop, nest/unnest
 │   │   └── user-menu.tsx        # User dropdown with settings link + sign-out
+│   ├── page-title.tsx           # Inline-editable page title (saves on blur/Enter)
+│   ├── workspace-home.tsx       # Workspace home: page list or empty state with create CTA
 │   ├── workspace-settings-form.tsx # Edit workspace name/slug, delete workspace
 │   └── ui/                 # shadcn/ui components (base-nova style, base-ui primitives)
 │       ├── alert-dialog.tsx
@@ -214,7 +217,7 @@ src/
 │   │   ├── layout.tsx                 # App shell (sidebar + main content), passes userId
 │   │   └── [workspaceSlug]/
 │   │       ├── page.tsx               # /[workspaceSlug] (workspace home)
-│   │       ├── [pageId]/page.tsx      # /[workspaceSlug]/[pageId] (editor) — planned
+│   │       ├── [pageId]/page.tsx      # /[workspaceSlug]/[pageId] (page view + editor placeholder)
 │   │       └── settings/
 │   │           ├── page.tsx           # /[workspaceSlug]/settings (name, slug, delete)
 │   │           └── members/page.tsx   # /[workspaceSlug]/settings/members — planned
