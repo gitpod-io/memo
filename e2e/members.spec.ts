@@ -93,7 +93,7 @@ test.describe("Workspace member management", () => {
     await page.fill("#invite-email", INVITE_EMAIL);
 
     // Submit the invite
-    await page.getByRole("button", { name: /invite/i }).click();
+    await page.getByRole("button", { name: "Invite", exact: true }).click();
 
     // Wait for success message
     await expect(page.locator("text=Invite sent.")).toBeVisible({
@@ -144,7 +144,7 @@ test.describe("Workspace member management", () => {
 
     // Re-invite the same email
     await page.fill("#invite-email", INVITE_EMAIL);
-    await page.getByRole("button", { name: /invite/i }).click();
+    await page.getByRole("button", { name: "Invite", exact: true }).click();
     await expect(page.locator("text=Invite sent.")).toBeVisible({
       timeout: 10_000,
     });
