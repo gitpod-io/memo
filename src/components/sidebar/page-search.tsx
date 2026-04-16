@@ -41,6 +41,7 @@ export function PageSearch() {
     }
 
     setWorkspaceResolved(false);
+    let cancelled = false;
     const supabase = createClient();
     supabase
       .from("workspaces")
@@ -48,6 +49,7 @@ export function PageSearch() {
       .eq("slug", params.workspaceSlug)
       .maybeSingle()
       .then(({ data, error }) => {
+        if (cancelled) return;
         if (error) {
           captureSupabaseError(error, "page-search:workspace-lookup");
           setWorkspaceResolved(true);
@@ -56,6 +58,10 @@ export function PageSearch() {
         setWorkspaceId(data?.id ?? null);
         setWorkspaceResolved(true);
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, [params.workspaceSlug]);
 
   const search = useCallback(
@@ -66,7 +72,6 @@ export function PageSearch() {
         return;
       }
 
-      setLoading(true);
       try {
         const response = await fetch(
           `/api/search?q=${encodeURIComponent(q.trim())}&workspace_id=${encodeURIComponent(workspaceId)}`
@@ -88,10 +93,14 @@ export function PageSearch() {
     [workspaceId]
   );
 
-  // Debounced search (300ms) — waits for workspaceId to resolve before firing
+  // Debounced search (300ms). The timer always fires; the search callback
+  // handles the case where workspaceId is not yet available by clearing
+  // loading. The rendering layer uses workspaceResolved to decide whether
+  // to show skeletons or the empty-state message.
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
+      debounceRef.current = null;
     }
 
     if (!query.trim()) {
@@ -100,22 +109,19 @@ export function PageSearch() {
       return;
     }
 
-    if (!workspaceResolved) {
-      setLoading(true);
-      return;
-    }
-
     setLoading(true);
     debounceRef.current = setTimeout(() => {
+      debounceRef.current = null;
       search(query);
     }, 300);
 
     return () => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
+        debounceRef.current = null;
       }
     };
-  }, [query, search, workspaceResolved]);
+  }, [query, search]);
 
   // Close on click outside
   useEffect(() => {
@@ -262,7 +268,7 @@ export function PageSearch() {
           role="listbox"
           className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] overflow-y-auto border border-white/[0.06] bg-muted rounded-sm shadow-md"
         >
-          {loading && results.length === 0 && (
+          {(loading || !workspaceResolved) && results.length === 0 && (
             <div className="flex flex-col">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="flex flex-col gap-1 px-3 py-2">
@@ -276,7 +282,7 @@ export function PageSearch() {
             </div>
           )}
 
-          {!loading && results.length === 0 && query.trim().length > 0 && (
+          {!loading && workspaceResolved && results.length === 0 && query.trim().length > 0 && (
             <div className="px-3 py-4 text-center text-xs text-muted-foreground">
               No pages match your search
             </div>
