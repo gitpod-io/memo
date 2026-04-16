@@ -1,12 +1,11 @@
 import { test, expect } from "./fixtures/auth";
+import { navigateToEditorPage, modifierKey } from "./fixtures/editor-helpers";
+
+const mod = modifierKey();
 
 test.describe("Editor floating toolbar", () => {
   test.beforeEach(async ({ authenticatedPage: page }) => {
-    const pageButton = page.locator("button").filter({ hasText: /ago/ });
-    if ((await pageButton.count()) > 0) {
-      await pageButton.first().click();
-      await page.waitForURL((url) => url.pathname.split("/").filter(Boolean).length >= 2);
-    }
+    await navigateToEditorPage(page);
   });
 
   test("toolbar appears on text selection", async ({
@@ -110,7 +109,7 @@ test.describe("Editor floating toolbar", () => {
     await page.keyboard.up("Shift");
 
     // Apply bold via keyboard shortcut
-    await page.keyboard.press("Meta+b");
+    await page.keyboard.press(`${mod}+b`);
     await page.waitForTimeout(200);
 
     const boldText = editor.locator("strong");

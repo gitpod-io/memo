@@ -224,6 +224,7 @@ function ToolbarButton({
   return (
     <button
       type="button"
+      onMouseDown={(e) => e.preventDefault()}
       className={`flex h-11 w-11 sm:h-7 sm:w-7 items-center justify-center text-sm ${
         active
           ? "bg-white/[0.08] text-foreground"

@@ -1,12 +1,11 @@
 import { test, expect } from "./fixtures/auth";
+import { navigateToEditorPage, modifierKey } from "./fixtures/editor-helpers";
+
+const mod = modifierKey();
 
 test.describe("Editor floating link editor", () => {
   test.beforeEach(async ({ authenticatedPage: page }) => {
-    const pageButton = page.locator("button").filter({ hasText: /ago/ });
-    if ((await pageButton.count()) > 0) {
-      await pageButton.first().click();
-      await page.waitForURL((url) => url.pathname.split("/").filter(Boolean).length >= 2);
-    }
+    await navigateToEditorPage(page);
   });
 
   test("link button in toolbar creates a link", async ({
@@ -14,6 +13,9 @@ test.describe("Editor floating link editor", () => {
   }) => {
     const editor = page.locator('[contenteditable="true"]');
     await expect(editor).toBeVisible({ timeout: 10_000 });
+
+    // Count existing links before we create one
+    const linksBefore = await editor.locator("a").count();
 
     await editor.click();
     await page.keyboard.press("End");
@@ -34,9 +36,9 @@ test.describe("Editor floating link editor", () => {
     await linkBtn.click();
     await page.waitForTimeout(300);
 
-    // A link element should be created (with default https://)
-    const link = editor.locator("a");
-    await expect(link).toBeVisible({ timeout: 2_000 });
+    // A new link element should be created
+    const links = editor.locator("a");
+    await expect(links).toHaveCount(linksBefore + 1, { timeout: 2_000 });
   });
 
   test("link editor appears when cursor is in a link", async ({
@@ -56,8 +58,8 @@ test.describe("Editor floating link editor", () => {
     await page.keyboard.press("Home");
     await page.keyboard.up("Shift");
 
-    // Use Cmd+K to create link
-    await page.keyboard.press("Meta+k");
+    // Use Cmd/Ctrl+K to create link
+    await page.keyboard.press(`${mod}+k`);
     await page.waitForTimeout(500);
 
     // The link editor popover should appear with a URL input
@@ -70,7 +72,7 @@ test.describe("Editor floating link editor", () => {
     await page.waitForTimeout(300);
 
     // The link should now have the URL
-    const link = editor.locator('a[href="https://example.com"]');
+    const link = editor.locator('a[href="https://example.com"]').last();
     await expect(link).toBeVisible({ timeout: 2_000 });
   });
 
@@ -79,6 +81,9 @@ test.describe("Editor floating link editor", () => {
   }) => {
     const editor = page.locator('[contenteditable="true"]');
     await expect(editor).toBeVisible({ timeout: 10_000 });
+
+    // Count existing links before we create one
+    const linksBefore = await editor.locator("a").count();
 
     // Create a link
     await editor.click();
@@ -91,7 +96,7 @@ test.describe("Editor floating link editor", () => {
     await page.keyboard.press("Home");
     await page.keyboard.up("Shift");
 
-    await page.keyboard.press("Meta+k");
+    await page.keyboard.press(`${mod}+k`);
     await page.waitForTimeout(500);
 
     const linkInput = page.locator('input[type="url"]');
@@ -100,8 +105,8 @@ test.describe("Editor floating link editor", () => {
     await page.keyboard.press("Enter");
     await page.waitForTimeout(300);
 
-    // Click on the link to show the link editor
-    const link = editor.locator("a").first();
+    // Click on the link we just created to show the link editor
+    const link = editor.locator('a[href="https://example.com"]').last();
     await expect(link).toBeVisible();
     await link.click();
     await page.waitForTimeout(300);
@@ -112,8 +117,8 @@ test.describe("Editor floating link editor", () => {
     await removeBtn.click();
     await page.waitForTimeout(300);
 
-    // Link should be gone
+    // The link we created should be gone — count should be back to what it was
     const links = editor.locator("a");
-    await expect(links).toHaveCount(0, { timeout: 2_000 });
+    await expect(links).toHaveCount(linksBefore, { timeout: 2_000 });
   });
 });

@@ -51,6 +51,9 @@ interface EditorProps {
 }
 
 function validateUrl(url: string): boolean {
+  // Accept protocol-only URLs like "https://" used as placeholders during
+  // link creation — the user edits the URL in the floating link editor.
+  if (url === "https://" || url === "http://") return true;
   try {
     const parsed = new URL(url);
     return parsed.protocol === "https:" || parsed.protocol === "http:";

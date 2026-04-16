@@ -1,13 +1,9 @@
 import { test, expect } from "./fixtures/auth";
+import { navigateToEditorPage } from "./fixtures/editor-helpers";
 
 test.describe("Editor slash commands", () => {
   test.beforeEach(async ({ authenticatedPage: page }) => {
-    // Navigate to a page with the editor
-    const pageButton = page.locator("button").filter({ hasText: /ago/ });
-    if ((await pageButton.count()) > 0) {
-      await pageButton.first().click();
-      await page.waitForURL((url) => url.pathname.split("/").filter(Boolean).length >= 2);
-    }
+    await navigateToEditorPage(page);
   });
 
   test("slash menu appears when typing /", async ({
