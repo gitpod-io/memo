@@ -27,6 +27,7 @@ export function PageSearch() {
   const [open, setOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const [workspaceResolved, setWorkspaceResolved] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -35,9 +36,11 @@ export function PageSearch() {
   useEffect(() => {
     if (!params.workspaceSlug) {
       setWorkspaceId(null);
+      setWorkspaceResolved(true);
       return;
     }
 
+    setWorkspaceResolved(false);
     const supabase = createClient();
     supabase
       .from("workspaces")
@@ -47,9 +50,11 @@ export function PageSearch() {
       .then(({ data, error }) => {
         if (error) {
           captureSupabaseError(error, "page-search:workspace-lookup");
+          setWorkspaceResolved(true);
           return;
         }
         setWorkspaceId(data?.id ?? null);
+        setWorkspaceResolved(true);
       });
   }, [params.workspaceSlug]);
 
@@ -83,7 +88,7 @@ export function PageSearch() {
     [workspaceId]
   );
 
-  // Debounced search (300ms)
+  // Debounced search (300ms) — waits for workspaceId to resolve before firing
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
@@ -92,6 +97,11 @@ export function PageSearch() {
     if (!query.trim()) {
       setResults([]);
       setLoading(false);
+      return;
+    }
+
+    if (!workspaceResolved) {
+      setLoading(true);
       return;
     }
 
@@ -105,7 +115,7 @@ export function PageSearch() {
         clearTimeout(debounceRef.current);
       }
     };
-  }, [query, search]);
+  }, [query, search, workspaceResolved]);
 
   // Close on click outside
   useEffect(() => {
