@@ -220,6 +220,7 @@ src/
 │       ├── table.tsx
 │       └── tooltip.tsx
 ├── lib/
+│   ├── sentry.ts           # captureSupabaseError helper (structured Sentry reporting)
 │   ├── utils.ts            # cn() utility (clsx + tailwind-merge)
 │   ├── types.ts            # Database entity types
 │   ├── workspace.ts        # Workspace utilities: slug generation, validation, limits
@@ -234,7 +235,6 @@ Root config files:
 ├── instrumentation-client.ts  # Sentry client init (replay, route transitions)
 ├── sentry.server.config.ts    # Sentry server SDK config
 ├── sentry.edge.config.ts      # Sentry edge SDK config
-├── sentry.client.config.ts    # Sentry client SDK config
 └── components.json            # shadcn/ui config (base-nova style, Tailwind v4)
 ```
 

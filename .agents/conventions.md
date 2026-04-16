@@ -117,6 +117,71 @@ The `updateSession` function in `src/lib/supabase/proxy.ts` creates a server cli
 that reads cookies from the request and writes refreshed cookies to the response.
 It calls `supabase.auth.getUser()` to trigger the refresh.
 
+## Error Handling
+
+All errors must reach Sentry. `console.error` alone is never sufficient — always
+pair with a Sentry capture call. Bare `catch {}` is banned except for documented
+exceptions (see allowlist below).
+
+### Supabase mutations
+
+Every Supabase mutation must check the error return and call `captureSupabaseError`:
+
+```typescript
+import { captureSupabaseError } from "@/lib/sentry";
+
+const { error } = await supabase.from("pages").update({ title }).eq("id", pageId);
+if (error) {
+  captureSupabaseError(error, "pages.update");
+  // handle the error (toast, return error response, etc.)
+}
+```
+
+The helper accepts `PostgrestError` (from query results) and generic `Error` (from
+catch blocks). It tags the Sentry event with the operation name, error code, and
+message so errors are filterable in the Sentry dashboard.
+
+### API route catch blocks
+
+All catch blocks in API routes must call `Sentry.captureException`:
+
+```typescript
+import * as Sentry from "@sentry/nextjs";
+
+try {
+  // ... route logic
+} catch (error) {
+  Sentry.captureException(error);
+  return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+}
+```
+
+### Client-side mutations
+
+Client-side mutations must show `toast.error()` on failure in addition to Sentry
+capture:
+
+```typescript
+import { captureSupabaseError } from "@/lib/sentry";
+import { toast } from "sonner";
+
+const { error } = await supabase.from("pages").insert({ ... });
+if (error) {
+  captureSupabaseError(error, "pages.insert");
+  toast.error("Failed to create page");
+}
+```
+
+### Bare catch allowlist
+
+These files have intentional bare `catch {}` blocks with documented reasons:
+
+- `src/lib/supabase/server.ts` — cookie `setAll` in Server Components (can't set cookies, safe to ignore)
+- `src/components/editor/editor.tsx` — URL validation (`new URL()` throws on invalid input)
+- `src/app/api/health/route.ts` — intentionally silent, monitored by Performance Monitor
+
+All other catch blocks must capture the error variable and report to Sentry.
+
 ## Environment Variable Guards
 
 Route handlers and server utilities that use Supabase must guard against missing
