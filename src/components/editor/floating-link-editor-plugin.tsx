@@ -133,13 +133,21 @@ export function FloatingLinkEditorPlugin({
 
   const handleSave = useCallback(() => {
     if (editedUrl.trim()) {
-      editor.dispatchCommand(TOGGLE_LINK_COMMAND, editedUrl.trim());
+      // Wrap in editor.update() so the LinkPlugin command listener runs in a
+      // writable context. Without this, if dispatchCommand fires while an
+      // editorState.read() is active (e.g. from the update listener),
+      // $toggleLink's mutations hit Lexical's read-only guard.
+      editor.update(() => {
+        editor.dispatchCommand(TOGGLE_LINK_COMMAND, editedUrl.trim());
+      });
     }
     setIsEditing(false);
   }, [editor, editedUrl]);
 
   const handleRemove = useCallback(() => {
-    editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
+    editor.update(() => {
+      editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
+    });
     setIsVisible(false);
     setIsEditing(false);
   }, [editor]);
