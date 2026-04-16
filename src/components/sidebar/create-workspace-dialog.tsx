@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { generateSlug, WORKSPACE_LIMIT } from "@/lib/workspace";
@@ -14,22 +14,22 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
 interface CreateWorkspaceDialogProps {
-  children: ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   workspaceCount: number;
   userId: string;
 }
 
 export function CreateWorkspaceDialog({
-  children,
+  open,
+  onOpenChange,
   workspaceCount,
   userId,
 }: CreateWorkspaceDialogProps) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -81,7 +81,7 @@ export function CreateWorkspaceDialog({
       return;
     }
 
-    setOpen(false);
+    onOpenChange(false);
     setName("");
     setLoading(false);
     router.push(`/${workspace.slug}`);
@@ -89,8 +89,7 @@ export function CreateWorkspaceDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<>{children}</>} />
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create workspace</DialogTitle>
