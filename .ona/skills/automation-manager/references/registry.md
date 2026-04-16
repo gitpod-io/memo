@@ -10,6 +10,7 @@ Mapping between YAML files in `.ona/automations/` and their registered Ona autom
 | feature-builder.yaml | Feature Builder | 019d8daa-6efc-76bb-9326-d814d0a17bdf |
 | feature-planner.yaml | Feature Planner | 019d8d97-b2fd-7589-b685-e8373538c552 |
 | incident-responder.yaml | Incident Responder | 019d8db6-f940-78ac-86ce-788536c849ec |
+| needs-human-requeue.yaml | Needs-Human Requeue | 019d964b-d418-7269-a813-a5dbc10cfd8c |
 | performance-monitor.yaml | Performance Monitor | 019d8db6-fb68-7228-9e1f-9bb6719331fc |
 | post-merge-verifier.yaml | Post-Merge Verifier | 019d8db6-fd99-7744-8e92-af4ab899ac57 |
 | pr-reviewer.yaml | PR Reviewer | 019d8dbc-3121-7934-9594-2eddfc588e3f |

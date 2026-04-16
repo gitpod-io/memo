@@ -195,8 +195,21 @@ action:
                 If any check fails:
                 1. Create a GitHub Issue:
                    - Title: `bug: UI regression after PR #<number> — <first failure>`
-                   - Body: list all failures, include the PR number and title for context
                    - Labels: `bug`, `priority:1`, `status:backlog`
+                   - Body must include ALL of these sections:
+
+                     ## Description
+                     <what broke, which routes/checks failed, include PR number and title for context>
+
+                     ## Acceptance Criteria
+                     - [ ] All previously passing smoke test checks pass again
+                     - [ ] <specific criterion for each failure>
+                     - [ ] `pnpm lint && pnpm typecheck && pnpm test` pass
+
+                     ## Technical Notes
+                     - List all failures with details
+                     - PR that introduced the regression: #<number>
+                     - Affected routes/components
                 2. Comment on the merged PR:
                    > ❌ Post-merge verification failed. See #<new-issue-number>.
 

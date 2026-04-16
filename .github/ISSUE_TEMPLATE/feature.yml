@@ -1,0 +1,36 @@
+name: Feature Request
+description: Suggest a new feature or enhancement
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The Feature Planner will triage this issue and add appropriate labels.
+        If more detail is needed, it will add `needs-human` and ask questions.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What should this feature do and why does it matter?
+      placeholder: Describe the feature and the problem it solves.
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this?
+      options:
+        - "1 — Foundation (nothing else works without this)"
+        - "2 — Core feature (product value)"
+        - "3 — Polish (nice to have)"
+    validations:
+      required: true
+  - type: textarea
+    id: area
+    attributes:
+      label: Affected area
+      description: Which components, pages, or systems does this affect?
+      placeholder: e.g., editor, sidebar, auth, API routes
+    validations:
+      required: false

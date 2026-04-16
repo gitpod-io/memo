@@ -177,8 +177,13 @@ action:
                   gh pr merge <number> --squash --delete-branch
                 Stop.
 
+                **User-prompted PRs** (has the `ona-user` label — created via interactive
+                Ona session, does not require a linked issue):
+                  gh pr merge <number> --squash --delete-branch
+                Stop.
+
                 **Feature/fix PRs** (title starts with `feat:` or `fix:` without an
-                infrastructure scope):
+                infrastructure scope, and no `ona-user` label):
 
                 1. Check the PR body for `Closes #N` or `Fixes #N`.
                    - If missing or the referenced issue doesn't exist, leave a comment:

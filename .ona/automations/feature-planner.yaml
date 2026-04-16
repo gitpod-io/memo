@@ -1,5 +1,5 @@
 name: Feature Planner
-description: Decomposes the product vision into a prioritized backlog of GitHub Issues.
+description: Triages unlabeled issues, decomposes product-spec into backlog items, and ensures issue quality.
 triggers:
     - context:
         projects:
@@ -9,20 +9,22 @@ triggers:
 action:
     limits:
         maxParallel: 1
-        maxTotal: 5
+        maxTotal: 10
     steps:
         - agent:
             prompt: |
-                You are the Feature Planner. Decompose the product vision into a prioritized backlog
-                of GitHub Issues.
+                You are the Feature Planner. You have two jobs:
+                1. Triage unlabeled GitHub Issues (user-created feature requests and bug reports)
+                2. Decompose the product spec into new backlog items when needed
 
                 ## Step 1 — Read Context
 
-                1. Read AGENTS.md for tech stack and conventions.
-                2. Read docs/product-spec.md for the product vision, scope boundaries, and feature priority.
+                1. Read AGENTS.md for tech stack, conventions, and label rules.
+                2. Read docs/product-spec.md for the product vision and scope.
                 3. Read .agents/architecture.md for the data model and system design.
-                4. List existing GitHub Issues: gh issue list --state all --json number,title,state,labels
-                5. Identify what's already planned, in progress, or done.
+                4. Read .agents/conventions.md for coding patterns.
+                5. List all GitHub Issues:
+                   gh issue list --state all --json number,title,state,labels,body --limit 100
 
                 ## Step 2 — Ensure Labels Exist
 
@@ -40,10 +42,45 @@ action:
                 gh label create "chore" --color FEF2C0 --force
                 gh label create "bug" --color D73A4A --force
                 gh label create "performance" --color F9D0C4 --force
+                gh label create "needs-human" --color D93F0B --force
+                gh label create "ona-user" --color 7057FF --force
 
-                ## Step 3 — Decompose into Issues
+                ## Step 3 — Triage Unlabeled Issues
 
-                For each feature, create a GitHub Issue. Each issue must be:
+                Find open issues that have NO status label (`status:backlog`, `status:in-progress`,
+                `status:in-review`, `status:done`) and NO `needs-human` label. These are
+                user-created issues that haven't entered the automation workflow yet.
+
+                For each unlabeled issue, assess whether it has sufficient detail to act on.
+                An issue is sufficient if it has:
+                - A clear description of what and why
+                - Enough context to identify affected files/components
+                - A testable definition of "done"
+
+                **If sufficient:**
+                - Enrich the issue body if needed (add Acceptance Criteria, Technical Notes
+                  sections if missing, referencing .agents/conventions.md and .agents/architecture.md)
+                - Add exactly 3 labels: `status:backlog` + appropriate `priority:*` + type label
+                - The issue is now in the automation queue
+
+                **If insufficient:**
+                - Add the `needs-human` label
+                - Post a comment asking specific questions:
+
+                  > Thanks for the issue! To move this forward, we need a bit more detail:
+                  >
+                  > - [ ] **What:** <specific question about what should change>
+                  > - [ ] **Why:** <question about the use case or problem being solved>
+                  > - [ ] **Context:** <question about technical constraints, affected areas>
+                  >
+                  > Once you've added this information, the automation will pick it back up.
+
+                ## Step 4 — Decompose Product Spec (if needed)
+
+                Check if there are unimplemented features in docs/product-spec.md that don't
+                have corresponding GitHub Issues. If so, create issues for them.
+
+                For each new feature, create a GitHub Issue. Each issue must be:
                 - Single-concern: one independently implementable feature, resulting in one PR
                 - Ordered by dependency: foundational features first
                 - Sized for one session: an agent should be able to implement it in a single run
@@ -60,6 +97,7 @@ action:
                   - [ ] Criterion 1 (user-visible behavior)
                   - [ ] Criterion 2
                   - [ ] Criterion 3
+                  - [ ] `pnpm lint && pnpm typecheck && pnpm test` pass
 
                   ## Dependencies
                   Depends on #N, #M (or "None")
@@ -79,20 +117,23 @@ action:
                 - priority:2 = core features — the product's value (editor, search, realtime)
                 - priority:3 = polish and stretch goals (dark mode, responsive, import/export)
 
-                ## Step 4 — Finalize
+                ## Step 5 — Finalize
 
-                After creating all issues, log a summary (do NOT wait for user input — this runs as an unattended automation):
+                Log a summary (do NOT wait for user input — this runs unattended):
 
-                Total issues created: N
-                By priority: P1: X, P2: Y, P3: Z
+                ## Triage Results
+                - Issues triaged: N
+                - Labeled for backlog: X
+                - Marked needs-human: Y
+
+                ## New Issues Created
+                - Total: N
+                - By priority: P1: X, P2: Y, P3: Z
 
                 Suggested implementation order:
                 1. #N — Title (P1, no deps)
                 2. #M — Title (P1, depends on #N)
                 ...
-
-                If there are ambiguities or scope questions, create a GitHub Issue labeled
-                "needs-human" with the questions so a human can address them asynchronously.
 
                 ## Do NOT
                 - Create issues that bundle multiple unrelated changes.
@@ -100,3 +141,5 @@ action:
                 - Create overly granular issues (each should be a meaningful feature).
                 - Create issues without acceptance criteria.
                 - Assign priority:1 to non-foundational features.
+                - Triage issues that already have a status label — those are already in the workflow.
+                - Remove `needs-human` from issues — that's the re-queue automation's job.

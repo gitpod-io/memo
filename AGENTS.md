@@ -36,6 +36,7 @@ metrics/           → Daily/weekly metrics snapshots
 - Conventional commits: `feat|fix|chore|docs|test|refactor(scope): description`
 - PRs with type `feat` or `fix` must reference an issue: `Closes #N`. Chore PRs (metrics, docs, deps) do not require an issue.
 - **Issue-first workflow:** Before creating a `feat` or `fix` PR, create a GitHub issue first (or find an existing one). Label it `status:in-progress` immediately. Add `Closes #N` to the PR description. This prevents the PR Reviewer from blocking the merge.
+- **Exception — `ona-user` PRs:** PRs created via interactive Ona sessions (user prompts) may use the `ona-user` label instead of linking an issue. The PR Reviewer will merge these without requiring `Closes #N`.
 - Database changes require a migration: `npx supabase migration new <name>`
 - Environment variables: `NEXT_PUBLIC_` prefix only for browser-safe values.
 
@@ -78,7 +79,8 @@ Issues use labels for status, priority, and flags:
 - Status: `status:backlog`, `status:in-progress`, `status:in-review`, `status:done`
 - Priority: `priority:1` (foundation), `priority:2` (features), `priority:3` (polish)
 - Type: `bug`, `feature`, `enhancement`, `chore`, `performance`
-- Flag: `needs-human` — permanently excludes the issue from all automation queues
+- Flag: `needs-human` — excludes the issue from automation queues until a human responds. The Needs-Human Requeue automation removes this label when new comments are detected, and the Feature Planner re-triages on its next run.
+- Flag: `ona-user` — applied to PRs created via interactive Ona sessions. The PR Reviewer merges these without requiring a linked issue.
 - Query: `gh issue list --label "status:backlog" --label "priority:1" --state open`
 
 Label lifecycle: `status:backlog` → `status:in-progress` → `status:in-review` → `status:done`
@@ -88,6 +90,31 @@ Label lifecycle: `status:backlog` → `status:in-progress` → `status:in-review
 - `status:backlog` — **only** for issues you want automations (Feature Builder, Bug Fixer) to pick up. These automations poll for `status:backlog` issues on a cron schedule.
 - `status:in-progress` — use when creating an issue for work you are already doing. This prevents automations from picking it up.
 - Never create an issue with `status:backlog` if you intend to work on it yourself — use `status:in-progress` instead.
+
+### How to request a feature or improvement
+
+1. Create a GitHub Issue using the feature or bug template.
+2. The Feature Planner triages unlabeled issues on its next manual run.
+3. If detail is sufficient, labels are added and the issue enters the automation queue.
+4. If detail is insufficient, `needs-human` is added with specific questions — respond to them and the automation will re-queue the issue.
+
+### Automation development loop
+
+These automations work together to implement features and fix bugs autonomously:
+
+| Automation | Trigger | Role |
+|---|---|---|
+| Feature Planner | Manual | Triages unlabeled issues, decomposes specs into issues |
+| Feature Builder | Cron (30 min) | Implements features/enhancements from backlog |
+| Bug Fixer | Cron (30 min) | Implements bug fixes from backlog |
+| PR Reviewer | Cron (15 min) | Reviews and merges PRs |
+| Incident Responder | Cron (15 min) | Triages Sentry errors into bug issues |
+| Post-Merge Verifier | On PR merge | Smoke-tests production after merge |
+| UI Verifier | On PR merge | Checks design spec compliance |
+| Performance Monitor | Weekly | Checks latency, errors, build size |
+| Needs-Human Requeue | Cron (30 min) | Re-queues issues after user responds |
+
+For full details on the development workflow, see `.ona/skills/development-workflow/SKILL.md`.
 
 ## Where to Find Details
 

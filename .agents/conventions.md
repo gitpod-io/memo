@@ -395,6 +395,35 @@ gh issue create --title "Short description" \
 - Use `status:backlog` only for issues intended for automation pickup (Feature Builder, Bug Fixer).
 - Never label an issue `status:backlog` if you plan to work on it yourself — the Feature Builder or Bug Fixer may claim it first.
 - Chore PRs (metrics, docs, deps) do not require an issue.
+- Use `ona-user` label on PRs created via interactive Ona sessions — these skip the issue-reference requirement.
+
+## Development Loop
+
+### How to queue work for automations
+
+Create a GitHub Issue with sufficient detail for the Feature Builder or Bug Fixer
+to act on. Every issue entering the backlog must have:
+
+- **Description:** what and why
+- **Acceptance Criteria:** testable checkboxes
+- **Dependencies:** explicit issue refs or "None"
+- **Technical Notes:** relevant files, patterns, edge cases
+- **3 labels:** status + priority + type
+
+### When to create an issue vs work directly
+
+- **Create an issue with `status:backlog`** when you want an automation to do the work.
+- **Create an issue with `status:in-progress`** when you're doing the work yourself.
+- **Use `ona-user` on the PR** when working via an interactive Ona session with no issue.
+
+### The `needs-human` feedback loop
+
+1. Feature Planner adds `needs-human` + questions to an insufficient issue.
+2. User responds with the requested information.
+3. Needs-Human Requeue automation (every 30 min) detects the response and removes `needs-human`.
+4. Feature Planner re-triages on its next manual run.
+
+For the full automation roster and workflow details, see `.ona/skills/development-workflow/SKILL.md`.
 
 ## Imports
 

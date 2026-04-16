@@ -1,0 +1,73 @@
+name: Needs-Human Requeue
+description: Detects new comments on needs-human issues and removes the label so the Feature Planner re-triages.
+triggers:
+    - context:
+        projects:
+            projectIds:
+                - 019d8bf4-1ded-7317-be2f-555e8fb55ff9
+      time:
+        cronExpression: "*/30 * * * *"
+    - context:
+        projects:
+            projectIds:
+                - 019d8bf4-1ded-7317-be2f-555e8fb55ff9
+      manual: {}
+action:
+    limits:
+        maxParallel: 1
+        maxTotal: 50
+    steps:
+        - agent:
+            prompt: |
+                You are the Needs-Human Requeue automation. Your job is to detect when a
+                human has responded to a `needs-human` issue and re-queue it for triage.
+
+                ## Step 1 — Find needs-human issues
+
+                List all open issues with the `needs-human` label:
+
+                gh issue list --state open --label "needs-human" --json number,title,comments,updatedAt --limit 50
+
+                If there are no results, log "No needs-human issues found." and stop.
+
+                ## Step 2 — Check for new human comments
+
+                For each issue, get the comments:
+
+                gh issue view <number> --json comments --jq '.comments'
+
+                Check if there are comments from a human user (not a bot or automation).
+                Look for comments that were posted AFTER the `needs-human` label was added.
+
+                To find when the label was added, check the issue timeline:
+
+                gh api repos/{owner}/{repo}/issues/<number>/timeline --jq '[.[] | select(.event == "labeled" and .label.name == "needs-human")] | last | .created_at'
+
+                A comment is a human response if:
+                - It was posted after the `needs-human` label was added
+                - It is NOT from a bot (check the author login — bot accounts typically
+                  end in `[bot]` or are the automation's own comments starting with ">")
+
+                ## Step 3 — Re-queue
+
+                For each issue with new human comments:
+
+                1. Remove the `needs-human` label:
+                   gh issue edit <number> --remove-label "needs-human"
+
+                2. Post a comment:
+                   gh issue comment <number> --body "> New input detected. This issue will be triaged on the next Feature Planner run."
+
+                ## Step 4 — Log summary
+
+                Log results (do NOT wait for user input — this runs unattended):
+
+                Needs-human issues checked: N
+                Re-queued: X
+                Still waiting: Y
+
+                ## Do NOT
+                - Add any labels — only remove `needs-human`. The Feature Planner handles labeling.
+                - Assess issue quality — that's the Feature Planner's job.
+                - Modify issue bodies or titles.
+                - Re-queue issues where the only new comments are from bots/automations.

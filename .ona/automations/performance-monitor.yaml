@@ -61,8 +61,20 @@ action:
                 - [list any issues that need fixing, or "No action needed"]
 
                 If any metric is in a critical state, create a GitHub Issue:
-                - Labels: performance, priority:1
-                - Include the specific metric and suggested investigation steps.
+                - Labels: performance, priority:1, status:backlog
+                - Body must include ALL of these sections:
+
+                  ## Description
+                  <which metric is critical, current value vs threshold, when it started>
+
+                  ## Acceptance Criteria
+                  - [ ] <metric name> returns to acceptable range (<threshold>)
+                  - [ ] `pnpm lint && pnpm typecheck && pnpm test` pass
+
+                  ## Technical Notes
+                  - Specific metric and current value
+                  - Suggested investigation steps
+                  - Relevant endpoints or components
 
                 Commit: `chore: performance report YYYY-WNN`
                 Push and open a PR.
