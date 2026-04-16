@@ -145,3 +145,62 @@
     @apply font-sans;
   }
 }
+
+/*
+ * Lexical checklist checkbox rendering.
+ * Lexical's CheckListPlugin expects ::before pseudo-elements to render checkboxes.
+ * Tailwind cannot generate these, so raw CSS is required here.
+ */
+.editor-checklist-checked,
+.editor-checklist-unchecked {
+  outline: none;
+  display: block;
+  min-height: 1.5em;
+}
+
+.editor-checklist-unchecked::before,
+.editor-checklist-checked::before {
+  content: "\200B";
+  width: 0.9em;
+  height: 0.9em;
+  top: 50%;
+  left: 0;
+  cursor: pointer;
+  display: block;
+  background-size: cover;
+  position: absolute;
+  transform: translateY(-50%);
+  border-radius: 2px;
+}
+
+.editor-checklist-unchecked::before {
+  border: 1px solid var(--muted-foreground);
+}
+
+.editor-checklist-checked::before {
+  border: 1px solid var(--accent);
+  background-color: var(--accent);
+  background-repeat: no-repeat;
+}
+
+/* Checkmark on checked items */
+.editor-checklist-checked::after {
+  content: "";
+  cursor: pointer;
+  border-color: var(--primary-foreground);
+  border-style: solid;
+  position: absolute;
+  display: block;
+  top: 45%;
+  width: 0.2em;
+  left: 0.35em;
+  height: 0.4em;
+  transform: translateY(-50%) rotate(45deg);
+  border-width: 0 0.1em 0.1em 0;
+}
+
+/* Focus ring on checkbox */
+.editor-checklist-unchecked:focus::before,
+.editor-checklist-checked:focus::before {
+  box-shadow: 0 0 0 2px var(--ring);
+}

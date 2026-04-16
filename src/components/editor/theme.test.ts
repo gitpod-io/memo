@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 import { editorTheme } from "./theme";
 
 /**
@@ -59,5 +61,45 @@ describe("editorTheme", () => {
     const quote = editorTheme.quote as string;
     expect(quote).toContain("border-white/[0.06]");
     expect(quote).not.toContain("border-white/[0.12]");
+  });
+});
+
+/**
+ * Regression test for issue #95: checklist checkboxes not visible.
+ * Lexical's CheckListPlugin renders checkboxes via CSS ::before pseudo-elements
+ * on the theme class names. The theme must include marker classes that the
+ * globals.css rules can target.
+ */
+describe("editorTheme checklist checkbox rendering", () => {
+  const listTheme = editorTheme.list as Record<string, string>;
+
+  it("listitemChecked includes the CSS marker class", () => {
+    expect(listTheme.listitemChecked).toContain("editor-checklist-checked");
+  });
+
+  it("listitemUnchecked includes the CSS marker class", () => {
+    expect(listTheme.listitemUnchecked).toContain("editor-checklist-unchecked");
+  });
+
+  it("listitemChecked has relative positioning for pseudo-element placement", () => {
+    expect(listTheme.listitemChecked).toContain("relative");
+  });
+
+  it("listitemUnchecked has relative positioning for pseudo-element placement", () => {
+    expect(listTheme.listitemUnchecked).toContain("relative");
+  });
+
+  it("listitemChecked applies strikethrough styling", () => {
+    expect(listTheme.listitemChecked).toContain("line-through");
+  });
+
+  it("globals.css defines ::before rules for checklist marker classes", () => {
+    const css = readFileSync(
+      resolve(__dirname, "../../app/globals.css"),
+      "utf-8"
+    );
+    expect(css).toContain(".editor-checklist-unchecked::before");
+    expect(css).toContain(".editor-checklist-checked::before");
+    expect(css).toContain(".editor-checklist-checked::after");
   });
 });

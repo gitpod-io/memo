@@ -17,8 +17,9 @@ export const editorTheme: EditorThemeClasses = {
       listitem: "list-none",
     },
     listitemChecked:
-      "relative mt-0.5 list-none pl-6 line-through text-muted-foreground",
-    listitemUnchecked: "relative mt-0.5 list-none pl-6",
+      "editor-checklist-checked relative mt-0.5 list-none pl-6 line-through text-muted-foreground",
+    listitemUnchecked:
+      "editor-checklist-unchecked relative mt-0.5 list-none pl-6",
     olDepth: ["list-decimal", "list-[lower-alpha]", "list-[lower-roman]"],
   },
   code: "mt-3 block bg-muted rounded-sm p-4 font-mono text-sm overflow-x-auto",
