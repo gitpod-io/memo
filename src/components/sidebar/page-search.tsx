@@ -28,6 +28,7 @@ export function PageSearch() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [workspaceResolved, setWorkspaceResolved] = useState(false);
+  const [searched, setSearched] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -88,6 +89,7 @@ export function PageSearch() {
         setResults([]);
       } finally {
         setLoading(false);
+        setSearched(true);
       }
     },
     [workspaceId]
@@ -106,6 +108,7 @@ export function PageSearch() {
     if (!query.trim()) {
       setResults([]);
       setLoading(false);
+      setSearched(false);
       return;
     }
 
@@ -147,6 +150,7 @@ export function PageSearch() {
     setOpen(false);
     setQuery("");
     setResults([]);
+    setSearched(false);
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -182,6 +186,7 @@ export function PageSearch() {
   function handleClear() {
     setQuery("");
     setResults([]);
+    setSearched(false);
     setOpen(false);
     inputRef.current?.focus();
   }
@@ -282,7 +287,7 @@ export function PageSearch() {
             </div>
           )}
 
-          {!loading && workspaceResolved && results.length === 0 && query.trim().length > 0 && (
+          {!loading && searched && results.length === 0 && query.trim().length > 0 && (
             <div className="px-3 py-4 text-center text-xs text-muted-foreground">
               No pages match your search
             </div>
