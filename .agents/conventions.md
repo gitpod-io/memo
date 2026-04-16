@@ -504,6 +504,29 @@ For the full automation roster and workflow details, see `.ona/skills/developmen
 - No `as` casts unless unavoidable (add a comment explaining why)
 - Prefer interfaces for object shapes, types for unions/intersections
 
+### DOM event target safety
+
+`MouseEvent.target`, `MouseEvent.relatedTarget`, and `FocusEvent.relatedTarget` are
+typed as `EventTarget | null`. They can be non-Node objects (e.g. when the mouse
+leaves to a cross-origin iframe or the browser window). Never cast them with
+`as Node` or `as HTMLElement` — use `instanceof` guards instead.
+
+```typescript
+// ✅ Correct — instanceof guard before DOM API call
+const target = event.relatedTarget;
+if (target instanceof Node && container.contains(target)) { ... }
+
+// ✅ Correct — instanceof guard before property access
+const target = event.target;
+if (!(target instanceof HTMLElement)) return;
+target.closest(".menu");
+
+// ❌ Wrong — unsafe cast, throws TypeError if target is not a Node
+container.contains(event.target as Node)
+```
+
+A static analysis test (`node-contains-safety.test.ts`) enforces this convention.
+
 ## shadcn/ui (base-nova style)
 
 This project uses shadcn/ui v4 with the `base-nova` style, which uses `@base-ui/react`

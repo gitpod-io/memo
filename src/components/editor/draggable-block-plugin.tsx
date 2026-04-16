@@ -164,7 +164,8 @@ export function DraggableBlockPlugin({
   // Track the hovered block element for showing the drag handle
   const handleMouseMove = useCallback(
     (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
       if (isOnMenu(target) || isDraggingRef.current) return;
 
       const blockElem = getBlockElement(anchorElem, editor, event);
@@ -182,8 +183,9 @@ export function DraggableBlockPlugin({
   const handleMouseLeave = useCallback((event: MouseEvent) => {
     if (menuRef.current && !isDraggingRef.current) {
       // Don't hide if the mouse moved to the drag handle itself
-      const relatedTarget = event.relatedTarget as HTMLElement | null;
-      if (relatedTarget && isOnMenu(relatedTarget)) return;
+      const relatedTarget = event.relatedTarget;
+      if (relatedTarget instanceof HTMLElement && isOnMenu(relatedTarget))
+        return;
 
       menuRef.current.style.opacity = "0";
       targetBlockElemRef.current = null;
@@ -203,8 +205,10 @@ export function DraggableBlockPlugin({
     (event: React.MouseEvent) => {
       if (isDraggingRef.current) return;
       // Don't hide if the mouse moved back into the anchor element
-      const relatedTarget = event.relatedTarget as HTMLElement | null;
-      if (relatedTarget && anchorElem.contains(relatedTarget)) return;
+      // relatedTarget can be a non-Node EventTarget (e.g. cross-origin iframe)
+      const relatedTarget = event.relatedTarget;
+      if (relatedTarget instanceof Node && anchorElem.contains(relatedTarget))
+        return;
 
       if (menuRef.current) {
         menuRef.current.style.opacity = "0";

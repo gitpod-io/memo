@@ -110,9 +110,12 @@ export function PageSearch() {
   // Close on click outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
+      // e.target can be a non-Node EventTarget (e.g. cross-origin iframe)
+      const target = e.target;
       if (
         containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
+        (!(target instanceof Node) ||
+          !containerRef.current.contains(target))
       ) {
         setOpen(false);
       }
