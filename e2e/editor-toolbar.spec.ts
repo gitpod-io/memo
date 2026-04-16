@@ -37,13 +37,16 @@ test.describe("Editor floating toolbar", () => {
     const editor = page.locator('[contenteditable="true"]');
     await expect(editor).toBeVisible({ timeout: 10_000 });
 
+    // Use unique text to avoid matching leftover bold content from previous runs
+    const uid = Date.now().toString();
+    const marker = `boldme ${uid}`;
     await editor.click();
     await page.keyboard.press("End");
     await page.keyboard.press("Enter");
-    await editor.pressSequentially("bold me");
+    await page.keyboard.type(marker);
     await page.waitForTimeout(200);
 
-    // Select "bold me"
+    // Select the text we just typed
     await page.keyboard.down("Shift");
     await page.keyboard.press("Home");
     await page.keyboard.up("Shift");
@@ -58,9 +61,9 @@ test.describe("Editor floating toolbar", () => {
     // The bold button should now be active (pressed)
     await expect(boldBtn).toHaveAttribute("aria-pressed", "true");
 
-    // The text should be wrapped in a bold element
-    const boldText = editor.locator("strong");
-    await expect(boldText).toContainText("bold me");
+    // The text should be wrapped in a bold element — filter by our unique text
+    const boldText = editor.locator("strong").filter({ hasText: marker });
+    await expect(boldText).toBeVisible({ timeout: 2_000 });
   });
 
   test("toolbar disappears when selection is collapsed", async ({
@@ -97,10 +100,13 @@ test.describe("Editor floating toolbar", () => {
     const editor = page.locator('[contenteditable="true"]');
     await expect(editor).toBeVisible({ timeout: 10_000 });
 
+    // Use unique text to avoid matching leftover bold content from previous runs
+    const uid = Date.now().toString();
+    const marker = `kbdbold ${uid}`;
     await editor.click();
     await page.keyboard.press("End");
     await page.keyboard.press("Enter");
-    await editor.pressSequentially("shortcut bold");
+    await page.keyboard.type(marker);
     await page.waitForTimeout(200);
 
     // Select text
@@ -112,7 +118,8 @@ test.describe("Editor floating toolbar", () => {
     await page.keyboard.press(`${mod}+b`);
     await page.waitForTimeout(200);
 
-    const boldText = editor.locator("strong");
-    await expect(boldText).toContainText("shortcut bold");
+    // Filter by our unique text to avoid matching pre-existing bold elements
+    const boldText = editor.locator("strong").filter({ hasText: marker });
+    await expect(boldText).toBeVisible({ timeout: 2_000 });
   });
 });
