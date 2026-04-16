@@ -742,6 +742,30 @@ Each custom block type has a paired plugin file that:
 
 The slash command menu imports the command and dispatches it on selection.
 
+### Dispatching mutating commands
+
+Always wrap `editor.dispatchCommand()` in `editor.update()` when the command's
+listener mutates state (e.g. `TOGGLE_LINK_COMMAND`, `FORMAT_TEXT_COMMAND`).
+Calling `dispatchCommand` from a React event handler without `editor.update()`
+can execute mutations in a read-only context if an `editorState.read()` is active
+on the call stack. See Sentry MEMO-5.
+
+```typescript
+// ✅ Correct — writable context guaranteed
+const handleSave = () => {
+  editor.update(() => {
+    editor.dispatchCommand(TOGGLE_LINK_COMMAND, url);
+  });
+};
+
+// ❌ Wrong — may run in read-only context
+const handleSave = () => {
+  editor.dispatchCommand(TOGGLE_LINK_COMMAND, url);
+};
+```
+
+A static analysis test (`lexical-dispatch-safety.test.ts`) enforces this pattern.
+
 ### Lexical package versions
 
 All `@lexical/*` packages are pinned to the same version (currently 0.31.0).

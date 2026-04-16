@@ -138,20 +138,30 @@ export function FloatingToolbarPlugin({
     };
   }, [isVisible, updatePosition]);
 
-  const formatBold = () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold");
+  // All dispatchCommand calls are wrapped in editor.update() so command
+  // listeners that mutate state run in a writable context. See MEMO-5.
+  const formatBold = () =>
+    editor.update(() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold"));
   const formatItalic = () =>
-    editor.dispatchCommand(FORMAT_TEXT_COMMAND, "italic");
+    editor.update(() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "italic"));
   const formatUnderline = () =>
-    editor.dispatchCommand(FORMAT_TEXT_COMMAND, "underline");
+    editor.update(() =>
+      editor.dispatchCommand(FORMAT_TEXT_COMMAND, "underline")
+    );
   const formatStrikethrough = () =>
-    editor.dispatchCommand(FORMAT_TEXT_COMMAND, "strikethrough");
-  const formatCode = () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code");
+    editor.update(() =>
+      editor.dispatchCommand(FORMAT_TEXT_COMMAND, "strikethrough")
+    );
+  const formatCode = () =>
+    editor.update(() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code"));
   const toggleLink = () => {
-    if (isLink) {
-      editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
-    } else {
-      editor.dispatchCommand(TOGGLE_LINK_COMMAND, "https://");
-    }
+    editor.update(() => {
+      if (isLink) {
+        editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
+      } else {
+        editor.dispatchCommand(TOGGLE_LINK_COMMAND, "https://");
+      }
+    });
   };
 
   if (!isVisible) return null;
