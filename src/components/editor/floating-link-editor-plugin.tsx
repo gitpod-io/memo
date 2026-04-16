@@ -14,6 +14,7 @@ import {
 } from "lexical";
 import {
   $isLinkNode,
+  $toggleLink,
   LinkNode,
   TOGGLE_LINK_COMMAND,
 } from "@lexical/link";
@@ -162,16 +163,19 @@ export function FloatingLinkEditorPlugin({
     const handleKeyboard = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        editor.read(() => {
+        editor.update(() => {
           const linkNode = getSelectedLinkNode();
           if (linkNode) {
             setIsEditing(true);
           } else {
             const selection = $getSelection();
             if ($isRangeSelection(selection) && !selection.isCollapsed()) {
-              editor.dispatchCommand(TOGGLE_LINK_COMMAND, "https://");
-              // The link editor will appear via the update listener
-              setTimeout(() => setIsEditing(true), 50);
+              $toggleLink("https://");
+              // After the link is created in this update, the update listener
+              // will set isVisible. Use rAF to set editing after React renders.
+              requestAnimationFrame(() => {
+                setIsEditing(true);
+              });
             }
           }
         });
