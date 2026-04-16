@@ -2,7 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { FileText, Plus } from "lucide-react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { captureSupabaseError } from "@/lib/sentry";
 import { Button } from "@/components/ui/button";
 
 interface WorkspaceHomeProps {
@@ -37,7 +39,12 @@ export function WorkspaceHome({
       .select()
       .single();
 
-    if (error || !newPage) return;
+    if (error) {
+      captureSupabaseError(error, "workspace-home:create-page");
+      toast.error("Failed to create page");
+      return;
+    }
+    if (!newPage) return;
 
     router.push(`/${workspace.slug}/${newPage.id}`);
     router.refresh();

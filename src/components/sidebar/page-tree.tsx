@@ -10,7 +10,9 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { captureSupabaseError } from "@/lib/sentry";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -113,7 +115,11 @@ export function PageTree({ userId }: PageTreeProps) {
       .select("id")
       .eq("slug", workspaceSlug)
       .maybeSingle()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          captureSupabaseError(error, "page-tree:workspace-lookup");
+          return;
+        }
         if (data) setWorkspaceId(data.id);
       });
   }, [workspaceSlug]);
@@ -122,11 +128,16 @@ export function PageTree({ userId }: PageTreeProps) {
     if (!workspaceId) return;
 
     const supabase = createClient();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("pages")
       .select("*")
       .eq("workspace_id", workspaceId)
       .order("position", { ascending: true });
+
+    if (error) {
+      captureSupabaseError(error, "page-tree:fetch-pages");
+      toast.error("Failed to load pages");
+    }
 
     if (data) {
       setPages(data);
@@ -176,7 +187,12 @@ export function PageTree({ userId }: PageTreeProps) {
       .select()
       .single();
 
-    if (error || !newPage) return;
+    if (error) {
+      captureSupabaseError(error, "page-tree:create-page");
+      toast.error("Failed to create page");
+      return;
+    }
+    if (!newPage) return;
 
     setPages((prev) => [...prev, newPage]);
 
@@ -197,7 +213,10 @@ export function PageTree({ userId }: PageTreeProps) {
       .delete()
       .eq("id", deleteTarget.page.id);
 
-    if (!error) {
+    if (error) {
+      captureSupabaseError(error, "page-tree:delete-page");
+      toast.error("Failed to delete page");
+    } else {
       const removedIds = new Set([
         deleteTarget.page.id,
         ...getDescendantIds(deleteTarget),
@@ -248,10 +267,18 @@ export function PageTree({ userId }: PageTreeProps) {
       })
     );
 
-    await Promise.all([
+    const results = await Promise.all([
       supabase.from("pages").update({ position: b.position }).eq("id", a.id),
       supabase.from("pages").update({ position: a.position }).eq("id", b.id),
     ]);
+
+    for (const result of results) {
+      if (result.error) {
+        captureSupabaseError(result.error, "page-tree:swap-positions");
+        toast.error("Failed to reorder page");
+        break;
+      }
+    }
   }
 
   async function handleNest(page: Page) {
@@ -281,10 +308,15 @@ export function PageTree({ userId }: PageTreeProps) {
 
     setExpanded((prev) => new Set(prev).add(newParent.id));
 
-    await supabase
+    const { error } = await supabase
       .from("pages")
       .update({ parent_id: newParent.id, position: nextPosition })
       .eq("id", page.id);
+
+    if (error) {
+      captureSupabaseError(error, "page-tree:nest-page");
+      toast.error("Failed to nest page");
+    }
   }
 
   async function handleUnnest(page: Page) {
@@ -330,7 +362,15 @@ export function PageTree({ userId }: PageTreeProps) {
       ),
     ];
 
-    await Promise.all(updates);
+    const results = await Promise.all(updates);
+
+    for (const result of results) {
+      if (result.error) {
+        captureSupabaseError(result.error, "page-tree:unnest-page");
+        toast.error("Failed to unnest page");
+        break;
+      }
+    }
   }
 
   function handleDragStart(e: React.DragEvent, pageId: string) {
@@ -408,10 +448,15 @@ export function PageTree({ userId }: PageTreeProps) {
       );
       setExpanded((prev) => new Set(prev).add(targetPage.id));
 
-      await supabase
+      const { error } = await supabase
         .from("pages")
         .update({ parent_id: targetPage.id, position: nextPos })
         .eq("id", draggedId);
+
+      if (error) {
+        captureSupabaseError(error, "page-tree:drop-inside");
+        toast.error("Failed to move page");
+      }
     } else {
       const newParentId = targetPage.parent_id;
       const siblings = pages
@@ -441,10 +486,16 @@ export function PageTree({ userId }: PageTreeProps) {
       });
 
       for (let i = 0; i < reordered.length; i++) {
-        await supabase
+        const { error } = await supabase
           .from("pages")
           .update({ parent_id: newParentId, position: i })
           .eq("id", reordered[i].id);
+
+        if (error) {
+          captureSupabaseError(error, "page-tree:drop-reorder");
+          toast.error("Failed to move page");
+          break;
+        }
       }
     }
 

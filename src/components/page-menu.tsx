@@ -18,7 +18,9 @@ import {
   readFileAsText,
   parseMarkdownToEditorState,
 } from "@/components/editor/markdown-utils";
+import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/lib/supabase/client";
+import { captureSupabaseError } from "@/lib/sentry";
 
 interface PageMenuProps {
   pageId: string;
@@ -51,10 +53,10 @@ export function PageMenu({
       const filename = (pageTitle.trim() || "Untitled") + ".md";
       downloadMarkdown(markdown, filename);
     } catch (error) {
+      Sentry.captureException(error);
       toast.error("Export failed", {
         duration: 8000,
       });
-      console.error("Markdown export error:", error);
     }
   }, [editorRef, pageTitle]);
 
@@ -107,21 +109,27 @@ export function PageMenu({
           .select("id")
           .single();
 
-        if (error || !newPage) {
+        if (error) {
+          captureSupabaseError(error, "page-menu:import-create-page");
           toast.error("Failed to create page from import", {
             duration: 8000,
           });
-          console.error("Import error:", error);
+          return;
+        }
+        if (!newPage) {
+          toast.error("Failed to create page from import", {
+            duration: 8000,
+          });
           return;
         }
 
         router.push(`/${workspaceSlug}/${newPage.id}`);
         router.refresh();
       } catch (error) {
+        Sentry.captureException(error);
         toast.error("Failed to read or parse the markdown file", {
           duration: 8000,
         });
-        console.error("Import error:", error);
       }
     },
     [workspaceId, workspaceSlug, userId, router]

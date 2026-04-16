@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/lib/supabase/server";
+import { captureSupabaseError } from "@/lib/sentry";
 
 export async function GET(request: NextRequest) {
   if (
@@ -45,6 +47,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (error) {
+      captureSupabaseError(error, "search_pages");
       return NextResponse.json(
         { error: "Search failed" },
         { status: 500 }
@@ -52,7 +55,8 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ results: data ?? [] });
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
