@@ -47,10 +47,11 @@ export function InviteForm({
 
     const supabase = createClient();
 
-    // Check if user is already a member
+    // Check if user is already a member.
+    // Disambiguate: members has two FKs to profiles (user_id, invited_by).
     const { data: existingMember } = await supabase
       .from("members")
-      .select("id, profiles(email)")
+      .select("id, profiles!members_user_id_fkey(email)")
       .eq("workspace_id", workspaceId);
 
     const alreadyMember = existingMember?.some((m) => {

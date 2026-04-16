@@ -141,6 +141,28 @@ The helper accepts `PostgrestError` (from query results) and generic `Error` (fr
 catch blocks). It tags the Sentry event with the operation name, error code, and
 message so errors are filterable in the Sentry dashboard.
 
+### Disambiguating Supabase joins
+
+When a table has multiple foreign keys to the same target table, PostgREST cannot
+infer which relationship to use. The query silently returns `null` data (no error
+thrown). Disambiguate by specifying the FK constraint name:
+
+```typescript
+// BAD — ambiguous: members has both user_id and invited_by referencing profiles
+const { data } = await supabase
+  .from("members")
+  .select("*, profiles(email, display_name)");
+// data will be null with a PGRST201 error
+
+// GOOD — specify the FK constraint
+const { data } = await supabase
+  .from("members")
+  .select("*, profiles!members_user_id_fkey(email, display_name)");
+```
+
+Check `supabase/migrations/` for constraint names. The naming convention is
+`{table}_{column}_fkey`.
+
 ### API route catch blocks
 
 All catch blocks in API routes must call `Sentry.captureException`:

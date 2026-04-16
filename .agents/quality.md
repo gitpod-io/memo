@@ -21,7 +21,7 @@ Updated weekly by the Automation Auditor. Tracks code quality per domain.
 | Editor | A | Full Lexical editor: slash commands, floating toolbar, floating link editor, drag-and-drop blocks, code highlighting, image upload, callouts, collapsible/toggle blocks. Markdown import/export. 4 unit test files (24 tests): theme mapping, markdown utils, design spec compliance, Node.contains safety. 4 E2E specs (editor-drag, editor-link, editor-slash-commands, editor-toolbar). Auto-save with debounce. Sentry error capture on save failures and image uploads. |
 | Search | B | Full-text search via PostgreSQL tsvector + tsquery. API route with integration tests (8 tests). Sidebar search component with debounced input (300ms) and results dropdown. Sentry error capture. No E2E test for search interaction. |
 | Import/Export | B | Markdown export (download .md) and import (parse .md, create page) via page menu. Markdown utils with unit tests (8 tests). No E2E test for import/export flow. |
-| Members | B | Member list with role badges, role change, remove. Invite form (email + role). Pending invite list with revoke. Invite accept page. Role select dropdown. Settings members page with server-side data fetching. No unit or E2E tests for member management. |
+| Members | A | Member list with role badges, role change, remove. Invite form (email + role). Pending invite list with revoke. Invite accept page. Role select dropdown. Settings members page with server-side data fetching. Full E2E coverage: invite, pending list, revoke, accept, role change, remove, member role restrictions. |
 | App Shell | B | Collapsible sidebar (desktop: aside, mobile: Sheet), sidebar context with ⌘+\ shortcut, workspace switcher, page tree, user menu with sign-out. Clean component decomposition. No unit tests for sidebar context or app shell layout. |
 | API Routes | A | Health endpoint (DB connectivity check, 6 tests) and search endpoint (full-text search, 8 tests). Both routes have Sentry error capture. Both have integration tests with mocked Supabase. |
 | UI Components | A | 13 shadcn/ui components (base-nova style): alert-dialog, badge, button, card, dialog, dropdown-menu, input, label, select, separator, sheet, table, tooltip. Overlay opacity regression test (2 tests). Toast error duration regression test (1 test). Design tokens use oklch color space, --radius: 0 for sharp corners. |
@@ -48,7 +48,7 @@ Updated weekly by the Automation Auditor. Tracks code quality per domain.
 
 ## Known Gaps
 
-- **Members**: No unit or E2E tests for member list, invite form, invite accept, or role changes.
+- **Members**: Full E2E coverage added (7 tests). Disambiguated Supabase join bug fixed in members page and invite form.
 - **Search UI**: No E2E test for the sidebar search interaction (typing, results display, navigation).
 - **Import/Export**: No E2E test for markdown export/import flow via page menu.
 - **Page tree**: No unit tests for the tree manipulation logic (nest, unnest, reorder). The component is 836 lines — extracting tree logic into a utility would improve testability.
