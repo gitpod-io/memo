@@ -58,6 +58,11 @@ action:
                 - A testable definition of "done"
 
                 **If sufficient:**
+                - Normalize the title to conventional format if it doesn't already match:
+                  `<type>: <short imperative description>` where type is feat|fix|chore|perf.
+                  Examples: "feat: add drag-and-drop column reordering", "fix: sidebar flickers on page switch".
+                  Use `gh issue edit <N> --title "<normalized title>"` to update.
+                  Only rename user-created issues — never rename issues created by other automations.
                 - Enrich the issue body if needed (add Acceptance Criteria, Technical Notes
                   sections if missing, referencing .agents/conventions.md and .agents/architecture.md)
                 - Add exactly 3 labels: `status:backlog` + appropriate `priority:*` + type label
