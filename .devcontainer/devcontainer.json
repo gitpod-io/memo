@@ -2,8 +2,13 @@
   "name": "memo",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
   "features": {
-    "ghcr.io/devcontainers/features/github-cli:1": {}
+    "ghcr.io/devcontainers/features/github-cli": {}
   },
-  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y --no-install-recommends curl && pnpm install && npx playwright install --with-deps chromium",
-  "forwardPorts": [3000]
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Memo App",
+      "onAutoForward": "notify"
+    }
+  }
 }

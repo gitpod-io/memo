@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
-const nextConfig: NextConfig = {};
+const nextConfig: NextConfig = {
+  allowedDevOrigins: ["*.preview.devx.network", "*.preview.env.ona.dev"],
+};
 
 export default withSentryConfig(nextConfig, {
   org: process.env.SENTRY_ORG,
