@@ -21,11 +21,17 @@ action:
 
                 ## Check for New Errors
 
-                1. Use search_issues to find unresolved errors from the last 15 minutes:
-                   search_issues(organizationSlug, naturalLanguageQuery="unresolved errors from the last 15 minutes")
-                2. If no new unresolved issues, stop — do nothing.
-                3. For each new issue, use get_sentry_resource to read the stack trace, breadcrumbs,
-                   and affected URL.
+                1. Use search_issues to find unresolved issues first seen in the last 24 hours.
+                   IMPORTANT: Use the word "issues" (not "errors") to avoid filtering by issueCategory.
+                   search_issues(organizationSlug="ona-2j", projectSlugOrId="memo",
+                     naturalLanguageQuery="unresolved issues first seen in the last 24 hours",
+                     regionUrl="https://de.sentry.io")
+                2. If no unresolved issues, stop — do nothing.
+                3. Check which Sentry issue short IDs (e.g., MEMO-9) already have a corresponding
+                   GitHub issue by searching: github_search_issues(query="Sentry MEMO- in:title", owner="gitpod-io", repo="memo").
+                   Skip any Sentry issue that already has a GitHub issue.
+                4. For each NEW (un-triaged) issue, use get_sentry_resource to read the stack trace,
+                   breadcrumbs, and affected URL.
 
                 ## Triage
 
