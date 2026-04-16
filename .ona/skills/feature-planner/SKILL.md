@@ -1,13 +1,15 @@
 ---
 name: feature-planner
 description: >-
-  Decompose the product vision into a prioritized backlog of GitHub Issues.
-  Reads the product spec, creates issues with acceptance criteria and
+  Triage unlabeled GitHub Issues, decompose product specs into backlog items,
+  and ensure issue quality for the automation loop. Reads the product spec,
+  triages user-created issues, creates issues with acceptance criteria and
   dependency chains, and sets up labels for the autonomous Feature Builder.
-  Use when starting a new product, adding a new feature area, or
-  re-planning after a scope change.
+  Use when starting a new product, adding a new feature area, re-planning
+  after a scope change, or triaging incoming feature requests and bug reports.
   Triggers on "plan features", "create backlog", "decompose spec",
-  "what should we build", "create issues", "plan the product".
+  "what should we build", "create issues", "plan the product",
+  "triage issues", "review backlog".
 ---
 
 # Feature Planner
@@ -17,6 +19,7 @@ description: >-
 - Starting a new product from a spec
 - Adding a new feature area to an existing product
 - Re-planning after scope changes or user feedback
+- Triaging unlabeled GitHub Issues (user-created feature requests and bugs)
 
 ## Workflow
 
@@ -111,6 +114,42 @@ After creating all issues, present a summary to the user:
 
 Wait for the user to review, reorder, or adjust before the Feature Builder starts picking up issues.
 
+## Continuous Improvement: Triaging Unlabeled Issues
+
+After the initial product spec is implemented, the Feature Planner's primary role
+shifts to triaging incoming issues. Users and automations create GitHub Issues that
+need to be assessed and labeled before the Feature Builder or Bug Fixer can act.
+
+### Triage Workflow
+
+1. Find open issues with NO `status:*` label and NO `needs-human` label.
+2. For each issue, assess quality:
+   - **Sufficient detail** (clear what/why, testable definition of done):
+     - Enrich the body if needed (add Acceptance Criteria, Technical Notes)
+     - Add 3 labels: `status:backlog` + `priority:*` + type
+   - **Insufficient detail:**
+     - Add `needs-human` label
+     - Post a comment with specific questions (what, why, context)
+3. Do NOT remove `needs-human` from issues — the Needs-Human Requeue automation
+   handles that when the user responds.
+
+### The `needs-human` Feedback Loop
+
+1. Feature Planner adds `needs-human` + questions to an insufficient issue
+2. User responds with the requested information
+3. Needs-Human Requeue automation (cron, every 30 min) detects the response
+   and removes `needs-human`
+4. Feature Planner re-triages the issue on its next manual run
+
+### Issue Quality Checklist
+
+Every issue entering the backlog must have:
+- [ ] Description: what and why
+- [ ] Acceptance Criteria: testable checkboxes
+- [ ] Dependencies: explicit issue refs or "None"
+- [ ] Technical Notes: relevant files, patterns, edge cases
+- [ ] 3 labels: status + priority + type
+
 ## Anti-patterns
 
 - Do NOT create issues that bundle multiple unrelated changes
@@ -118,3 +157,5 @@ Wait for the user to review, reorder, or adjust before the Feature Builder start
 - Do NOT create overly granular issues (e.g., "add import statement") — each should be a meaningful feature
 - Do NOT create issues without acceptance criteria — the Feature Builder needs them to know when it's done
 - Do NOT assign priority:1 to non-foundational features — P1 means "blocks other work"
+- Do NOT triage issues that already have a `status:*` label — they're already in the workflow
+- Do NOT remove `needs-human` — that's the re-queue automation's job

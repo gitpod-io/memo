@@ -56,8 +56,22 @@ action:
 
                 Create a GitHub Issue:
                 - Title: bug: <description> (Sentry <SHORT_ID>)
-                - Body: Sentry issue link, stack trace summary, suggested fix
                 - Labels: bug, priority:3, status:backlog
+                - Body must include ALL of these sections:
+
+                  ## Description
+                  <what is broken and how it manifests, include Sentry issue link>
+
+                  ## Acceptance Criteria
+                  - [ ] <specific, testable criterion that defines "fixed">
+                  - [ ] Error no longer appears in Sentry after fix is deployed
+                  - [ ] `pnpm lint && pnpm typecheck && pnpm test` pass
+
+                  ## Technical Notes
+                  - Stack trace summary
+                  - Affected file(s) and line number(s)
+                  - Suggested fix approach
+                  - Relevant patterns from .agents/conventions.md
 
                 ## Do NOT
                 - Ignore errors or mark resolved without a fix.
