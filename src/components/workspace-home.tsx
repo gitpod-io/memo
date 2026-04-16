@@ -41,7 +41,7 @@ export function WorkspaceHome({
 
     if (error) {
       captureSupabaseError(error, "workspace-home:create-page");
-      toast.error("Failed to create page");
+      toast.error("Failed to create page", { duration: 8000 });
       return;
     }
     if (!newPage) return;

@@ -168,7 +168,7 @@ import { toast } from "sonner";
 const { error } = await supabase.from("pages").insert({ ... });
 if (error) {
   captureSupabaseError(error, "pages.insert");
-  toast.error("Failed to create page");
+  toast.error("Failed to create page", { duration: 8000 });
 }
 ```
 
