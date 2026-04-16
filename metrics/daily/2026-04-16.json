@@ -1,0 +1,12 @@
+{
+  "date": "2026-04-16",
+  "loc": { "total": 7848, "delta": 7631, "by_language": { "TypeScript": 7708, "CSS": 140 } },
+  "files": { "total": 76, "delta": 61 },
+  "prs": { "opened_today": 0, "merged_today": 0, "currently_open": 0 },
+  "commits_today": 0,
+  "test_coverage_pct": null,
+  "ci_pass_rate_pct": 100,
+  "issues": { "backlog": 0, "in_progress": 0, "in_review": 0, "done": 0 },
+  "human_minutes": null,
+  "agent_minutes": null
+}
