@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Separator } from "@/components/ui/separator";
@@ -31,7 +31,13 @@ export function MembersPage({
 }: MembersPageProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [invites, setInvites] = useState(initialInvites);
   const isAdmin = currentUserRole === "owner" || currentUserRole === "admin";
+
+  // Sync local invite state when server data changes (e.g. after sending a new invite)
+  useEffect(() => {
+    setInvites(initialInvites);
+  }, [initialInvites]);
 
   async function handleRoleChange(memberId: string, newRole: MemberRole) {
     setError(null);
@@ -71,12 +77,17 @@ export function MembersPage({
     setError(null);
     const supabase = createClient();
 
+    // Optimistically remove the invite so the UI updates immediately
+    setInvites((prev) => prev.filter((i) => i.id !== inviteId));
+
     const { error: deleteError } = await supabase
       .from("workspace_invites")
       .delete()
       .eq("id", inviteId);
 
     if (deleteError) {
+      // Revert optimistic removal on failure
+      setInvites(initialInvites);
       setError(deleteError.message);
       return;
     }
@@ -109,11 +120,11 @@ export function MembersPage({
         onRemove={handleRemoveMember}
       />
 
-      {isAdmin && initialInvites.length > 0 && (
+      {isAdmin && invites.length > 0 && (
         <>
           <Separator className="bg-white/[0.06]" />
           <PendingInviteList
-            invites={initialInvites}
+            invites={invites}
             onRevoke={handleRevokeInvite}
           />
         </>
