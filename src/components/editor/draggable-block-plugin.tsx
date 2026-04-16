@@ -7,12 +7,8 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import {
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
-  COMMAND_PRIORITY_HIGH,
-  DRAGOVER_COMMAND,
-  DROP_COMMAND,
   type LexicalEditor,
 } from "lexical";
-import { mergeRegister } from "@lexical/utils";
 import { GripVertical } from "lucide-react";
 
 const DRAG_DATA_FORMAT = "application/x-memo-drag-block";
@@ -22,31 +18,38 @@ const DROP_INDICATOR_CLASSNAME = "memo-drop-indicator";
 // Position drag handle within the anchor's left padding (anchor has pl-8 = 32px)
 const HANDLE_LEFT_OFFSET = 0;
 // Vertical dead zone — mouse must be within this distance of a block to show handle
-const HANDLE_DEAD_ZONE = 4;
+const HANDLE_DEAD_ZONE = 16;
+
+function getTopLevelBlockElements(
+  anchorElem: HTMLElement
+): HTMLCollectionOf<Element> | NodeListOf<Element> | undefined {
+  const children = anchorElem.querySelectorAll(
+    "[data-lexical-editor] > *"
+  );
+  if (children.length > 0) return children;
+
+  const contentEditable = anchorElem.querySelector(
+    '[contenteditable="true"]'
+  );
+  return contentEditable?.children;
+}
 
 function getBlockElement(
   anchorElem: HTMLElement,
   editor: LexicalEditor,
-  event: MouseEvent
+  event: MouseEvent,
+  /** When true (during drag), always return the nearest block regardless of dead zone */
+  useUnboundedSearch = false
 ): HTMLElement | null {
   const editorBounds = anchorElem.getBoundingClientRect();
   const y = event.clientY;
 
-  // Walk through top-level block elements in the editor
+  const elements = getTopLevelBlockElements(anchorElem);
+  if (!elements) return null;
+
+  // First pass: find the closest block within the dead zone
   let blockElem: HTMLElement | null = null;
   let minDistance = Infinity;
-
-  const children = anchorElem.querySelectorAll(
-    "[data-lexical-editor] > *"
-  );
-
-  // If no direct children found, try the contentEditable's children
-  const contentEditable = anchorElem.querySelector(
-    '[contenteditable="true"]'
-  );
-  const elements = children.length > 0 ? children : contentEditable?.children;
-
-  if (!elements) return null;
 
   for (let i = 0; i < elements.length; i++) {
     const elem = elements[i] as HTMLElement;
@@ -54,15 +57,50 @@ function getBlockElement(
     const centerY = rect.top + rect.height / 2;
     const distance = Math.abs(y - centerY);
 
-    if (distance < minDistance && y >= rect.top - HANDLE_DEAD_ZONE && y <= rect.bottom + HANDLE_DEAD_ZONE) {
+    if (
+      distance < minDistance &&
+      y >= rect.top - HANDLE_DEAD_ZONE &&
+      y <= rect.bottom + HANDLE_DEAD_ZONE
+    ) {
       minDistance = distance;
       blockElem = elem;
     }
   }
 
-  // Verify the mouse is within the editor bounds horizontally
+  // Fallback: if nothing matched within the dead zone (cursor is in a gap
+  // between blocks or beyond the last block), find the absolute nearest block.
+  // Always used during drag; for hover, only when cursor is within the editor
+  // vertical bounds.
+  if (!blockElem) {
+    const withinEditorY =
+      y >= editorBounds.top && y <= editorBounds.bottom;
+
+    if (useUnboundedSearch || withinEditorY) {
+      let fallbackDistance = Infinity;
+      for (let i = 0; i < elements.length; i++) {
+        const elem = elements[i] as HTMLElement;
+        const rect = elem.getBoundingClientRect();
+        // Distance to the nearest edge of the element
+        const dist =
+          y < rect.top
+            ? rect.top - y
+            : y > rect.bottom
+              ? y - rect.bottom
+              : 0;
+        if (dist < fallbackDistance) {
+          fallbackDistance = dist;
+          blockElem = elem;
+        }
+      }
+    }
+  }
+
+  // For hover (non-drag), verify the mouse is within the editor bounds
+  // horizontally. During drag the cursor may be over the handle/padding area
+  // to the left of the editor — that's valid.
   if (
     blockElem &&
+    !useUnboundedSearch &&
     (event.clientX < editorBounds.left - 50 ||
       event.clientX > editorBounds.right + 50)
   ) {
@@ -233,86 +271,86 @@ export function DraggableBlockPlugin({
     }
   }, []);
 
-  // Register drag-over and drop commands on the Lexical editor
+  // Listen for dragover/drop on the anchorElem (the full-width container
+  // including the left padding where the drag handle lives). Lexical's
+  // DRAGOVER_COMMAND / DROP_COMMAND only fire on the contentEditable, so
+  // dragging straight down from the handle would miss the editor entirely.
+  const handleDragOver = useCallback(
+    (event: DragEvent) => {
+      if (!event.dataTransfer?.types.includes(DRAG_DATA_FORMAT)) return;
+
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+
+      const blockElem = getBlockElement(anchorElem, editor, event, true);
+      if (!blockElem || !dropIndicatorRef.current) return;
+
+      const blockRect = blockElem.getBoundingClientRect();
+      const isBelow = event.clientY > blockRect.top + blockRect.height / 2;
+
+      setDropIndicatorPosition(
+        dropIndicatorRef.current,
+        blockElem,
+        anchorElem,
+        isBelow
+      );
+    },
+    [anchorElem, editor]
+  );
+
+  const handleDrop = useCallback(
+    (event: DragEvent) => {
+      if (!event.dataTransfer?.types.includes(DRAG_DATA_FORMAT)) return;
+
+      event.preventDefault();
+
+      const nodeKey = event.dataTransfer.getData(DRAG_DATA_FORMAT);
+      if (!nodeKey) return;
+
+      const blockElem = getBlockElement(anchorElem, editor, event, true);
+      if (!blockElem) return;
+
+      const blockRect = blockElem.getBoundingClientRect();
+      const isBelow = event.clientY > blockRect.top + blockRect.height / 2;
+
+      editor.update(() => {
+        const draggedNode = $getNodeByKey(nodeKey);
+        if (!draggedNode) return;
+
+        const targetNode = $getNearestNodeFromDOMNode(blockElem);
+        if (!targetNode) return;
+
+        // Don't drop on self
+        if (draggedNode.getKey() === targetNode.getKey()) return;
+
+        // Remove from current position
+        draggedNode.remove();
+
+        // Insert at new position
+        if (isBelow) {
+          targetNode.insertAfter(draggedNode);
+        } else {
+          targetNode.insertBefore(draggedNode);
+        }
+      });
+
+      if (dropIndicatorRef.current) {
+        dropIndicatorRef.current.style.opacity = "0";
+      }
+
+      isDraggingRef.current = false;
+    },
+    [anchorElem, editor]
+  );
+
   useEffect(() => {
-    return mergeRegister(
-      editor.registerCommand(
-        DRAGOVER_COMMAND,
-        (event: DragEvent) => {
-          if (!event.dataTransfer?.types.includes(DRAG_DATA_FORMAT)) {
-            return false;
-          }
-
-          event.preventDefault();
-
-          const blockElem = getBlockElement(anchorElem, editor, event);
-          if (!blockElem || !dropIndicatorRef.current) return true;
-
-          const blockRect = blockElem.getBoundingClientRect();
-          const isBelow = event.clientY > blockRect.top + blockRect.height / 2;
-
-          setDropIndicatorPosition(
-            dropIndicatorRef.current,
-            blockElem,
-            anchorElem,
-            isBelow
-          );
-
-          event.dataTransfer.dropEffect = "move";
-          return true;
-        },
-        COMMAND_PRIORITY_HIGH
-      ),
-      editor.registerCommand(
-        DROP_COMMAND,
-        (event: DragEvent) => {
-          if (!event.dataTransfer?.types.includes(DRAG_DATA_FORMAT)) {
-            return false;
-          }
-
-          event.preventDefault();
-
-          const nodeKey = event.dataTransfer.getData(DRAG_DATA_FORMAT);
-          if (!nodeKey) return true;
-
-          const blockElem = getBlockElement(anchorElem, editor, event);
-          if (!blockElem) return true;
-
-          const blockRect = blockElem.getBoundingClientRect();
-          const isBelow = event.clientY > blockRect.top + blockRect.height / 2;
-
-          editor.update(() => {
-            const draggedNode = $getNodeByKey(nodeKey);
-            if (!draggedNode) return;
-
-            const targetNode = $getNearestNodeFromDOMNode(blockElem);
-            if (!targetNode) return;
-
-            // Don't drop on self
-            if (draggedNode.getKey() === targetNode.getKey()) return;
-
-            // Remove from current position
-            draggedNode.remove();
-
-            // Insert at new position
-            if (isBelow) {
-              targetNode.insertAfter(draggedNode);
-            } else {
-              targetNode.insertBefore(draggedNode);
-            }
-          });
-
-          if (dropIndicatorRef.current) {
-            dropIndicatorRef.current.style.opacity = "0";
-          }
-
-          isDraggingRef.current = false;
-          return true;
-        },
-        COMMAND_PRIORITY_HIGH
-      )
-    );
-  }, [anchorElem, editor]);
+    anchorElem.addEventListener("dragover", handleDragOver);
+    anchorElem.addEventListener("drop", handleDrop);
+    return () => {
+      anchorElem.removeEventListener("dragover", handleDragOver);
+      anchorElem.removeEventListener("drop", handleDrop);
+    };
+  }, [anchorElem, handleDragOver, handleDrop]);
 
   return createPortal(
     <>
