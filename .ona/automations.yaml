@@ -1,0 +1,16 @@
+tasks:
+  installDeps:
+    name: Install dependencies
+    description: Install npm packages and Playwright browsers.
+    command: |
+      pnpm install && npx playwright install --with-deps chromium
+    triggeredBy:
+      - postDevcontainerStart
+
+services:
+  dev-server:
+    name: Dev Server
+    description: Next.js development server on port 3000.
+    commands:
+      start: pnpm dev
+      ready: curl -sf http://localhost:3000

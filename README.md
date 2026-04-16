@@ -37,14 +37,32 @@ Past streams are available on the [YouTube channel](https://www.youtube.com/@ona
 - [Vitest](https://vitest.dev/) + [Playwright](https://playwright.dev/) (testing)
 - Deployed on [Vercel](https://vercel.com/)
 
-## Quick start
+## Getting started
 
-```bash
-pnpm install
-pnpm dev
-```
+[![Run in Ona](https://ona.com/run-in-ona.svg)](https://app.ona.com/#https://github.com/gitpod-io/memo)
 
-Open [http://localhost:3000](http://localhost:3000).
+The fastest way to run Memo is in an [Ona](https://ona.com). Click the badge above, or:
+
+1. [Add this repository to an Ona project](https://ona.com/docs/ona/create-first-project)
+2. Configure the required [**project secrets**](https://ona.com/docs/ona/projects/project-secrets#project-secrets) (see below)
+3. Open the environment — dependencies install automatically and the dev server starts on port 3000
+
+### Required project secrets
+
+Set these in your Ona project settings under **Secrets**:
+
+| Secret | Description |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase anon/public key |
+| `SUPABASE_SECRET_KEY` | Supabase service role key |
+| `NEXT_PUBLIC_SENTRY_DSN` | Sentry DSN (optional — leave empty to disable) |
+| `SENTRY_DSN` | Sentry server-side DSN (optional) |
+| `SENTRY_AUTH_TOKEN` | Sentry auth token for source maps (optional) |
+| `SENTRY_ORG` | Sentry organization slug (optional) |
+| `SENTRY_PROJECT` | Sentry project slug (optional) |
+
+Without Supabase secrets, the app starts but auth and data features won't work.
 
 ## Project links
 
