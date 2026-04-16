@@ -44,7 +44,7 @@ export function PageMenu({
   const handleExport = useCallback(() => {
     const editor = editorRef.current;
     if (!editor) {
-      toast.error("Editor not ready");
+      toast.error("Editor not ready", { duration: 8000 });
       return;
     }
 

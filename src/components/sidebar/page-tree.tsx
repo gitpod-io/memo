@@ -136,7 +136,7 @@ export function PageTree({ userId }: PageTreeProps) {
 
     if (error) {
       captureSupabaseError(error, "page-tree:fetch-pages");
-      toast.error("Failed to load pages");
+      toast.error("Failed to load pages", { duration: 8000 });
     }
 
     if (data) {
@@ -189,7 +189,7 @@ export function PageTree({ userId }: PageTreeProps) {
 
     if (error) {
       captureSupabaseError(error, "page-tree:create-page");
-      toast.error("Failed to create page");
+      toast.error("Failed to create page", { duration: 8000 });
       return;
     }
     if (!newPage) return;
@@ -215,7 +215,7 @@ export function PageTree({ userId }: PageTreeProps) {
 
     if (error) {
       captureSupabaseError(error, "page-tree:delete-page");
-      toast.error("Failed to delete page");
+      toast.error("Failed to delete page", { duration: 8000 });
     } else {
       const removedIds = new Set([
         deleteTarget.page.id,
@@ -275,7 +275,7 @@ export function PageTree({ userId }: PageTreeProps) {
     for (const result of results) {
       if (result.error) {
         captureSupabaseError(result.error, "page-tree:swap-positions");
-        toast.error("Failed to reorder page");
+        toast.error("Failed to reorder page", { duration: 8000 });
         break;
       }
     }
@@ -315,7 +315,7 @@ export function PageTree({ userId }: PageTreeProps) {
 
     if (error) {
       captureSupabaseError(error, "page-tree:nest-page");
-      toast.error("Failed to nest page");
+      toast.error("Failed to nest page", { duration: 8000 });
     }
   }
 
@@ -367,7 +367,7 @@ export function PageTree({ userId }: PageTreeProps) {
     for (const result of results) {
       if (result.error) {
         captureSupabaseError(result.error, "page-tree:unnest-page");
-        toast.error("Failed to unnest page");
+        toast.error("Failed to unnest page", { duration: 8000 });
         break;
       }
     }
@@ -455,7 +455,7 @@ export function PageTree({ userId }: PageTreeProps) {
 
       if (error) {
         captureSupabaseError(error, "page-tree:drop-inside");
-        toast.error("Failed to move page");
+        toast.error("Failed to move page", { duration: 8000 });
       }
     } else {
       const newParentId = targetPage.parent_id;
@@ -493,7 +493,7 @@ export function PageTree({ userId }: PageTreeProps) {
 
         if (error) {
           captureSupabaseError(error, "page-tree:drop-reorder");
-          toast.error("Failed to move page");
+          toast.error("Failed to move page", { duration: 8000 });
           break;
         }
       }
