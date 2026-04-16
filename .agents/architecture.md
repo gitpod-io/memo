@@ -176,7 +176,7 @@ src/
 │   │   ├── workspace-switcher.tsx # Dropdown listing all workspaces, create workspace trigger
 │   │   ├── create-workspace-dialog.tsx # Dialog for creating a new workspace
 │   │   ├── page-search.tsx      # Full-text search input + results dropdown (debounced, 300ms)
-│   │   ├── page-tree.tsx        # Hierarchical page tree with CRUD, drag-and-drop, nest/unnest
+│   │   ├── page-tree.tsx        # Hierarchical page tree with CRUD, drag-and-drop, nest/unnest (uses lib/page-tree.ts)
 │   │   └── user-menu.tsx        # User dropdown with settings link + sign-out
 │   ├── editor/                  # Lexical block editor
 │   │   ├── editor.tsx               # Main editor: LexicalComposer, plugins, auto-save to Supabase
@@ -220,6 +220,7 @@ src/
 │       ├── table.tsx
 │       └── tooltip.tsx
 ├── lib/
+│   ├── page-tree.ts        # Pure functions: tree building, reorder, nest/unnest, drop computation
 │   ├── sentry.ts           # captureSupabaseError helper (structured Sentry reporting)
 │   ├── utils.ts            # cn() utility (clsx + tailwind-merge)
 │   ├── types.ts            # Database entity types

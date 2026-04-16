@@ -32,60 +32,20 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { Page } from "@/lib/types";
+import {
+  buildTree,
+  computeDrop,
+  computeNest,
+  computeSwapPositions,
+  computeUnnest,
+  getDescendantIds,
+  getNextSiblingPosition,
+  getSortedSiblings,
+  type TreeNode,
+} from "@/lib/page-tree";
 
 interface PageTreeProps {
   userId: string;
-}
-
-interface TreeNode {
-  page: Page;
-  children: TreeNode[];
-}
-
-function buildTree(pages: Page[]): TreeNode[] {
-  const map = new Map<string, TreeNode>();
-  const roots: TreeNode[] = [];
-
-  for (const page of pages) {
-    map.set(page.id, { page, children: [] });
-  }
-
-  for (const page of pages) {
-    const node = map.get(page.id)!;
-    if (page.parent_id && map.has(page.parent_id)) {
-      map.get(page.parent_id)!.children.push(node);
-    } else {
-      roots.push(node);
-    }
-  }
-
-  function sortChildren(nodes: TreeNode[]) {
-    nodes.sort((a, b) => a.page.position - b.page.position);
-    for (const node of nodes) {
-      sortChildren(node.children);
-    }
-  }
-  sortChildren(roots);
-
-  return roots;
-}
-
-function getDescendantIds(node: TreeNode): string[] {
-  const ids: string[] = [];
-  for (const child of node.children) {
-    ids.push(child.page.id);
-    ids.push(...getDescendantIds(child));
-  }
-  return ids;
-}
-
-function findNode(nodes: TreeNode[], id: string): TreeNode | null {
-  for (const node of nodes) {
-    if (node.page.id === id) return node;
-    const found = findNode(node.children, id);
-    if (found) return found;
-  }
-  return null;
 }
 
 export function PageTree({ userId }: PageTreeProps) {
@@ -124,32 +84,38 @@ export function PageTree({ userId }: PageTreeProps) {
       });
   }, [workspaceSlug]);
 
-  const fetchPages = useCallback(async () => {
+  useEffect(() => {
     if (!workspaceId) return;
 
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("pages")
-      .select("*")
-      .eq("workspace_id", workspaceId)
-      .order("position", { ascending: true });
+    let cancelled = false;
 
-    if (error) {
-      captureSupabaseError(error, "page-tree:fetch-pages");
-      toast.error("Failed to load pages", { duration: 8000 });
+    async function fetchPages() {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("pages")
+        .select("*")
+        .eq("workspace_id", workspaceId)
+        .order("position", { ascending: true });
+
+      if (cancelled) return;
+
+      if (error) {
+        captureSupabaseError(error, "page-tree:fetch-pages");
+        toast.error("Failed to load pages", { duration: 8000 });
+      }
+
+      if (data) {
+        setPages(data);
+      }
+      setLoading(false);
     }
 
-    if (data) {
-      setPages(data);
-    }
-    setLoading(false);
+    fetchPages();
+
+    return () => {
+      cancelled = true;
+    };
   }, [workspaceId]);
-
-  useEffect(() => {
-    if (workspaceId) {
-      fetchPages();
-    }
-  }, [workspaceId, fetchPages]);
 
   const tree = useMemo(() => buildTree(pages), [pages]);
 
@@ -168,11 +134,7 @@ export function PageTree({ userId }: PageTreeProps) {
   async function handleCreate(parentId: string | null) {
     if (!workspaceId || !workspaceSlug) return;
 
-    const siblings = pages.filter((p) => p.parent_id === parentId);
-    const nextPosition =
-      siblings.length > 0
-        ? Math.max(...siblings.map((p) => p.position)) + 1
-        : 0;
+    const nextPosition = getNextSiblingPosition(pages, parentId);
 
     const supabase = createClient();
     const { data: newPage, error } = await supabase
@@ -233,44 +195,34 @@ export function PageTree({ userId }: PageTreeProps) {
   }
 
   async function handleMoveUp(page: Page) {
-    const siblings = pages
-      .filter((p) => p.parent_id === page.parent_id)
-      .sort((a, b) => a.position - b.position);
-
-    const idx = siblings.findIndex((p) => p.id === page.id);
-    if (idx <= 0) return;
-
-    const prev = siblings[idx - 1];
-    await swapPositions(page, prev);
+    const result = computeSwapPositions(pages, page.id, "up");
+    if (!result) return;
+    await applySwap(result.updates);
   }
 
   async function handleMoveDown(page: Page) {
-    const siblings = pages
-      .filter((p) => p.parent_id === page.parent_id)
-      .sort((a, b) => a.position - b.position);
-
-    const idx = siblings.findIndex((p) => p.id === page.id);
-    if (idx < 0 || idx >= siblings.length - 1) return;
-
-    const next = siblings[idx + 1];
-    await swapPositions(page, next);
+    const result = computeSwapPositions(pages, page.id, "down");
+    if (!result) return;
+    await applySwap(result.updates);
   }
 
-  async function swapPositions(a: Page, b: Page) {
+  async function applySwap(
+    updates: Array<{ id: string; position: number }>,
+  ) {
     const supabase = createClient();
 
     setPages((prev) =>
       prev.map((p) => {
-        if (p.id === a.id) return { ...p, position: b.position };
-        if (p.id === b.id) return { ...p, position: a.position };
-        return p;
+        const update = updates.find((u) => u.id === p.id);
+        return update ? { ...p, position: update.position } : p;
       })
     );
 
-    const results = await Promise.all([
-      supabase.from("pages").update({ position: b.position }).eq("id", a.id),
-      supabase.from("pages").update({ position: a.position }).eq("id", b.id),
-    ]);
+    const results = await Promise.all(
+      updates.map((u) =>
+        supabase.from("pages").update({ position: u.position }).eq("id", u.id)
+      )
+    );
 
     for (const result of results) {
       if (result.error) {
@@ -282,35 +234,25 @@ export function PageTree({ userId }: PageTreeProps) {
   }
 
   async function handleNest(page: Page) {
-    const siblings = pages
-      .filter((p) => p.parent_id === page.parent_id)
-      .sort((a, b) => a.position - b.position);
+    const result = computeNest(pages, page.id);
+    if (!result) return;
 
-    const idx = siblings.findIndex((p) => p.id === page.id);
-    if (idx <= 0) return;
-
-    const newParent = siblings[idx - 1];
-    const newSiblings = pages.filter((p) => p.parent_id === newParent.id);
-    const nextPosition =
-      newSiblings.length > 0
-        ? Math.max(...newSiblings.map((p) => p.position)) + 1
-        : 0;
-
+    const { parentId, position } = result;
     const supabase = createClient();
 
     setPages((prev) =>
       prev.map((p) =>
         p.id === page.id
-          ? { ...p, parent_id: newParent.id, position: nextPosition }
+          ? { ...p, parent_id: parentId, position }
           : p
       )
     );
 
-    setExpanded((prev) => new Set(prev).add(newParent.id));
+    setExpanded((prev) => new Set(prev).add(parentId));
 
     const { error } = await supabase
       .from("pages")
-      .update({ parent_id: newParent.id, position: nextPosition })
+      .update({ parent_id: parentId, position })
       .eq("id", page.id);
 
     if (error) {
@@ -320,53 +262,43 @@ export function PageTree({ userId }: PageTreeProps) {
   }
 
   async function handleUnnest(page: Page) {
-    if (!page.parent_id) return;
+    const result = computeUnnest(pages, page.id);
+    if (!result) return;
 
-    const parent = pages.find((p) => p.id === page.parent_id);
-    if (!parent) return;
-
-    const parentSiblings = pages
-      .filter((p) => p.parent_id === parent.parent_id)
-      .sort((a, b) => a.position - b.position);
-
-    const nextPosition = parent.position + 1;
-
-    const toShift = parentSiblings.filter(
-      (p) => p.position >= nextPosition && p.id !== page.id
-    );
-
+    const { pageUpdate, shiftUpdates } = result;
     const supabase = createClient();
 
     setPages((prev) =>
       prev.map((p) => {
         if (p.id === page.id) {
-          return { ...p, parent_id: parent.parent_id, position: nextPosition };
+          return { ...p, parent_id: pageUpdate.parentId, position: pageUpdate.position };
         }
-        if (toShift.some((s) => s.id === p.id)) {
-          return { ...p, position: p.position + 1 };
+        const shift = shiftUpdates.find((s) => s.id === p.id);
+        if (shift) {
+          return { ...p, position: shift.position };
         }
         return p;
       })
     );
 
-    const updates = [
+    const dbUpdates = [
       supabase
         .from("pages")
-        .update({ parent_id: parent.parent_id, position: nextPosition })
+        .update({ parent_id: pageUpdate.parentId, position: pageUpdate.position })
         .eq("id", page.id),
-      ...toShift.map((s) =>
+      ...shiftUpdates.map((s) =>
         supabase
           .from("pages")
-          .update({ position: s.position + 1 })
+          .update({ position: s.position })
           .eq("id", s.id)
       ),
     ];
 
-    const results = await Promise.all(updates);
+    const results = await Promise.all(dbUpdates);
 
-    for (const result of results) {
-      if (result.error) {
-        captureSupabaseError(result.error, "page-tree:unnest-page");
+    for (const r of results) {
+      if (r.error) {
+        captureSupabaseError(r.error, "page-tree:unnest-page");
         toast.error("Failed to unnest page", { duration: 8000 });
         break;
       }
@@ -411,91 +343,54 @@ export function PageTree({ userId }: PageTreeProps) {
       return;
     }
 
-    const draggedPage = pages.find((p) => p.id === draggedId);
-    const targetPage = pages.find((p) => p.id === dropTarget.id);
-    if (!draggedPage || !targetPage) {
+    const result = computeDrop(
+      pages,
+      tree,
+      draggedId,
+      dropTarget.id,
+      dropTarget.position,
+    );
+
+    if (!result) {
       setDraggedId(null);
       setDropTarget(null);
       return;
     }
 
-    // Prevent dropping a parent onto its own descendant
-    const draggedNode = findNode(tree, draggedId);
-    if (draggedNode) {
-      const descendantIds = getDescendantIds(draggedNode);
-      if (descendantIds.includes(dropTarget.id)) {
-        setDraggedId(null);
-        setDropTarget(null);
-        return;
-      }
-    }
-
     const supabase = createClient();
 
+    // Optimistic UI update
+    setPages((prev) => {
+      const next = [...prev];
+      for (const update of result.updates) {
+        const idx = next.findIndex((p) => p.id === update.id);
+        if (idx !== -1) {
+          next[idx] = {
+            ...next[idx],
+            parent_id: update.parentId,
+            position: update.position,
+          };
+        }
+      }
+      return next;
+    });
+
+    // Expand target when dropping inside
     if (dropTarget.position === "inside") {
-      const newSiblings = pages.filter((p) => p.parent_id === targetPage.id);
-      const nextPos =
-        newSiblings.length > 0
-          ? Math.max(...newSiblings.map((p) => p.position)) + 1
-          : 0;
+      setExpanded((prev) => new Set(prev).add(dropTarget.id));
+    }
 
-      setPages((prev) =>
-        prev.map((p) =>
-          p.id === draggedId
-            ? { ...p, parent_id: targetPage.id, position: nextPos }
-            : p
-        )
-      );
-      setExpanded((prev) => new Set(prev).add(targetPage.id));
-
+    // Persist to database
+    for (const update of result.updates) {
       const { error } = await supabase
         .from("pages")
-        .update({ parent_id: targetPage.id, position: nextPos })
-        .eq("id", draggedId);
+        .update({ parent_id: update.parentId, position: update.position })
+        .eq("id", update.id);
 
       if (error) {
-        captureSupabaseError(error, "page-tree:drop-inside");
+        captureSupabaseError(error, "page-tree:drop-reorder");
         toast.error("Failed to move page", { duration: 8000 });
-      }
-    } else {
-      const newParentId = targetPage.parent_id;
-      const siblings = pages
-        .filter((p) => p.parent_id === newParentId && p.id !== draggedId)
-        .sort((a, b) => a.position - b.position);
-
-      const targetIdx = siblings.findIndex((p) => p.id === targetPage.id);
-      const insertIdx =
-        dropTarget.position === "before" ? targetIdx : targetIdx + 1;
-
-      const reordered = [...siblings];
-      reordered.splice(insertIdx, 0, draggedPage);
-
-      setPages((prev) => {
-        const next = [...prev];
-        for (let i = 0; i < reordered.length; i++) {
-          const idx = next.findIndex((p) => p.id === reordered[i].id);
-          if (idx !== -1) {
-            next[idx] = {
-              ...next[idx],
-              parent_id: newParentId,
-              position: i,
-            };
-          }
-        }
-        return next;
-      });
-
-      for (let i = 0; i < reordered.length; i++) {
-        const { error } = await supabase
-          .from("pages")
-          .update({ parent_id: newParentId, position: i })
-          .eq("id", reordered[i].id);
-
-        if (error) {
-          captureSupabaseError(error, "page-tree:drop-reorder");
-          toast.error("Failed to move page", { duration: 8000 });
-          break;
-        }
+        break;
       }
     }
 
@@ -659,9 +554,7 @@ function PageTreeItem({
   const isDragged = draggedId === page.id;
   const isDropTarget = dropTarget?.id === page.id;
 
-  const siblings = pages
-    .filter((p) => p.parent_id === page.parent_id)
-    .sort((a, b) => a.position - b.position);
+  const siblings = getSortedSiblings(pages, page.parent_id);
   const siblingIdx = siblings.findIndex((p) => p.id === page.id);
   const canNest = siblingIdx > 0;
   const canUnnest = page.parent_id !== null;
