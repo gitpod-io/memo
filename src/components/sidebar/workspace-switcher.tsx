@@ -25,6 +25,7 @@ export function WorkspaceSwitcher({ userId }: WorkspaceSwitcherProps) {
   const params = useParams<{ workspaceSlug?: string }>();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [loading, setLoading] = useState(true);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -98,18 +99,22 @@ export function WorkspaceSwitcher({ userId }: WorkspaceSwitcherProps) {
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
-        <CreateWorkspaceDialog workspaceCount={createdCount} userId={userId}>
-          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-            <Plus className="h-4 w-4" />
-            Create workspace
-            {createdCount >= WORKSPACE_LIMIT && (
-              <span className="ml-auto text-xs text-muted-foreground">
-                Limit reached
-              </span>
-            )}
-          </DropdownMenuItem>
-        </CreateWorkspaceDialog>
+        <DropdownMenuItem onClick={() => setCreateDialogOpen(true)}>
+          <Plus className="h-4 w-4" />
+          Create workspace
+          {createdCount >= WORKSPACE_LIMIT && (
+            <span className="ml-auto text-xs text-muted-foreground">
+              Limit reached
+            </span>
+          )}
+        </DropdownMenuItem>
       </DropdownMenuContent>
+      <CreateWorkspaceDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        workspaceCount={createdCount}
+        userId={userId}
+      />
     </DropdownMenu>
   );
 }

@@ -550,6 +550,31 @@ base-ui's `TooltipTrigger` does NOT support `asChild`. Use the `render` prop ins
 </TooltipTrigger>
 ```
 
+### Dialogs triggered from dropdown menus
+
+Never nest a `DialogTrigger` inside a `DropdownMenuItem`. Base UI's `DialogTrigger`
+with `render={<>{children}</>}` wraps children in a fragment, which has no DOM node
+for the click handler. Instead, use controlled dialog state:
+
+```typescript
+// ✅ Correct — controlled dialog opened by menu item click
+const [dialogOpen, setDialogOpen] = useState(false);
+
+<DropdownMenu>
+  <DropdownMenuContent>
+    <DropdownMenuItem onClick={() => setDialogOpen(true)}>
+      Open dialog
+    </DropdownMenuItem>
+  </DropdownMenuContent>
+  <MyDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+</DropdownMenu>
+
+// ❌ Wrong — DialogTrigger inside DropdownMenuItem never fires
+<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+  <DialogTrigger render={<>{children}</>} />
+</DropdownMenuItem>
+```
+
 ### Button primitives
 
 Buttons use `@base-ui/react/button` internally. The `Button` component accepts
