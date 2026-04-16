@@ -12,6 +12,7 @@ import {
   DROP_COMMAND,
   type LexicalCommand,
 } from "lexical";
+import * as Sentry from "@sentry/nextjs";
 import { $createImageNode, type ImagePayload } from "@/components/editor/image-node";
 import { createClient } from "@/lib/supabase/client";
 import { captureSupabaseError } from "@/lib/sentry";
@@ -96,14 +97,18 @@ export function ImagePlugin(): null {
         event.preventDefault();
 
         for (const file of imageFiles) {
-          void uploadImage(file).then((url) => {
-            if (url) {
-              editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
-                src: url,
-                altText: file.name,
-              });
-            }
-          });
+          void uploadImage(file)
+            .then((url) => {
+              if (url) {
+                editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
+                  src: url,
+                  altText: file.name,
+                });
+              }
+            })
+            .catch((error) => {
+              Sentry.captureException(error);
+            });
         }
 
         return true;
@@ -140,12 +145,16 @@ export function openImagePicker(editor: ReturnType<typeof useLexicalComposerCont
     const file = input.files?.[0];
     if (!file) return;
 
-    const url = await uploadImage(file);
-    if (url) {
-      editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
-        src: url,
-        altText: file.name,
-      });
+    try {
+      const url = await uploadImage(file);
+      if (url) {
+        editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
+          src: url,
+          altText: file.name,
+        });
+      }
+    } catch (error) {
+      Sentry.captureException(error);
     }
   };
   input.click();

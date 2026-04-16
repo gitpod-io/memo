@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { captureSupabaseError } from "@/lib/sentry";
 
 interface PageTitleProps {
   pageId: string;
@@ -37,6 +38,8 @@ export function PageTitle({ pageId, initialTitle }: PageTitleProps) {
 
       if (!error) {
         lastSavedRef.current = trimmed;
+      } else {
+        captureSupabaseError(error, "page.title.save");
       }
     },
     [pageId]
