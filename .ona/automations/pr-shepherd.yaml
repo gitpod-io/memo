@@ -37,6 +37,13 @@ action:
 
                 ### Duplicate (linked issue already closed)
 
+                **Skip this check entirely if the PR has the `ona-user` label.** These PRs are
+                created via interactive user sessions and may intentionally re-address a
+                previously-closed issue (e.g., when the first fix was insufficient). The user
+                knows the issue state — do not second-guess them.
+
+                For all other PRs:
+
                 Extract the linked issue number from the PR body (`Closes #N` or `Fixes #N`).
                 If found, check the issue state:
                   gh issue view <N> --json state,labels --jq '{state: .state, labels: [.labels[].name]}'
@@ -56,7 +63,9 @@ action:
                 ### Duplicate (multiple open PRs for the same issue)
 
                 After processing all PRs above, check if multiple REMAINING open PRs reference the
-                same `Closes #N`. If so, keep the OLDEST PR (lowest number) and flag the newer ones.
+                same `Closes #N`. Exclude PRs with the `ona-user` label from this deduplication —
+                they are user-initiated and take priority. For the remaining PRs, keep the OLDEST
+                PR (lowest number) and flag the newer ones.
 
                 Action on each newer duplicate:
                 1. Leave a comment:
@@ -175,3 +184,5 @@ action:
                 - Attempt to resolve genuine semantic conflicts (both sides changed the same lines
                   with incompatible intent). Additive and non-overlapping conflicts ARE safe to resolve.
                 - Rebase a PR more than once — if a [shepherd:conflict] comment exists, skip it.
+                - Close `ona-user` PRs as duplicates. These are user-initiated and may intentionally
+                  re-address a previously-closed issue when the first fix was insufficient.
