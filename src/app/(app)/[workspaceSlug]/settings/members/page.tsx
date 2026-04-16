@@ -41,10 +41,12 @@ export default async function WorkspaceMembersPage({
     notFound();
   }
 
-  // Fetch all members with profile info
+  // Fetch all members with profile info.
+  // Disambiguate the profiles join: members has two FKs to profiles
+  // (user_id and invited_by). We want the user's profile.
   const { data: membersRaw } = await supabase
     .from("members")
-    .select("*, profiles(email, display_name, avatar_url)")
+    .select("*, profiles!members_user_id_fkey(email, display_name, avatar_url)")
     .eq("workspace_id", workspace.id)
     .order("created_at", { ascending: true });
 
