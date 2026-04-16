@@ -65,7 +65,10 @@ export function InviteForm({
       return;
     }
 
-    // Check for existing pending invite
+    // Remove any existing pending invite so re-inviting is idempotent.
+    // This covers the case where a previous revoke failed silently (e.g.
+    // RLS-blocked deletes return success with 0 rows) or the user simply
+    // wants to refresh the invite expiry.
     const { data: existingInvite } = await supabase
       .from("workspace_invites")
       .select("id")
@@ -75,9 +78,16 @@ export function InviteForm({
       .maybeSingle();
 
     if (existingInvite) {
-      onError("An invite has already been sent to this email.");
-      setSending(false);
-      return;
+      const { error: deleteError } = await supabase
+        .from("workspace_invites")
+        .delete()
+        .eq("id", existingInvite.id);
+
+      if (deleteError) {
+        onError("Failed to replace existing invite. Try revoking it first.");
+        setSending(false);
+        return;
+      }
     }
 
     // Generate token and expiry
