@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { FileText, Search, X } from "lucide-react";
+import * as Sentry from "@sentry/nextjs";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
+import { captureSupabaseError } from "@/lib/sentry";
 
 interface SearchResult {
   id: string;
@@ -42,7 +44,11 @@ export function PageSearch() {
       .select("id")
       .eq("slug", params.workspaceSlug)
       .maybeSingle()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          captureSupabaseError(error, "page-search:workspace-lookup");
+          return;
+        }
         setWorkspaceId(data?.id ?? null);
       });
   }, [params.workspaceSlug]);
@@ -67,7 +73,8 @@ export function PageSearch() {
         } else {
           setResults([]);
         }
-      } catch {
+      } catch (error) {
+        Sentry.captureException(error);
         setResults([]);
       } finally {
         setLoading(false);

@@ -14,6 +14,7 @@ import {
 } from "lexical";
 import { $createImageNode, type ImagePayload } from "@/components/editor/image-node";
 import { createClient } from "@/lib/supabase/client";
+import { captureSupabaseError } from "@/lib/sentry";
 
 export const INSERT_IMAGE_COMMAND: LexicalCommand<ImagePayload> =
   createCommand("INSERT_IMAGE_COMMAND");
@@ -45,7 +46,7 @@ async function uploadImage(file: File): Promise<string | null> {
     });
 
   if (error) {
-    console.error("Image upload failed:", error.message);
+    captureSupabaseError(error, "image-plugin:upload");
     return null;
   }
 

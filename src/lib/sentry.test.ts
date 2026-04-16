@@ -23,9 +23,7 @@ const BARE_CATCH_PERMANENT_ALLOWLIST = new Set([
  * Files with bare `catch {}` that will be fixed in subsequent PRs.
  * Each entry should reference the issue that will fix it.
  */
-const BARE_CATCH_PENDING_ALLOWLIST = new Set([
-  "src/components/sidebar/page-search.tsx", // #81 or follow-up
-  "src/app/api/search/route.ts", // #81 or follow-up
+const BARE_CATCH_PENDING_ALLOWLIST = new Set<string>([
 ]);
 
 const BARE_CATCH_ALLOWLIST = new Set([
@@ -37,9 +35,7 @@ const BARE_CATCH_ALLOWLIST = new Set([
  * Files with `console.error` without Sentry capture that will be fixed
  * in subsequent PRs.
  */
-const CONSOLE_ERROR_PENDING_ALLOWLIST = new Set([
-  "src/components/editor/image-plugin.tsx", // #81 or follow-up
-  "src/components/page-menu.tsx", // #81 or follow-up
+const CONSOLE_ERROR_PENDING_ALLOWLIST = new Set<string>([
 ]);
 
 function collectTsFiles(dir: string): string[] {
