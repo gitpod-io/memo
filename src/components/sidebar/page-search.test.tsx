@@ -97,6 +97,65 @@ describe("PageSearch", () => {
     expect(skeletons.length).toBe(0);
   });
 
+  it("renders result options when search returns matches", async () => {
+    // Regression test for #166: search results with role="option" must
+    // render when the API returns matching pages. Verifies the
+    // searchStatus state machine transitions correctly from
+    // idle → loading → done with results populated.
+    const mockResults = {
+      results: [
+        {
+          id: "page-1",
+          workspace_id: "ws-uuid-123",
+          parent_id: null,
+          title: "Quantum Test Document",
+          icon: null,
+          snippet: "<<Quantum>> test content",
+          rank: 0.5,
+        },
+      ],
+    };
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify(mockResults), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime,
+    });
+
+    render(<PageSearch />);
+
+    // Wait for workspace resolution
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(50);
+    });
+
+    const input = screen.getByRole("combobox", { name: /search pages/i });
+    await user.click(input);
+    await user.type(input, "quantum");
+
+    // Advance past the 300ms debounce
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    // Result options should be rendered
+    const options = screen.getAllByRole("option");
+    expect(options.length).toBe(1);
+    expect(options[0]).toHaveTextContent("Quantum Test Document");
+
+    // No skeletons or empty state should be visible
+    const searchResults = screen.getByRole("listbox");
+    const skeletons = searchResults.querySelectorAll(".animate-pulse");
+    expect(skeletons.length).toBe(0);
+    expect(
+      screen.queryByText("No pages match your search")
+    ).not.toBeInTheDocument();
+  });
+
   it("shows skeleton loaders while search is in progress", async () => {
     // Make fetch hang (never resolve)
     let resolveFetch: (value: Response | PromiseLike<Response>) => void;

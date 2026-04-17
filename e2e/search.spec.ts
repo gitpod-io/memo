@@ -17,6 +17,10 @@ async function waitForSidebarReady(page: import("@playwright/test").Page) {
 /**
  * Helper: create a page with a specific title via the sidebar.
  * Returns the page ID from the URL.
+ *
+ * Waits for the Supabase PATCH response to confirm the title was persisted
+ * before returning. This prevents search tests from querying before the
+ * title is committed to the database (root cause of #166).
  */
 async function createPageWithTitle(
   page: import("@playwright/test").Page,
@@ -42,10 +46,23 @@ async function createPageWithTitle(
   await expect(titleInput.first()).toBeVisible({ timeout: 5_000 });
   await titleInput.first().click();
   await titleInput.first().fill(title);
-  await page.keyboard.press("Enter");
 
-  // Wait for auto-save to persist the title
-  await page.waitForTimeout(1_500);
+  // Wait for the Supabase PATCH (title save) to complete before returning.
+  // The PageTitle component saves on Enter via an async supabase update.
+  // Without this, search tests can query before the title is committed,
+  // causing the full-text search_vector to not match (the stored generated
+  // column updates synchronously with the row, but the row must be written
+  // first).
+  const titleSaveResponse = page.waitForResponse(
+    (resp) =>
+      resp.url().includes("/rest/v1/pages") &&
+      resp.request().method() === "PATCH" &&
+      resp.status() >= 200 &&
+      resp.status() < 300,
+    { timeout: 10_000 }
+  );
+  await page.keyboard.press("Enter");
+  await titleSaveResponse;
 
   // Extract page ID from URL
   const url = new URL(page.url());
@@ -90,22 +107,27 @@ test.describe("Sidebar search", () => {
 
     createdPageId = await createPageWithTitle(page, pageTitle);
 
-    // Now search for the unique word
+    // Search for the unique word. Use expect.toPass to retry the entire
+    // search flow — the title save is confirmed by createPageWithTitle,
+    // but Supabase read-replicas may have a short replication lag.
     const searchInput = page.getByRole("combobox", { name: /search pages/i });
     await expect(searchInput).toBeVisible({ timeout: 5_000 });
-    await searchInput.click();
-    await searchInput.fill(uniqueWord);
 
-    // Wait for debounce (300ms) + network response
-    const resultsList = page.locator("#search-results");
-    await expect(resultsList).toBeVisible({ timeout: 5_000 });
+    await expect(async () => {
+      await searchInput.click();
+      await searchInput.fill(uniqueWord);
 
-    // Should have at least one result matching our page
-    const resultOptions = resultsList.locator('[role="option"]');
-    await expect(resultOptions.first()).toBeVisible({ timeout: 5_000 });
+      // Wait for debounce (300ms) + network response
+      const resultsList = page.locator("#search-results");
+      await expect(resultsList).toBeVisible({ timeout: 5_000 });
 
-    // The result should contain our page title
-    await expect(resultOptions.first()).toContainText("Quantum");
+      // Should have at least one result matching our page
+      const resultOptions = resultsList.locator('[role="option"]');
+      await expect(resultOptions.first()).toBeVisible({ timeout: 5_000 });
+
+      // The result should contain our page title
+      await expect(resultOptions.first()).toContainText("Quantum");
+    }).toPass({ timeout: 15_000, intervals: [2_000, 3_000, 5_000] });
   });
 
   test("clicking a search result navigates to the correct page", async ({
