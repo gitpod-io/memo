@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { captureSupabaseError } from "@/lib/sentry";
+import { retryOnNetworkError } from "@/lib/retry";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -69,19 +70,27 @@ export function PageTree({ userId }: PageTreeProps) {
   useEffect(() => {
     if (!workspaceSlug) return;
 
-    const supabase = createClient();
-    supabase
-      .from("workspaces")
-      .select("id")
-      .eq("slug", workspaceSlug)
-      .maybeSingle()
-      .then(({ data, error }) => {
-        if (error) {
-          captureSupabaseError(error, "page-tree:workspace-lookup");
-          return;
-        }
-        if (data) setWorkspaceId(data.id);
-      });
+    let cancelled = false;
+
+    retryOnNetworkError(() => {
+      const supabase = createClient();
+      return supabase
+        .from("workspaces")
+        .select("id")
+        .eq("slug", workspaceSlug)
+        .maybeSingle();
+    }).then(({ data, error }) => {
+      if (cancelled) return;
+      if (error) {
+        captureSupabaseError(error, "page-tree:workspace-lookup");
+        return;
+      }
+      if (data) setWorkspaceId(data.id);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [workspaceSlug]);
 
   useEffect(() => {
@@ -90,12 +99,14 @@ export function PageTree({ userId }: PageTreeProps) {
     let cancelled = false;
 
     async function fetchPages() {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("pages")
-        .select("*")
-        .eq("workspace_id", workspaceId)
-        .order("position", { ascending: true });
+      const { data, error } = await retryOnNetworkError(() => {
+        const supabase = createClient();
+        return supabase
+          .from("pages")
+          .select("*")
+          .eq("workspace_id", workspaceId)
+          .order("position", { ascending: true });
+      });
 
       if (cancelled) return;
 

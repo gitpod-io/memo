@@ -141,6 +141,30 @@ The helper accepts `PostgrestError` (from query results) and generic `Error` (fr
 catch blocks). It tags the Sentry event with the operation name, error code, and
 message so errors are filterable in the Sentry dashboard.
 
+Transient network errors (`TypeError: Failed to fetch`, `Load failed`, etc.) are
+automatically captured at `warning` level instead of `error` — they are not
+application bugs and should not trigger error-level alerts.
+
+### Retrying transient network errors
+
+Client-side Supabase queries that run on page load (e.g. workspace lookup, page
+list fetch) should use `retryOnNetworkError` from `@/lib/retry` to retry on
+transient network failures before reporting to Sentry:
+
+```typescript
+import { retryOnNetworkError } from "@/lib/retry";
+
+const { data, error } = await retryOnNetworkError(() => {
+  const supabase = createClient();
+  return supabase.from("workspaces").select("id").eq("slug", slug).maybeSingle();
+});
+```
+
+This retries up to 2 times with exponential backoff (500ms, 1s). Only transient
+network errors are retried — application errors (RLS violations, constraint errors)
+are returned immediately. Do **not** wrap user-initiated mutations (create, update,
+delete) in retry — those should fail fast and show a toast.
+
 ### Disambiguating Supabase joins
 
 When a table has multiple foreign keys to the same target table, PostgREST cannot
