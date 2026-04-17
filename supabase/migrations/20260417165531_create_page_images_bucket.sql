@@ -1,15 +1,19 @@
 -- Create the page-images storage bucket for editor image uploads.
 -- Public bucket so images can be served without auth tokens.
+-- Wrapped in a DO block because `ON CONFLICT` can be lost when the
+-- Supabase CLI splits statements during `db reset`.
 
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES (
-  'page-images',
-  'page-images',
-  true,
-  5242880, -- 5 MB
-  ARRAY['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml']
-)
-ON CONFLICT (id) DO NOTHING;
+DO $$ BEGIN
+  INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+  VALUES (
+    'page-images',
+    'page-images',
+    true,
+    5242880, -- 5 MB
+    ARRAY['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml']
+  );
+EXCEPTION WHEN unique_violation THEN NULL;
+END $$;
 
 -- Authenticated users can upload images
 DO $$ BEGIN
