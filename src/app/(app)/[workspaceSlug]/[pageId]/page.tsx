@@ -48,6 +48,7 @@ export default async function PageView({
     <PageViewClient
       pageId={page.id}
       pageTitle={page.title}
+      pageIcon={page.icon ?? null}
       initialContent={initialContent}
       workspaceId={workspace.id}
       workspaceSlug={workspaceSlug}
