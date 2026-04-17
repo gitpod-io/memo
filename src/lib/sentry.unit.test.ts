@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { ErrorEvent } from "@sentry/nextjs";
 import { PostgrestError } from "@supabase/supabase-js";
 
 const captureExceptionMock = vi.fn();
@@ -7,7 +8,11 @@ vi.mock("@sentry/nextjs", () => ({
   captureException: (...args: unknown[]) => captureExceptionMock(...args),
 }));
 
-import { isTransientNetworkError, captureSupabaseError } from "./sentry";
+import {
+  isTransientNetworkError,
+  captureSupabaseError,
+  isNextjsInternalNoise,
+} from "./sentry";
 
 function makePostgrestError(
   overrides: Partial<PostgrestError> = {},
@@ -131,5 +136,70 @@ describe("captureSupabaseError", () => {
     const [, opts] = captureExceptionMock.mock.calls[0];
     expect(opts.extra.code).toBe("23505");
     expect(opts.extra.details).toBe("Key (id)=(abc) already exists.");
+  });
+});
+
+function makeSentryEvent(
+  exceptionValues: Array<{ value?: string; type?: string }>,
+): ErrorEvent {
+  return {
+    type: undefined,
+    exception: { values: exceptionValues },
+  } as ErrorEvent;
+}
+
+describe("isNextjsInternalNoise", () => {
+  it("detects router state header parse error", () => {
+    const event = makeSentryEvent([
+      {
+        type: "Error",
+        value: "The router state header was sent but could not be parsed.",
+      },
+    ]);
+    expect(isNextjsInternalNoise(event)).toBe(true);
+  });
+
+  it("detects the error when it appears as a substring", () => {
+    const event = makeSentryEvent([
+      {
+        type: "Error",
+        value:
+          "Error: The router state header was sent but could not be parsed. Value: corrupted",
+      },
+    ]);
+    expect(isNextjsInternalNoise(event)).toBe(true);
+  });
+
+  it("detects the error in any exception value (chained exceptions)", () => {
+    const event = makeSentryEvent([
+      { type: "Error", value: "Some wrapper error" },
+      {
+        type: "Error",
+        value: "The router state header was sent but could not be parsed.",
+      },
+    ]);
+    expect(isNextjsInternalNoise(event)).toBe(true);
+  });
+
+  it("returns false for unrelated errors", () => {
+    const event = makeSentryEvent([
+      { type: "TypeError", value: "Cannot read properties of undefined" },
+    ]);
+    expect(isNextjsInternalNoise(event)).toBe(false);
+  });
+
+  it("returns false when exception values are empty", () => {
+    const event = makeSentryEvent([]);
+    expect(isNextjsInternalNoise(event)).toBe(false);
+  });
+
+  it("returns false when exception is missing", () => {
+    const event = { type: undefined } as ErrorEvent;
+    expect(isNextjsInternalNoise(event)).toBe(false);
+  });
+
+  it("returns false when exception value is undefined", () => {
+    const event = makeSentryEvent([{ type: "Error" }]);
+    expect(isNextjsInternalNoise(event)).toBe(false);
   });
 });

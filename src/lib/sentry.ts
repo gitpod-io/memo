@@ -1,5 +1,31 @@
 import * as Sentry from "@sentry/nextjs";
+import type { ErrorEvent } from "@sentry/nextjs";
 import { PostgrestError } from "@supabase/supabase-js";
+
+/**
+ * Error messages from Next.js internals that are caused by clients sending
+ * malformed headers (e.g. RSC router state). These are not application bugs —
+ * they originate from bots, crawlers, or browser quirks (Mobile Safari 17).
+ */
+const NEXTJS_INTERNAL_NOISE_PATTERNS = [
+  "The router state header was sent but could not be parsed",
+];
+
+/**
+ * Returns true when the Sentry event represents a Next.js internal error
+ * caused by malformed client headers. These are not actionable and should
+ * be dropped from Sentry to reduce noise.
+ */
+export function isNextjsInternalNoise(event: ErrorEvent): boolean {
+  const values = event.exception?.values;
+  if (!values || values.length === 0) return false;
+
+  return values.some((ex) =>
+    NEXTJS_INTERNAL_NOISE_PATTERNS.some(
+      (pattern) => ex.value?.includes(pattern),
+    ),
+  );
+}
 
 /**
  * True when the error is a transient network failure (e.g. offline, DNS
