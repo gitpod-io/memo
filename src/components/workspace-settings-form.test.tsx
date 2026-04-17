@@ -20,6 +20,10 @@ const mockSelect = vi.fn();
 const mockSelectEq = vi.fn();
 const mockSelectLimit = vi.fn();
 
+// Default resolved values — tests override via beforeEach or inline assignment
+let updateResult: { error: { message: string } | null } = { error: null };
+let deleteResult: { error: { message: string } | null } = { error: null };
+
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
     from: (table: string) => {
@@ -30,7 +34,7 @@ vi.mock("@/lib/supabase/client", () => ({
             return {
               eq: (_col: string, _val: string) => {
                 mockEq(_col, _val);
-                return Promise.resolve({ error: null });
+                return Promise.resolve(updateResult);
               },
             };
           },
@@ -39,7 +43,7 @@ vi.mock("@/lib/supabase/client", () => ({
             return {
               eq: (_col: string, _val: string) => {
                 mockDeleteEq(_col, _val);
-                return Promise.resolve({ error: null });
+                return Promise.resolve(deleteResult);
               },
             };
           },
@@ -95,6 +99,8 @@ function makeWorkspace(overrides: Partial<Workspace> = {}): Workspace {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  updateResult = { error: null };
+  deleteResult = { error: null };
 });
 
 describe("WorkspaceSettingsForm", () => {
@@ -276,5 +282,139 @@ describe("WorkspaceSettingsForm", () => {
     await waitFor(() => {
       expect(screen.getByText("Settings saved.")).toBeInTheDocument();
     });
+  });
+
+  it("slug input lowercases uppercase characters", async () => {
+    const user = userEvent.setup();
+    const ws = makeWorkspace();
+    render(<WorkspaceSettingsForm workspace={ws} userId="user-1" />);
+
+    const slugInput = screen.getByLabelText("Slug") as HTMLInputElement;
+    await user.clear(slugInput);
+    await user.type(slugInput, "MY-TEAM");
+
+    expect(slugInput.value).toBe("my-team");
+  });
+
+  it("slug input preserves hyphens", async () => {
+    const user = userEvent.setup();
+    const ws = makeWorkspace();
+    render(<WorkspaceSettingsForm workspace={ws} userId="user-1" />);
+
+    const slugInput = screen.getByLabelText("Slug") as HTMLInputElement;
+    await user.clear(slugInput);
+    await user.type(slugInput, "my-cool-team");
+
+    expect(slugInput.value).toBe("my-cool-team");
+  });
+
+  it("shows duplicate key error when slug is already taken", async () => {
+    updateResult = {
+      error: { message: "duplicate key value violates unique constraint" },
+    };
+
+    const user = userEvent.setup();
+    const ws = makeWorkspace();
+    render(<WorkspaceSettingsForm workspace={ws} userId="user-1" />);
+
+    const slugInput = screen.getByLabelText("Slug");
+    await user.clear(slugInput);
+    await user.type(slugInput, "taken-slug");
+
+    const saveButton = screen.getByRole("button", { name: /save changes/i });
+    await user.click(saveButton);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "This slug is already taken. Choose a different one."
+        )
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("shows generic error message on non-duplicate update failure", async () => {
+    updateResult = { error: { message: "network timeout" } };
+
+    const user = userEvent.setup();
+    const ws = makeWorkspace();
+    render(<WorkspaceSettingsForm workspace={ws} userId="user-1" />);
+
+    const nameInput = screen.getByLabelText("Name");
+    await user.clear(nameInput);
+    await user.type(nameInput, "New Name");
+
+    const saveButton = screen.getByRole("button", { name: /save changes/i });
+    await user.click(saveButton);
+
+    await waitFor(() => {
+      expect(screen.getByText("network timeout")).toBeInTheDocument();
+    });
+    expect(mockRefresh).not.toHaveBeenCalled();
+  });
+
+  it("delete confirmation calls Supabase delete and redirects to personal workspace", async () => {
+    const user = userEvent.setup();
+    const ws = makeWorkspace({
+      id: "ws-to-delete",
+      name: "Doomed Workspace",
+      is_personal: false,
+      created_by: "user-1",
+    });
+    render(<WorkspaceSettingsForm workspace={ws} userId="user-1" />);
+
+    // Click the delete trigger button to open the dialog
+    const deleteTrigger = screen.getByRole("button", {
+      name: /delete workspace/i,
+    });
+    await user.click(deleteTrigger);
+
+    // The confirmation dialog should appear with a second "Delete workspace" action
+    const confirmButton = await screen.findByRole("button", {
+      name: /delete workspace/i,
+    });
+    // Cancel button should be present in the dialog
+    expect(
+      screen.getByRole("button", { name: /cancel/i })
+    ).toBeInTheDocument();
+
+    await user.click(confirmButton);
+
+    await waitFor(() => {
+      expect(mockDelete).toHaveBeenCalled();
+      expect(mockDeleteEq).toHaveBeenCalledWith("id", "ws-to-delete");
+    });
+
+    // After delete, should redirect to personal workspace
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith("/personal");
+      expect(mockRefresh).toHaveBeenCalled();
+    });
+  });
+
+  it("shows error when delete fails", async () => {
+    deleteResult = { error: { message: "permission denied" } };
+
+    const user = userEvent.setup();
+    const ws = makeWorkspace({
+      is_personal: false,
+      created_by: "user-1",
+    });
+    render(<WorkspaceSettingsForm workspace={ws} userId="user-1" />);
+
+    const deleteTrigger = screen.getByRole("button", {
+      name: /delete workspace/i,
+    });
+    await user.click(deleteTrigger);
+
+    const confirmButton = await screen.findByRole("button", {
+      name: /delete workspace/i,
+    });
+    await user.click(confirmButton);
+
+    await waitFor(() => {
+      expect(screen.getByText("permission denied")).toBeInTheDocument();
+    });
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });

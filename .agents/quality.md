@@ -16,7 +16,7 @@ Updated weekly by the Automation Auditor. Tracks code quality per domain.
 |---|---|---|
 | Infrastructure | A | Sentry (client + server + edge), proxy with session refresh, health endpoint with tests (6 tests), PWA manifest, global error boundary, Supabase clients (browser + server + proxy). JetBrains Mono font correctly configured. Dark-only oklch theme tokens. |
 | Auth | B | Sign-in, sign-up, invite accept pages. OAuth buttons rendered with "coming soon" tooltip. Auth guard in app layout with redirect. Typography regression test (2 tests). E2E spec covers form rendering, redirect, and sign-in flow (5 tests). No unit tests for form validation logic. |
-| Workspaces | B | Workspace home, settings (name/slug/delete), workspace switcher with create dialog. Slug generation utility with unit tests (12 tests). E2E spec covers workspace creation and settings (3 tests). Max 3 workspace limit enforced via DB trigger. No unit tests for settings form or workspace-home component. |
+| Workspaces | A | Workspace home, settings (name/slug/delete), workspace switcher with create dialog. Slug generation utility with unit tests (12 tests). Settings form unit tests (17 tests): validation, save, slug sanitization, delete confirmation flow, error handling. E2E spec covers workspace creation and settings (3 tests). Max 3 workspace limit enforced via DB trigger. |
 | Pages | A | Page view with title + editor, page tree with CRUD + drag-and-drop + nest/unnest. Page menu with export/import markdown. E2E specs for page CRUD (4 tests) and sidebar drag (2 tests). Tree logic extracted to `src/lib/page-tree.ts` (224 lines) with 35 unit tests covering build, reorder, nest, unnest, and drop computation. Component reduced from 836 to 729 lines. |
 | Editor | A | Full Lexical editor: slash commands, floating toolbar, floating link editor, drag-and-drop blocks, code highlighting, image upload, callouts, collapsible/toggle blocks. Markdown import/export. 4 unit test files (25 tests): theme mapping, markdown utils, design spec compliance, Node.contains safety. 4 E2E specs (editor-drag, editor-link, editor-slash-commands, editor-toolbar — 14 tests total). Auto-save with debounce. Sentry error capture on save failures and image uploads. |
 | Search | B | Full-text search via PostgreSQL tsvector + tsquery. API route with integration tests (8 tests). Sidebar search component with debounced input (300ms) and results dropdown. Sentry error capture. E2E spec exists (`e2e/search.spec.ts`, 5 tests) but 2 tests are flaky — see #118. |
@@ -38,7 +38,7 @@ Updated weekly by the Automation Auditor. Tracks code quality per domain.
 ### Test files by domain
 
 - **Auth**: `auth-typography.test.ts` (2 tests), `e2e/auth.spec.ts` (5 tests)
-- **Workspaces**: `workspace.test.ts` (12 tests), `e2e/workspace.spec.ts` (3 tests)
+- **Workspaces**: `workspace.test.ts` (12 tests), `workspace-settings-form.test.tsx` (17 tests), `e2e/workspace.spec.ts` (3 tests)
 - **Editor**: `theme.test.ts` (9), `markdown-utils.test.ts` (8), `design-spec-compliance.test.ts` (7), `node-contains-safety.test.ts` (1), `e2e/editor-drag.spec.ts` (3), `e2e/editor-link.spec.ts` (3), `e2e/editor-slash-commands.spec.ts` (4), `e2e/editor-toolbar.spec.ts` (4)
 - **Pages**: `page-tree.test.ts` (35 tests), `e2e/page-crud.spec.ts` (4), `e2e/sidebar-drag.spec.ts` (2)
 - **Search**: `search/route.test.ts` (8 tests), `e2e/search.spec.ts` (5 tests)
