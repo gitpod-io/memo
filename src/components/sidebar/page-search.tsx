@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 import { captureSupabaseError } from "@/lib/sentry";
 import { retryOnNetworkError } from "@/lib/retry";
+import { useSidebar } from "@/components/sidebar/sidebar-context";
 
 interface SearchResult {
   id: string;
@@ -34,6 +35,7 @@ type SearchStatus = "idle" | "loading" | "done";
 export function PageSearch() {
   const router = useRouter();
   const params = useParams<{ workspaceSlug?: string }>();
+  const { registerSearchRef, isMac } = useSidebar();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [searchStatus, setSearchStatus] = useState<SearchStatus>("idle");
@@ -49,6 +51,11 @@ export function PageSearch() {
   // callbacks never update state. Immune to microtask ordering because
   // the counter is incremented synchronously before any async work.
   const searchGenRef = useRef(0);
+
+  // Register the search input ref so the sidebar context can focus it via ⌘+K
+  useEffect(() => {
+    registerSearchRef(inputRef);
+  }, [registerSearchRef]);
 
   // Resolve workspace slug to ID
   useEffect(() => {
@@ -293,7 +300,7 @@ export function PageSearch() {
         <Input
           ref={inputRef}
           type="text"
-          placeholder="Search pages…"
+          placeholder={`Search… ${isMac ? "⌘K" : "Ctrl+K"}`}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);

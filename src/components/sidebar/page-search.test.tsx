@@ -39,6 +39,13 @@ vi.mock("@sentry/nextjs", () => ({
   captureException: vi.fn(),
 }));
 
+vi.mock("@/components/sidebar/sidebar-context", () => ({
+  useSidebar: () => ({
+    registerSearchRef: vi.fn(),
+    isMac: true,
+  }),
+}));
+
 // Track fetch calls
 let fetchMock: ReturnType<typeof vi.fn<typeof globalThis.fetch>>;
 
