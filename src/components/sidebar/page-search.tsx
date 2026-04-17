@@ -34,6 +34,12 @@ export function PageSearch() {
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  // Generation counter: incremented each search cycle so async callbacks
+  // can detect whether they belong to the current cycle or a stale one.
+  // Unlike AbortSignal checks, reading the ref at state-update time avoids
+  // microtask ordering issues where an aborted fetch's finally block runs
+  // after the next cycle has already set loading=true.
+  const searchGenRef = useRef(0);
 
   // Resolve workspace slug to ID
   useEffect(() => {
@@ -70,9 +76,9 @@ export function PageSearch() {
   }, [params.workspaceSlug]);
 
   const search = useCallback(
-    async (q: string, signal: AbortSignal) => {
+    async (q: string, gen: number, signal: AbortSignal) => {
       if (!q.trim() || !workspaceId) {
-        if (!signal.aborted) {
+        if (searchGenRef.current === gen) {
           setResults([]);
           setLoading(false);
         }
@@ -84,21 +90,21 @@ export function PageSearch() {
           `/api/search?q=${encodeURIComponent(q.trim())}&workspace_id=${encodeURIComponent(workspaceId)}`,
           { signal }
         );
-        if (signal.aborted) return;
+        if (searchGenRef.current !== gen) return;
         if (response.ok) {
           const data = (await response.json()) as { results: SearchResult[] };
-          if (signal.aborted) return;
+          if (searchGenRef.current !== gen) return;
           setResults(data.results);
           setSelectedIndex(0);
         } else {
           setResults([]);
         }
       } catch (error) {
-        if (signal.aborted) return;
+        if (searchGenRef.current !== gen) return;
         Sentry.captureException(error);
         setResults([]);
       } finally {
-        if (!signal.aborted) {
+        if (searchGenRef.current === gen) {
           setLoading(false);
           setSearched(true);
         }
@@ -107,9 +113,18 @@ export function PageSearch() {
     [workspaceId]
   );
 
-  // Debounced search with abort support. Cancels any in-flight fetch when
-  // the query or search callback changes, preventing stale responses from
-  // overwriting the current state.
+  // Debounced search with abort + generation counter. The abort signal
+  // cancels the network request for efficiency. The generation counter
+  // (searchGenRef) determines whether async callbacks should update state.
+  // This avoids a microtask ordering bug: when the effect re-runs, it
+  // aborts the old controller and sets loading=true synchronously, but the
+  // aborted fetch's finally block runs later as a microtask. If that
+  // finally block used signal.aborted to decide whether to set
+  // loading=false, it would correctly skip — but if the abort races with
+  // fetch completion (signal not yet aborted when finally runs), it could
+  // set loading=false and then the new cycle's loading=true would be
+  // undone. The generation counter is immune to this because it is
+  // incremented synchronously before the microtask runs.
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
@@ -121,12 +136,14 @@ export function PageSearch() {
     }
 
     if (!query.trim()) {
+      searchGenRef.current += 1;
       setResults([]);
       setLoading(false);
       setSearched(false);
       return;
     }
 
+    const gen = ++searchGenRef.current;
     setLoading(true);
     setSearched(false);
     const controller = new AbortController();
@@ -134,7 +151,7 @@ export function PageSearch() {
 
     debounceRef.current = setTimeout(() => {
       debounceRef.current = null;
-      search(query, controller.signal);
+      search(query, gen, controller.signal);
     }, 300);
 
     return () => {

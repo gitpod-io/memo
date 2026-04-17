@@ -212,6 +212,73 @@ describe("PageSearch", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows empty state even when aborted fetch finally block races with new cycle", async () => {
+    // Regression test for the microtask ordering bug: when the debounce
+    // effect re-runs (e.g. because workspaceId resolved), it aborts the
+    // old controller and sets loading=true synchronously. The aborted
+    // fetch's finally block runs later as a microtask. If the finally
+    // block used signal.aborted to decide whether to clear loading, a
+    // race could leave loading=true permanently. The generation counter
+    // prevents this.
+
+    // First fetch resolves synchronously (simulating a fetch that
+    // completes at the same tick the abort fires)
+    let fetchCallCount = 0;
+    fetchMock.mockImplementation((_url: string | URL | Request, init?: RequestInit) => {
+      fetchCallCount++;
+      const signal = init?.signal;
+      if (fetchCallCount === 1) {
+        // First fetch: resolve immediately so its finally block runs
+        // in the same microtask queue as the abort
+        return Promise.resolve(new Response(JSON.stringify({ results: [] }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }));
+      }
+      // Second fetch: also resolves, but check abort
+      return new Promise<Response>((resolve, reject) => {
+        if (signal?.aborted) {
+          reject(new DOMException("Aborted", "AbortError"));
+          return;
+        }
+        resolve(new Response(JSON.stringify({ results: [] }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }));
+      });
+    });
+
+    // Start with workspace already resolved
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime,
+    });
+
+    render(<PageSearch />);
+
+    // Wait for workspace resolution
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(50);
+    });
+
+    const input = screen.getByRole("combobox", { name: /search pages/i });
+    await user.click(input);
+    await user.type(input, "test");
+
+    // Advance past debounce — first fetch fires and resolves immediately
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    // The empty state should be visible (not stuck on skeletons)
+    expect(
+      screen.getByText("No pages match your search")
+    ).toBeInTheDocument();
+
+    const searchResults = screen.getByRole("listbox");
+    const skeletons = searchResults.querySelectorAll(".animate-pulse");
+    expect(skeletons.length).toBe(0);
+  });
+
   it("shows skeletons while workspace is resolving even after search completes", async () => {
     // Make workspace resolution hang
     let resolveWorkspace: (value: unknown) => void;
