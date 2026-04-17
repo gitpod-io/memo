@@ -55,7 +55,7 @@ export function PageIcon({ pageId, initialIcon }: PageIconProps) {
           hasIcon
         >
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-sm text-4xl leading-none hover:bg-white/[0.04]"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-sm text-4xl leading-none hover:bg-white/[0.04] sm:min-h-10 sm:min-w-10"
             aria-label={`Page icon: ${icon}. Click to change`}
           >
             {icon}
@@ -66,7 +66,7 @@ export function PageIcon({ pageId, initialIcon }: PageIconProps) {
   }
 
   return (
-    <div className="mb-1 opacity-0 group-hover/page-header:opacity-100">
+    <div className="mb-1 max-sm:opacity-100 opacity-0 group-hover/page-header:opacity-100">
       <EmojiPicker
         open={open}
         onOpenChange={setOpen}
@@ -75,7 +75,7 @@ export function PageIcon({ pageId, initialIcon }: PageIconProps) {
         hasIcon={false}
       >
         <button
-          className="flex h-7 items-center gap-1 rounded-sm px-1.5 text-xs text-muted-foreground hover:bg-white/[0.04]"
+          className="flex min-h-[44px] items-center gap-1 rounded-sm px-1.5 text-xs text-muted-foreground hover:bg-white/[0.04] sm:min-h-7"
           aria-label="Add page icon"
         >
           <SmilePlus className="h-3.5 w-3.5" />
