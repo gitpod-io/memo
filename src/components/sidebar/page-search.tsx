@@ -19,26 +19,35 @@ interface SearchResult {
   rank: number;
 }
 
+/**
+ * Search display status — a single discriminated value replaces the
+ * previous independent `loading` + `searched` booleans. This eliminates
+ * the class of race conditions where the two flags get out of sync
+ * (the root cause of issues #118, #126, #136, #144, #162).
+ *
+ * - "idle"    — no query entered or query was cleared
+ * - "loading" — a search is in-flight (show skeleton placeholders)
+ * - "done"    — the search completed (show results or empty state)
+ */
+type SearchStatus = "idle" | "loading" | "done";
+
 export function PageSearch() {
   const router = useRouter();
   const params = useParams<{ workspaceSlug?: string }>();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [searchStatus, setSearchStatus] = useState<SearchStatus>("idle");
   const [open, setOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [workspaceResolved, setWorkspaceResolved] = useState(false);
-  const [searched, setSearched] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  // Generation counter: incremented each search cycle so async callbacks
-  // can detect whether they belong to the current cycle or a stale one.
-  // Unlike AbortSignal checks, reading the ref at state-update time avoids
-  // microtask ordering issues where an aborted fetch's finally block runs
-  // after the next cycle has already set loading=true.
+  // Generation counter: incremented each search cycle so stale async
+  // callbacks never update state. Immune to microtask ordering because
+  // the counter is incremented synchronously before any async work.
   const searchGenRef = useRef(0);
 
   // Resolve workspace slug to ID
@@ -80,7 +89,10 @@ export function PageSearch() {
       if (!q.trim() || !workspaceId) {
         if (searchGenRef.current === gen) {
           setResults([]);
-          setLoading(false);
+          // Mark as done — the search resolved (even without a fetch).
+          // The render logic uses `workspaceResolved` to decide whether
+          // to show skeletons or the empty state.
+          setSearchStatus("done");
         }
         return;
       }
@@ -101,30 +113,22 @@ export function PageSearch() {
         }
       } catch (error) {
         if (searchGenRef.current !== gen) return;
-        Sentry.captureException(error);
+        // AbortErrors are expected when the user types quickly — only
+        // capture genuine failures.
+        if (!(error instanceof DOMException && error.name === "AbortError")) {
+          Sentry.captureException(error);
+        }
         setResults([]);
       } finally {
         if (searchGenRef.current === gen) {
-          setLoading(false);
-          setSearched(true);
+          setSearchStatus("done");
         }
       }
     },
     [workspaceId]
   );
 
-  // Debounced search with abort + generation counter. The abort signal
-  // cancels the network request for efficiency. The generation counter
-  // (searchGenRef) determines whether async callbacks should update state.
-  // This avoids a microtask ordering bug: when the effect re-runs, it
-  // aborts the old controller and sets loading=true synchronously, but the
-  // aborted fetch's finally block runs later as a microtask. If that
-  // finally block used signal.aborted to decide whether to set
-  // loading=false, it would correctly skip — but if the abort races with
-  // fetch completion (signal not yet aborted when finally runs), it could
-  // set loading=false and then the new cycle's loading=true would be
-  // undone. The generation counter is immune to this because it is
-  // incremented synchronously before the microtask runs.
+  // Debounced search with abort + generation counter.
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
@@ -138,14 +142,12 @@ export function PageSearch() {
     if (!query.trim()) {
       searchGenRef.current += 1;
       setResults([]);
-      setLoading(false);
-      setSearched(false);
+      setSearchStatus("idle");
       return;
     }
 
     const gen = ++searchGenRef.current;
-    setLoading(true);
-    setSearched(false);
+    setSearchStatus("loading");
     const controller = new AbortController();
     abortRef.current = controller;
 
@@ -187,7 +189,7 @@ export function PageSearch() {
     setOpen(false);
     setQuery("");
     setResults([]);
-    setSearched(false);
+    setSearchStatus("idle");
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -223,7 +225,7 @@ export function PageSearch() {
   function handleClear() {
     setQuery("");
     setResults([]);
-    setSearched(false);
+    setSearchStatus("idle");
     setOpen(false);
     inputRef.current?.focus();
   }
@@ -264,6 +266,25 @@ export function PageSearch() {
   }
 
   const showResults = open && query.trim().length > 0;
+
+  // Show skeletons when a search is in-flight, OR when the workspace
+  // hasn't resolved yet (so we can't search). The `searchStatus === "done"`
+  // check with `!workspaceResolved` handles the case where the search
+  // callback returned early because workspaceId was null — we still want
+  // skeletons until the workspace resolves and a real search can fire.
+  const showSkeleton =
+    results.length === 0 &&
+    (searchStatus === "loading" ||
+      (!workspaceResolved && searchStatus !== "idle"));
+
+  // Show empty state only when the search completed AND the workspace
+  // is resolved (so we know the empty result is real, not just because
+  // we couldn't search yet).
+  const showEmpty =
+    searchStatus === "done" &&
+    workspaceResolved &&
+    results.length === 0 &&
+    query.trim().length > 0;
 
   return (
     <div ref={containerRef} className="relative px-1">
@@ -310,7 +331,7 @@ export function PageSearch() {
           role="listbox"
           className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] overflow-y-auto border border-white/[0.06] bg-muted rounded-sm shadow-md"
         >
-          {(loading || !workspaceResolved) && results.length === 0 && (
+          {showSkeleton && (
             <div className="flex flex-col">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="flex flex-col gap-1 px-3 py-2">
@@ -324,7 +345,7 @@ export function PageSearch() {
             </div>
           )}
 
-          {!loading && searched && results.length === 0 && query.trim().length > 0 && (
+          {showEmpty && (
             <div className="px-3 py-4 text-center text-xs text-muted-foreground">
               No pages match your search
             </div>
