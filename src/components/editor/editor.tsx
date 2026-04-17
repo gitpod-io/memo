@@ -13,6 +13,7 @@ import { ListTabIndentationPlugin } from "@/components/editor/list-tab-indentati
 import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
 import { ClickableLinkPlugin } from "@lexical/react/LexicalClickableLinkPlugin";
 import { HorizontalRulePlugin } from "@lexical/react/LexicalHorizontalRulePlugin";
+import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPlugin";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { ListNode, ListItemNode } from "@lexical/list";
@@ -31,6 +32,7 @@ import { FloatingToolbarPlugin } from "@/components/editor/floating-toolbar-plug
 import { FloatingLinkEditorPlugin } from "@/components/editor/floating-link-editor-plugin";
 import { CodeHighlightPlugin } from "@/components/editor/code-highlight-plugin";
 import { DraggableBlockPlugin } from "@/components/editor/draggable-block-plugin";
+import { MARKDOWN_TRANSFORMERS } from "@/components/editor/markdown-utils";
 import { ImageNode } from "@/components/editor/image-node";
 import { ImagePlugin } from "@/components/editor/image-plugin";
 import { CalloutNode } from "@/components/editor/callout-node";
@@ -199,6 +201,7 @@ export function Editor({ pageId, initialContent, editorRef }: EditorProps) {
         <LinkPlugin validateUrl={validateUrl} />
         <ClickableLinkPlugin />
         <HorizontalRulePlugin />
+        <MarkdownShortcutPlugin transformers={MARKDOWN_TRANSFORMERS} />
         <CodeHighlightPlugin />
         <ImagePlugin />
         <CalloutPlugin />
