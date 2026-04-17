@@ -151,21 +151,28 @@ test.describe("Sidebar search", () => {
     await page.goto(`/${workspaceSlug}`);
     await waitForSidebarReady(page);
 
-    // Search for the page
+    // Search for the page. Use expect.toPass to retry the entire search
+    // flow — Supabase read-replicas may have a short replication lag after
+    // the title save, causing the first search attempt to return no results.
     const searchInput = page.getByRole("combobox", { name: /search pages/i });
     await expect(searchInput).toBeVisible({ timeout: 5_000 });
-    await searchInput.click();
-    await searchInput.fill(navUniqueWord);
 
-    // Wait for results
+    await expect(async () => {
+      await searchInput.click();
+      await searchInput.fill(navUniqueWord);
+
+      // Wait for debounce (300ms) + network response
+      const resultsList = page.locator("#search-results");
+      await expect(resultsList).toBeVisible({ timeout: 5_000 });
+
+      const resultOption = resultsList.locator('[role="option"]').first();
+      await expect(resultOption).toBeVisible({ timeout: 5_000 });
+      await expect(resultOption).toContainText("Navigate");
+    }).toPass({ timeout: 15_000, intervals: [2_000, 3_000, 5_000] });
+
+    // Click the result (outside toPass — we only need to retry the search)
     const resultsList = page.locator("#search-results");
-    await expect(resultsList).toBeVisible({ timeout: 5_000 });
-
     const resultOption = resultsList.locator('[role="option"]').first();
-    await expect(resultOption).toBeVisible({ timeout: 5_000 });
-    await expect(resultOption).toContainText("Navigate");
-
-    // Click the result
     await resultOption.click();
 
     // Should navigate to the page URL containing the page ID
@@ -216,20 +223,30 @@ test.describe("Sidebar search", () => {
     const scopeTitle = `Scoped ${scopeWord} Page`;
     await createPageWithTitle(page, scopeTitle);
 
-    // Search for the page — it should appear since it's in the current workspace
+    // Search for the page. Use expect.toPass to retry the entire search
+    // flow — Supabase read-replicas may lag after the title save.
     const searchInput = page.getByRole("combobox", { name: /search pages/i });
     await expect(searchInput).toBeVisible({ timeout: 5_000 });
-    await searchInput.click();
-    await searchInput.fill(scopeWord);
 
+    await expect(async () => {
+      await searchInput.click();
+      await searchInput.fill(scopeWord);
+
+      // Wait for debounce (300ms) + network response
+      const resultsList = page.locator("#search-results");
+      await expect(resultsList).toBeVisible({ timeout: 5_000 });
+
+      // Verify the search API was called with a workspace_id parameter
+      // by checking that results appear (the API requires workspace_id)
+      const resultOptions = resultsList.locator('[role="option"]');
+      await expect(resultOptions.first()).toBeVisible({ timeout: 5_000 });
+      await expect(resultOptions.first()).toContainText("Scoped");
+    }).toPass({ timeout: 15_000, intervals: [2_000, 3_000, 5_000] });
+
+    // Verify all results are scoped to the current workspace (outside toPass
+    // since the search results are now confirmed visible above).
     const resultsList = page.locator("#search-results");
-    await expect(resultsList).toBeVisible({ timeout: 5_000 });
-
-    // Verify the search API was called with a workspace_id parameter
-    // by checking that results appear (the API requires workspace_id)
     const resultOptions = resultsList.locator('[role="option"]');
-    await expect(resultOptions.first()).toBeVisible({ timeout: 5_000 });
-    await expect(resultOptions.first()).toContainText("Scoped");
 
     // The search component resolves workspace_id from the URL's workspaceSlug
     // and passes it to /api/search?workspace_id=. If workspace scoping were
