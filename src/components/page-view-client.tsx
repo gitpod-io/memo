@@ -3,12 +3,14 @@
 import { useRef } from "react";
 import type { LexicalEditor, SerializedEditorState } from "lexical";
 import { PageTitle } from "@/components/page-title";
+import { PageIcon } from "@/components/page-icon";
 import { Editor } from "@/components/editor/editor";
 import { PageMenu } from "@/components/page-menu";
 
 interface PageViewClientProps {
   pageId: string;
   pageTitle: string;
+  pageIcon: string | null;
   initialContent: SerializedEditorState | null;
   workspaceId: string;
   workspaceSlug: string;
@@ -18,6 +20,7 @@ interface PageViewClientProps {
 export function PageViewClient({
   pageId,
   pageTitle,
+  pageIcon,
   initialContent,
   workspaceId,
   workspaceSlug,
@@ -27,7 +30,8 @@ export function PageViewClient({
 
   return (
     <div className="mx-auto max-w-3xl p-6">
-      <div className="flex items-start gap-2">
+      <div className="group/page-icon flex items-start gap-2">
+        <PageIcon key={`icon-${pageId}`} pageId={pageId} initialIcon={pageIcon} />
         <div className="min-w-0 flex-1">
           <PageTitle key={pageId} pageId={pageId} initialTitle={pageTitle} />
         </div>
