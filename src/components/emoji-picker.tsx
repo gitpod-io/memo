@@ -213,7 +213,7 @@ export function EmojiPicker({
                     <button
                       key={emoji}
                       onClick={() => handleSelect(emoji)}
-                      className="flex min-h-[44px] min-w-[44px] items-center justify-center text-lg hover:bg-white/[0.04] sm:min-h-8 sm:min-w-8"
+                      className="flex min-h-11 min-w-11 items-center justify-center text-lg hover:bg-white/[0.04] sm:min-h-8 sm:min-w-8"
                       aria-label={`Select ${emoji}`}
                     >
                       {emoji}

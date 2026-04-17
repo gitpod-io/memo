@@ -3,11 +3,11 @@ import { readFileSync } from "fs";
 import { resolve } from "path";
 
 /**
- * Regression tests for issue #186: UI does not match design spec after PR #185.
+ * Regression tests for issues #186 and #201: UI design spec compliance.
  *
  * These tests verify that emoji-picker and page-icon source files comply with
  * the design spec constraints for touch targets, input styling, mobile
- * visibility, and responsive width.
+ * visibility, responsive width, and Tailwind spacing scale usage.
  */
 
 function readSource(relativePath: string): string {
@@ -17,11 +17,15 @@ function readSource(relativePath: string): string {
 describe("emoji-picker design spec compliance", () => {
   const source = readSource("./emoji-picker.tsx");
 
-  it("emoji buttons have 44px minimum touch target on mobile", () => {
+  it("emoji buttons have 44px minimum touch target on mobile using Tailwind scale", () => {
     // Design spec: "Touch targets: minimum 44px on mobile."
-    // Emoji buttons must use min-h-[44px] and min-w-[44px] for mobile.
-    expect(source).toContain("min-h-[44px]");
-    expect(source).toContain("min-w-[44px]");
+    // Design spec: "Never use arbitrary spacing values. Use the scale."
+    // min-h-11 = 44px (11 × 4px), min-w-11 = 44px — exact Tailwind scale matches.
+    expect(source).toContain("min-h-11");
+    expect(source).toContain("min-w-11");
+    // Must NOT use arbitrary values when a scale equivalent exists
+    expect(source).not.toContain("min-h-[44px]");
+    expect(source).not.toContain("min-w-[44px]");
   });
 
   it("filter input has border per input spec", () => {
@@ -54,10 +58,14 @@ describe("emoji-picker design spec compliance", () => {
 describe("page-icon design spec compliance", () => {
   const source = readSource("./page-icon.tsx");
 
-  it("page icon button has 44px minimum touch target on mobile", () => {
+  it("page icon button has 44px minimum touch target on mobile using Tailwind scale", () => {
     // Design spec: "Touch targets: minimum 44px on mobile."
-    expect(source).toContain("min-h-[44px]");
-    expect(source).toContain("min-w-[44px]");
+    // Design spec: "Never use arbitrary spacing values. Use the scale."
+    // min-h-11 = 44px, min-w-11 = 44px — exact Tailwind scale matches.
+    expect(source).toContain("min-h-11");
+    expect(source).toContain("min-w-11");
+    expect(source).not.toContain("min-h-[44px]");
+    expect(source).not.toContain("min-w-[44px]");
   });
 
   it("add-icon button is visible on mobile (not hover-only)", () => {
@@ -67,15 +75,16 @@ describe("page-icon design spec compliance", () => {
     expect(source).toContain("max-sm:opacity-100");
   });
 
-  it("add-icon button has 44px minimum touch target on mobile", () => {
+  it("add-icon button has 44px minimum touch target on mobile using Tailwind scale", () => {
     // The "Add icon" button must meet the 44px minimum on mobile.
+    // Design spec: "Never use arbitrary spacing values. Use the scale."
     const addIconSection = source.match(
       /aria-label="Add page icon"[\s\S]{0,50}/
     );
     expect(addIconSection).not.toBeNull();
 
     const classSection = source.match(
-      /className="[^"]*min-h-\[44px\][^"]*"[\s\S]*?aria-label="Add page icon"/
+      /className="[^"]*min-h-11[^"]*"[\s\S]*?aria-label="Add page icon"/
     );
     expect(classSection).not.toBeNull();
   });
