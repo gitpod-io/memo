@@ -150,3 +150,34 @@ export async function cleanupInvitesForEmail(email: string): Promise<void> {
     .ilike("email", email)
     .is("accepted_at", null);
 }
+
+/**
+ * Removes stale test users that match a given display name.
+ * Used in beforeAll to clean up leftovers from previous test runs whose
+ * afterAll cleanup was interrupted (e.g. process killed, timeout).
+ * Skips the provided excludeUserId (the current test owner) to avoid
+ * accidentally deleting the primary test user.
+ */
+export async function cleanupStaleTestUsers(
+  displayName: string,
+  excludeUserId?: string
+): Promise<void> {
+  const admin = getAdminClient();
+
+  const query = admin
+    .from("profiles")
+    .select("id")
+    .eq("display_name", displayName);
+
+  const { data: staleProfiles } = excludeUserId
+    ? await query.neq("id", excludeUserId)
+    : await query;
+
+  if (!staleProfiles || staleProfiles.length === 0) return;
+
+  for (const profile of staleProfiles) {
+    await deleteTestUser(profile.id).catch((err) => {
+      console.warn(`Failed to clean up stale test user ${profile.id}: ${err}`);
+    });
+  }
+}
