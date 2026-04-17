@@ -379,20 +379,14 @@ describe("PageSearch", () => {
       screen.queryByText("No pages match your search")
     ).not.toBeInTheDocument();
 
-    // Now resolve the workspace — this triggers a new search via the
-    // search callback getting a new workspaceId reference
+    // Now resolve the workspace — the workspace-resolved effect
+    // re-triggers the search immediately (no debounce).
     await act(async () => {
       resolveWorkspace!({
         data: { id: "ws-uuid-123" },
         error: null,
       });
       await vi.advanceTimersByTimeAsync(50);
-    });
-
-    // Debounce effect re-runs because search changed (new workspaceId).
-    // Advance past the new 300ms debounce.
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(350);
     });
 
     // Now the empty state should show
@@ -510,5 +504,113 @@ describe("PageSearch", () => {
 
     // AbortError should NOT have been sent to Sentry
     expect(captureException).not.toHaveBeenCalled();
+  });
+
+  it("shows empty state when workspace resolves after debounce fires (#178)", async () => {
+    // Regression test for #178: when workspace resolution is slow and
+    // completes after the debounce timer fires, the old code re-ran the
+    // debounce effect (because the search callback changed identity),
+    // creating a cascade of loading→done→loading transitions that could
+    // leave searchStatus stuck at "loading". The fix decouples the search
+    // callback from workspaceId by using a ref, and adds a dedicated
+    // effect to re-trigger search when the workspace resolves.
+
+    // Make workspace resolution slow
+    let resolveWorkspace: (value: unknown) => void;
+    mockMaybeSingle.mockReturnValue(
+      new Promise((resolve) => {
+        resolveWorkspace = resolve;
+      })
+    );
+
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime,
+    });
+
+    render(<PageSearch />);
+
+    const input = screen.getByRole("combobox", { name: /search pages/i });
+    await user.click(input);
+    await user.type(input, "zzzyyyxxxnonexistent999");
+
+    // Advance past debounce — search fires but workspaceId is null
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    // Skeletons should show (workspace not resolved)
+    const searchResults = screen.getByRole("listbox");
+    expect(searchResults.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
+    expect(screen.queryByText("No pages match your search")).not.toBeInTheDocument();
+
+    // Resolve workspace — the workspace-resolved effect fires a new
+    // search immediately (no 300ms debounce delay).
+    await act(async () => {
+      resolveWorkspace!({
+        data: { id: "ws-uuid-123" },
+        error: null,
+      });
+      await vi.advanceTimersByTimeAsync(50);
+    });
+
+    // The fetch should have been called with the workspace ID
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("workspace_id=ws-uuid-123"),
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    );
+
+    // Empty state should now show (not stuck on skeletons)
+    expect(
+      screen.getByText("No pages match your search")
+    ).toBeInTheDocument();
+    expect(searchResults.querySelectorAll(".animate-pulse").length).toBe(0);
+  });
+
+  it("shows empty state when workspace resolution rejects (#178)", async () => {
+    // Regression test for #178: the old code had no .catch() on the
+    // workspace resolution promise. If retryOnNetworkError rejected,
+    // workspaceResolved stayed false forever, causing infinite skeletons.
+    const captureException = vi.mocked(
+      (await import("@sentry/nextjs")).captureException
+    );
+
+    mockMaybeSingle.mockImplementation(() => {
+      throw new Error("Unexpected Supabase error");
+    });
+
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime,
+    });
+
+    render(<PageSearch />);
+
+    // Wait for workspace resolution to reject and .catch() to fire
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(50);
+    });
+
+    const input = screen.getByRole("combobox", { name: /search pages/i });
+    await user.click(input);
+    await user.type(input, "zzzyyyxxxnonexistent999");
+
+    // Advance past debounce
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    // The error should have been captured in Sentry
+    expect(captureException).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "Unexpected Supabase error" })
+    );
+
+    // Empty state should show (workspaceResolved=true from .catch(),
+    // workspaceId=null, so search early-returns with done status)
+    expect(
+      screen.getByText("No pages match your search")
+    ).toBeInTheDocument();
+
+    // No skeletons
+    const searchResults = screen.getByRole("listbox");
+    expect(searchResults.querySelectorAll(".animate-pulse").length).toBe(0);
   });
 });
