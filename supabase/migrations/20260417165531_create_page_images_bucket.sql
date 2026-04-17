@@ -8,22 +8,32 @@ VALUES (
   true,
   5242880, -- 5 MB
   ARRAY['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml']
-);
+)
+ON CONFLICT (id) DO NOTHING;
 
 -- Authenticated users can upload images
-CREATE POLICY "Authenticated users can upload page images"
-  ON storage.objects FOR INSERT
-  TO authenticated
-  WITH CHECK (bucket_id = 'page-images');
+DO $$ BEGIN
+  CREATE POLICY "Authenticated users can upload page images"
+    ON storage.objects FOR INSERT
+    TO authenticated
+    WITH CHECK (bucket_id = 'page-images');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Anyone can view uploaded images (public bucket)
-CREATE POLICY "Public read access for page images"
-  ON storage.objects FOR SELECT
-  TO public
-  USING (bucket_id = 'page-images');
+DO $$ BEGIN
+  CREATE POLICY "Public read access for page images"
+    ON storage.objects FOR SELECT
+    TO public
+    USING (bucket_id = 'page-images');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Image owners can delete their uploads
-CREATE POLICY "Users can delete own page images"
-  ON storage.objects FOR DELETE
-  TO authenticated
-  USING (bucket_id = 'page-images' AND (storage.foldername(name))[1] = 'uploads' AND auth.uid() = owner);
+DO $$ BEGIN
+  CREATE POLICY "Users can delete own page images"
+    ON storage.objects FOR DELETE
+    TO authenticated
+    USING (bucket_id = 'page-images' AND (storage.foldername(name))[1] = 'uploads' AND auth.uid() = owner);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
