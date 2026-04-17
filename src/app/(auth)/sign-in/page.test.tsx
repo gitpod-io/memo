@@ -5,8 +5,10 @@ import userEvent from "@testing-library/user-event";
 
 // Mock next/navigation
 const mockPush = vi.fn();
+let mockSearchParams = new URLSearchParams();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
+  useSearchParams: () => mockSearchParams,
 }));
 
 // Mock next/link as a simple anchor
@@ -49,6 +51,7 @@ import SignInPage from "./page";
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockSearchParams = new URLSearchParams();
 });
 
 describe("SignInPage", () => {
@@ -206,5 +209,22 @@ describe("SignInPage", () => {
         screen.getByRole("button", { name: /signing in/i }),
       ).toBeDisabled();
     });
+  });
+
+  it("shows confirmation success message when confirmed=true query param is present", () => {
+    mockSearchParams = new URLSearchParams("confirmed=true");
+    render(<SignInPage />);
+
+    expect(
+      screen.getByText(/email confirmed/i),
+    ).toBeInTheDocument();
+  });
+
+  it("does not show confirmation message without query param", () => {
+    render(<SignInPage />);
+
+    expect(
+      screen.queryByText(/email confirmed/i),
+    ).not.toBeInTheDocument();
   });
 });

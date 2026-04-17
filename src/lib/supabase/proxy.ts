@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Routes that unauthenticated users can access
-const PUBLIC_ROUTES = ["/sign-in", "/sign-up", "/invite"];
+const PUBLIC_ROUTES = ["/sign-in", "/sign-up", "/invite", "/auth/callback"];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
