@@ -21,8 +21,9 @@ action:
                 1. Lines of code: run `npx cloc src/ supabase/migrations/ --json`. Extract total and by-language.
                 2. File count: count files in src/ excluding node_modules, .next, test files.
                 3. PRs today: use gh pr list to count opened and merged today, and currently open.
-                4. Test coverage: run `pnpm test -- --coverage --reporter=json` and extract percentage.
-                   If coverage is not configured, set to null.
+                4. Test coverage: run `pnpm test:coverage` then read `coverage/coverage-summary.json`.
+                   Extract the value at `total.statements.pct` (a number like 72.5).
+                   If the command fails or the file is missing, set to null.
                 5. CI pass rate: use `gh run list --limit 20 --json conclusion` and calculate success %.
                 6. GitHub Issues: use gh issue list with label filters to count issues per status.
                 7. Commits today: `git log --oneline --since="today" | wc -l`
