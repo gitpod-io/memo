@@ -51,6 +51,10 @@ export function PageSearch() {
   // callbacks never update state. Immune to microtask ordering because
   // the counter is incremented synchronously before any async work.
   const searchGenRef = useRef(0);
+  // Ref mirrors workspaceId state so the search callback can read the
+  // latest value without being recreated (which would re-trigger the
+  // debounce effect and add an unnecessary 300ms delay).
+  const workspaceIdRef = useRef<string | null>(null);
 
   // Register the search input ref so the sidebar context can focus it via ⌘+K
   useEffect(() => {
@@ -60,6 +64,7 @@ export function PageSearch() {
   // Resolve workspace slug to ID
   useEffect(() => {
     if (!params.workspaceSlug) {
+      workspaceIdRef.current = null;
       setWorkspaceId(null);
       setWorkspaceResolved(true);
       return;
@@ -82,7 +87,9 @@ export function PageSearch() {
         setWorkspaceResolved(true);
         return;
       }
-      setWorkspaceId(data?.id ?? null);
+      const id = data?.id ?? null;
+      workspaceIdRef.current = id;
+      setWorkspaceId(id);
       setWorkspaceResolved(true);
     });
 
@@ -91,9 +98,14 @@ export function PageSearch() {
     };
   }, [params.workspaceSlug]);
 
+  // Reads workspaceIdRef (not the state) so the callback identity is stable
+  // and doesn't cause the debounce effect to re-run when the workspace
+  // resolves. A separate effect handles re-triggering the search when
+  // workspaceId becomes available.
   const search = useCallback(
     async (q: string, gen: number, signal: AbortSignal) => {
-      if (!q.trim() || !workspaceId) {
+      const wsId = workspaceIdRef.current;
+      if (!q.trim() || !wsId) {
         if (searchGenRef.current === gen) {
           setResults([]);
           // Mark as done — the search resolved (even without a fetch).
@@ -106,7 +118,7 @@ export function PageSearch() {
 
       try {
         const response = await fetch(
-          `/api/search?q=${encodeURIComponent(q.trim())}&workspace_id=${encodeURIComponent(workspaceId)}`,
+          `/api/search?q=${encodeURIComponent(q.trim())}&workspace_id=${encodeURIComponent(wsId)}`,
           { signal }
         );
         if (searchGenRef.current !== gen) return;
@@ -132,7 +144,7 @@ export function PageSearch() {
         }
       }
     },
-    [workspaceId]
+    []
   );
 
   // Debounced search with abort + generation counter.
@@ -171,6 +183,40 @@ export function PageSearch() {
       controller.abort();
     };
   }, [query, search]);
+
+  // When workspaceId becomes available and there is an active query,
+  // re-trigger the search immediately (no debounce). This covers the
+  // case where the initial search completed with workspaceId=null
+  // (early return → searchStatus="done") and the workspace resolved
+  // afterwards. Without this, the empty state would never show because
+  // the debounce effect wouldn't re-run (search callback is now stable).
+  const queryRef = useRef(query);
+  queryRef.current = query;
+
+  useEffect(() => {
+    if (!workspaceId || !queryRef.current.trim()) return;
+
+    // Abort any in-flight request from the debounce effect
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+    }
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+
+    const gen = ++searchGenRef.current;
+    setSearchStatus("loading");
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    search(queryRef.current, gen, controller.signal);
+
+    return () => {
+      controller.abort();
+    };
+  }, [workspaceId, search]);
 
   // Close on click outside
   useEffect(() => {

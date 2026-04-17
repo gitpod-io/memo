@@ -379,8 +379,8 @@ describe("PageSearch", () => {
       screen.queryByText("No pages match your search")
     ).not.toBeInTheDocument();
 
-    // Now resolve the workspace — this triggers a new search via the
-    // search callback getting a new workspaceId reference
+    // Now resolve the workspace — the workspaceId effect triggers an
+    // immediate re-search (no debounce) via the re-trigger effect.
     await act(async () => {
       resolveWorkspace!({
         data: { id: "ws-uuid-123" },
@@ -389,16 +389,77 @@ describe("PageSearch", () => {
       await vi.advanceTimersByTimeAsync(50);
     });
 
-    // Debounce effect re-runs because search changed (new workspaceId).
-    // Advance past the new 300ms debounce.
+    // Now the empty state should show — no extra 300ms debounce needed
+    expect(
+      screen.getByText("No pages match your search")
+    ).toBeInTheDocument();
+  });
+
+  it("shows empty state immediately when workspace resolves after search debounce", async () => {
+    // Regression test for #178: when the workspace resolves after the
+    // search debounce already fired (with workspaceId=null), the search
+    // must re-fire immediately without an additional 300ms debounce.
+    // The old code recreated the search callback when workspaceId changed,
+    // which re-triggered the debounce effect with a fresh 300ms delay.
+    // With production latency this caused the total wait to exceed the
+    // E2E timeout, leaving skeletons visible indefinitely.
+    let resolveWorkspace: (value: unknown) => void;
+    mockMaybeSingle.mockReturnValue(
+      new Promise((resolve) => {
+        resolveWorkspace = resolve;
+      })
+    );
+
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ results: [] }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime,
+    });
+
+    render(<PageSearch />);
+
+    const input = screen.getByRole("combobox", { name: /search pages/i });
+    await user.click(input);
+    await user.type(input, "zzzyyyxxxnonexistent999");
+
+    // Advance past debounce — search fires but workspaceId is null
     await act(async () => {
       await vi.advanceTimersByTimeAsync(350);
     });
 
-    // Now the empty state should show
+    // Skeletons should show (workspace not resolved)
+    const searchResults = screen.getByRole("listbox");
+    expect(searchResults.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
+    expect(screen.queryByText("No pages match your search")).not.toBeInTheDocument();
+
+    // No fetch should have been made yet (workspaceId was null)
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    // Resolve workspace — search should re-fire immediately (no debounce)
+    await act(async () => {
+      resolveWorkspace!({
+        data: { id: "ws-uuid-123" },
+        error: null,
+      });
+      await vi.advanceTimersByTimeAsync(50);
+    });
+
+    // The fetch should have been called with the query
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("zzzyyyxxxnonexistent999"),
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    );
+
+    // Empty state should show immediately — no extra 300ms debounce
     expect(
       screen.getByText("No pages match your search")
     ).toBeInTheDocument();
+    expect(searchResults.querySelectorAll(".animate-pulse").length).toBe(0);
   });
 
   it("shows empty state when workspace resolves to null (workspace not found)", async () => {
