@@ -25,11 +25,13 @@ export type SerializedCalloutNode = Spread<
 >;
 
 const VARIANT_CLASSES: Record<CalloutVariant, string> = {
-  info: "bg-muted",
-  warning: "bg-muted",
-  success: "bg-muted",
-  error: "bg-muted",
+  info: "border-l-accent bg-muted",
+  warning: "border-l-code-type bg-muted",
+  success: "border-l-code-string bg-muted",
+  error: "border-l-destructive bg-muted",
 };
+
+const BASE_CLASSES = "mt-3 flex gap-3 border-l-2 p-4 text-sm";
 
 export class CalloutNode extends ElementNode {
   __emoji: string;
@@ -69,13 +71,26 @@ export class CalloutNode extends ElementNode {
 
   createDOM(): HTMLElement {
     const div = document.createElement("div");
-    div.className = `mt-3 flex gap-3 p-4 text-sm ${VARIANT_CLASSES[this.__variant]}`;
+    div.className = `${BASE_CLASSES} ${VARIANT_CLASSES[this.__variant]}`;
+
+    const emojiSpan = document.createElement("span");
+    emojiSpan.className = "callout-emoji select-none text-lg shrink-0";
+    emojiSpan.contentEditable = "false";
+    emojiSpan.textContent = this.__emoji;
+    div.appendChild(emojiSpan);
+
     return div;
   }
 
   updateDOM(prevNode: CalloutNode, dom: HTMLElement): boolean {
     if (prevNode.__variant !== this.__variant) {
-      dom.className = `mt-3 flex gap-3 p-4 text-sm ${VARIANT_CLASSES[this.__variant]}`;
+      dom.className = `${BASE_CLASSES} ${VARIANT_CLASSES[this.__variant]}`;
+    }
+    if (prevNode.__emoji !== this.__emoji) {
+      const emojiSpan = dom.querySelector(".callout-emoji");
+      if (emojiSpan) {
+        emojiSpan.textContent = this.__emoji;
+      }
     }
     return false;
   }

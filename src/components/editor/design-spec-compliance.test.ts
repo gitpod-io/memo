@@ -14,8 +14,8 @@ function readSource(relativePath: string): string {
   return readFileSync(resolve(__dirname, relativePath), "utf-8");
 }
 
-describe("callout-plugin design spec compliance", () => {
-  const source = readSource("./callout-plugin.tsx");
+describe("callout-node design spec compliance", () => {
+  const source = readSource("./callout-node.tsx");
 
   it("callout emoji does not use text-base (not in typography scale)", () => {
     // The typography scale does not include text-base. Emoji should use
@@ -31,6 +31,41 @@ describe("callout-plugin design spec compliance", () => {
       /callout-emoji[^"]*?(text-(?:sm|lg|xl|2xl|3xl))/
     );
     expect(emojiClassLine).not.toBeNull();
+  });
+
+  it("callout emoji span is created in createDOM, not via mutation listener", () => {
+    // The emoji must render immediately on insert, not asynchronously via
+    // a mutation listener. Verify createDOM creates the emoji span.
+    expect(source).toContain("createDOM");
+    const createDOMIndex = source.indexOf("createDOM");
+    const emojiIndex = source.indexOf("callout-emoji", createDOMIndex);
+    expect(emojiIndex).toBeGreaterThan(createDOMIndex);
+  });
+
+  it("callout uses a left border to distinguish from code blocks", () => {
+    // Design spec: callouts need visual distinction from code blocks.
+    // A colored left border provides this.
+    expect(source).toContain("border-l-2");
+  });
+
+  it("each callout variant has a distinct border color", () => {
+    // All four variants must map to different border color classes
+    const variantBlock = source.match(
+      /VARIANT_CLASSES[\s\S]*?\{([\s\S]*?)\}/
+    );
+    expect(variantBlock).not.toBeNull();
+    const block = variantBlock![1];
+    expect(block).toContain("border-l-accent");
+    expect(block).toContain("border-l-code-type");
+    expect(block).toContain("border-l-code-string");
+    expect(block).toContain("border-l-destructive");
+  });
+
+  it("callout plugin does not use registerMutationListener for emoji", () => {
+    // Emoji rendering moved to createDOM — the plugin should not
+    // manipulate DOM via mutation listeners.
+    const pluginSource = readSource("./callout-plugin.tsx");
+    expect(pluginSource).not.toContain("registerMutationListener");
   });
 });
 
