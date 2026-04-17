@@ -44,24 +44,44 @@ export function PageIcon({ pageId, initialIcon }: PageIconProps) {
     saveIcon(null);
   }, [saveIcon]);
 
+  if (icon) {
+    return (
+      <div className="mb-2">
+        <EmojiPicker
+          open={open}
+          onOpenChange={setOpen}
+          onSelect={handleSelect}
+          onRemove={handleRemove}
+          hasIcon
+        >
+          <button
+            className="flex h-10 w-10 items-center justify-center rounded-sm text-4xl leading-none hover:bg-white/[0.04]"
+            aria-label={`Page icon: ${icon}. Click to change`}
+          >
+            {icon}
+          </button>
+        </EmojiPicker>
+      </div>
+    );
+  }
+
   return (
-    <EmojiPicker
-      open={open}
-      onOpenChange={setOpen}
-      onSelect={handleSelect}
-      onRemove={handleRemove}
-      hasIcon={icon !== null}
-    >
-      <button
-        className="flex h-9 w-9 shrink-0 items-center justify-center text-muted-foreground hover:bg-white/[0.04]"
-        aria-label={icon ? `Page icon: ${icon}. Click to change` : "Add page icon"}
+    <div className="mb-1 opacity-0 group-hover/page-header:opacity-100 transition-opacity">
+      <EmojiPicker
+        open={open}
+        onOpenChange={setOpen}
+        onSelect={handleSelect}
+        onRemove={handleRemove}
+        hasIcon={false}
       >
-        {icon ? (
-          <span className="text-2xl leading-none">{icon}</span>
-        ) : (
-          <SmilePlus className="h-5 w-5 opacity-0 group-hover/page-icon:opacity-100" />
-        )}
-      </button>
-    </EmojiPicker>
+        <button
+          className="flex h-7 items-center gap-1 rounded-sm px-1.5 text-xs text-muted-foreground hover:bg-white/[0.04]"
+          aria-label="Add page icon"
+        >
+          <SmilePlus className="h-3.5 w-3.5" />
+          <span>Add icon</span>
+        </button>
+      </EmojiPicker>
+    </div>
   );
 }
