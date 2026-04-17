@@ -299,12 +299,12 @@ describe("PageSearch", () => {
     await user.type(input, "test query");
 
     // Advance past debounce — search fires but workspaceId is null so it
-    // returns immediately with loading=false
+    // returns immediately with searchStatus="done"
     await act(async () => {
       await vi.advanceTimersByTimeAsync(350);
     });
 
-    // Even though loading is false, workspace hasn't resolved so skeletons
+    // Even though search is done, workspace hasn't resolved so skeletons
     // should still show (not the empty state)
     const searchResults = screen.getByRole("listbox");
     const skeletons = searchResults.querySelectorAll(".animate-pulse");
@@ -333,5 +333,116 @@ describe("PageSearch", () => {
     expect(
       screen.getByText("No pages match your search")
     ).toBeInTheDocument();
+  });
+
+  it("shows empty state when workspace resolves to null (workspace not found)", async () => {
+    // Regression test for #162: when workspaceId is null and
+    // workspaceResolved is true, the old code left `searched=false`
+    // in the early return path, causing neither skeletons nor empty
+    // state to render. The new searchStatus="done" transition in the
+    // early return path fixes this.
+    mockMaybeSingle.mockResolvedValue({
+      data: null,
+      error: null,
+    });
+
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime,
+    });
+
+    render(<PageSearch />);
+
+    // Wait for workspace resolution (resolves to null)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(50);
+    });
+
+    const input = screen.getByRole("combobox", { name: /search pages/i });
+    await user.click(input);
+    await user.type(input, "zzzyyyxxxnonexistent999");
+
+    // Advance past debounce — search fires, workspaceId is null,
+    // early return sets searchStatus="done"
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    // The empty state should show (not stuck in a blank dropdown)
+    expect(
+      screen.getByText("No pages match your search")
+    ).toBeInTheDocument();
+
+    // No skeletons should be visible
+    const searchResults = screen.getByRole("listbox");
+    const skeletons = searchResults.querySelectorAll(".animate-pulse");
+    expect(skeletons.length).toBe(0);
+
+    // No fetch should have been made (workspaceId was null)
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("does not capture AbortError in Sentry when user types quickly", async () => {
+    const captureException = vi.mocked(
+      (await import("@sentry/nextjs")).captureException
+    );
+
+    // First fetch hangs, second resolves
+    let fetchCallCount = 0;
+    fetchMock.mockImplementation((_url: string | URL | Request, init?: RequestInit) => {
+      fetchCallCount++;
+      const signal = init?.signal;
+      return new Promise<Response>((resolve, reject) => {
+        const onAbort = () => {
+          reject(new DOMException("Aborted", "AbortError"));
+        };
+        if (signal?.aborted) {
+          onAbort();
+          return;
+        }
+        signal?.addEventListener("abort", onAbort);
+        if (fetchCallCount > 1) {
+          resolve(new Response(JSON.stringify({ results: [] }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }));
+        }
+      });
+    });
+
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime,
+    });
+
+    render(<PageSearch />);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(50);
+    });
+
+    const input = screen.getByRole("combobox", { name: /search pages/i });
+    await user.click(input);
+    await user.type(input, "first");
+
+    // Trigger first fetch
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    // Type new query — aborts first fetch
+    await user.clear(input);
+    await user.type(input, "second");
+
+    // Trigger second fetch
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    // Allow microtasks to settle
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(50);
+    });
+
+    // AbortError should NOT have been sent to Sentry
+    expect(captureException).not.toHaveBeenCalled();
   });
 });
