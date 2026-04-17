@@ -77,7 +77,10 @@ export function CollapsiblePlugin(): null {
     );
   }, [editor]);
 
-  // Handle toggle open/close via DOM events on <details>
+  // Handle toggle open/close via the chevron button.
+  // The native <summary> click toggles <details>, which conflicts with
+  // Lexical text editing in the title. We prevent the native toggle on
+  // summary clicks and instead toggle only when the chevron is clicked.
   useEffect(() => {
     const cleanupMap = new Map<string, () => void>();
 
@@ -102,19 +105,56 @@ export function CollapsiblePlugin(): null {
           ) as HTMLDetailsElement | null;
           if (!dom) continue;
 
-          const handleToggle = () => {
+          const summary = dom.querySelector("summary");
+          if (!summary) continue;
+
+          const chevron = summary.querySelector(
+            ".collapsible-toggle"
+          ) as HTMLButtonElement | null;
+
+          // Prevent the native <details> toggle when clicking the summary
+          // text area — this allows Lexical to handle cursor placement
+          // and text editing without the section collapsing.
+          const handleSummaryClick = (e: MouseEvent) => {
+            const target = e.target;
+            // Allow the chevron button (and its SVG children) to toggle
+            if (
+              chevron &&
+              target instanceof Node &&
+              (chevron === target || chevron.contains(target))
+            ) {
+              return;
+            }
+            // Prevent native toggle for all other summary clicks (text editing)
+            e.preventDefault();
+          };
+
+          // Toggle via the chevron button only
+          const handleChevronClick = (e: MouseEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
             editor.update(() => {
               const node = $getNodeByKey(nodeKey);
               if (node instanceof CollapsibleContainerNode) {
-                node.setOpen(dom.open);
+                const newOpen = !node.getOpen();
+                node.setOpen(newOpen);
+                // Sync the DOM immediately since we prevented native toggle
+                dom.open = newOpen;
               }
             });
           };
 
-          dom.addEventListener("toggle", handleToggle);
-          cleanupMap.set(nodeKey, () =>
-            dom.removeEventListener("toggle", handleToggle)
-          );
+          summary.addEventListener("click", handleSummaryClick);
+          if (chevron) {
+            chevron.addEventListener("click", handleChevronClick);
+          }
+
+          cleanupMap.set(nodeKey, () => {
+            summary.removeEventListener("click", handleSummaryClick);
+            if (chevron) {
+              chevron.removeEventListener("click", handleChevronClick);
+            }
+          });
         }
       }
     );

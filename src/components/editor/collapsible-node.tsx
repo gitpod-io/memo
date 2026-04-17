@@ -54,7 +54,8 @@ export class CollapsibleContainerNode extends ElementNode {
 
   createDOM(): HTMLElement {
     const details = document.createElement("details");
-    details.className = "mt-3 border border-white/[0.06] text-sm";
+    details.className =
+      "mt-3 border border-white/[0.06] text-sm rounded-sm";
     if (this.__open) {
       details.open = true;
     }
@@ -123,7 +124,20 @@ export class CollapsibleTitleNode extends ElementNode {
   createDOM(): HTMLElement {
     const summary = document.createElement("summary");
     summary.className =
-      "cursor-pointer select-none p-3 text-sm font-medium text-foreground hover:bg-white/[0.04] list-none";
+      "flex items-center gap-1.5 p-3 text-sm font-medium text-foreground hover:bg-white/[0.04] list-none";
+
+    // Add a toggle chevron button as the visual affordance.
+    // The chevron rotates when the parent <details> is open.
+    const chevron = document.createElement("button");
+    chevron.type = "button";
+    chevron.contentEditable = "false";
+    chevron.className =
+      "collapsible-toggle flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-white/[0.08] transition-transform duration-150";
+    chevron.setAttribute("aria-label", "Toggle section");
+    chevron.innerHTML =
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
+    summary.prepend(chevron);
+
     return summary;
   }
 
