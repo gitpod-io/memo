@@ -37,6 +37,40 @@ test.describe("Page CRUD", () => {
     await expect(editor).toBeVisible({ timeout: 10_000 });
   });
 
+  test("user can create a new page with ⌘+N shortcut", async ({
+    authenticatedPage: page,
+  }) => {
+    const sidebar = page.getByRole("complementary");
+
+    // Wait for the page tree to load
+    const treeItem = sidebar.locator('[role="treeitem"]').first();
+    try {
+      await expect(treeItem).toBeVisible({ timeout: 10_000 });
+    } catch {
+      // Tree loaded but empty — that's fine
+    }
+
+    // Record the URL before the shortcut
+    const urlBefore = page.url();
+
+    // Press ⌘+N / Ctrl+N
+    await page.keyboard.press(`${mod}+n`);
+
+    // Wait for navigation to a page route (URL has at least 2 path segments)
+    await page.waitForURL(
+      (url) => url.pathname.split("/").filter(Boolean).length >= 2,
+      { timeout: 10_000 },
+    );
+
+    // URL should have changed (navigated to the new page)
+    expect(page.url()).not.toBe(urlBefore);
+
+    // The page title input should be focused (empty title auto-focuses)
+    const titleInput = page.locator('input[aria-label="Page title"]');
+    await expect(titleInput).toBeVisible({ timeout: 10_000 });
+    await expect(titleInput).toBeFocused({ timeout: 5_000 });
+  });
+
   test("user can navigate to a page via sidebar", async ({
     authenticatedPage: page,
   }) => {
