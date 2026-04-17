@@ -142,39 +142,54 @@ export function PageTree({ userId }: PageTreeProps) {
     });
   }, []);
 
-  async function handleCreate(parentId: string | null) {
-    if (!workspaceId || !workspaceSlug) return;
+  const handleCreate = useCallback(
+    async (parentId: string | null) => {
+      if (!workspaceId || !workspaceSlug) return;
 
-    const nextPosition = getNextSiblingPosition(pages, parentId);
+      const nextPosition = getNextSiblingPosition(pages, parentId);
 
-    const supabase = createClient();
-    const { data: newPage, error } = await supabase
-      .from("pages")
-      .insert({
-        workspace_id: workspaceId,
-        parent_id: parentId,
-        title: "",
-        position: nextPosition,
-        created_by: userId,
-      })
-      .select()
-      .single();
+      const supabase = createClient();
+      const { data: newPage, error } = await supabase
+        .from("pages")
+        .insert({
+          workspace_id: workspaceId,
+          parent_id: parentId,
+          title: "",
+          position: nextPosition,
+          created_by: userId,
+        })
+        .select()
+        .single();
 
-    if (error) {
-      captureSupabaseError(error, "page-tree:create-page");
-      toast.error("Failed to create page", { duration: 8000 });
-      return;
+      if (error) {
+        captureSupabaseError(error, "page-tree:create-page");
+        toast.error("Failed to create page", { duration: 8000 });
+        return;
+      }
+      if (!newPage) return;
+
+      setPages((prev) => [...prev, newPage]);
+
+      if (parentId) {
+        setExpanded((prev) => new Set(prev).add(parentId));
+      }
+
+      router.push(`/${workspaceSlug}/${newPage.id}`);
+    },
+    [workspaceId, workspaceSlug, pages, userId, router],
+  );
+
+  // ⌘+N / Ctrl+N global shortcut to create a new page
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "n" && (e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        handleCreate(null);
+      }
     }
-    if (!newPage) return;
-
-    setPages((prev) => [...prev, newPage]);
-
-    if (parentId) {
-      setExpanded((prev) => new Set(prev).add(parentId));
-    }
-
-    router.push(`/${workspaceSlug}/${newPage.id}`);
-  }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleCreate]);
 
   async function handleDelete() {
     if (!deleteTarget) return;
