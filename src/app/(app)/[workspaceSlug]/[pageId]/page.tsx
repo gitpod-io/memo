@@ -11,19 +11,20 @@ export default async function PageView({
   const { workspaceSlug, pageId } = await params;
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Run auth check and workspace lookup in parallel to reduce waterfall
+  const [{ data: authData }, { data: workspace }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from("workspaces")
+      .select("id")
+      .eq("slug", workspaceSlug)
+      .maybeSingle(),
+  ]);
 
+  const user = authData.user;
   if (!user) {
     notFound();
   }
-
-  const { data: workspace } = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("slug", workspaceSlug)
-    .maybeSingle();
 
   if (!workspace) {
     notFound();
