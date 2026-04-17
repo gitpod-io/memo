@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { isNextjsInternalNoise } from "@/lib/sentry";
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
@@ -9,4 +10,11 @@ Sentry.init({
   includeLocalVariables: true,
 
   enableLogs: true,
+
+  beforeSend(event) {
+    if (isNextjsInternalNoise(event)) {
+      return null;
+    }
+    return event;
+  },
 });
