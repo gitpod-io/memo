@@ -182,7 +182,7 @@ export function Editor({ pageId, initialContent, editorRef }: EditorProps) {
                 className="outline-none min-h-[200px] text-sm"
                 aria-placeholder="Type '/' for commands"
                 placeholder={
-                  <div className="pointer-events-none absolute top-0 left-0 text-sm text-muted-foreground">
+                  <div className="pointer-events-none absolute top-0.5 left-8 text-sm text-muted-foreground">
                     Type &apos;/&apos; for commands
                   </div>
                 }
