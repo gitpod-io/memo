@@ -13,6 +13,7 @@ import {
   type LexicalCommand,
 } from "lexical";
 import * as Sentry from "@sentry/nextjs";
+import { toast } from "sonner";
 import { $createImageNode, type ImagePayload } from "@/components/editor/image-node";
 import { createClient } from "@/lib/supabase/client";
 import { captureSupabaseError } from "@/lib/sentry";
@@ -30,9 +31,17 @@ const ACCEPTED_IMAGE_TYPES = new Set([
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-async function uploadImage(file: File): Promise<string | null> {
-  if (!ACCEPTED_IMAGE_TYPES.has(file.type)) return null;
-  if (file.size > MAX_FILE_SIZE) return null;
+type UploadResult =
+  | { url: string; error: null }
+  | { url: null; error: string };
+
+export async function uploadImage(file: File): Promise<UploadResult> {
+  if (!ACCEPTED_IMAGE_TYPES.has(file.type)) {
+    return { url: null, error: "Unsupported image type. Use PNG, JPEG, GIF, WebP, or SVG." };
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    return { url: null, error: "Image is too large. Maximum size is 5 MB." };
+  }
 
   const supabase = createClient();
   const ext = file.name.split(".").pop() ?? "png";
@@ -48,14 +57,14 @@ async function uploadImage(file: File): Promise<string | null> {
 
   if (error) {
     captureSupabaseError(error, "image-plugin:upload");
-    return null;
+    return { url: null, error: "Failed to upload image" };
   }
 
   const { data: urlData } = supabase.storage
     .from("page-images")
     .getPublicUrl(filePath);
 
-  return urlData.publicUrl;
+  return { url: urlData.publicUrl, error: null };
 }
 
 export function ImagePlugin(): null {
@@ -98,16 +107,19 @@ export function ImagePlugin(): null {
 
         for (const file of imageFiles) {
           void uploadImage(file)
-            .then((url) => {
-              if (url) {
-                editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
-                  src: url,
-                  altText: file.name,
-                });
+            .then((result) => {
+              if (result.error !== null) {
+                toast.error(result.error, { duration: 8000 });
+                return;
               }
+              editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
+                src: result.url,
+                altText: file.name,
+              });
             })
             .catch((error) => {
               Sentry.captureException(error);
+              toast.error("Failed to upload image", { duration: 8000 });
             });
         }
 
@@ -146,15 +158,18 @@ export function openImagePicker(editor: ReturnType<typeof useLexicalComposerCont
     if (!file) return;
 
     try {
-      const url = await uploadImage(file);
-      if (url) {
-        editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
-          src: url,
-          altText: file.name,
-        });
+      const result = await uploadImage(file);
+      if (result.error !== null) {
+        toast.error(result.error, { duration: 8000 });
+        return;
       }
+      editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
+        src: result.url,
+        altText: file.name,
+      });
     } catch (error) {
       Sentry.captureException(error);
+      toast.error("Failed to upload image", { duration: 8000 });
     }
   };
   input.click();
