@@ -9,6 +9,7 @@ import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { CheckListPlugin } from "@lexical/react/LexicalCheckListPlugin";
+import { ListTabIndentationPlugin } from "@/components/editor/list-tab-indentation-plugin";
 import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
 import { ClickableLinkPlugin } from "@lexical/react/LexicalClickableLinkPlugin";
 import { HorizontalRulePlugin } from "@lexical/react/LexicalHorizontalRulePlugin";
@@ -194,6 +195,7 @@ export function Editor({ pageId, initialContent, editorRef }: EditorProps) {
         <HistoryPlugin />
         <ListPlugin />
         <CheckListPlugin />
+        <ListTabIndentationPlugin />
         <LinkPlugin validateUrl={validateUrl} />
         <ClickableLinkPlugin />
         <HorizontalRulePlugin />
