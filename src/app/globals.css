@@ -204,3 +204,12 @@
 .editor-checklist-checked:focus::before {
   box-shadow: 0 0 0 2px var(--ring);
 }
+
+/*
+ * Collapsible toggle chevron rotation.
+ * Rotates the chevron 90° when the parent <details> is open.
+ * Tailwind cannot target details[open] > summary > button.
+ */
+details[open] > summary > .collapsible-toggle {
+  transform: rotate(90deg);
+}
