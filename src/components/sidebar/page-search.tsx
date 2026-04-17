@@ -21,10 +21,9 @@ interface SearchResult {
 }
 
 /**
- * Search display status — a single discriminated value replaces the
- * previous independent `loading` + `searched` booleans. This eliminates
- * the class of race conditions where the two flags get out of sync
- * (the root cause of issues #118, #126, #136, #144, #162).
+ * Search display status — a single discriminated value that eliminates
+ * the class of race conditions where independent flags get out of sync
+ * (the root cause of issues #118, #126, #136, #144, #162, #178).
  *
  * - "idle"    — no query entered or query was cleared
  * - "loading" — a search is in-flight (show skeleton placeholders)
@@ -47,10 +46,23 @@ export function PageSearch() {
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  // Ref mirror of workspaceId so the search callback can read the
+  // latest value without being recreated when it changes. This
+  // decouples workspace resolution from the debounce effect and
+  // eliminates the cascade of effect re-runs that caused issues
+  // #118, #126, #136, #144, #162, #178.
+  const workspaceIdRef = useRef<string | null>(null);
+  // Ref mirror of query so the workspace-resolved effect can read
+  // the current query without adding it as a dependency.
+  const queryRef = useRef("");
   // Generation counter: incremented each search cycle so stale async
   // callbacks never update state. Immune to microtask ordering because
   // the counter is incremented synchronously before any async work.
   const searchGenRef = useRef(0);
+
+  // Keep refs in sync with state.
+  workspaceIdRef.current = workspaceId;
+  queryRef.current = query;
 
   // Register the search input ref so the sidebar context can focus it via ⌘+K
   useEffect(() => {
@@ -75,30 +87,36 @@ export function PageSearch() {
         .select("id")
         .eq("slug", params.workspaceSlug)
         .maybeSingle();
-    }).then(({ data, error }) => {
-      if (cancelled) return;
-      if (error) {
-        captureSupabaseError(error, "page-search:workspace-lookup");
+    })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          captureSupabaseError(error, "page-search:workspace-lookup");
+          setWorkspaceResolved(true);
+          return;
+        }
+        setWorkspaceId(data?.id ?? null);
         setWorkspaceResolved(true);
-        return;
-      }
-      setWorkspaceId(data?.id ?? null);
-      setWorkspaceResolved(true);
-    });
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        Sentry.captureException(error);
+        setWorkspaceResolved(true);
+      });
 
     return () => {
       cancelled = true;
     };
   }, [params.workspaceSlug]);
 
+  // Stable search function — reads workspaceId from a ref so it never
+  // changes identity. The debounce effect depends only on `query`.
   const search = useCallback(
     async (q: string, gen: number, signal: AbortSignal) => {
-      if (!q.trim() || !workspaceId) {
+      const wsId = workspaceIdRef.current;
+      if (!q.trim() || !wsId) {
         if (searchGenRef.current === gen) {
           setResults([]);
-          // Mark as done — the search resolved (even without a fetch).
-          // The render logic uses `workspaceResolved` to decide whether
-          // to show skeletons or the empty state.
           setSearchStatus("done");
         }
         return;
@@ -106,7 +124,7 @@ export function PageSearch() {
 
       try {
         const response = await fetch(
-          `/api/search?q=${encodeURIComponent(q.trim())}&workspace_id=${encodeURIComponent(workspaceId)}`,
+          `/api/search?q=${encodeURIComponent(q.trim())}&workspace_id=${encodeURIComponent(wsId)}`,
           { signal }
         );
         if (searchGenRef.current !== gen) return;
@@ -132,10 +150,12 @@ export function PageSearch() {
         }
       }
     },
-    [workspaceId]
+    [] // stable — reads workspaceId from ref
   );
 
-  // Debounced search with abort + generation counter.
+  // Debounced search — depends only on `query`. Decoupled from
+  // workspace resolution so the effect never re-runs when
+  // workspaceId changes.
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
@@ -171,6 +191,37 @@ export function PageSearch() {
       controller.abort();
     };
   }, [query, search]);
+
+  // When workspaceId resolves and there is an active query whose
+  // search returned early (because workspaceId was null), re-trigger
+  // the search immediately so the user sees real results.
+  useEffect(() => {
+    if (!workspaceId || !workspaceResolved) return;
+    const q = queryRef.current;
+    if (!q.trim()) return;
+    // Only re-search if a search cycle is active (not idle).
+    if (searchStatus === "idle") return;
+
+    // Cancel any in-flight request from the debounce effect.
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+    }
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+
+    const gen = ++searchGenRef.current;
+    setSearchStatus("loading");
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    // Fire immediately — no debounce needed since the user already
+    // waited for the workspace to resolve.
+    search(q, gen, controller.signal);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspaceId, workspaceResolved]);
 
   // Close on click outside
   useEffect(() => {

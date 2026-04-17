@@ -117,6 +117,40 @@ The `updateSession` function in `src/lib/supabase/proxy.ts` creates a server cli
 that reads cookies from the request and writes refreshed cookies to the response.
 It calls `supabase.auth.getUser()` to trigger the refresh.
 
+## Async State in Effects
+
+When a `useCallback` closes over async state (e.g. a resolved ID), putting that
+state in the dependency array causes the callback reference to change whenever the
+state resolves. If a `useEffect` depends on that callback, the effect re-runs,
+creating a cascade of state transitions that race with each other.
+
+**Pattern:** store async state in a ref and read it inside the callback so the
+callback identity is stable. Use a separate effect to re-trigger work when the
+async state resolves.
+
+```typescript
+// ❌ Bad — callback changes when workspaceId resolves, re-triggering the effect
+const search = useCallback(async (q) => {
+  fetch(`/api?ws=${workspaceId}`);
+}, [workspaceId]);
+
+useEffect(() => { /* debounce */ search(query); }, [query, search]);
+
+// ✅ Good — callback is stable, dedicated effect handles late resolution
+const wsRef = useRef(workspaceId);
+wsRef.current = workspaceId;
+
+const search = useCallback(async (q) => {
+  fetch(`/api?ws=${wsRef.current}`);
+}, []);
+
+useEffect(() => { /* debounce */ search(query); }, [query, search]);
+useEffect(() => { if (workspaceId) search(query); }, [workspaceId]);
+```
+
+Also: always add `.catch()` to fire-and-forget promises in effects. An unhandled
+rejection silently prevents state transitions, leaving the UI stuck.
+
 ## Error Handling
 
 All errors must reach Sentry. `console.error` alone is never sufficient — always
