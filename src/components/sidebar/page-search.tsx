@@ -7,6 +7,7 @@ import * as Sentry from "@sentry/nextjs";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 import { captureSupabaseError } from "@/lib/sentry";
+import { retryOnNetworkError } from "@/lib/retry";
 
 interface SearchResult {
   id: string;
@@ -44,22 +45,24 @@ export function PageSearch() {
 
     setWorkspaceResolved(false);
     let cancelled = false;
-    const supabase = createClient();
-    supabase
-      .from("workspaces")
-      .select("id")
-      .eq("slug", params.workspaceSlug)
-      .maybeSingle()
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        if (error) {
-          captureSupabaseError(error, "page-search:workspace-lookup");
-          setWorkspaceResolved(true);
-          return;
-        }
-        setWorkspaceId(data?.id ?? null);
+
+    retryOnNetworkError(() => {
+      const supabase = createClient();
+      return supabase
+        .from("workspaces")
+        .select("id")
+        .eq("slug", params.workspaceSlug)
+        .maybeSingle();
+    }).then(({ data, error }) => {
+      if (cancelled) return;
+      if (error) {
+        captureSupabaseError(error, "page-search:workspace-lookup");
         setWorkspaceResolved(true);
-      });
+        return;
+      }
+      setWorkspaceId(data?.id ?? null);
+      setWorkspaceResolved(true);
+    });
 
     return () => {
       cancelled = true;
