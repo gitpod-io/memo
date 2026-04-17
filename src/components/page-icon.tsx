@@ -66,7 +66,7 @@ export function PageIcon({ pageId, initialIcon }: PageIconProps) {
   }
 
   return (
-    <div className="mb-1 max-sm:opacity-100 opacity-0 group-hover/page-header:opacity-100 transition-opacity">
+    <div className="mb-1 max-sm:opacity-100 opacity-0 group-hover/page-header:opacity-100">
       <EmojiPicker
         open={open}
         onOpenChange={setOpen}
