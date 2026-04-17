@@ -32,6 +32,7 @@ vi.mock("@/lib/supabase/client", () => ({
 
 vi.mock("@/lib/sentry", () => ({
   captureSupabaseError: vi.fn(),
+  isTransientNetworkError: vi.fn().mockReturnValue(false),
 }));
 
 vi.mock("@sentry/nextjs", () => ({
