@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
@@ -68,13 +68,18 @@ class SlashCommandOption extends MenuOption {
 export function SlashCommandPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [queryString, setQueryString] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const triggerFn = useBasicTypeaheadTriggerMatch("/", {
     minLength: 0,
   });
 
-  const options = useMemo(() => {
-    const baseOptions = [
+  // Create base options once per editor instance so MenuOption refs stay
+  // stable across query changes. Recreating options on every keystroke
+  // discards the DOM refs that Lexical uses for scroll-into-view, causing
+  // the highlighted index to appear to jump back to the top.
+  const baseOptions = useMemo(
+    () => [
       new SlashCommandOption("Paragraph", {
         description: "Plain text block",
         icon: <Type className="h-5 w-5" />,
@@ -202,17 +207,20 @@ export function SlashCommandPlugin(): JSX.Element | null {
           editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined);
         },
       }),
-    ];
+    ],
+    [editor]
+  );
 
+  // Filter separately so base option objects (and their refs) persist.
+  const options = useMemo(() => {
     if (queryString) {
       const lower = queryString.toLowerCase();
       return baseOptions.filter((option) =>
         option.title.toLowerCase().includes(lower)
       );
     }
-
     return baseOptions;
-  }, [editor, queryString]);
+  }, [baseOptions, queryString]);
 
   const onSelectOption = useCallback(
     (
@@ -232,6 +240,21 @@ export function SlashCommandPlugin(): JSX.Element | null {
     [editor]
   );
 
+  // Scroll the highlighted item into view within the menu's scrollable
+  // container. Lexical's built-in SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND
+  // targets the #typeahead-menu anchor div, not the overflow-y-auto menu
+  // div we render, so it cannot scroll items within our container.
+  const scrollHighlightedIntoView = useCallback((index: number) => {
+    const container = menuRef.current;
+    if (!container) return;
+    const item = container.children[index];
+    if (item instanceof HTMLElement) {
+      item.scrollIntoView({ block: "nearest" });
+    }
+  }, []);
+
+  const lastScrolledIndex = useRef<number | null>(null);
+
   return (
     <LexicalTypeaheadMenuPlugin<SlashCommandOption>
       onQueryChange={setQueryString}
@@ -246,8 +269,22 @@ export function SlashCommandPlugin(): JSX.Element | null {
           return null;
         }
 
+        // Scroll the newly highlighted item into view when the index changes.
+        // We track the last scrolled index to avoid redundant calls.
+        if (
+          selectedIndex !== null &&
+          selectedIndex !== lastScrolledIndex.current
+        ) {
+          lastScrolledIndex.current = selectedIndex;
+          // Defer to after React has committed the DOM update
+          requestAnimationFrame(() => scrollHighlightedIntoView(selectedIndex));
+        }
+
         return createPortal(
-          <div className="fixed z-50 max-h-[300px] w-64 overflow-y-auto rounded-sm border border-white/[0.06] bg-popover p-1 shadow-md">
+          <div
+            ref={menuRef}
+            className="fixed z-50 max-h-[300px] w-64 overflow-y-auto rounded-sm border border-white/[0.06] bg-popover p-1 shadow-md"
+          >
             {items.map((option, index) => (
               <button
                 key={option.key}
