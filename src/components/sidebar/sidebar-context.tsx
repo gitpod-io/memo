@@ -5,8 +5,10 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
+  type RefObject,
 } from "react";
 
 interface SidebarContextValue {
@@ -14,15 +16,26 @@ interface SidebarContextValue {
   setOpen: (open: boolean) => void;
   toggle: () => void;
   isMobile: boolean;
+  isMac: boolean;
+  registerSearchRef: (ref: RefObject<HTMLInputElement | null>) => void;
+  focusSearch: () => void;
 }
 
 const SidebarContext = createContext<SidebarContextValue | null>(null);
 
 const MOBILE_BREAKPOINT = 768;
 
+function isEditorFocused(): boolean {
+  return document.activeElement?.closest("[data-lexical-editor]") !== null;
+}
+
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [isMac] = useState(
+    () => typeof navigator !== "undefined" && navigator.platform.toUpperCase().includes("MAC")
+  );
+  const searchRef = useRef<RefObject<HTMLInputElement | null> | null>(null);
 
   useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
@@ -40,6 +53,21 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
 
   const toggle = useCallback(() => setOpen((prev) => !prev), []);
 
+  const registerSearchRef = useCallback(
+    (ref: RefObject<HTMLInputElement | null>) => {
+      searchRef.current = ref;
+    },
+    []
+  );
+
+  const focusSearch = useCallback(() => {
+    setOpen(true);
+    // Delay focus to allow the sidebar to render when opening from collapsed
+    requestAnimationFrame(() => {
+      searchRef.current?.current?.focus();
+    });
+  }, []);
+
   // ⌘+\ keyboard shortcut to toggle sidebar
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -52,8 +80,30 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [toggle]);
 
+  // ⌘+K keyboard shortcut to focus search — yields to editor's ⌘+K (link insertion)
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey) && !isEditorFocused()) {
+        e.preventDefault();
+        focusSearch();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [focusSearch]);
+
   return (
-    <SidebarContext.Provider value={{ open, setOpen, toggle, isMobile }}>
+    <SidebarContext.Provider
+      value={{
+        open,
+        setOpen,
+        toggle,
+        isMobile,
+        isMac,
+        registerSearchRef,
+        focusSearch,
+      }}
+    >
       {children}
     </SidebarContext.Provider>
   );

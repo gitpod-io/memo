@@ -5,11 +5,12 @@ import { SidebarProvider, useSidebar } from "./sidebar-context";
 
 // Helper component that exposes sidebar context values for assertions
 function SidebarConsumer() {
-  const { open, isMobile, setOpen, toggle } = useSidebar();
+  const { open, isMobile, isMac, setOpen, toggle } = useSidebar();
   return (
     <div>
       <span data-testid="open">{String(open)}</span>
       <span data-testid="is-mobile">{String(isMobile)}</span>
+      <span data-testid="is-mac">{String(isMac)}</span>
       <button data-testid="set-open-true" onClick={() => setOpen(true)}>
         Open
       </button>
@@ -215,6 +216,163 @@ describe("SidebarProvider", () => {
 
     // Should remain open — no modifier key
     expect(screen.getByTestId("open")).toHaveTextContent("true");
+
+    vi.unstubAllGlobals();
+  });
+
+  it("⌘+K opens sidebar and focuses search input when sidebar is closed", async () => {
+    vi.stubGlobal("matchMedia", createMockMatchMedia(false));
+
+    const focusSpy = vi.fn();
+    const fakeInput = { focus: focusSpy } as unknown as HTMLInputElement;
+    const fakeRef = { current: fakeInput };
+
+    function SearchRegistrar() {
+      const { registerSearchRef } = useSidebar();
+      // Register on mount
+      registerSearchRef(fakeRef);
+      return null;
+    }
+
+    render(
+      <SidebarProvider>
+        <SidebarConsumer />
+        <SearchRegistrar />
+      </SidebarProvider>
+    );
+
+    // Close the sidebar first
+    act(() => {
+      screen.getByTestId("set-open-false").click();
+    });
+    expect(screen.getByTestId("open")).toHaveTextContent("false");
+
+    // Simulate ⌘+K
+    act(() => {
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "k",
+          metaKey: true,
+          bubbles: true,
+        })
+      );
+    });
+
+    // Sidebar should open
+    expect(screen.getByTestId("open")).toHaveTextContent("true");
+
+    // Focus is deferred via rAF — flush it
+    await act(async () => {
+      await new Promise((r) => requestAnimationFrame(r));
+    });
+
+    expect(focusSpy).toHaveBeenCalled();
+
+    vi.unstubAllGlobals();
+  });
+
+  it("⌘+K does not fire when a Lexical editor element is focused", () => {
+    vi.stubGlobal("matchMedia", createMockMatchMedia(false));
+
+    render(
+      <SidebarProvider>
+        <SidebarConsumer />
+        {/* Simulate a Lexical editor element */}
+        <div data-lexical-editor="true">
+          <input data-testid="editor-input" />
+        </div>
+      </SidebarProvider>
+    );
+
+    // Close sidebar
+    act(() => {
+      screen.getByTestId("set-open-false").click();
+    });
+    expect(screen.getByTestId("open")).toHaveTextContent("false");
+
+    // Focus the editor input so document.activeElement is inside [data-lexical-editor]
+    const editorInput = screen.getByTestId("editor-input");
+    editorInput.focus();
+
+    // Simulate ⌘+K — should be ignored because editor is focused
+    act(() => {
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "k",
+          metaKey: true,
+          bubbles: true,
+        })
+      );
+    });
+
+    // Sidebar should remain closed
+    expect(screen.getByTestId("open")).toHaveTextContent("false");
+
+    vi.unstubAllGlobals();
+  });
+
+  it("Ctrl+K also triggers search focus (non-Mac)", () => {
+    vi.stubGlobal("matchMedia", createMockMatchMedia(false));
+
+    const focusSpy = vi.fn();
+    const fakeInput = { focus: focusSpy } as unknown as HTMLInputElement;
+    const fakeRef = { current: fakeInput };
+
+    function SearchRegistrar() {
+      const { registerSearchRef } = useSidebar();
+      registerSearchRef(fakeRef);
+      return null;
+    }
+
+    render(
+      <SidebarProvider>
+        <SidebarConsumer />
+        <SearchRegistrar />
+      </SidebarProvider>
+    );
+
+    act(() => {
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "k",
+          ctrlKey: true,
+          bubbles: true,
+        })
+      );
+    });
+
+    // Sidebar should remain open (was already open)
+    expect(screen.getByTestId("open")).toHaveTextContent("true");
+
+    vi.unstubAllGlobals();
+  });
+
+  it("ignores K keydown without meta or ctrl modifier", () => {
+    vi.stubGlobal("matchMedia", createMockMatchMedia(false));
+
+    render(
+      <SidebarProvider>
+        <SidebarConsumer />
+      </SidebarProvider>
+    );
+
+    // Close sidebar
+    act(() => {
+      screen.getByTestId("set-open-false").click();
+    });
+    expect(screen.getByTestId("open")).toHaveTextContent("false");
+
+    act(() => {
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "k",
+          bubbles: true,
+        })
+      );
+    });
+
+    // Should remain closed — no modifier key
+    expect(screen.getByTestId("open")).toHaveTextContent("false");
 
     vi.unstubAllGlobals();
   });
