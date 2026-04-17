@@ -364,14 +364,13 @@ describe("PageSearch", () => {
     await user.click(input);
     await user.type(input, "test query");
 
-    // Advance past debounce — search fires but workspaceId is null so it
-    // returns immediately with searchStatus="done"
+    // Advance time — the unified effect stays in "loading" because
+    // workspace hasn't resolved (no fetch fires).
     await act(async () => {
       await vi.advanceTimersByTimeAsync(350);
     });
 
-    // Even though search is done, workspace hasn't resolved so skeletons
-    // should still show (not the empty state)
+    // Skeletons should show while workspace is resolving
     const searchResults = screen.getByRole("listbox");
     const skeletons = searchResults.querySelectorAll(".animate-pulse");
     expect(skeletons.length).toBeGreaterThan(0);
@@ -379,14 +378,21 @@ describe("PageSearch", () => {
       screen.queryByText("No pages match your search")
     ).not.toBeInTheDocument();
 
-    // Now resolve the workspace — the workspace-resolved effect
-    // re-triggers the search immediately (no debounce).
+    // No fetch should have been made (workspace not resolved)
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    // Resolve workspace — let the promise settle and React re-render.
     await act(async () => {
       resolveWorkspace!({
         data: { id: "ws-uuid-123" },
         error: null,
       });
       await vi.advanceTimersByTimeAsync(50);
+    });
+
+    // Advance past the 300ms debounce so the search fires.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
     });
 
     // Now the empty state should show
@@ -397,10 +403,8 @@ describe("PageSearch", () => {
 
   it("shows empty state when workspace resolves to null (workspace not found)", async () => {
     // Regression test for #162: when workspaceId is null and
-    // workspaceResolved is true, the old code left `searched=false`
-    // in the early return path, causing neither skeletons nor empty
-    // state to render. The new searchStatus="done" transition in the
-    // early return path fixes this.
+    // workspaceResolved is true, the unified effect transitions
+    // directly to "done" without firing a fetch.
     mockMaybeSingle.mockResolvedValue({
       data: null,
       error: null,
@@ -421,10 +425,10 @@ describe("PageSearch", () => {
     await user.click(input);
     await user.type(input, "zzzyyyxxxnonexistent999");
 
-    // Advance past debounce — search fires, workspaceId is null,
-    // early return sets searchStatus="done"
+    // The unified effect sees workspaceResolved=true but workspaceId=null,
+    // so it transitions directly to "done" (no debounce, no fetch).
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(350);
+      await vi.advanceTimersByTimeAsync(50);
     });
 
     // The empty state should show (not stuck in a blank dropdown)
@@ -507,13 +511,10 @@ describe("PageSearch", () => {
   });
 
   it("shows empty state when workspace resolves after debounce fires (#178)", async () => {
-    // Regression test for #178: when workspace resolution is slow and
-    // completes after the debounce timer fires, the old code re-ran the
-    // debounce effect (because the search callback changed identity),
-    // creating a cascade of loading→done→loading transitions that could
-    // leave searchStatus stuck at "loading". The fix decouples the search
-    // callback from workspaceId by using a ref, and adds a dedicated
-    // effect to re-trigger search when the workspace resolves.
+    // Regression test for #178/#181: when workspace resolution is slow,
+    // the unified effect stays in "loading" until the workspace resolves.
+    // Once resolved, the effect re-runs, debounces, and fires the search.
+    // This eliminates the two-effect race condition that caused #178/#181.
 
     // Make workspace resolution slow
     let resolveWorkspace: (value: unknown) => void;
@@ -533,24 +534,32 @@ describe("PageSearch", () => {
     await user.click(input);
     await user.type(input, "zzzyyyxxxnonexistent999");
 
-    // Advance past debounce — search fires but workspaceId is null
+    // Advance time — the unified effect stays in "loading" because
+    // workspace hasn't resolved (no fetch fires).
     await act(async () => {
       await vi.advanceTimersByTimeAsync(350);
     });
 
-    // Skeletons should show (workspace not resolved)
+    // Skeletons should show (workspace not resolved, status is "loading")
     const searchResults = screen.getByRole("listbox");
     expect(searchResults.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
     expect(screen.queryByText("No pages match your search")).not.toBeInTheDocument();
 
-    // Resolve workspace — the workspace-resolved effect fires a new
-    // search immediately (no 300ms debounce delay).
+    // No fetch yet
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    // Resolve workspace — let the promise settle and React re-render.
     await act(async () => {
       resolveWorkspace!({
         data: { id: "ws-uuid-123" },
         error: null,
       });
       await vi.advanceTimersByTimeAsync(50);
+    });
+
+    // Advance past the 300ms debounce so the search fires.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
     });
 
     // The fetch should have been called with the workspace ID
@@ -567,9 +576,9 @@ describe("PageSearch", () => {
   });
 
   it("shows empty state when workspace resolution rejects (#178)", async () => {
-    // Regression test for #178: the old code had no .catch() on the
-    // workspace resolution promise. If retryOnNetworkError rejected,
-    // workspaceResolved stayed false forever, causing infinite skeletons.
+    // Regression test for #178: if retryOnNetworkError rejects,
+    // workspaceResolved is set to true (from .catch()) and workspaceId
+    // stays null. The unified effect transitions directly to "done".
     const captureException = vi.mocked(
       (await import("@sentry/nextjs")).captureException
     );
@@ -593,9 +602,10 @@ describe("PageSearch", () => {
     await user.click(input);
     await user.type(input, "zzzyyyxxxnonexistent999");
 
-    // Advance past debounce
+    // The unified effect sees workspaceResolved=true but workspaceId=null,
+    // so it transitions directly to "done" (no debounce, no fetch).
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(350);
+      await vi.advanceTimersByTimeAsync(50);
     });
 
     // The error should have been captured in Sentry
@@ -603,8 +613,7 @@ describe("PageSearch", () => {
       expect.objectContaining({ message: "Unexpected Supabase error" })
     );
 
-    // Empty state should show (workspaceResolved=true from .catch(),
-    // workspaceId=null, so search early-returns with done status)
+    // Empty state should show (workspaceResolved=true, workspaceId=null)
     expect(
       screen.getByText("No pages match your search")
     ).toBeInTheDocument();
@@ -612,5 +621,61 @@ describe("PageSearch", () => {
     // No skeletons
     const searchResults = screen.getByRole("listbox");
     expect(searchResults.querySelectorAll(".animate-pulse").length).toBe(0);
+  });
+
+  it("never leaves skeletons stuck when workspace resolves mid-debounce (#181)", async () => {
+    // Regression test for #181: the two-effect architecture (debounce +
+    // re-trigger) could leave searchStatus stuck at "loading" when the
+    // workspace resolved at specific timings. The unified effect approach
+    // eliminates this by handling workspace resolution as a dependency
+    // change that naturally re-runs the effect.
+
+    // Make workspace resolution resolve after 150ms (mid-debounce)
+    mockMaybeSingle.mockReturnValue(
+      new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({ data: { id: "ws-uuid-123" }, error: null });
+        }, 150);
+      })
+    );
+
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime,
+    });
+
+    render(<PageSearch />);
+
+    const input = screen.getByRole("combobox", { name: /search pages/i });
+    await user.click(input);
+    await user.type(input, "zzzyyyxxxnonexistent999");
+
+    // At this point: query is set, workspace is resolving, effect is
+    // in "loading" state waiting for workspace.
+
+    // Advance 150ms — workspace resolves mid-debounce
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(150);
+    });
+
+    // Skeletons should still show (debounce hasn't fired yet)
+    const searchResults = screen.getByRole("listbox");
+    expect(searchResults.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
+
+    // Advance past the 300ms debounce
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    // Empty state should show — skeletons must NOT be stuck
+    expect(
+      screen.getByText("No pages match your search")
+    ).toBeInTheDocument();
+    expect(searchResults.querySelectorAll(".animate-pulse").length).toBe(0);
+
+    // Fetch should have been called with the workspace ID
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("workspace_id=ws-uuid-123"),
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    );
   });
 });
