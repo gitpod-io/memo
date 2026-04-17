@@ -74,23 +74,32 @@ test.describe("Page CRUD", () => {
   test("user can navigate to a page via sidebar", async ({
     authenticatedPage: page,
   }) => {
-    // Wait for the page tree to load
-    const treeItem = page.locator('[role="treeitem"]').first();
-    await expect(treeItem).toBeVisible({ timeout: 10_000 }).catch(() => {
-      // no-op: tree may be empty
-    });
+    const sidebar = page.getByRole("complementary");
 
-    if ((await treeItem.count()) === 0) {
-      test.skip(true, "No pages in sidebar");
-      return;
-    }
+    // Wait for the page tree to load
+    const treeLoaded = sidebar.locator('[role="tree"], :text("No pages yet")');
+    await expect(treeLoaded).toBeVisible({ timeout: 10_000 });
+
+    // Create a page so we own it and parallel tests cannot delete it
+    const newPageBtn = sidebar.getByRole("button", { name: /new page/i });
+    await newPageBtn.click();
+
+    const editor = page.locator('[contenteditable="true"]');
+    await expect(editor).toBeVisible({ timeout: 10_000 });
+
+    // Navigate away to the workspace home
+    const workspaceSlug = new URL(page.url()).pathname.split("/").filter(Boolean)[0];
+    await page.goto(`/${workspaceSlug}`);
+
+    // Wait for the tree to reload, then click the selected page's tree item
+    const treeItem = sidebar.locator('[role="treeitem"]').first();
+    await expect(treeItem).toBeVisible({ timeout: 10_000 });
 
     // Click the page title button
-    const titleBtn = treeItem.locator("button.flex-1").first();
+    const titleBtn = treeItem.locator("button.text-left").first();
     await titleBtn.click();
 
     // Editor should be visible on the page
-    const editor = page.locator('[contenteditable="true"]');
     await expect(editor).toBeVisible({ timeout: 10_000 });
   });
 
@@ -151,26 +160,25 @@ test.describe("Page CRUD", () => {
       { timeout: 10_000 }
     );
 
+    // Extract the page ID from the URL so we can target the correct tree item
+    const newPageId = new URL(page.url()).pathname.split("/").filter(Boolean)[1];
+
     // Wait for the editor to appear
     const editor = page.locator('[contenteditable="true"]');
     await expect(editor).toBeVisible({ timeout: 10_000 });
     await page.waitForTimeout(1_000);
 
-    // Wait for the page tree to update with the new page
-    const sidebarItems = page.locator('[role="treeitem"]');
-    await expect(sidebarItems.first()).toBeVisible({ timeout: 10_000 });
+    // Find the tree item for the page we just created (not just the first item,
+    // which could belong to a parallel test).
+    const targetItem = sidebar.locator(`[role="treeitem"][aria-selected="true"]`);
+    await expect(targetItem).toBeVisible({ timeout: 10_000 });
 
-    if ((await sidebarItems.count()) === 0) {
-      test.skip(true, "No sidebar items to test delete");
-      return;
-    }
-
-    await sidebarItems.first().hover();
+    await targetItem.hover();
     await page.waitForTimeout(300);
 
-    // Look for the "Page actions" more options button
-    const moreBtn = sidebarItems.first().locator('[aria-label*="action" i]').or(
-      sidebarItems.first().locator('[aria-label*="more" i]')
+    // Look for the "Page actions" more options button on the selected item
+    const moreBtn = targetItem.locator('[aria-label*="action" i]').or(
+      targetItem.locator('[aria-label*="more" i]')
     );
 
     if ((await moreBtn.count()) === 0) {
@@ -195,6 +203,11 @@ test.describe("Page CRUD", () => {
     await expect(confirmBtn).toBeVisible({ timeout: 3_000 });
     await confirmBtn.click();
 
-    await page.waitForTimeout(1_000);
+    // After deleting the current page, the app redirects to the workspace home.
+    // Wait for the URL to no longer contain the deleted page ID.
+    await page.waitForURL(
+      (url) => !url.pathname.includes(newPageId),
+      { timeout: 10_000 },
+    );
   });
 });

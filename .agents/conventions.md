@@ -511,6 +511,21 @@ test("editor loads on page", async ({ authenticatedPage: page }) => {
 - Use `test.skip(true, "reason")` when preconditions aren't met (no pages, no button)
 - Timeouts: 10s for page loads, 3s for UI elements, 2s for state changes
 
+#### Parallel test isolation
+
+E2E tests run in parallel (`fullyParallel: true`). All tests share the same Supabase
+database and user account. A page created by one test is visible in every other
+test's sidebar. Never rely on "the first tree item" or any positional assumption
+about shared data — another test may create or delete that item at any time.
+
+- **Own your data:** each test must create the resources it needs (pages, invites,
+  etc.) rather than reusing items that may belong to another parallel test.
+- **Target your data:** when modifying or deleting, target the specific item the
+  test created (e.g., use `aria-selected` or extract the ID from the URL) — never
+  target `first()` or `last()` on a shared list.
+- **Use `navigateToEditorPage`:** this helper creates a fresh page for each test,
+  ensuring isolation. Do not replace it with a click on an existing tree item.
+
 #### Running
 
 - All tests: `pnpm test:e2e`
