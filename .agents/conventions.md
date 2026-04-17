@@ -124,28 +124,35 @@ state in the dependency array causes the callback reference to change whenever t
 state resolves. If a `useEffect` depends on that callback, the effect re-runs,
 creating a cascade of state transitions that race with each other.
 
-**Pattern:** store async state in a ref and read it inside the callback so the
-callback identity is stable. Use a separate effect to re-trigger work when the
-async state resolves.
+**Pattern:** pass async state as a parameter to a stable callback (empty deps).
+The effect that calls the callback includes the async state in its own deps so it
+re-runs when the state resolves.
+
+### Discarding stale async callbacks
+
+When an effect starts async work (fetch, timer callback), the effect may re-run
+before the async work completes. The stale callback must not update state.
+
+**Use a `cancelled` flag, not a generation counter.** A generation counter
+(`if (genRef.current !== gen) return`) has a subtle race: if the effect re-runs
+between the fetch start and the `finally` block, the counter check fails and the
+status transition is skipped — leaving the UI stuck (issues #118–#192). A boolean
+`cancelled` flag set once in cleanup is immune to this race.
 
 ```typescript
-// ❌ Bad — callback changes when workspaceId resolves, re-triggering the effect
-const search = useCallback(async (q) => {
-  fetch(`/api?ws=${workspaceId}`);
-}, [workspaceId]);
+// ❌ Bad — generation counter race in finally block
+const gen = ++genRef.current;
+fetch(url, { signal }).finally(() => {
+  if (genRef.current === gen) setStatus("done"); // skipped if effect re-ran
+});
 
-useEffect(() => { /* debounce */ search(query); }, [query, search]);
-
-// ✅ Good — callback is stable, dedicated effect handles late resolution
-const wsRef = useRef(workspaceId);
-wsRef.current = workspaceId;
-
-const search = useCallback(async (q) => {
-  fetch(`/api?ws=${wsRef.current}`);
-}, []);
-
-useEffect(() => { /* debounce */ search(query); }, [query, search]);
-useEffect(() => { if (workspaceId) search(query); }, [workspaceId]);
+// ✅ Good — cancelled flag set once in cleanup
+let cancelled = false;
+fetch(url, { signal })
+  .then(res => { if (!cancelled) { /* update state */ } })
+  .catch(err => { if (!cancelled) { /* handle error */ } });
+// cleanup:
+return () => { cancelled = true; controller.abort(); };
 ```
 
 Also: always add `.catch()` to fire-and-forget promises in effects. An unhandled

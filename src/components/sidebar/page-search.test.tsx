@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
@@ -54,6 +54,12 @@ import { PageSearch } from "./page-search";
 describe("PageSearch", () => {
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
+    // Reset workspace mock — vi.restoreAllMocks() in afterEach clears
+    // the mock implementation, so we must re-set it each test.
+    mockMaybeSingle.mockResolvedValue({
+      data: { id: "ws-uuid-123" },
+      error: null,
+    });
     fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ results: [] }),
@@ -279,13 +285,12 @@ describe("PageSearch", () => {
   });
 
   it("shows empty state even when aborted fetch finally block races with new cycle", async () => {
-    // Regression test for the microtask ordering bug: when the debounce
-    // effect re-runs (e.g. because workspaceId resolved), it aborts the
-    // old controller and sets loading=true synchronously. The aborted
-    // fetch's finally block runs later as a microtask. If the finally
-    // block used signal.aborted to decide whether to clear loading, a
-    // race could leave loading=true permanently. The generation counter
-    // prevents this.
+    // Regression test for the microtask ordering bug: when the effect
+    // re-runs (e.g. because workspaceId resolved), it aborts the old
+    // controller and sets loading=true synchronously. The aborted
+    // fetch's finally block runs later as a microtask. The cancelled
+    // flag (set in the effect cleanup) prevents stale callbacks from
+    // updating state.
 
     // First fetch resolves synchronously (simulating a fetch that
     // completes at the same tick the abort fires)
@@ -623,12 +628,101 @@ describe("PageSearch", () => {
     expect(searchResults.querySelectorAll(".animate-pulse").length).toBe(0);
   });
 
+  it("cancelled flag prevents stale finally block from blocking new cycle (#192)", async () => {
+    // Regression test for #192: the generation counter pattern could
+    // leave searchStatus stuck at "loading" if the effect re-ran between
+    // fetch start and completion. The cancelled flag fixes this: it's
+    // set once in cleanup and stays true, so the stale finally block is
+    // discarded and the new cycle completes independently.
+
+    // First fetch hangs, second resolves immediately.
+    let resolveFetch1: (value: Response) => void;
+    const fetchCalls: string[] = [];
+    fetchMock.mockImplementation(
+      (url: string | URL | Request, init?: RequestInit) => {
+        const urlStr = typeof url === "string" ? url : url.toString();
+        fetchCalls.push(urlStr);
+        const signal = init?.signal;
+        if (fetchCalls.length === 1) {
+          return new Promise<Response>((resolve, reject) => {
+            resolveFetch1 = resolve;
+            signal?.addEventListener("abort", () => {
+              reject(new DOMException("Aborted", "AbortError"));
+            });
+          });
+        }
+        return Promise.resolve(
+          new Response(JSON.stringify({ results: [] }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      },
+    );
+
+    render(<PageSearch />);
+
+    // Wait for workspace resolution
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(50);
+    });
+
+    const input = screen.getByRole("combobox", { name: /search pages/i });
+
+    // Set the first query
+    await act(async () => {
+      fireEvent.focus(input);
+      fireEvent.change(input, { target: { value: "first" } });
+    });
+
+    // Advance past debounce — first fetch fires (hangs)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    expect(fetchCalls.length).toBe(1);
+    expect(fetchCalls[0]).toContain("first");
+
+    // Change query — effect cleanup cancels first cycle
+    await act(async () => {
+      fireEvent.change(input, { target: { value: "second" } });
+    });
+
+    // Advance past debounce — second fetch fires and resolves
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    expect(fetchCalls.length).toBe(2);
+    expect(fetchCalls[1]).toContain("second");
+
+    // Now resolve the first (stale) fetch — its .then() runs but
+    // cancelledRef is true for that cycle, so it's discarded.
+    await act(async () => {
+      resolveFetch1!(
+        new Response(JSON.stringify({ results: [] }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+      await vi.advanceTimersByTimeAsync(50);
+    });
+
+    // The empty state should be visible (from the second fetch)
+    expect(
+      screen.getByText("No pages match your search"),
+    ).toBeInTheDocument();
+
+    // No skeletons should be stuck
+    const searchResults = screen.getByRole("listbox");
+    expect(searchResults.querySelectorAll(".animate-pulse").length).toBe(0);
+  });
+
   it("never leaves skeletons stuck when workspace resolves mid-debounce (#181)", async () => {
-    // Regression test for #181: the two-effect architecture (debounce +
-    // re-trigger) could leave searchStatus stuck at "loading" when the
-    // workspace resolved at specific timings. The unified effect approach
-    // eliminates this by handling workspace resolution as a dependency
-    // change that naturally re-runs the effect.
+    // Regression test for #181/#192: workspace resolution mid-debounce
+    // must not leave searchStatus stuck at "loading". The cancelled flag
+    // ensures the old cycle's callbacks are discarded and the new cycle
+    // completes normally.
 
     // Make workspace resolution resolve after 150ms (mid-debounce)
     mockMaybeSingle.mockReturnValue(
