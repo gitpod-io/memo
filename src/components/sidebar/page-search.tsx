@@ -32,6 +32,7 @@ export function PageSearch() {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Resolve workspace slug to ID
   useEffect(() => {
@@ -66,43 +67,54 @@ export function PageSearch() {
   }, [params.workspaceSlug]);
 
   const search = useCallback(
-    async (q: string) => {
+    async (q: string, signal: AbortSignal) => {
       if (!q.trim() || !workspaceId) {
-        setResults([]);
-        setLoading(false);
+        if (!signal.aborted) {
+          setResults([]);
+          setLoading(false);
+        }
         return;
       }
 
       try {
         const response = await fetch(
-          `/api/search?q=${encodeURIComponent(q.trim())}&workspace_id=${encodeURIComponent(workspaceId)}`
+          `/api/search?q=${encodeURIComponent(q.trim())}&workspace_id=${encodeURIComponent(workspaceId)}`,
+          { signal }
         );
+        if (signal.aborted) return;
         if (response.ok) {
           const data = (await response.json()) as { results: SearchResult[] };
+          if (signal.aborted) return;
           setResults(data.results);
           setSelectedIndex(0);
         } else {
           setResults([]);
         }
       } catch (error) {
+        if (signal.aborted) return;
         Sentry.captureException(error);
         setResults([]);
       } finally {
-        setLoading(false);
-        setSearched(true);
+        if (!signal.aborted) {
+          setLoading(false);
+          setSearched(true);
+        }
       }
     },
     [workspaceId]
   );
 
-  // Debounced search (300ms). The timer always fires; the search callback
-  // handles the case where workspaceId is not yet available by clearing
-  // loading. The rendering layer uses workspaceResolved to decide whether
-  // to show skeletons or the empty-state message.
+  // Debounced search with abort support. Cancels any in-flight fetch when
+  // the query or search callback changes, preventing stale responses from
+  // overwriting the current state.
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
       debounceRef.current = null;
+    }
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
     }
 
     if (!query.trim()) {
@@ -113,9 +125,13 @@ export function PageSearch() {
     }
 
     setLoading(true);
+    setSearched(false);
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     debounceRef.current = setTimeout(() => {
       debounceRef.current = null;
-      search(query);
+      search(query, controller.signal);
     }, 300);
 
     return () => {
@@ -123,6 +139,7 @@ export function PageSearch() {
         clearTimeout(debounceRef.current);
         debounceRef.current = null;
       }
+      controller.abort();
     };
   }, [query, search]);
 

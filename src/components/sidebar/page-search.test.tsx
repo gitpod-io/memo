@@ -79,9 +79,10 @@ describe("PageSearch", () => {
       await vi.advanceTimersByTimeAsync(350);
     });
 
-    // The fetch should have been called
+    // The fetch should have been called with the query and an abort signal
     expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining("zzzyyyxxxnonexistent999")
+      expect.stringContaining("zzzyyyxxxnonexistent999"),
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
     );
 
     // The empty state message should be visible
@@ -139,6 +140,72 @@ describe("PageSearch", () => {
     });
 
     // Empty state should now show
+    expect(
+      screen.getByText("No pages match your search")
+    ).toBeInTheDocument();
+  });
+
+  it("aborts stale fetch when query changes rapidly", async () => {
+    // Track abort signals to verify cancellation
+    const signals: AbortSignal[] = [];
+    fetchMock.mockImplementation((_url: string | URL | Request, init?: RequestInit) => {
+      if (init?.signal) signals.push(init.signal);
+      return new Promise<Response>((resolve) => {
+        // Resolve after a delay, but only if not aborted
+        setTimeout(() => {
+          resolve(new Response(JSON.stringify({ results: [] }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }));
+        }, 100);
+      });
+    });
+
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime,
+    });
+
+    render(<PageSearch />);
+
+    // Wait for workspace resolution
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(50);
+    });
+
+    const input = screen.getByRole("combobox", { name: /search pages/i });
+    await user.click(input);
+    await user.type(input, "first");
+
+    // Advance past debounce to trigger first fetch
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    // First fetch should be in-flight
+    expect(signals.length).toBe(1);
+    expect(signals[0].aborted).toBe(false);
+
+    // Type a new query before first fetch resolves
+    await user.clear(input);
+    await user.type(input, "second");
+
+    // The first signal should now be aborted
+    expect(signals[0].aborted).toBe(true);
+
+    // Advance past debounce for second query
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    // Second fetch should have been called
+    expect(signals.length).toBe(2);
+
+    // Let second fetch resolve
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(150);
+    });
+
+    // Should show empty state (second query returned no results)
     expect(
       screen.getByText("No pages match your search")
     ).toBeInTheDocument();
