@@ -4,6 +4,7 @@ import {
   deleteTestUser,
   getInviteToken,
   cleanupInvitesForEmail,
+  cleanupStaleTestUsers,
 } from "./fixtures/supabase-admin";
 import { createClient } from "@supabase/supabase-js";
 import { type Browser, type Page } from "@playwright/test";
@@ -72,11 +73,21 @@ test.describe("Workspace member management", () => {
   let invitedUserId: string | undefined;
   let workspaceSlug: string;
 
+  // Remove stale test users from previous runs whose cleanup was interrupted.
+  // Without this, a leftover member with display_name "E2E Member" causes
+  // the re-invite test to find 2 matching elements (strict mode violation).
+  test.beforeAll(async () => {
+    await cleanupStaleTestUsers(INVITE_DISPLAY_NAME).catch(() => {});
+    await cleanupInvitesForEmail(INVITE_EMAIL).catch(() => {});
+  });
+
   test.afterAll(async () => {
     await cleanupInvitesForEmail(INVITE_EMAIL).catch(() => {});
     if (invitedUserId) {
       await deleteTestUser(invitedUserId).catch(() => {});
     }
+    // Fallback: clean up by display name in case invitedUserId was never set
+    await cleanupStaleTestUsers(INVITE_DISPLAY_NAME).catch(() => {});
   });
 
   test("owner can invite a user by email", async ({

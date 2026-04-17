@@ -55,11 +55,18 @@ export function MemberList({
   onRemove,
 }: MemberListProps) {
   const [removingId, setRemovingId] = useState<string | null>(null);
+  // Track which member's remove dialog is open so we can close it after the
+  // async delete completes. AlertDialogAction is a plain Button in Base UI
+  // and does not auto-close the dialog.
+  const [openDialogMemberId, setOpenDialogMemberId] = useState<string | null>(
+    null
+  );
   const isAdmin = currentUserRole === "owner" || currentUserRole === "admin";
 
   async function handleRemove(memberId: string) {
     setRemovingId(memberId);
     await onRemove(memberId);
+    setOpenDialogMemberId(null);
     setRemovingId(null);
   }
 
@@ -130,7 +137,12 @@ export function MemberList({
               {isAdmin && (
                 <TableCell>
                   {canRemove(member) && (
-                    <AlertDialog>
+                    <AlertDialog
+                      open={openDialogMemberId === member.id}
+                      onOpenChange={(open) =>
+                        setOpenDialogMemberId(open ? member.id : null)
+                      }
+                    >
                       <AlertDialogTrigger
                         render={
                           <Button
