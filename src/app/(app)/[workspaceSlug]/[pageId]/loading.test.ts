@@ -28,6 +28,18 @@ describe("[pageId] route loading state", () => {
     expect(loading).toContain("animate-pulse");
   });
 
+  it("skeleton elements use sharp corners per design spec (#165)", () => {
+    const loading = readFileSync(resolve(PAGE_DIR, "loading.tsx"), "utf-8");
+    // Design spec: skeletons must have sharp corners — no rounded classes
+    // except the explicit exceptions listed in the Corners section.
+    const lines = loading.split("\n");
+    const skeletonLines = lines.filter((l) => l.includes("animate-pulse"));
+    expect(skeletonLines.length).toBeGreaterThan(0);
+    for (const line of skeletonLines) {
+      expect(line).not.toMatch(/\brounded\b/);
+    }
+  });
+
   it("page.tsx parallelizes auth and workspace queries", () => {
     const page = readFileSync(resolve(PAGE_DIR, "page.tsx"), "utf-8");
     // The auth check and workspace lookup should run in parallel
