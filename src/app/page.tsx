@@ -2,6 +2,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
+/** Supabase may return the joined workspace as an object or array — normalise to a slug. */
+function extractSlug(
+  workspaces: { slug: string } | { slug: string }[] | null | undefined,
+): string | undefined {
+  if (Array.isArray(workspaces)) return workspaces[0]?.slug;
+  return workspaces?.slug;
+}
+
 export default async function Home() {
   const supabase = await createClient();
   const {
@@ -9,25 +17,32 @@ export default async function Home() {
   } = await supabase.auth.getUser();
 
   if (user) {
-    // Redirect authenticated users to their first workspace
-    const { data: membership } = await supabase
+    // Redirect authenticated users to their personal workspace.
+    // Use !inner join so the is_personal filter excludes non-matching rows.
+    const { data: personalMembership } = await supabase
+      .from("members")
+      .select("workspace_id, workspaces!inner(slug)")
+      .eq("user_id", user.id)
+      .eq("workspaces.is_personal", true)
+      .limit(1)
+      .maybeSingle();
+
+    const personalSlug = extractSlug(personalMembership?.workspaces);
+    if (personalSlug) {
+      redirect(`/${personalSlug}`);
+    }
+
+    // Fall back to any workspace if no personal workspace exists
+    const { data: anyMembership } = await supabase
       .from("members")
       .select("workspace_id, workspaces(slug)")
       .eq("user_id", user.id)
       .limit(1)
       .maybeSingle();
 
-    // Supabase types the joined relation based on schema — extract slug safely
-    const workspaces = membership?.workspaces as
-      | { slug: string }
-      | { slug: string }[]
-      | null
-      | undefined;
-    const slug = Array.isArray(workspaces)
-      ? workspaces[0]?.slug
-      : workspaces?.slug;
-    if (slug) {
-      redirect(`/${slug}`);
+    const anySlug = extractSlug(anyMembership?.workspaces);
+    if (anySlug) {
+      redirect(`/${anySlug}`);
     }
   }
 
