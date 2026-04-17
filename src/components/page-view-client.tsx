@@ -30,19 +30,21 @@ export function PageViewClient({
 
   return (
     <div className="mx-auto max-w-3xl p-6">
-      <div className="group/page-icon flex items-start gap-2">
+      <div className="group/page-header">
         <PageIcon key={`icon-${pageId}`} pageId={pageId} initialIcon={pageIcon} />
-        <div className="min-w-0 flex-1">
-          <PageTitle key={pageId} pageId={pageId} initialTitle={pageTitle} />
+        <div className="flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <PageTitle key={pageId} pageId={pageId} initialTitle={pageTitle} />
+          </div>
+          <PageMenu
+            pageId={pageId}
+            pageTitle={pageTitle}
+            workspaceId={workspaceId}
+            workspaceSlug={workspaceSlug}
+            userId={userId}
+            editorRef={editorRef}
+          />
         </div>
-        <PageMenu
-          pageId={pageId}
-          pageTitle={pageTitle}
-          workspaceId={workspaceId}
-          workspaceSlug={workspaceSlug}
-          userId={userId}
-          editorRef={editorRef}
-        />
       </div>
       <div className="mt-4">
         <Editor
