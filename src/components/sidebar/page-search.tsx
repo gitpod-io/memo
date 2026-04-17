@@ -23,7 +23,7 @@ interface SearchResult {
 /**
  * Search display status — a single discriminated value that eliminates
  * the class of race conditions where independent flags get out of sync
- * (the root cause of issues #118, #126, #136, #144, #162, #178).
+ * (the root cause of issues #118, #126, #136, #144, #162, #178, #181).
  *
  * - "idle"    — no query entered or query was cleared
  * - "loading" — a search is in-flight (show skeleton placeholders)
@@ -46,23 +46,10 @@ export function PageSearch() {
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  // Ref mirror of workspaceId so the search callback can read the
-  // latest value without being recreated when it changes. This
-  // decouples workspace resolution from the debounce effect and
-  // eliminates the cascade of effect re-runs that caused issues
-  // #118, #126, #136, #144, #162, #178.
-  const workspaceIdRef = useRef<string | null>(null);
-  // Ref mirror of query so the workspace-resolved effect can read
-  // the current query without adding it as a dependency.
-  const queryRef = useRef("");
   // Generation counter: incremented each search cycle so stale async
   // callbacks never update state. Immune to microtask ordering because
   // the counter is incremented synchronously before any async work.
   const searchGenRef = useRef(0);
-
-  // Keep refs in sync with state.
-  workspaceIdRef.current = workspaceId;
-  queryRef.current = query;
 
   // Register the search input ref so the sidebar context can focus it via ⌘+K
   useEffect(() => {
@@ -109,23 +96,14 @@ export function PageSearch() {
     };
   }, [params.workspaceSlug]);
 
-  // Stable search function — reads workspaceId from a ref so it never
-  // changes identity. The debounce effect depends only on `query`.
+  // Stable search function — accepts wsId as a parameter so the
+  // callback identity never changes.
   const search = useCallback(
-    async (q: string, gen: number, signal: AbortSignal) => {
-      const wsId = workspaceIdRef.current;
-      if (!q.trim() || !wsId) {
-        if (searchGenRef.current === gen) {
-          setResults([]);
-          setSearchStatus("done");
-        }
-        return;
-      }
-
+    async (q: string, wsId: string, gen: number, signal: AbortSignal) => {
       try {
         const response = await fetch(
           `/api/search?q=${encodeURIComponent(q.trim())}&workspace_id=${encodeURIComponent(wsId)}`,
-          { signal }
+          { signal },
         );
         if (searchGenRef.current !== gen) return;
         if (response.ok) {
@@ -150,12 +128,14 @@ export function PageSearch() {
         }
       }
     },
-    [] // stable — reads workspaceId from ref
+    [],
   );
 
-  // Debounced search — depends only on `query`. Decoupled from
-  // workspace resolution so the effect never re-runs when
-  // workspaceId changes.
+  // Unified debounced search effect. Depends on query, workspaceId,
+  // and workspaceResolved so it naturally re-runs when the workspace
+  // resolves — no separate re-trigger effect needed. This eliminates
+  // the class of race conditions caused by two effects competing over
+  // the same abort controller and generation counter (#178, #181).
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
@@ -174,13 +154,30 @@ export function PageSearch() {
     }
 
     const gen = ++searchGenRef.current;
+
+    // If workspace hasn't resolved yet, stay in loading state.
+    // When it resolves, this effect re-runs and fires the search.
+    if (!workspaceResolved) {
+      setSearchStatus("loading");
+      return;
+    }
+
+    // Workspace resolved but no workspace found — can't search.
+    // Transition directly to done (empty state).
+    if (!workspaceId) {
+      setResults([]);
+      setSearchStatus("done");
+      return;
+    }
+
     setSearchStatus("loading");
+
     const controller = new AbortController();
     abortRef.current = controller;
 
     debounceRef.current = setTimeout(() => {
       debounceRef.current = null;
-      search(query, gen, controller.signal);
+      search(query, workspaceId, gen, controller.signal);
     }, 300);
 
     return () => {
@@ -190,38 +187,7 @@ export function PageSearch() {
       }
       controller.abort();
     };
-  }, [query, search]);
-
-  // When workspaceId resolves and there is an active query whose
-  // search returned early (because workspaceId was null), re-trigger
-  // the search immediately so the user sees real results.
-  useEffect(() => {
-    if (!workspaceId || !workspaceResolved) return;
-    const q = queryRef.current;
-    if (!q.trim()) return;
-    // Only re-search if a search cycle is active (not idle).
-    if (searchStatus === "idle") return;
-
-    // Cancel any in-flight request from the debounce effect.
-    if (abortRef.current) {
-      abortRef.current.abort();
-      abortRef.current = null;
-    }
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-      debounceRef.current = null;
-    }
-
-    const gen = ++searchGenRef.current;
-    setSearchStatus("loading");
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    // Fire immediately — no debounce needed since the user already
-    // waited for the workspace to resolve.
-    search(q, gen, controller.signal);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspaceId, workspaceResolved]);
+  }, [query, workspaceId, workspaceResolved, search]);
 
   // Close on click outside
   useEffect(() => {
@@ -325,22 +291,14 @@ export function PageSearch() {
 
   const showResults = open && query.trim().length > 0;
 
-  // Show skeletons when a search is in-flight, OR when the workspace
-  // hasn't resolved yet (so we can't search). The `searchStatus === "done"`
-  // check with `!workspaceResolved` handles the case where the search
-  // callback returned early because workspaceId was null — we still want
-  // skeletons until the workspace resolves and a real search can fire.
-  const showSkeleton =
-    results.length === 0 &&
-    (searchStatus === "loading" ||
-      (!workspaceResolved && searchStatus !== "idle"));
+  // Show skeletons while a search is in-flight (includes waiting for
+  // workspace resolution — the unified effect stays in "loading" until
+  // the workspace resolves and the search completes).
+  const showSkeleton = results.length === 0 && searchStatus === "loading";
 
-  // Show empty state only when the search completed AND the workspace
-  // is resolved (so we know the empty result is real, not just because
-  // we couldn't search yet).
+  // Show empty state when the search completed with no results.
   const showEmpty =
     searchStatus === "done" &&
-    workspaceResolved &&
     results.length === 0 &&
     query.trim().length > 0;
 
