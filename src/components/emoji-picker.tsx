@@ -208,7 +208,7 @@ export function EmojiPicker({
                 <div className="px-1 py-1 text-xs tracking-widest uppercase text-white/30">
                   {category.label}
                 </div>
-                <div className="grid grid-cols-8 gap-0.5">
+                <div className="grid grid-cols-6 gap-0.5 sm:grid-cols-8">
                   {category.emojis.map((emoji) => (
                     <button
                       key={emoji}
