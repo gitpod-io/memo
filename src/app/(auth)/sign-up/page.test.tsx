@@ -104,9 +104,9 @@ describe("SignUpPage", () => {
     });
   });
 
-  it("calls supabase.auth.signUp with correct parameters", async () => {
+  it("calls supabase.auth.signUp with correct parameters including emailRedirectTo", async () => {
     mockSignUp.mockResolvedValue({
-      data: { user: { id: "user-1" } },
+      data: { user: { id: "user-1", identities: [{ id: "id-1" }] } },
       error: null,
     });
 
@@ -137,14 +137,43 @@ describe("SignUpPage", () => {
           data: {
             display_name: "Jane Doe",
           },
+          emailRedirectTo: "http://localhost:3000/auth/callback",
         },
       });
     });
   });
 
-  it("redirects to workspace after successful sign-up", async () => {
+  it("shows confirmation screen when email confirmation is required", async () => {
     mockSignUp.mockResolvedValue({
-      data: { user: { id: "user-1" } },
+      data: { user: { id: "user-1", identities: [] } },
+      error: null,
+    });
+
+    const user = userEvent.setup();
+    render(<SignUpPage />);
+
+    await user.type(screen.getByLabelText("Display name"), "Jane Doe");
+    await user.type(screen.getByLabelText("Email"), "jane@example.com");
+    await user.type(screen.getByLabelText("Password"), "password123");
+
+    const form = screen.getByRole("button", { name: /sign up/i })
+      .closest("form")!;
+    form.requestSubmit();
+
+    await waitFor(() => {
+      expect(screen.getByText("Check your inbox")).toBeInTheDocument();
+      expect(screen.getByText("jane@example.com")).toBeInTheDocument();
+    });
+
+    // Form should no longer be visible
+    expect(screen.queryByLabelText("Email")).not.toBeInTheDocument();
+    // Should not have attempted a redirect
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it("redirects to workspace after successful sign-up without email confirmation", async () => {
+    mockSignUp.mockResolvedValue({
+      data: { user: { id: "user-1", identities: [{ id: "id-1" }] } },
       error: null,
     });
 
@@ -174,7 +203,7 @@ describe("SignUpPage", () => {
 
   it("redirects to root when no workspace found after sign-up", async () => {
     mockSignUp.mockResolvedValue({
-      data: { user: { id: "user-1" } },
+      data: { user: { id: "user-1", identities: [{ id: "id-1" }] } },
       error: null,
     });
 

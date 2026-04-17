@@ -23,6 +23,7 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [confirmationPending, setConfirmationPending] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -30,6 +31,8 @@ export default function SignUpPage() {
     setLoading(true);
 
     const supabase = createClient();
+    const siteUrl =
+      typeof window !== "undefined" ? window.location.origin : "";
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -37,6 +40,7 @@ export default function SignUpPage() {
         data: {
           display_name: displayName,
         },
+        emailRedirectTo: `${siteUrl}/auth/callback`,
       },
     });
 
@@ -46,8 +50,20 @@ export default function SignUpPage() {
       return;
     }
 
-    // After sign-up, the handle_new_user trigger creates a personal workspace.
-    // Fetch it so we can redirect there.
+    // When email confirmation is required, Supabase returns a user with
+    // an empty identities array. Show the confirmation screen instead of
+    // attempting to redirect.
+    if (
+      data.user &&
+      (!data.user.identities || data.user.identities.length === 0)
+    ) {
+      setConfirmationPending(true);
+      setLoading(false);
+      return;
+    }
+
+    // If email confirmation is disabled, the user is immediately active.
+    // Fetch their workspace and redirect.
     if (data.user) {
       const { data: membership } = await supabase
         .from("members")
@@ -65,6 +81,34 @@ export default function SignUpPage() {
 
     // Fallback: redirect to root
     router.push("/");
+  }
+
+  if (confirmationPending) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl font-semibold">
+            Check your inbox
+          </CardTitle>
+          <CardDescription>
+            We sent a confirmation link to{" "}
+            <span className="font-medium text-foreground">{email}</span>.
+            Click the link to activate your account.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-xs text-muted-foreground">
+            Already confirmed?{" "}
+            <Link
+              href="/sign-in"
+              className="text-accent underline-offset-4 hover:underline"
+            >
+              Sign in
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,10 @@ import {
 } from "@/components/ui/card";
 import { OAuthButtons } from "@/components/auth/oauth-buttons";
 
-export default function SignInPage() {
+function SignInForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const confirmed = searchParams.get("confirmed") === "true";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -99,6 +101,11 @@ export default function SignInPage() {
               minLength={6}
             />
           </div>
+          {confirmed && (
+            <p className="text-xs text-accent">
+              Email confirmed — you can now sign in.
+            </p>
+          )}
           {error && <p className="text-xs text-destructive">{error}</p>}
           <Button type="submit" disabled={loading} className="mt-1">
             {loading ? "Signing in…" : "Sign in"}
@@ -121,5 +128,13 @@ export default function SignInPage() {
         </p>
       </CardContent>
     </Card>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense>
+      <SignInForm />
+    </Suspense>
   );
 }

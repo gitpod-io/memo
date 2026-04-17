@@ -19,6 +19,30 @@ test.describe("Authentication", () => {
     await expect(page.getByRole("button", { name: /sign up/i })).toBeVisible();
   });
 
+  test("sign-in page shows confirmation message with confirmed=true param", async ({
+    page,
+  }) => {
+    await page.goto("/sign-in?confirmed=true");
+    await expect(
+      page.getByText(/email confirmed/i),
+    ).toBeVisible();
+  });
+
+  test("sign-in page does not show confirmation message without param", async ({
+    page,
+  }) => {
+    await page.goto("/sign-in");
+    await expect(
+      page.getByText(/email confirmed/i),
+    ).not.toBeVisible();
+  });
+
+  test("auth callback redirects to sign-in without code", async ({ page }) => {
+    await page.goto("/auth/callback");
+    await page.waitForURL(/sign-in/, { timeout: 10_000 });
+    expect(page.url()).toContain("/sign-in");
+  });
+
   test("unauthenticated user is redirected to sign-in", async ({ page }) => {
     // Try to access an authenticated route
     await page.goto("/test-workspace");
