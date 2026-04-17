@@ -1,6 +1,23 @@
 import { test, expect } from "./fixtures/auth";
 import { navigateToEditorPage } from "./fixtures/editor-helpers";
 
+/**
+ * Move the cursor to the end of the editor and exit any active list context
+ * by pressing Enter twice (an empty list item exits the list in Lexical),
+ * leaving the cursor in a fresh paragraph block.
+ */
+async function moveToParagraphBlock(
+  page: import("@playwright/test").Page,
+  editor: import("@playwright/test").Locator,
+) {
+  await editor.click();
+  await page.keyboard.press("End");
+  // Press Enter twice: first creates a new list item (if inside a list),
+  // second exits the list and creates a paragraph.
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Enter");
+}
+
 test.describe("Editor drag-and-drop", () => {
   test("drag handle appears when hovering a block", async ({
     authenticatedPage: page,
@@ -10,19 +27,15 @@ test.describe("Editor drag-and-drop", () => {
     const editor = page.locator('[contenteditable="true"]');
     await expect(editor).toBeVisible({ timeout: 10_000 });
 
-    // Type unique content to avoid matching leftover text from previous runs
+    // Use unique text to avoid matching leftover content from previous runs
     const uid = Date.now().toString();
-    await editor.click();
-    await page.keyboard.press("End");
-    await page.keyboard.press("Enter");
-    await editor.pressSequentially(`DragTest ${uid}`);
+    const marker = `DragTest ${uid}`;
+    await moveToParagraphBlock(page, editor);
+    await page.keyboard.type(marker);
 
-    // Wait for content to render
-    await page.waitForTimeout(500);
-
-    // Find the block we just typed and hover it
-    const block = editor.locator("p").filter({ hasText: `DragTest ${uid}` });
-    await expect(block).toBeVisible();
+    // Wait for the paragraph with our unique text to render
+    const block = editor.locator("p").filter({ hasText: marker });
+    await expect(block).toBeVisible({ timeout: 3_000 });
     await block.hover();
 
     // The drag handle should become visible
@@ -38,13 +51,14 @@ test.describe("Editor drag-and-drop", () => {
     const editor = page.locator('[contenteditable="true"]');
     await expect(editor).toBeVisible({ timeout: 10_000 });
 
-    // Ensure there's content
-    await editor.click();
-    await editor.pressSequentially("Drag test block");
-    await page.waitForTimeout(300);
+    // Use unique text so the locator doesn't match leftover content
+    const uid = Date.now().toString();
+    const marker = `DragStay ${uid}`;
+    await moveToParagraphBlock(page, editor);
+    await page.keyboard.type(marker);
 
-    const block = editor.locator("p").first();
-    await expect(block).toBeVisible();
+    const block = editor.locator("p").filter({ hasText: marker });
+    await expect(block).toBeVisible({ timeout: 3_000 });
 
     // Hover the block to show the drag handle
     const blockBox = await block.boundingBox();
@@ -81,19 +95,19 @@ test.describe("Editor drag-and-drop", () => {
     const editor = page.locator('[contenteditable="true"]');
     await expect(editor).toBeVisible({ timeout: 10_000 });
 
-    // Type content to create multiple blocks
-    await editor.click();
-    await page.keyboard.press("End");
+    // Use unique text to avoid matching leftover content from previous runs
+    const uid = Date.now().toString();
+    const markerOne = `BlockOne ${uid}`;
+    const markerTwo = `BlockTwo ${uid}`;
+    await moveToParagraphBlock(page, editor);
+    await page.keyboard.type(markerOne);
     await page.keyboard.press("Enter");
-    await editor.pressSequentially("Block one");
-    await page.keyboard.press("Enter");
-    await editor.pressSequentially("Block two");
+    await page.keyboard.type(markerTwo);
     await page.waitForTimeout(300);
 
-    // Hover the first typed block
-    const paragraphs = editor.locator("p");
-    const blockOne = paragraphs.filter({ hasText: "Block one" }).first();
-    await expect(blockOne).toBeVisible();
+    // Hover the first typed block using unique text
+    const blockOne = editor.locator("p").filter({ hasText: markerOne });
+    await expect(blockOne).toBeVisible({ timeout: 3_000 });
     await blockOne.hover();
     await page.waitForTimeout(200);
 

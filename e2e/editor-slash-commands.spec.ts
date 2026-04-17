@@ -49,6 +49,9 @@ test.describe("Editor slash commands", () => {
     const editor = page.locator('[contenteditable="true"]');
     await expect(editor).toBeVisible({ timeout: 10_000 });
 
+    // Count existing h1 elements before inserting so we can target the new one
+    const h1CountBefore = await editor.locator("h1").count();
+
     await editor.click();
     await page.keyboard.press("End");
     await page.keyboard.press("Enter");
@@ -59,9 +62,13 @@ test.describe("Editor slash commands", () => {
     await expect(heading1Option).toBeVisible({ timeout: 3_000 });
     await heading1Option.click();
 
-    // A heading element should now exist in the editor
-    const heading = editor.locator("h1");
+    // The newly inserted heading — use .last() to avoid matching pre-existing h1s
+    const heading = editor.locator("h1").last();
     await expect(heading).toBeVisible({ timeout: 2_000 });
+
+    // Verify a new h1 was actually added
+    const h1CountAfter = await editor.locator("h1").count();
+    expect(h1CountAfter).toBeGreaterThan(h1CountBefore);
   });
 
   test("slash menu is keyboard navigable", async ({
