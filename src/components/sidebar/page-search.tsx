@@ -46,10 +46,13 @@ export function PageSearch() {
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  // Generation counter: incremented each search cycle so stale async
-  // callbacks never update state. Immune to microtask ordering because
-  // the counter is incremented synchronously before any async work.
-  const searchGenRef = useRef(0);
+  // Cancelled flag: set to true by the effect cleanup so stale async
+  // callbacks (from aborted fetches) never update state. Unlike the
+  // generation counter this replaces, a boolean flag cannot be
+  // "incremented past" the expected value by a concurrent effect run —
+  // once set to true it stays true, guaranteeing the finally block
+  // always transitions to "done" for the active cycle.
+  const cancelledRef = useRef(false);
 
   // Register the search input ref so the sidebar context can focus it via ⌘+K
   useEffect(() => {
@@ -97,25 +100,26 @@ export function PageSearch() {
   }, [params.workspaceSlug]);
 
   // Stable search function — accepts wsId as a parameter so the
-  // callback identity never changes.
+  // callback identity never changes. Uses cancelledRef to discard
+  // stale results instead of a generation counter.
   const search = useCallback(
-    async (q: string, wsId: string, gen: number, signal: AbortSignal) => {
+    async (q: string, wsId: string, signal: AbortSignal) => {
       try {
         const response = await fetch(
           `/api/search?q=${encodeURIComponent(q.trim())}&workspace_id=${encodeURIComponent(wsId)}`,
           { signal },
         );
-        if (searchGenRef.current !== gen) return;
+        if (cancelledRef.current) return;
         if (response.ok) {
           const data = (await response.json()) as { results: SearchResult[] };
-          if (searchGenRef.current !== gen) return;
+          if (cancelledRef.current) return;
           setResults(data.results);
           setSelectedIndex(0);
         } else {
           setResults([]);
         }
       } catch (error) {
-        if (searchGenRef.current !== gen) return;
+        if (cancelledRef.current) return;
         // AbortErrors are expected when the user types quickly — only
         // capture genuine failures.
         if (!(error instanceof DOMException && error.name === "AbortError")) {
@@ -123,7 +127,12 @@ export function PageSearch() {
         }
         setResults([]);
       } finally {
-        if (searchGenRef.current === gen) {
+        // Always transition to "done" unless this cycle was cancelled.
+        // The cancelled flag is set once in cleanup and stays true,
+        // so there is no race where a concurrent effect run can
+        // prevent this transition (unlike the generation counter
+        // pattern that caused issues #118–#192).
+        if (!cancelledRef.current) {
           setSearchStatus("done");
         }
       }
@@ -133,9 +142,7 @@ export function PageSearch() {
 
   // Unified debounced search effect. Depends on query, workspaceId,
   // and workspaceResolved so it naturally re-runs when the workspace
-  // resolves — no separate re-trigger effect needed. This eliminates
-  // the class of race conditions caused by two effects competing over
-  // the same abort controller and generation counter (#178, #181).
+  // resolves — no separate re-trigger effect needed.
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
@@ -146,14 +153,15 @@ export function PageSearch() {
       abortRef.current = null;
     }
 
+    // Mark the previous cycle as cancelled so its async callbacks
+    // (catch/finally) won't update state. Then reset for this cycle.
+    cancelledRef.current = true;
+
     if (!query.trim()) {
-      searchGenRef.current += 1;
       setResults([]);
       setSearchStatus("idle");
       return;
     }
-
-    const gen = ++searchGenRef.current;
 
     // If workspace hasn't resolved yet, stay in loading state.
     // When it resolves, this effect re-runs and fires the search.
@@ -170,6 +178,8 @@ export function PageSearch() {
       return;
     }
 
+    // Reset cancelled for this new search cycle.
+    cancelledRef.current = false;
     setSearchStatus("loading");
 
     const controller = new AbortController();
@@ -177,10 +187,11 @@ export function PageSearch() {
 
     debounceRef.current = setTimeout(() => {
       debounceRef.current = null;
-      search(query, workspaceId, gen, controller.signal);
+      search(query, workspaceId, controller.signal);
     }, 300);
 
     return () => {
+      cancelledRef.current = true;
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
         debounceRef.current = null;

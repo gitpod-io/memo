@@ -7,6 +7,9 @@ import { expect } from "@playwright/test";
  * prevents parallel tests (e.g. the delete test) from interfering by deleting
  * a shared page mid-test.
  *
+ * If the new page returns a 404 (e.g. due to Supabase replication lag), the
+ * function reloads the page and retries up to 2 times before failing.
+ *
  * Returns once `[contenteditable="true"]` is visible.
  */
 export async function navigateToEditorPage(page: Page): Promise<void> {
@@ -27,9 +30,31 @@ export async function navigateToEditorPage(page: Page): Promise<void> {
   const newPageBtn = sidebar.getByRole("button", { name: /new page/i });
   await newPageBtn.click();
 
-  // Wait for the editor to appear (works for both hard and soft navigation)
+  // Wait for the editor to appear. If the server returns a 404 (e.g.
+  // Supabase replication lag between the client-side insert and the
+  // server-side read), reload and retry.
   const editor = page.locator('[contenteditable="true"]');
-  await expect(editor).toBeVisible({ timeout: 10_000 });
+  const maxRetries = 2;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const visible = await editor
+      .waitFor({ state: "visible", timeout: 10_000 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (visible) return;
+
+    // Check if we got a 404 — if so, reload to retry the server render
+    const is404 = await page.getByText("This page could not be found").isVisible().catch(() => false);
+    if (is404 && attempt < maxRetries) {
+      await page.reload({ waitUntil: "domcontentloaded" });
+      continue;
+    }
+
+    // Not a 404 or out of retries — fail with a clear message
+    throw new Error(
+      `navigateToEditorPage: editor not visible after ${attempt + 1} attempt(s)`,
+    );
+  }
 }
 
 /**
