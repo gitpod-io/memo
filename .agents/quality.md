@@ -1,6 +1,6 @@
 # Quality Grades
 
-Updated weekly by the Automation Auditor. Tracks code quality per domain.
+Tracks code quality per domain. Updated by automations as a side effect of feature and test PRs, and through dedicated staleness issues when grades drift from reality.
 
 ## Grading Scale
 
