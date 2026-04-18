@@ -28,6 +28,10 @@ test.describe("Editor auto-save", () => {
     // Use a unique string so we can verify it survives the reload
     const uniqueText = `autosave-test-${Date.now()}`;
 
+    // Register the response listener BEFORE typing so we never miss the
+    // PATCH response if the debounce fires quickly.
+    const saveResponse = waitForContentSave(page);
+
     // Type content into the editor
     await editor.click();
     await page.keyboard.press("End");
@@ -35,7 +39,6 @@ test.describe("Editor auto-save", () => {
     await page.keyboard.type(uniqueText);
 
     // Wait for the debounced auto-save PATCH to complete
-    const saveResponse = waitForContentSave(page);
     await saveResponse;
 
     // Reload the page
