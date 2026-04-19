@@ -106,10 +106,10 @@ test.describe("Workspace member management", () => {
     // Submit the invite
     await page.getByRole("button", { name: "Invite", exact: true }).click();
 
-    // Wait for success message
-    await expect(page.locator("text=Invite sent.")).toBeVisible({
-      timeout: 10_000,
-    });
+    // Wait for the invite link to appear (PR #240 replaced "Invite sent." with a copyable link)
+    await expect(
+      page.getByRole("button", { name: "Copy invite link" })
+    ).toBeVisible({ timeout: 10_000 });
   });
 
   test("invited user appears in the pending invites list", async ({
@@ -156,9 +156,9 @@ test.describe("Workspace member management", () => {
     // Re-invite the same email
     await page.fill("#invite-email", INVITE_EMAIL);
     await page.getByRole("button", { name: "Invite", exact: true }).click();
-    await expect(page.locator("text=Invite sent.")).toBeVisible({
-      timeout: 10_000,
-    });
+    await expect(
+      page.getByRole("button", { name: "Copy invite link" })
+    ).toBeVisible({ timeout: 10_000 });
 
     // Create the test user via admin API so they can accept the invite
     const testUser = await createTestUser(
