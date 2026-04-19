@@ -31,9 +31,9 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 
 | Category | Files | Tests |
 |---|---|---|
-| Unit/Integration (Vitest) | 32 | 252 |
+| Unit/Integration (Vitest) | 33 | 256 |
 | E2E (Playwright) | 20 | 74 |
-| **Total** | **52** | **326** |
+| **Total** | **53** | **330** |
 
 ### Test files by domain
 
@@ -43,7 +43,7 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 - **Pages**: `page-tree.test.ts` (35 tests), `page-tree-shortcut.test.tsx` (5 tests), `page-icon-design-spec.test.ts` (1 test), `e2e/page-crud.spec.ts` (5), `e2e/page-icon.spec.ts` (4), `e2e/sidebar-drag.spec.ts` (2)
 - **Search**: `search/route.test.ts` (8 tests), `page-search.test.tsx` (12 tests), `e2e/search.spec.ts` (5 tests)
 - **Import/Export**: `e2e/import-export.spec.ts` (2 tests)
-- **Members**: `e2e/members.spec.ts` (7 tests)
+- **Members**: `invite-form.test.ts` (4 tests), `e2e/members.spec.ts` (7 tests)
 - **App Shell**: `sidebar-context.test.tsx` (12 tests), `loading.test.ts` ×3 (14 tests), `e2e/sidebar-responsive.spec.ts` (3 tests)
 - **API**: `health/route.test.ts` (6 tests), `search/route.test.ts` (8 tests)
 - **UI**: `overlay-opacity.test.ts` (2 tests), `toast-error-duration.test.ts` (1 test), `relative-time.test.ts` (7 tests)
@@ -64,3 +64,4 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | 2026-04-16 | Post-MVP update (#119). Pages upgraded B→A (page-tree extraction + 35 unit tests from #113). Import/Export upgraded B→A (E2E added in #111). Search and Members notes updated with E2E specs from #110/#112 and flaky test bug #118. Test totals: 12 Vitest files (93 tests), 11 E2E specs (42 tests). |
 | 2026-04-17 | Full reassessment (#155). Auth B→A (sign-in 8 tests + sign-up 9 tests added). App Shell B→A (sidebar-context 8 tests added). Search B→A (flaky test bug #118 closed). Removed 5 resolved known gaps. Added new test files: page-search (5), relative-time (7), retry (6), sentry.unit (20), lexical-dispatch-safety (1). Test totals: 21 Vitest files (174 tests), 11 E2E specs (42 tests). |
 | 2026-04-18 | Test count refresh (#227). Counts drifted as features landed without quality.md updates. Added 11 new Vitest files and 9 new E2E specs. Updated counts for existing files that grew. Test totals: 32 Vitest files (252 tests), 20 E2E specs (74 tests). |
+| 2026-04-19 | Test count drift fix (#245). Added missing `invite-form.test.ts` (4 tests) to Members domain. Test totals: 33 Vitest files (256 tests), 20 E2E specs (74 tests). |
