@@ -1,7 +1,38 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PageViewClient } from "@/components/page-view-client";
 import type { SerializedEditorState } from "lexical";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ workspaceSlug: string; pageId: string }>;
+}): Promise<Metadata> {
+  const { workspaceSlug, pageId } = await params;
+  const supabase = await createClient();
+
+  const { data: workspace } = await supabase
+    .from("workspaces")
+    .select("id")
+    .eq("slug", workspaceSlug)
+    .maybeSingle();
+
+  if (!workspace) {
+    return { title: "Not found" };
+  }
+
+  const { data: page } = await supabase
+    .from("pages")
+    .select("title")
+    .eq("id", pageId)
+    .eq("workspace_id", workspace.id)
+    .maybeSingle();
+
+  return {
+    title: page?.title || "Untitled",
+  };
+}
 
 export default async function PageView({
   params,
