@@ -53,6 +53,13 @@ export default async function WorkspaceMembersPage({
   // Supabase join returns the relation as an opaque type; cast is unavoidable
   const members = (membersRaw ?? []) as unknown as MemberWithProfile[];
 
+  // Extract current user's display name for optimistic invite UI
+  const currentUserProfile = members.find((m) => m.user_id === user.id);
+  const currentUserDisplayName =
+    currentUserProfile?.profiles?.display_name ||
+    user.user_metadata?.display_name ||
+    "";
+
   // Fetch pending invites (only visible to admins/owners)
   const isAdmin = currentMember.role === "owner" || currentMember.role === "admin";
   let pendingInvites: WorkspaceInviteWithInviter[] = [];
@@ -82,6 +89,7 @@ export default async function WorkspaceMembersPage({
           pendingInvites={pendingInvites}
           currentUserId={user.id}
           currentUserRole={currentMember.role}
+          currentUserDisplayName={currentUserDisplayName}
         />
       </div>
     </div>

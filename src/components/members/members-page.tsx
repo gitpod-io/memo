@@ -20,6 +20,7 @@ interface MembersPageProps {
   pendingInvites: WorkspaceInviteWithInviter[];
   currentUserId: string;
   currentUserRole: MemberRole;
+  currentUserDisplayName: string;
 }
 
 export function MembersPage({
@@ -28,6 +29,7 @@ export function MembersPage({
   pendingInvites: initialInvites,
   currentUserId,
   currentUserRole,
+  currentUserDisplayName,
 }: MembersPageProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -102,7 +104,11 @@ export function MembersPage({
           <InviteForm
             workspaceId={workspace.id}
             currentUserId={currentUserId}
-            onInviteSent={() => router.refresh()}
+            currentUserDisplayName={currentUserDisplayName}
+            onInviteSent={(newInvite) => {
+              setInvites((prev) => [newInvite, ...prev]);
+              router.refresh();
+            }}
             onError={setError}
           />
           <Separator className="bg-white/[0.06]" />
