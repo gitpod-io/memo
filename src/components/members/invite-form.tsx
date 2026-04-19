@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Send } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Check, Copy, Send } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,11 +33,28 @@ export function InviteForm({
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<InviteRole>("member");
   const [sending, setSending] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const handleCopyLink = useCallback(async () => {
+    if (!inviteLink) return;
+    await navigator.clipboard.writeText(inviteLink);
+    setLinkCopied(true);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setLinkCopied(false), 2000);
+  }, [inviteLink]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setSuccess(false);
+    setInviteLink(null);
+    setLinkCopied(false);
     onError("");
 
     const trimmedEmail = email.trim().toLowerCase();
@@ -112,8 +129,9 @@ export function InviteForm({
       return;
     }
 
+    const link = `${window.location.origin}/invite/${token}`;
     setSending(false);
-    setSuccess(true);
+    setInviteLink(link);
     setEmail("");
     setRole("member");
     onInviteSent();
@@ -134,7 +152,7 @@ export function InviteForm({
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
-              setSuccess(false);
+              setInviteLink(null);
             }}
             required
           />
@@ -159,8 +177,24 @@ export function InviteForm({
           {sending ? "Sending…" : "Invite"}
         </Button>
       </form>
-      {success && (
-        <p className="text-xs text-accent">Invite sent.</p>
+      {inviteLink && (
+        <div className="flex items-center gap-2">
+          <p className="min-w-0 flex-1 truncate text-xs text-accent">
+            {inviteLink}
+          </p>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={handleCopyLink}
+            aria-label="Copy invite link"
+          >
+            {linkCopied ? (
+              <Check className="h-4 w-4 text-accent" />
+            ) : (
+              <Copy className="h-4 w-4 text-muted-foreground" />
+            )}
+          </Button>
+        </div>
       )}
     </div>
   );
