@@ -30,10 +30,14 @@ function CopyLinkButton({ token }: { token: string }) {
 
   const handleCopy = useCallback(async () => {
     const url = `${window.location.origin}/invite/${token}`;
-    await navigator.clipboard.writeText(url);
-    setCopied(true);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard access denied — no-op
+    }
   }, [token]);
 
   useEffect(() => {

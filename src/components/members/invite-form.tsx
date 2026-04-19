@@ -45,10 +45,14 @@ export function InviteForm({
 
   const handleCopyLink = useCallback(async () => {
     if (!inviteLink) return;
-    await navigator.clipboard.writeText(inviteLink);
-    setLinkCopied(true);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setLinkCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setLinkCopied(true);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      // Clipboard access denied — button stays in default state
+    }
   }, [inviteLink]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
