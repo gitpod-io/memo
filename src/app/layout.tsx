@@ -10,7 +10,10 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Memo",
+  title: {
+    template: "%s — Memo",
+    default: "Memo",
+  },
   description: "A Notion-style workspace, built with zero human code.",
 };
 

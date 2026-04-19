@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import {
   Card,
@@ -7,6 +8,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { InviteAccept } from "@/components/members/invite-accept";
+
+export const metadata: Metadata = {
+  title: "Join workspace",
+};
 
 export default async function InviteAcceptPage({
   params,

@@ -1,7 +1,28 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { WorkspaceSettingsForm } from "@/components/workspace-settings-form";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ workspaceSlug: string }>;
+}): Promise<Metadata> {
+  const { workspaceSlug } = await params;
+  const supabase = await createClient();
+
+  const { data: workspace } = await supabase
+    .from("workspaces")
+    .select("name")
+    .eq("slug", workspaceSlug)
+    .maybeSingle();
+
+  const workspaceName = workspace?.name ?? workspaceSlug;
+  return {
+    title: `Settings — ${workspaceName}`,
+  };
+}
 
 export default async function WorkspaceSettingsPage({
   params,

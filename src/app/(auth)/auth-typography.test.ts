@@ -11,7 +11,7 @@ describe("auth page typography", () => {
   const authDir = join(__dirname);
 
   it("sign-in heading uses font-semibold, not font-bold", () => {
-    const source = readFileSync(join(authDir, "sign-in/page.tsx"), "utf-8");
+    const source = readFileSync(join(authDir, "sign-in/sign-in-form.tsx"), "utf-8");
     const cardTitleMatch = source.match(/CardTitle[^>]*className="([^"]*)"/);
     expect(cardTitleMatch).not.toBeNull();
     const classes = cardTitleMatch![1];
@@ -20,7 +20,7 @@ describe("auth page typography", () => {
   });
 
   it("sign-up heading uses font-semibold, not font-bold", () => {
-    const source = readFileSync(join(authDir, "sign-up/page.tsx"), "utf-8");
+    const source = readFileSync(join(authDir, "sign-up/sign-up-form.tsx"), "utf-8");
     const cardTitleMatch = source.match(/CardTitle[^>]*className="([^"]*)"/);
     expect(cardTitleMatch).not.toBeNull();
     const classes = cardTitleMatch![1];
