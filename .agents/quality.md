@@ -22,7 +22,7 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | Search | A | Full-text search via PostgreSQL tsvector + tsquery. API route with integration tests (8 tests). Sidebar search component with unit tests (12 tests). Sentry error capture. E2E spec covers search flow (`e2e/search.spec.ts`, 5 tests). |
 | Import/Export | A | Markdown export (download .md) and import (parse .md, create page) via page menu. Markdown utils with unit tests (8 tests). E2E spec covers export and import flow (`e2e/import-export.spec.ts`, 2 tests). |
 | Members | A | Member list with role badges, role change, remove. Invite form (email + role). Pending invite list with revoke. Invite accept page. Role select dropdown. Settings members page with server-side data fetching. E2E coverage: invite, pending list, revoke, accept, role change, remove, member role restrictions (7 tests). |
-| App Shell | A | Collapsible sidebar (desktop: aside, mobile: Sheet), sidebar context with ⌘+\ shortcut, workspace switcher, page tree, user menu with sign-out. Clean component decomposition. Sidebar context unit tests (12 tests): state management, keyboard shortcut registration, toggle behavior. Loading skeleton tests (14 tests): app, workspace, page loading states. E2E spec for sidebar responsive behavior (3 tests). |
+| App Shell | A | Collapsible sidebar (desktop: aside, mobile: Sheet), sidebar context with ⌘+\ shortcut, workspace switcher, page tree, user menu with sign-out. Clean component decomposition. Sidebar context unit tests (12 tests): state management, keyboard shortcut registration, toggle behavior. Loading skeleton tests (14 tests): app, workspace, page loading states. Error boundary tests (14 tests): route-error component (6), workspace error (4), page error (4). E2E spec for sidebar responsive behavior (3 tests). |
 | API Routes | A | Health endpoint (DB connectivity check, 6 tests) and search endpoint (full-text search, 8 tests). Both routes have Sentry error capture. Both have integration tests with mocked Supabase. |
 | UI Components | A | 13 shadcn/ui components (base-nova style): alert-dialog, badge, button, card, dialog, dropdown-menu, input, label, select, separator, sheet, table, tooltip. Overlay opacity regression test (2 tests). Toast error duration regression test (1 test). Design tokens use oklch color space, --radius: 0 for sharp corners. |
 | Realtime | - | Deferred to post-MVP per architecture decision. |
@@ -31,9 +31,9 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 
 | Category | Files | Tests |
 |---|---|---|
-| Unit/Integration (Vitest) | 33 | 256 |
+| Unit/Integration (Vitest) | 36 | 270 |
 | E2E (Playwright) | 20 | 74 |
-| **Total** | **53** | **330** |
+| **Total** | **56** | **344** |
 
 ### Test files by domain
 
@@ -44,7 +44,7 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 - **Search**: `search/route.test.ts` (8 tests), `page-search.test.tsx` (12 tests), `e2e/search.spec.ts` (5 tests)
 - **Import/Export**: `e2e/import-export.spec.ts` (2 tests)
 - **Members**: `invite-form.test.ts` (4 tests), `e2e/members.spec.ts` (7 tests)
-- **App Shell**: `sidebar-context.test.tsx` (12 tests), `loading.test.ts` ×3 (14 tests), `e2e/sidebar-responsive.spec.ts` (3 tests)
+- **App Shell**: `sidebar-context.test.tsx` (12 tests), `loading.test.ts` ×3 (14 tests), `route-error.test.ts` (6 tests), `[workspaceSlug]/error.test.ts` (4 tests), `[workspaceSlug]/[pageId]/error.test.ts` (4 tests), `e2e/sidebar-responsive.spec.ts` (3 tests)
 - **API**: `health/route.test.ts` (6 tests), `search/route.test.ts` (8 tests)
 - **UI**: `overlay-opacity.test.ts` (2 tests), `toast-error-duration.test.ts` (1 test), `relative-time.test.ts` (7 tests)
 - **Lib**: `sentry.test.ts` (2 tests), `sentry.unit.test.ts` (20 tests), `retry.test.ts` (6 tests)
@@ -65,3 +65,4 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | 2026-04-17 | Full reassessment (#155). Auth B→A (sign-in 8 tests + sign-up 9 tests added). App Shell B→A (sidebar-context 8 tests added). Search B→A (flaky test bug #118 closed). Removed 5 resolved known gaps. Added new test files: page-search (5), relative-time (7), retry (6), sentry.unit (20), lexical-dispatch-safety (1). Test totals: 21 Vitest files (174 tests), 11 E2E specs (42 tests). |
 | 2026-04-18 | Test count refresh (#227). Counts drifted as features landed without quality.md updates. Added 11 new Vitest files and 9 new E2E specs. Updated counts for existing files that grew. Test totals: 32 Vitest files (252 tests), 20 E2E specs (74 tests). |
 | 2026-04-19 | Test count drift fix (#245). Added missing `invite-form.test.ts` (4 tests) to Members domain. Test totals: 33 Vitest files (256 tests), 20 E2E specs (74 tests). |
+| 2026-04-19 | Test count drift fix (#257). Added 3 error boundary test files from #252: `route-error.test.ts` (6), `[workspaceSlug]/error.test.ts` (4), `[workspaceSlug]/[pageId]/error.test.ts` (4). Test totals: 36 Vitest files (270 tests), 20 E2E specs (74 tests). |
