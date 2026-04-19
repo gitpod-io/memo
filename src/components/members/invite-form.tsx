@@ -13,12 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { InviteRole } from "@/lib/types";
+import type { InviteRole, WorkspaceInviteWithInviter } from "@/lib/types";
 
 interface InviteFormProps {
   workspaceId: string;
   currentUserId: string;
-  onInviteSent: () => void;
+  currentUserDisplayName: string;
+  onInviteSent: (invite: WorkspaceInviteWithInviter) => void;
   onError: (error: string) => void;
 }
 
@@ -27,6 +28,7 @@ const INVITE_EXPIRY_DAYS = 7;
 export function InviteForm({
   workspaceId,
   currentUserId,
+  currentUserDisplayName,
   onInviteSent,
   onError,
 }: InviteFormProps) {
@@ -116,7 +118,7 @@ export function InviteForm({
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + INVITE_EXPIRY_DAYS);
 
-    const { error: insertError } = await supabase
+    const { data: newInvite, error: insertError } = await supabase
       .from("workspace_invites")
       .insert({
         workspace_id: workspaceId,
@@ -125,10 +127,12 @@ export function InviteForm({
         invited_by: currentUserId,
         token,
         expires_at: expiresAt.toISOString(),
-      });
+      })
+      .select()
+      .single();
 
-    if (insertError) {
-      onError(insertError.message);
+    if (insertError || !newInvite) {
+      onError(insertError?.message ?? "Failed to create invite.");
       setSending(false);
       return;
     }
@@ -138,7 +142,10 @@ export function InviteForm({
     setInviteLink(link);
     setEmail("");
     setRole("member");
-    onInviteSent();
+    onInviteSent({
+      ...newInvite,
+      profiles: { display_name: currentUserDisplayName },
+    });
   }
 
   return (

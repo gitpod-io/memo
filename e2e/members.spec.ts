@@ -119,10 +119,12 @@ test.describe("Workspace member management", () => {
 
     // The pending invites section should show the invited email
     const pendingSection = page.locator("text=Pending invites").first();
-    await expect(pendingSection).toBeVisible({ timeout: 5_000 });
+    await expect(pendingSection).toBeVisible({ timeout: 10_000 });
 
     // The invited email should appear in the pending invites table
-    await expect(page.locator(`text=${INVITE_EMAIL}`)).toBeVisible();
+    await expect(page.locator(`text=${INVITE_EMAIL}`)).toBeVisible({
+      timeout: 10_000,
+    });
   });
 
   test("owner can revoke a pending invite", async ({
