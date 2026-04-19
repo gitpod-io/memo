@@ -17,6 +17,8 @@ const BARE_CATCH_PERMANENT_ALLOWLIST = new Set([
   "src/lib/supabase/server.ts", // cookie setAll in Server Components
   "src/components/editor/editor.tsx", // URL validation (new URL() throws)
   "src/app/api/health/route.ts", // intentionally silent, monitored externally
+  "src/components/members/invite-form.tsx", // clipboard writeText — intentionally silent on permission denied
+  "src/components/members/pending-invite-list.tsx", // clipboard writeText — intentionally silent on permission denied
 ]);
 
 /**

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Check, Copy, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,11 +12,61 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { WorkspaceInviteWithInviter } from "@/lib/types";
 
 interface PendingInviteListProps {
   invites: WorkspaceInviteWithInviter[];
   onRevoke: (inviteId: string) => Promise<void>;
+}
+
+function CopyLinkButton({ token }: { token: string }) {
+  const [copied, setCopied] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleCopy = useCallback(async () => {
+    const url = `${window.location.origin}/invite/${token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard access denied — no-op
+    }
+  }, [token]);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={handleCopy}
+            aria-label="Copy invite link"
+          />
+        }
+      >
+        {copied ? (
+          <Check className="h-4 w-4 text-accent" />
+        ) : (
+          <Copy className="h-4 w-4 text-muted-foreground" />
+        )}
+      </TooltipTrigger>
+      <TooltipContent>{copied ? "Copied!" : "Copy invite link"}</TooltipContent>
+    </Tooltip>
+  );
 }
 
 export function PendingInviteList({
@@ -46,7 +96,7 @@ export function PendingInviteList({
             <TableHead>Email</TableHead>
             <TableHead>Role</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead className="w-10" />
+            <TableHead className="w-20" />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -69,15 +119,18 @@ export function PendingInviteList({
                 )}
               </TableCell>
               <TableCell>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => handleRevoke(invite.id)}
-                  disabled={revokingId === invite.id}
-                  aria-label={`Revoke invite for ${invite.email}`}
-                >
-                  <X className="h-4 w-4 text-muted-foreground" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <CopyLinkButton token={invite.token} />
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => handleRevoke(invite.id)}
+                    disabled={revokingId === invite.id}
+                    aria-label={`Revoke invite for ${invite.email}`}
+                  >
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}
