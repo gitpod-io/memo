@@ -18,7 +18,7 @@ import {
   readFileAsText,
   parseMarkdownToEditorState,
 } from "@/components/editor/markdown-utils";
-import * as Sentry from "@sentry/nextjs";
+import { lazyCaptureException } from "@/lib/capture";
 import { createClient } from "@/lib/supabase/client";
 import { captureSupabaseError } from "@/lib/sentry";
 
@@ -53,7 +53,7 @@ export function PageMenu({
       const filename = (pageTitle.trim() || "Untitled") + ".md";
       downloadMarkdown(markdown, filename);
     } catch (error) {
-      Sentry.captureException(error);
+      lazyCaptureException(error);
       toast.error("Export failed", {
         duration: 8000,
       });
@@ -126,7 +126,7 @@ export function PageMenu({
         router.push(`/${workspaceSlug}/${newPage.id}`);
         router.refresh();
       } catch (error) {
-        Sentry.captureException(error);
+        lazyCaptureException(error);
         toast.error("Failed to read or parse the markdown file", {
           duration: 8000,
         });

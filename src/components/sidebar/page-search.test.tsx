@@ -613,9 +613,11 @@ describe("PageSearch", () => {
       await vi.advanceTimersByTimeAsync(50);
     });
 
-    // The error should have been captured in Sentry
+    // The error should have been captured in Sentry (lazyCaptureException
+    // passes opts as second arg, which is undefined for bare calls)
     expect(captureException).toHaveBeenCalledWith(
-      expect.objectContaining({ message: "Unexpected Supabase error" })
+      expect.objectContaining({ message: "Unexpected Supabase error" }),
+      undefined,
     );
 
     // Empty state should show (workspaceResolved=true, workspaceId=null)

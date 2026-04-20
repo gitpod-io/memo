@@ -25,7 +25,7 @@ import type {
   LexicalEditor,
   SerializedEditorState,
 } from "lexical";
-import * as Sentry from "@sentry/nextjs";
+import { lazyCaptureException } from "@/lib/capture";
 import { editorTheme } from "@/components/editor/theme";
 import { SlashCommandPlugin } from "@/components/editor/slash-command-plugin";
 import { FloatingToolbarPlugin } from "@/components/editor/floating-toolbar-plugin";
@@ -122,7 +122,7 @@ export function Editor({ pageId, initialContent, editorRef }: EditorProps) {
           lastSavedRef.current = serialized;
           setSaveStatus("saved");
         } else {
-          Sentry.captureException(error);
+          lazyCaptureException(error);
           setSaveStatus("error");
         }
       }, SAVE_DEBOUNCE_MS);
@@ -169,7 +169,7 @@ export function Editor({ pageId, initialContent, editorRef }: EditorProps) {
       CollapsibleContentNode,
     ],
     onError: (error: Error) => {
-      Sentry.captureException(error);
+      lazyCaptureException(error);
     },
     editorState: initialContent
       ? JSON.stringify(initialContent)

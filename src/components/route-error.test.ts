@@ -11,8 +11,8 @@ describe("RouteError component", () => {
     expect(source).toMatch(/^"use client"/);
   });
 
-  it("reports errors to Sentry via captureException in useEffect", () => {
-    expect(source).toContain("Sentry.captureException(error)");
+  it("reports errors to Sentry via lazyCaptureException in useEffect", () => {
+    expect(source).toContain("lazyCaptureException(error)");
     expect(source).toContain("useEffect");
   });
 

@@ -120,6 +120,6 @@ describe("Image crop dialog", () => {
   });
 
   it("reports errors to Sentry", () => {
-    expect(cropSource).toContain("Sentry.captureException");
+    expect(cropSource).toContain("lazyCaptureException");
   });
 });

@@ -1,8 +1,30 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/server";
-import { PageViewClient } from "@/components/page-view-client";
 import type { SerializedEditorState } from "lexical";
+
+const PageViewClient = dynamic(
+  () =>
+    import("@/components/page-view-client").then((mod) => mod.PageViewClient),
+  {
+    loading: () => (
+      <div className="mx-auto max-w-3xl p-6">
+        <div className="flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="h-9 w-1/3 animate-pulse bg-muted" />
+          </div>
+          <div className="h-8 w-8 animate-pulse bg-muted" />
+        </div>
+        <div className="mt-4 space-y-3">
+          <div className="h-4 w-full animate-pulse bg-muted" />
+          <div className="h-4 w-5/6 animate-pulse bg-muted" />
+          <div className="h-4 w-4/6 animate-pulse bg-muted" />
+        </div>
+      </div>
+    ),
+  },
+);
 
 export async function generateMetadata({
   params,

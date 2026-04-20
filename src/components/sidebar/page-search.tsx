@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { FileText, Search, X } from "lucide-react";
-import * as Sentry from "@sentry/nextjs";
+import { lazyCaptureException } from "@/lib/capture";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 import { captureSupabaseError } from "@/lib/sentry";
@@ -90,7 +90,7 @@ export function PageSearch() {
       })
       .catch((error: unknown) => {
         if (cancelled) return;
-        Sentry.captureException(error);
+        lazyCaptureException(error);
         setWorkspaceResolved(true);
       });
 
@@ -123,7 +123,7 @@ export function PageSearch() {
         // AbortErrors are expected when the user types quickly — only
         // capture genuine failures.
         if (!(error instanceof DOMException && error.name === "AbortError")) {
-          Sentry.captureException(error);
+          lazyCaptureException(error);
         }
         setResults([]);
       } finally {
