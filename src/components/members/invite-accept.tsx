@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getClient } from "@/lib/supabase/lazy-client";
+import { captureSupabaseError } from "@/lib/sentry";
 import { Button } from "@/components/ui/button";
 
 interface InviteAcceptProps {
@@ -82,7 +83,8 @@ export function InviteAccept({
         router.push(`/${workspaceSlug}`);
         return;
       }
-      setError(acceptError.message);
+      captureSupabaseError(acceptError, "invite-accept:accept");
+      setError("Failed to accept invite. Please try again.");
       setAccepting(false);
       return;
     }

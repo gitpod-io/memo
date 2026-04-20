@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getClient } from "@/lib/supabase/lazy-client";
+import { captureSupabaseError } from "@/lib/sentry";
 import { generateSlug, WORKSPACE_LIMIT } from "@/lib/workspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,14 +21,12 @@ interface CreateWorkspaceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   workspaceCount: number;
-  userId: string;
 }
 
 export function CreateWorkspaceDialog({
   open,
   onOpenChange,
   workspaceCount,
-  userId,
 }: CreateWorkspaceDialogProps) {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -46,37 +45,23 @@ export function CreateWorkspaceDialog({
     const supabase = await getClient();
     const slug = generateSlug(name.trim());
 
-    const { data: workspace, error: createError } = await supabase
-      .from("workspaces")
-      .insert({
-        name: name.trim(),
-        slug,
-        is_personal: false,
-        created_by: userId,
+    // Atomic RPC: creates workspace + owner member in a single transaction.
+    // Avoids the RLS chicken-and-egg where the SELECT policy on workspaces
+    // requires membership that doesn't exist yet during INSERT ... RETURNING.
+    const { data, error: rpcError } = await supabase
+      .rpc("create_workspace", {
+        workspace_name: name.trim(),
+        workspace_slug: slug,
       })
-      .select("id, slug")
-      .single();
+      .single<{ id: string; slug: string }>();
 
-    if (createError) {
-      if (createError.message.includes("Workspace limit reached")) {
+    if (rpcError) {
+      if (rpcError.message.includes("Workspace limit reached")) {
         setError(`You can create at most ${WORKSPACE_LIMIT} workspaces.`);
       } else {
-        setError(createError.message);
+        captureSupabaseError(rpcError, "create-workspace-dialog:create");
+        setError("Failed to create workspace. Please try again.");
       }
-      setLoading(false);
-      return;
-    }
-
-    // Add the creator as owner
-    const { error: memberError } = await supabase.from("members").insert({
-      workspace_id: workspace.id,
-      user_id: userId,
-      role: "owner",
-      joined_at: new Date().toISOString(),
-    });
-
-    if (memberError) {
-      setError(memberError.message);
       setLoading(false);
       return;
     }
@@ -84,7 +69,7 @@ export function CreateWorkspaceDialog({
     onOpenChange(false);
     setName("");
     setLoading(false);
-    router.push(`/${workspace.slug}`);
+    router.push(`/${data!.slug}`);
     router.refresh();
   }
 

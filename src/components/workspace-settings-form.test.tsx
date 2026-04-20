@@ -333,7 +333,7 @@ describe("WorkspaceSettingsForm", () => {
     });
   });
 
-  it("shows generic error message on non-duplicate update failure", async () => {
+  it("shows user-friendly error on non-duplicate update failure", async () => {
     updateResult = { error: { message: "network timeout" } };
 
     const user = userEvent.setup();
@@ -348,7 +348,9 @@ describe("WorkspaceSettingsForm", () => {
     await user.click(saveButton);
 
     await waitFor(() => {
-      expect(screen.getByText("network timeout")).toBeInTheDocument();
+      expect(
+        screen.getByText("Failed to save settings. Please try again."),
+      ).toBeInTheDocument();
     });
     expect(mockRefresh).not.toHaveBeenCalled();
   });
@@ -392,7 +394,7 @@ describe("WorkspaceSettingsForm", () => {
     });
   });
 
-  it("shows error when delete fails", async () => {
+  it("shows user-friendly error when delete fails", async () => {
     deleteResult = { error: { message: "permission denied" } };
 
     const user = userEvent.setup();
@@ -413,7 +415,9 @@ describe("WorkspaceSettingsForm", () => {
     await user.click(confirmButton);
 
     await waitFor(() => {
-      expect(screen.getByText("permission denied")).toBeInTheDocument();
+      expect(
+        screen.getByText("Failed to delete workspace. Please try again."),
+      ).toBeInTheDocument();
     });
     expect(mockPush).not.toHaveBeenCalled();
   });
