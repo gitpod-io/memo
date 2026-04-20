@@ -216,7 +216,8 @@ export function WorkspaceSettingsForm({
         <>
           <Separator className="bg-white/[0.06]" />
           <p className="text-xs text-muted-foreground">
-            This is your personal workspace and cannot be deleted.
+            This is your personal workspace. It will be deleted if you delete
+            your account.
           </p>
         </>
       )}

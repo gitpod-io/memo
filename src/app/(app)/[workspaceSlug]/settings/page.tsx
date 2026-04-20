@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { WorkspaceSettingsForm } from "@/components/workspace-settings-form";
+import { DeleteAccountSection } from "@/components/delete-account-section";
+import { Separator } from "@/components/ui/separator";
 
 export async function generateMetadata({
   params,
@@ -50,6 +52,8 @@ export default async function WorkspaceSettingsPage({
     notFound();
   }
 
+  const userEmail = user.email ?? "";
+
   return (
     <div className="mx-auto max-w-xl p-6">
       <div className="flex items-center gap-4">
@@ -67,6 +71,14 @@ export default async function WorkspaceSettingsPage({
       <div className="mt-6">
         <WorkspaceSettingsForm workspace={workspace} userId={user.id} />
       </div>
+      {workspace.is_personal && (
+        <>
+          <Separator className="mt-8 bg-white/[0.06]" />
+          <div className="mt-8">
+            <DeleteAccountSection userEmail={userEmail} />
+          </div>
+        </>
+      )}
     </div>
   );
 }

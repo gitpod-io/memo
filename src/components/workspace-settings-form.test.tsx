@@ -192,17 +192,17 @@ describe("WorkspaceSettingsForm", () => {
     expect(slugInput.value).toBe("helloworld");
   });
 
-  it("personal workspace shows cannot-be-deleted message", () => {
+  it("personal workspace shows account deletion note", () => {
     const ws = makeWorkspace({ is_personal: true });
     render(<WorkspaceSettingsForm workspace={ws} userId="user-1" />);
 
     expect(
       screen.getByText(
-        "This is your personal workspace and cannot be deleted."
+        "This is your personal workspace. It will be deleted if you delete your account."
       )
     ).toBeInTheDocument();
 
-    // Delete button should not be present
+    // Delete workspace button should not be present (account deletion is separate)
     expect(
       screen.queryByRole("button", { name: /delete workspace/i })
     ).not.toBeInTheDocument();
