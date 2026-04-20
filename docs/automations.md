@@ -921,6 +921,10 @@ You are the Metrics Collector. Gather daily project stats, commit them, and open
 5. CI pass rate: use `gh run list --limit 20 --json conclusion` and calculate success %.
 6. GitHub Issues: use gh issue list with label filters to count issues per status.
 7. Commits today: `git log --oneline --since="today" | wc -l`
+8. Autonomous PR ratio:
+   - Total merged PRs: `gh pr list --state merged --limit 500 --json number --jq 'length'`
+   - User-prompted PRs: `gh pr list --state merged --label "ona-user" --limit 500 --json number --jq 'length'`
+   - Calculate: `autonomous_pct = round(((total - ona_user) / total) * 100)`
 
 ## Output
 
@@ -935,6 +939,7 @@ Create `metrics/daily/YYYY-MM-DD.json`:
   "commits_today": N,
   "test_coverage_pct": N,
   "ci_pass_rate_pct": N,
+  "autonomous_pct": N,
   "issues": { "backlog": N, "in_progress": N, "in_review": N, "done": N },
   "human_minutes": null,
   "agent_minutes": null
