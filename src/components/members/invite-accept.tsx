@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { getClient } from "@/lib/supabase/lazy-client";
 import { Button } from "@/components/ui/button";
 
 interface InviteAcceptProps {
@@ -68,7 +68,7 @@ export function InviteAccept({
     setAccepting(true);
     setError(null);
 
-    const supabase = createClient();
+    const supabase = await getClient();
 
     // Use the security definer RPC which atomically marks the invite as
     // accepted and inserts the member with the correct role from the invite.

@@ -2,8 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { FileText, Plus } from "lucide-react";
-import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
+import { toast } from "@/lib/toast";
+import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError } from "@/lib/sentry";
 import { Button } from "@/components/ui/button";
 import { RelativeTime } from "@/components/relative-time";
@@ -27,7 +27,7 @@ export function WorkspaceHome({
   const router = useRouter();
 
   async function handleCreatePage() {
-    const supabase = createClient();
+    const supabase = await getClient();
     const { data: newPage, error } = await supabase
       .from("pages")
       .insert({

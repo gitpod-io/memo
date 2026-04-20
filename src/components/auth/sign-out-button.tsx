@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { getClient } from "@/lib/supabase/lazy-client";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 
@@ -9,7 +9,7 @@ export function SignOutButton() {
   const router = useRouter();
 
   async function handleSignOut() {
-    const supabase = createClient();
+    const supabase = await getClient();
     await supabase.auth.signOut();
     router.push("/sign-in");
   }

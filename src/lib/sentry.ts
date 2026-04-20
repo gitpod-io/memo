@@ -1,9 +1,24 @@
 import type { ErrorEvent } from "@sentry/nextjs";
-import { PostgrestError } from "@supabase/supabase-js";
 import { lazyCaptureException } from "@/lib/capture";
 
 // Re-export so existing imports keep working
 export { lazyCaptureException } from "@/lib/capture";
+
+/**
+ * Duck-type check for Supabase PostgrestError. Avoids importing the class
+ * from `@supabase/supabase-js` which would pull the entire SDK (~59 kB)
+ * into every page bundle.
+ */
+function isPostgrestError(
+  error: unknown,
+): error is { message: string; code: string; details: string; hint: string } {
+  return (
+    error instanceof Error &&
+    "code" in error &&
+    "details" in error &&
+    "hint" in error
+  );
+}
 
 /**
  * Error messages from Next.js internals that are caused by clients sending
@@ -35,10 +50,9 @@ export function isNextjsInternalNoise(event: ErrorEvent): boolean {
  * timeout, connection reset). These are not application bugs and should be
  * reported at warning level so they don't trigger error-level alerts.
  */
-export function isTransientNetworkError(error: PostgrestError | Error): boolean {
+export function isTransientNetworkError(error: Error): boolean {
   const msg = error.message;
-  const details =
-    error instanceof PostgrestError ? error.details : "";
+  const details = isPostgrestError(error) ? error.details : "";
 
   return (
     msg === "TypeError: Failed to fetch" ||
@@ -62,7 +76,7 @@ export function isTransientNetworkError(error: PostgrestError | Error): boolean 
  * `warning` level to reduce noise — they are not application bugs.
  */
 export function captureSupabaseError(
-  error: PostgrestError | Error,
+  error: Error,
   operation: string,
 ): void {
   const extra: Record<string, string> = {
@@ -70,7 +84,7 @@ export function captureSupabaseError(
     message: error.message,
   };
 
-  if (error instanceof PostgrestError) {
+  if (isPostgrestError(error)) {
     extra.code = error.code;
     extra.details = error.details;
     extra.hint = error.hint;

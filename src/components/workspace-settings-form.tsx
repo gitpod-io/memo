@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { getClient } from "@/lib/supabase/lazy-client";
 import { isValidSlug } from "@/lib/workspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,7 +60,7 @@ export function WorkspaceSettingsForm({
 
     setSaving(true);
 
-    const supabase = createClient();
+    const supabase = await getClient();
     const slugChanged = slug !== workspace.slug;
 
     const { error: updateError } = await supabase
@@ -91,7 +91,7 @@ export function WorkspaceSettingsForm({
 
   async function handleDelete() {
     setDeleting(true);
-    const supabase = createClient();
+    const supabase = await getClient();
 
     const { error: deleteError } = await supabase
       .from("workspaces")

@@ -13,9 +13,9 @@ import {
   type LexicalCommand,
 } from "lexical";
 import { lazyCaptureException } from "@/lib/capture";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { $createImageNode, type ImagePayload } from "@/components/editor/image-node";
-import { createClient } from "@/lib/supabase/client";
+import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError } from "@/lib/sentry";
 
 export const INSERT_IMAGE_COMMAND: LexicalCommand<ImagePayload> =
@@ -43,7 +43,7 @@ export async function uploadImage(file: File): Promise<UploadResult> {
     return { url: null, error: "Image is too large. Maximum size is 5 MB." };
   }
 
-  const supabase = createClient();
+  const supabase = await getClient();
   const ext = file.name.split(".").pop() ?? "png";
   const fileName = `${crypto.randomUUID()}.${ext}`;
   const filePath = `uploads/${fileName}`;

@@ -44,7 +44,7 @@ import {
   CollapsibleContentNode,
 } from "@/components/editor/collapsible-node";
 import { CollapsiblePlugin } from "@/components/editor/collapsible-plugin";
-import { createClient } from "@/lib/supabase/client";
+import { getClient } from "@/lib/supabase/lazy-client";
 
 const SAVE_DEBOUNCE_MS = 500;
 
@@ -112,7 +112,7 @@ export function Editor({ pageId, initialContent, editorRef }: EditorProps) {
       }
 
       saveTimerRef.current = setTimeout(async () => {
-        const supabase = createClient();
+        const supabase = await getClient();
         const { error } = await supabase
           .from("pages")
           .update({ content: json })

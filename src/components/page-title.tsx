@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError } from "@/lib/sentry";
 
 interface PageTitleProps {
@@ -30,7 +30,7 @@ export function PageTitle({ pageId, initialTitle }: PageTitleProps) {
       const trimmed = value.trim();
       if (trimmed === lastSavedRef.current) return;
 
-      const supabase = createClient();
+      const supabase = await getClient();
       const { error } = await supabase
         .from("pages")
         .update({ title: trimmed })

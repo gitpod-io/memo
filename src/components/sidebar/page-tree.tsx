@@ -10,8 +10,8 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
+import { toast } from "@/lib/toast";
+import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError } from "@/lib/sentry";
 import { retryOnNetworkError } from "@/lib/retry";
 import { Button } from "@/components/ui/button";
@@ -72,8 +72,8 @@ export function PageTree({ userId }: PageTreeProps) {
 
     let cancelled = false;
 
-    retryOnNetworkError(() => {
-      const supabase = createClient();
+    retryOnNetworkError(async () => {
+      const supabase = await getClient();
       return supabase
         .from("workspaces")
         .select("id")
@@ -99,8 +99,8 @@ export function PageTree({ userId }: PageTreeProps) {
     let cancelled = false;
 
     async function fetchPages() {
-      const { data, error } = await retryOnNetworkError(() => {
-        const supabase = createClient();
+      const { data, error } = await retryOnNetworkError(async () => {
+        const supabase = await getClient();
         return supabase
           .from("pages")
           .select("*")
@@ -148,7 +148,7 @@ export function PageTree({ userId }: PageTreeProps) {
 
       const nextPosition = getNextSiblingPosition(pages, parentId);
 
-      const supabase = createClient();
+      const supabase = await getClient();
       const { data: newPage, error } = await supabase
         .from("pages")
         .insert({
@@ -195,7 +195,7 @@ export function PageTree({ userId }: PageTreeProps) {
     if (!deleteTarget) return;
     setDeleting(true);
 
-    const supabase = createClient();
+    const supabase = await getClient();
     const { error } = await supabase
       .from("pages")
       .delete()
@@ -235,7 +235,7 @@ export function PageTree({ userId }: PageTreeProps) {
   async function applySwap(
     updates: Array<{ id: string; position: number }>,
   ) {
-    const supabase = createClient();
+    const supabase = await getClient();
 
     setPages((prev) =>
       prev.map((p) => {
@@ -264,7 +264,7 @@ export function PageTree({ userId }: PageTreeProps) {
     if (!result) return;
 
     const { parentId, position } = result;
-    const supabase = createClient();
+    const supabase = await getClient();
 
     setPages((prev) =>
       prev.map((p) =>
@@ -292,7 +292,7 @@ export function PageTree({ userId }: PageTreeProps) {
     if (!result) return;
 
     const { pageUpdate, shiftUpdates } = result;
-    const supabase = createClient();
+    const supabase = await getClient();
 
     setPages((prev) =>
       prev.map((p) => {
@@ -383,7 +383,7 @@ export function PageTree({ userId }: PageTreeProps) {
       return;
     }
 
-    const supabase = createClient();
+    const supabase = await getClient();
 
     // Optimistic UI update
     setPages((prev) => {

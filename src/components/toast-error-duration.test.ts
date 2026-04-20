@@ -27,7 +27,10 @@ function collectFiles(dir: string, ext: string[]): string[] {
 describe("toast.error() duration matches design spec", () => {
   const srcDir = join(__dirname, "..");
   const files = collectFiles(srcDir, [".ts", ".tsx"]).filter(
-    (f) => !f.endsWith(".test.ts") && !f.endsWith(".test.tsx")
+    (f) =>
+      !f.endsWith(".test.ts") &&
+      !f.endsWith(".test.tsx") &&
+      !f.endsWith("lib/toast.ts") // lazy wrapper — forwards caller's data as-is
   );
 
   it("every toast.error() call includes { duration: 8000 }", () => {

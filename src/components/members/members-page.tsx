@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { getClient } from "@/lib/supabase/lazy-client";
 import { Separator } from "@/components/ui/separator";
 import { MemberList } from "@/components/members/member-list";
 import { InviteForm } from "@/components/members/invite-form";
@@ -43,7 +43,7 @@ export function MembersPage({
 
   async function handleRoleChange(memberId: string, newRole: MemberRole) {
     setError(null);
-    const supabase = createClient();
+    const supabase = await getClient();
 
     const { error: updateError } = await supabase
       .from("members")
@@ -60,7 +60,7 @@ export function MembersPage({
 
   async function handleRemoveMember(memberId: string) {
     setError(null);
-    const supabase = createClient();
+    const supabase = await getClient();
 
     const { error: deleteError } = await supabase
       .from("members")
@@ -77,7 +77,7 @@ export function MembersPage({
 
   async function handleRevokeInvite(inviteId: string) {
     setError(null);
-    const supabase = createClient();
+    const supabase = await getClient();
 
     // Optimistically remove the invite so the UI updates immediately
     setInvites((prev) => prev.filter((i) => i.id !== inviteId));
