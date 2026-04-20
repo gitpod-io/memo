@@ -75,6 +75,15 @@ describe("Floating image toolbar — design spec", () => {
   });
 });
 
+describe("Floating image toolbar — crop dimension reset (#279)", () => {
+  it("resets dimensions with undefined, not 0, after crop", () => {
+    // Setting width/height to 0 makes the image invisible (0x0 pixels).
+    // The crop handler must pass undefined so the <img> renders at natural size.
+    expect(toolbarSource).toContain("setWidthAndHeight(undefined, undefined)");
+    expect(toolbarSource).not.toContain("setWidthAndHeight(0, 0)");
+  });
+});
+
 describe("Image expand dialog", () => {
   it("uses shadcn Dialog component", () => {
     expect(expandSource).toContain("@/components/ui/dialog");

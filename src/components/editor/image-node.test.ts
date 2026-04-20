@@ -40,10 +40,31 @@ describe("ImageNode — alignment field", () => {
     expect(imageNodeSource).toContain("setSrc(src: string)");
   });
 
-  it("has setWidthAndHeight method for resize persistence", () => {
+  it("has setWidthAndHeight method that accepts undefined for dimension reset", () => {
     expect(imageNodeSource).toContain(
-      "setWidthAndHeight(width: number, height: number)"
+      "setWidthAndHeight("
     );
+    expect(imageNodeSource).toContain("width: number | undefined");
+    expect(imageNodeSource).toContain("height: number | undefined");
+  });
+});
+
+describe("ImageNode — crop dimension reset (#279)", () => {
+  it("setWidthAndHeight accepts undefined to reset to natural size", () => {
+    // Passing 0 instead of undefined causes the image to render at 0x0 (invisible)
+    expect(imageNodeSource).toContain("width: number | undefined");
+    expect(imageNodeSource).toContain("height: number | undefined");
+  });
+
+  it("does not set width/height to 0 in setWidthAndHeight", () => {
+    // The method body should assign the parameter directly, not coerce to 0
+    const methodMatch = imageNodeSource.match(
+      /setWidthAndHeight\([^)]+\)[^{]*\{([\s\S]*?)\n  \}/
+    );
+    expect(methodMatch).not.toBeNull();
+    const methodBody = methodMatch![1];
+    // Ensure the method doesn't hardcode 0
+    expect(methodBody).not.toMatch(/=\s*0/);
   });
 });
 
