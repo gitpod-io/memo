@@ -113,6 +113,7 @@ action:
                 | Security | No hardcoded secrets, parameterized queries, auth checks on protected routes, RLS policies on new tables |
                 | Conventions | AGENTS.md compliance: file naming, server vs client components, strict TypeScript, named exports, commit format |
                 | Design | (UI files only) `.agents/design.md` compliance: color tokens, typography scale, spacing scale, component variants, loading/empty states, accessibility |
+                | Stories | If the diff includes new or modified `.tsx` files in `src/components/` (excluding `*.stories.tsx` and `*.test.*`), verify that corresponding `*.stories.tsx` files exist or were updated in the same PR. If missing, request changes explaining that UI component PRs require co-located Storybook stories. |
                 | Testing | New logic has tests, existing tests still pass, test assertions are meaningful |
                 | Scope | Changes only touch files related to the stated feature. No unrelated refactors |
 

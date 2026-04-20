@@ -1,0 +1,21 @@
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
+  rel="stylesheet"
+/>
+<script>
+  // Add dark class to html element so @custom-variant dark (&:is(.dark *))
+  // activates and all dark-mode CSS variables resolve correctly.
+  document.documentElement.classList.add("dark");
+</script>
+<style>
+  :root {
+    --font-jetbrains-mono: "JetBrains Mono", monospace;
+  }
+  body {
+    font-family: var(--font-jetbrains-mono);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+</style>

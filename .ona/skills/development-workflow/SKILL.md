@@ -40,7 +40,7 @@ Several automations detect bugs and create issues:
 |---|---|---|
 | Production errors | Incident Responder | Sentry errors (every 15 min) |
 | Post-deploy regressions | Post-Merge Verifier | Smoke test failures (on PR merge) |
-| Design violations | UI Verifier | Design spec mismatches (on PR merge) |
+| Design violations | UI Verifier | Design spec mismatches + Storybook visual regressions (on PR merge) |
 | Performance degradation | Performance Monitor | Latency/error/size regressions (weekly) |
 
 These automations create issues with `bug` + `status:backlog` labels. The Bug Fixer
@@ -52,8 +52,11 @@ picks them up, implements a fix, and opens a PR. The PR Reviewer reviews and mer
    the product spec into new issues with `status:backlog` labels.
 2. **Feature Builder** (cron, every 30 min) picks up the highest-priority
    non-bug `status:backlog` issue, implements it, and opens a PR.
+   - For UI components, the Feature Builder creates co-located `*.stories.tsx`
+     files and runs visual regression tests (`pnpm test:visual`) to generate
+     baselines.
 3. **PR Reviewer** (cron, every 15 min) reviews the PR, fixes CI failures
-   if needed, and merges.
+   if needed, and merges. Checks that UI component PRs include Storybook stories.
 
 ## The Full Automation Roster
 
@@ -96,6 +99,23 @@ picks them up, implements a fix, and opens a PR. The PR Reviewer reviews and mer
 ### Flag labels
 - `needs-human` — needs user input; re-queue automation removes when user responds
 - `ona-user` — PR created via interactive Ona session (no issue reference required)
+
+## Storybook and Visual Regression
+
+Every UI component in `src/components/` has a co-located `*.stories.tsx` file.
+Storybook serves as the visual source of truth for the design system.
+
+**For developers:**
+- Run `pnpm storybook` to browse components in isolation.
+- When creating or modifying a component, update its story file.
+- Run `pnpm test:visual` to check for visual regressions against committed baselines.
+- After intentional visual changes, regenerate baselines with `pnpm test:visual --update-snapshots`.
+
+**For automations:**
+- The **Feature Builder** creates stories for new UI components and runs visual regression tests.
+- The **PR Reviewer** checks that UI component PRs include corresponding stories.
+- The **UI Verifier** runs Storybook visual regression after merge to detect unintended changes.
+- The **Bug Fixer** updates stories and baselines when fixing UI bugs.
 
 ## Issue Lifecycle
 

@@ -3,6 +3,13 @@
 This is the source of truth for all visual and interaction decisions in Memo.
 Read this before implementing or reviewing any UI.
 
+**Storybook is the visual source of truth.** Every UI component has a co-located
+`*.stories.tsx` file that renders it in isolation with all variants. Run
+`pnpm storybook` to browse the component library. Design token swatches, typography
+scale, and spacing scale are documented as stories under "Design System/Tokens".
+Visual regression baselines in `e2e/visual-regression.spec.ts-snapshots/` track
+every story — run `pnpm test:visual` to detect unintended visual changes.
+
 ---
 
 ## Design Philosophy

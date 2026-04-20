@@ -108,6 +108,15 @@ action:
                      → Testing → Playwright for patterns.
                      For logic/data bugs, add a Vitest unit or integration test.
                    - For database changes: `npx supabase migration new <name>`
+                   - If the fix changes component appearance, check for a co-located
+                     `*.stories.tsx` file. If one exists, verify the story still renders
+                     correctly and update it if needed. If the component has no story,
+                     create one covering the default state and the bug scenario.
+                     Then regenerate visual baselines: build Storybook (`pnpm build-storybook`),
+                     serve it (`python3 -m http.server 6099 -d storybook-static &`), run
+                     `STORYBOOK_URL=http://localhost:6099 pnpm test:visual --update-snapshots`,
+                     then clean up (`kill $(lsof -ti:6099) 2>/dev/null; rm -rf storybook-static`).
+                     Commit the updated baselines.
                 10. Run the full CI check locally: `pnpm lint && pnpm typecheck && pnpm test`
                 11. Run E2E tests: `pnpm test:e2e`
                 12. Fix any errors before proceeding.
