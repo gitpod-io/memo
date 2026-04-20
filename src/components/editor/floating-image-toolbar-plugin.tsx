@@ -179,7 +179,7 @@ export function FloatingImageToolbarPlugin({
       {createPortal(
         <div
           ref={toolbarRef}
-          className="fixed z-50 flex items-center gap-0.5 rounded-lg border border-white/[0.06] bg-popover p-1 shadow-lg"
+          className="fixed z-50 flex items-center gap-0.5 border border-white/[0.06] bg-popover p-1 shadow-md"
           role="toolbar"
           aria-label="Image tools"
           onMouseDown={(e) => e.preventDefault()}

@@ -21,12 +21,12 @@ const cropSource = readFileSync(
 );
 
 describe("Floating image toolbar — design spec", () => {
-  it("uses rounded-lg per issue spec", () => {
-    expect(toolbarSource).toContain("rounded-lg");
+  it("uses sharp corners per design spec", () => {
+    expect(toolbarSource).not.toContain("rounded-lg");
   });
 
-  it("uses shadow-lg per issue spec", () => {
-    expect(toolbarSource).toContain("shadow-lg");
+  it("uses shadow-md per design spec", () => {
+    expect(toolbarSource).toContain("shadow-md");
   });
 
   it("uses dark surface (bg-popover)", () => {
