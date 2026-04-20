@@ -119,4 +119,57 @@ describe("error handling conventions", () => {
       `console.error without Sentry capture found outside allowlist. Add Sentry.captureException or captureSupabaseError:\n${violations.join("\n")}`,
     ).toEqual([]);
   });
+
+  it("no Supabase error .message exposed to users without Sentry capture", () => {
+    /**
+     * Detects patterns like `setError(someError.message)` where a Supabase
+     * error message is shown directly to the user. These leak internal
+     * details (e.g. RLS policy names, SQL errors) and bypass Sentry.
+     *
+     * Allowed patterns:
+     * - The file imports and calls captureSupabaseError before setError
+     * - The error message is checked for a known string first (e.g.
+     *   `if (error.message.includes("Workspace limit"))`)
+     *
+     * Auth forms (sign-in, sign-up) are excluded — Supabase Auth error
+     * messages are designed to be user-facing (e.g. "Invalid login credentials").
+     */
+    const AUTH_FORM_ALLOWLIST = new Set([
+      "src/app/(auth)/sign-in/sign-in-form.tsx",
+      "src/app/(auth)/sign-up/sign-up-form.tsx",
+    ]);
+
+    const violations: string[] = [];
+
+    // Matches setError(identifier.message) — the raw error leak pattern
+    const rawErrorPattern = /\bsetError\(\s*\w+(?:Error)?\s*\.\s*message\s*\)/g;
+
+    for (const file of files) {
+      const rel = toRelative(file);
+      if (AUTH_FORM_ALLOWLIST.has(rel)) continue;
+
+      const content = readFileSync(file, "utf-8");
+
+      // Skip files that don't use setError at all
+      if (!content.includes("setError")) continue;
+
+      rawErrorPattern.lastIndex = 0;
+      let match;
+
+      while ((match = rawErrorPattern.exec(content)) !== null) {
+        const lineNum = content.slice(0, match.index).split("\n").length;
+        const hasSentryCapture = content.includes("captureSupabaseError");
+
+        if (!hasSentryCapture) {
+          violations.push(`${rel}:${lineNum}`);
+        }
+      }
+    }
+
+    expect(
+      violations,
+      `Raw Supabase error.message exposed to users without captureSupabaseError. ` +
+        `Use captureSupabaseError() to report to Sentry and show a generic message instead:\n${violations.join("\n")}`,
+    ).toEqual([]);
+  });
 });

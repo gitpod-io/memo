@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getClient } from "@/lib/supabase/lazy-client";
+import { captureSupabaseError } from "@/lib/sentry";
 import { Separator } from "@/components/ui/separator";
 import { MemberList } from "@/components/members/member-list";
 import { InviteForm } from "@/components/members/invite-form";
@@ -51,7 +52,8 @@ export function MembersPage({
       .eq("id", memberId);
 
     if (updateError) {
-      setError(updateError.message);
+      captureSupabaseError(updateError, "members-page:role-change");
+      setError("Failed to update role. Please try again.");
       return;
     }
 
@@ -68,7 +70,8 @@ export function MembersPage({
       .eq("id", memberId);
 
     if (deleteError) {
-      setError(deleteError.message);
+      captureSupabaseError(deleteError, "members-page:remove-member");
+      setError("Failed to remove member. Please try again.");
       return;
     }
 
@@ -90,7 +93,8 @@ export function MembersPage({
     if (deleteError) {
       // Revert optimistic removal on failure
       setInvites(initialInvites);
-      setError(deleteError.message);
+      captureSupabaseError(deleteError, "members-page:revoke-invite");
+      setError("Failed to revoke invite. Please try again.");
       return;
     }
 

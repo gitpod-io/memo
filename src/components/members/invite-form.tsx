@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Copy, Send } from "lucide-react";
 import { getClient } from "@/lib/supabase/lazy-client";
+import { captureSupabaseError } from "@/lib/sentry";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -132,7 +133,10 @@ export function InviteForm({
       .single();
 
     if (insertError || !newInvite) {
-      onError(insertError?.message ?? "Failed to create invite.");
+      if (insertError) {
+        captureSupabaseError(insertError, "invite-form:create-invite");
+      }
+      onError("Failed to create invite. Please try again.");
       setSending(false);
       return;
     }

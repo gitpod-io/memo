@@ -112,7 +112,6 @@ export function WorkspaceSwitcher({ userId }: WorkspaceSwitcherProps) {
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         workspaceCount={createdCount}
-        userId={userId}
       />
     </DropdownMenu>
   );

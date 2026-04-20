@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { getClient } from "@/lib/supabase/lazy-client";
+import { captureSupabaseError } from "@/lib/sentry";
 import { isValidSlug } from "@/lib/workspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,7 +73,8 @@ export function WorkspaceSettingsForm({
       if (updateError.message.includes("duplicate key")) {
         setError("This slug is already taken. Choose a different one.");
       } else {
-        setError(updateError.message);
+        captureSupabaseError(updateError, "workspace-settings:update");
+        setError("Failed to save settings. Please try again.");
       }
       setSaving(false);
       return;
@@ -99,7 +101,8 @@ export function WorkspaceSettingsForm({
       .eq("id", workspace.id);
 
     if (deleteError) {
-      setError(deleteError.message);
+      captureSupabaseError(deleteError, "workspace-settings:delete");
+      setError("Failed to delete workspace. Please try again.");
       setDeleting(false);
       return;
     }
