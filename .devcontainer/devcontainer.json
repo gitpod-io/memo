@@ -4,10 +4,14 @@
   "features": {
     "ghcr.io/devcontainers/features/github-cli": {}
   },
-  "forwardPorts": [3000],
+  "forwardPorts": [3000, 6006],
   "portsAttributes": {
     "3000": {
       "label": "Memo App",
+      "onAutoForward": "notify"
+    },
+    "6006": {
+      "label": "Storybook",
       "onAutoForward": "notify"
     }
   }

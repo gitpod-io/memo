@@ -14,3 +14,9 @@ services:
     commands:
       start: pnpm dev
       ready: curl -sf http://localhost:3000
+  storybook:
+    name: Storybook
+    description: Storybook component browser on port 6006.
+    commands:
+      start: pnpm storybook -p 6006 -h 0.0.0.0 --no-open
+      ready: curl -sf http://localhost:6006
