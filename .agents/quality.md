@@ -23,7 +23,7 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | Import/Export | A | Markdown export (download .md) and import (parse .md, create page) via page menu. Markdown utils with unit tests (8 tests). E2E spec covers export and import flow (`e2e/import-export.spec.ts`, 2 tests). |
 | Members | A | Member list with role badges, role change, remove. Invite form (email + role). Pending invite list with revoke. Invite accept page. Role select dropdown. Settings members page with server-side data fetching. E2E coverage: invite, pending list, revoke, accept, role change, remove, member role restrictions (7 tests). |
 | App Shell | A | Collapsible sidebar (desktop: aside, mobile: Sheet), sidebar context with ⌘+\ shortcut, workspace switcher, page tree, user menu with sign-out. Clean component decomposition. Sidebar context unit tests (12 tests): state management, keyboard shortcut registration, toggle behavior. Loading skeleton tests (14 tests): app, workspace, page loading states. Error boundary tests (14 tests): route-error component (6), workspace error (4), page error (4). E2E spec for sidebar responsive behavior (3 tests). |
-| API Routes | A | Health endpoint (DB connectivity check, 6 tests) and search endpoint (full-text search, 8 tests). Both routes have Sentry error capture. Both have integration tests with mocked Supabase. |
+| API Routes | A | Health endpoint (DB connectivity check, 6 tests), search endpoint (full-text search, 8 tests), and account deletion endpoint (5 tests). All routes have Sentry error capture. All have integration tests with mocked Supabase. |
 | UI Components | A | 13 shadcn/ui components (base-nova style): alert-dialog, badge, button, card, dialog, dropdown-menu, input, label, select, separator, sheet, table, tooltip. Overlay opacity regression test (2 tests). Toast error duration regression test (1 test). Dialog design spec test (3 tests). Design tokens use oklch color space, --radius: 0 for sharp corners. |
 | Realtime | - | Deferred to post-MVP per architecture decision. |
 
@@ -31,9 +31,9 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 
 | Category | Files | Tests |
 |---|---|---|
-| Unit/Integration (Vitest) | 40 | 320 |
+| Unit/Integration (Vitest) | 41 | 325 |
 | E2E (Playwright) | 20 | 74 |
-| **Total** | **60** | **394** |
+| **Total** | **61** | **399** |
 
 ### Test files by domain
 
@@ -45,7 +45,7 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 - **Import/Export**: `e2e/import-export.spec.ts` (2 tests)
 - **Members**: `invite-form.test.ts` (4 tests), `e2e/members.spec.ts` (7 tests)
 - **App Shell**: `sidebar-context.test.tsx` (12 tests), `loading.test.ts` ×3 (14 tests), `route-error.test.ts` (6 tests), `[workspaceSlug]/error.test.ts` (4 tests), `[workspaceSlug]/[pageId]/error.test.ts` (4 tests), `e2e/sidebar-responsive.spec.ts` (3 tests)
-- **API**: `health/route.test.ts` (6 tests), `search/route.test.ts` (8 tests)
+- **API**: `health/route.test.ts` (6 tests), `search/route.test.ts` (8 tests), `account/route.test.ts` (5 tests)
 - **UI**: `overlay-opacity.test.ts` (2 tests), `toast-error-duration.test.ts` (1 test), `dialog-design-spec.test.ts` (3 tests), `relative-time.test.ts` (7 tests)
 - **Lib**: `sentry.test.ts` (3 tests), `sentry.unit.test.ts` (20 tests), `retry.test.ts` (6 tests)
 
@@ -68,3 +68,4 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | 2026-04-19 | Test count drift fix (#257). Added 3 error boundary test files from #252: `route-error.test.ts` (6), `[workspaceSlug]/error.test.ts` (4), `[workspaceSlug]/[pageId]/error.test.ts` (4). Test totals: 36 Vitest files (270 tests), 20 E2E specs (74 tests). |
 | 2026-04-20 | Test count drift fix (#273). Added 3 missing test files: `floating-image-toolbar.test.ts` (20), `image-node.test.ts` (17), `dialog-design-spec.test.ts` (3). Test totals: 39 Vitest files (310 tests), 20 E2E specs (74 tests). |
 | 2026-04-20 | Test count drift fix (#286). Updated 4 files that grew: `sign-up/page.test.tsx` (10→11), `floating-image-toolbar.test.ts` (20→21), `image-node.test.ts` (17→19), `sentry.test.ts` (2→3). Added missing `create-workspace-dialog.test.tsx` (5 tests). Test totals: 40 Vitest files (320 tests), 20 E2E specs (74 tests). |
+| 2026-04-20 | Test count drift fix (#291). Added missing `account/route.test.ts` (5 tests) from account deletion feature (#288). Updated API Routes domain summary. Test totals: 41 Vitest files (325 tests), 20 E2E specs (74 tests). |
