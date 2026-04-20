@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { SmilePlus } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError } from "@/lib/sentry";
 import { EmojiPicker } from "@/components/emoji-picker";
 
@@ -18,7 +18,7 @@ export function PageIcon({ pageId, initialIcon }: PageIconProps) {
   const saveIcon = useCallback(
     async (value: string | null) => {
       setIcon(value);
-      const supabase = createClient();
+      const supabase = await getClient();
       const { error } = await supabase
         .from("pages")
         .update({ icon: value })

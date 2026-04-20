@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { FileText, Search, X } from "lucide-react";
 import { lazyCaptureException } from "@/lib/capture";
 import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
+import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError } from "@/lib/sentry";
 import { retryOnNetworkError } from "@/lib/retry";
 import { useSidebar } from "@/components/sidebar/sidebar-context";
@@ -70,8 +70,8 @@ export function PageSearch() {
     setWorkspaceResolved(false);
     let cancelled = false;
 
-    retryOnNetworkError(() => {
-      const supabase = createClient();
+    retryOnNetworkError(async () => {
+      const supabase = await getClient();
       return supabase
         .from("workspaces")
         .select("id")

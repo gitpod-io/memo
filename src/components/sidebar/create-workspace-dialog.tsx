@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { getClient } from "@/lib/supabase/lazy-client";
 import { generateSlug, WORKSPACE_LIMIT } from "@/lib/workspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +43,7 @@ export function CreateWorkspaceDialog({
     setError(null);
     setLoading(true);
 
-    const supabase = createClient();
+    const supabase = await getClient();
     const slug = generateSlug(name.trim());
 
     const { data: workspace, error: createError } = await supabase

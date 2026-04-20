@@ -1,11 +1,32 @@
 "use client";
 
 import { useRef } from "react";
+import dynamic from "next/dynamic";
 import type { LexicalEditor, SerializedEditorState } from "lexical";
 import { PageTitle } from "@/components/page-title";
 import { PageIcon } from "@/components/page-icon";
-import { Editor } from "@/components/editor/editor";
-import { PageMenu } from "@/components/page-menu";
+
+const Editor = dynamic(
+  () => import("@/components/editor/editor").then((mod) => mod.Editor),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="space-y-3">
+        <div className="h-4 w-full animate-pulse bg-muted" />
+        <div className="h-4 w-5/6 animate-pulse bg-muted" />
+        <div className="h-4 w-4/6 animate-pulse bg-muted" />
+      </div>
+    ),
+  },
+);
+
+const PageMenu = dynamic(
+  () => import("@/components/page-menu").then((mod) => mod.PageMenu),
+  {
+    ssr: false,
+    loading: () => <div className="h-8 w-8" />,
+  },
+);
 
 interface PageViewClientProps {
   pageId: string;

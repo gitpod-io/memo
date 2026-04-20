@@ -3,7 +3,7 @@
 import { useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Download, MoreHorizontal, Upload } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { LexicalEditor } from "lexical";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +19,7 @@ import {
   parseMarkdownToEditorState,
 } from "@/components/editor/markdown-utils";
 import { lazyCaptureException } from "@/lib/capture";
-import { createClient } from "@/lib/supabase/client";
+import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError } from "@/lib/sentry";
 
 interface PageMenuProps {
@@ -88,7 +88,7 @@ export function PageMenu({
         // Derive page title from filename (strip extension)
         const importedTitle = file.name.replace(/\.(md|markdown)$/, "");
 
-        const supabase = createClient();
+        const supabase = await getClient();
 
         // Count existing pages to determine position
         const { count } = await supabase

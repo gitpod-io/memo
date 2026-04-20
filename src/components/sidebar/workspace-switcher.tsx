@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronsUpDown, Plus, Check } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { getClient } from "@/lib/supabase/lazy-client";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -28,9 +28,8 @@ export function WorkspaceSwitcher({ userId }: WorkspaceSwitcherProps) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   useEffect(() => {
-    const supabase = createClient();
-
     async function fetchWorkspaces() {
+      const supabase = await getClient();
       const { data: memberships } = await supabase
         .from("members")
         .select("workspace_id, workspaces(*)")

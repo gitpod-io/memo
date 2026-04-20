@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Copy, Send } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { getClient } from "@/lib/supabase/lazy-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,7 +68,7 @@ export function InviteForm({
 
     setSending(true);
 
-    const supabase = createClient();
+    const supabase = await getClient();
 
     // Check if user is already a member.
     // Disambiguate: members has two FKs to profiles (user_id, invited_by).
