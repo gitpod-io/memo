@@ -106,6 +106,7 @@ Pin to a specific version to avoid breaking changes.
 | FloatingToolbarPlugin | `plugins/FloatingTextFormatToolbarPlugin` | Implemented |
 | FloatingLinkEditorPlugin | `plugins/FloatingLinkEditorPlugin` | Implemented |
 | ImagePlugin | `plugins/ImagesExtension` | Implemented |
+| FloatingImageToolbarPlugin | N/A (custom) | Implemented |
 | CodeHighlightPlugin | `plugins/CodeHighlightExtension` | Implemented |
 | CalloutPlugin | N/A (custom) | Implemented |
 | CollapsiblePlugin (toggle blocks) | `plugins/CollapsibleExtension` | Implemented |
@@ -208,8 +209,11 @@ src/
 │   │   ├── markdown-utils.ts        # Markdown ↔ Lexical conversion (export/import/download/parse)
 │   │   ├── draggable-block-plugin.tsx # Drag handle + drop indicator for block reordering
 │   │   ├── list-tab-indentation-plugin.tsx # Tab/Shift+Tab list indent/outdent
-│   │   ├── image-node.tsx           # ImageNode (DecoratorNode) with caption support
+│   │   ├── image-node.tsx           # ImageNode (DecoratorNode) with caption, alignment, resize handles
 │   │   ├── image-plugin.tsx         # Image upload to Supabase Storage, file drop handling
+│   │   ├── floating-image-toolbar-plugin.tsx # Image toolbar: align, crop, expand, download
+│   │   ├── image-expand-dialog.tsx  # Full-resolution image lightbox dialog
+│   │   ├── image-crop-dialog.tsx    # Canvas-based image crop dialog with re-upload
 │   │   ├── callout-node.tsx         # CalloutNode (ElementNode) with emoji + variant
 │   │   ├── callout-plugin.tsx       # Callout insert command + emoji rendering
 │   │   ├── collapsible-node.tsx     # CollapsibleContainer/Title/Content nodes (<details>/<summary>)
