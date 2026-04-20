@@ -90,6 +90,7 @@ Label lifecycle: `status:backlog` → `status:in-progress` → `status:in-review
 - `status:backlog` — **only** for issues you want automations (Feature Builder, Bug Fixer) to pick up. These automations poll for `status:backlog` issues on a cron schedule.
 - `status:in-progress` — use when creating an issue for work you are already doing. This prevents automations from picking it up.
 - Never create an issue with `status:backlog` if you intend to work on it yourself — use `status:in-progress` instead.
+- Never create an issue with `status:in-progress` if you are only raising/suggesting it without implementing it — use `status:backlog` so automations can pick it up.
 
 ### How to request a feature or improvement
 
