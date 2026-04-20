@@ -45,6 +45,7 @@ workspaces
   └── has many: pages
         ├── parent_id → pages.id (nullable, enables nesting)
         ├── content: jsonb (Lexical editor state — NOT a separate blocks table)
+        ├── icon: text (emoji character for page icon, nullable)
         ├── position: integer (ordering among siblings)
         ├── created_by → profiles.id
         └── search_vector: tsvector (generated, title weight A + content text weight B, GIN indexed)
@@ -100,26 +101,27 @@ Pin to a specific version to avoid breaking changes.
 
 | Plugin | Playground reference | Status |
 |---|---|---|
-| SlashCommandPlugin (slash commands) | `plugins/ComponentPickerPlugin` | ✅ Implemented |
-| DraggableBlockPlugin (drag-and-drop) | `plugins/DraggableBlockPlugin` | ✅ Implemented |
-| FloatingToolbarPlugin | `plugins/FloatingTextFormatToolbarPlugin` | ✅ Implemented |
-| FloatingLinkEditorPlugin | `plugins/FloatingLinkEditorPlugin` | ✅ Implemented |
-| ImagePlugin | `plugins/ImagesExtension` | ✅ Implemented |
-| CodeHighlightPlugin | `plugins/CodeHighlightExtension` | ✅ Implemented |
-| CalloutPlugin | N/A (custom) | ✅ Implemented |
-| CollapsiblePlugin (toggle blocks) | `plugins/CollapsibleExtension` | ✅ Implemented |
+| SlashCommandPlugin (slash commands) | `plugins/ComponentPickerPlugin` | Implemented |
+| DraggableBlockPlugin (drag-and-drop) | `plugins/DraggableBlockPlugin` | Implemented |
+| FloatingToolbarPlugin | `plugins/FloatingTextFormatToolbarPlugin` | Implemented |
+| FloatingLinkEditorPlugin | `plugins/FloatingLinkEditorPlugin` | Implemented |
+| ImagePlugin | `plugins/ImagesExtension` | Implemented |
+| CodeHighlightPlugin | `plugins/CodeHighlightExtension` | Implemented |
+| CalloutPlugin | N/A (custom) | Implemented |
+| CollapsiblePlugin (toggle blocks) | `plugins/CollapsibleExtension` | Implemented |
+| ListTabIndentationPlugin | N/A (custom) | Implemented |
 | ToolbarPlugin (top toolbar) | `plugins/ToolbarPlugin` | Deferred |
 
 ### Custom nodes
 
 | Node | Type | Purpose | Status |
 |---|---|---|---|
-| ImageNode | DecoratorNode | Image display with caption | ✅ Implemented |
-| CalloutNode | ElementNode | Callout/alert block with emoji + colored bg | ✅ Implemented |
-| CollapsibleContainerNode | ElementNode | `<details>` wrapper for toggle blocks | ✅ Implemented |
-| CollapsibleTitleNode | ElementNode | `<summary>` title for toggle blocks | ✅ Implemented |
-| CollapsibleContentNode | ElementNode | Content area for toggle blocks | ✅ Implemented |
-| DividerNode | HorizontalRuleNode (`@lexical/react`) | Horizontal divider | ✅ Built-in |
+| ImageNode | DecoratorNode | Image display with caption | Implemented |
+| CalloutNode | ElementNode | Callout/alert block with emoji + colored bg | Implemented |
+| CollapsibleContainerNode | ElementNode | `<details>` wrapper for toggle blocks | Implemented |
+| CollapsibleTitleNode | ElementNode | `<summary>` title for toggle blocks | Implemented |
+| CollapsibleContentNode | ElementNode | Content area for toggle blocks | Implemented |
+| DividerNode | HorizontalRuleNode (`@lexical/react`) | Horizontal divider | Built-in |
 
 ### Skipped plugins (not needed for MVP)
 
@@ -152,16 +154,34 @@ src/
 │   ├── page.tsx            # Landing page (redirects authenticated users to workspace)
 │   ├── manifest.ts         # PWA manifest (name, icons, display mode)
 │   ├── global-error.tsx    # Sentry error boundary
+│   ├── not-found.tsx       # Root 404 page
 │   ├── globals.css         # Tailwind v4 theme — dark-only oklch tokens, --radius: 0
+│   ├── auth/
+│   │   └── callback/route.ts # Email confirmation redirect (exchanges code → signs out → /sign-in?confirmed=true)
 │   ├── (auth)/             # Unauthenticated route group
 │   │   ├── layout.tsx      # Centered card layout for auth pages
-│   │   ├── sign-in/page.tsx # /sign-in — email/password form
-│   │   └── sign-up/page.tsx # /sign-up — display name + email/password form
+│   │   ├── sign-in/
+│   │   │   ├── page.tsx        # /sign-in — server page
+│   │   │   └── sign-in-form.tsx # Client form: email/password, redirect, ?confirmed banner
+│   │   ├── sign-up/
+│   │   │   ├── page.tsx        # /sign-up — server page
+│   │   │   └── sign-up-form.tsx # Client form: display name + email/password, email confirmation screen
+│   │   └── invite/[token]/page.tsx # /invite/[token] — invite accept flow
 │   ├── (app)/              # Authenticated route group
 │   │   ├── layout.tsx      # Auth guard, fetches profile, renders AppShell
+│   │   ├── loading.tsx     # App shell loading skeleton
+│   │   ├── not-found.tsx   # App-level 404 page
 │   │   └── [workspaceSlug]/
-│   │       ├── page.tsx    # /[workspaceSlug] — workspace home (page list or empty state)
-│   │       └── [pageId]/page.tsx  # /[workspaceSlug]/[pageId] — page with title + editor placeholder
+│   │       ├── page.tsx         # /[workspaceSlug] — workspace home (+ generateMetadata)
+│   │       ├── loading.tsx      # Workspace loading skeleton
+│   │       ├── error.tsx        # Workspace error boundary (delegates to RouteError)
+│   │       ├── [pageId]/
+│   │       │   ├── page.tsx     # /[workspaceSlug]/[pageId] — page view (+ generateMetadata)
+│   │       │   ├── loading.tsx  # Page loading skeleton
+│   │       │   └── error.tsx    # Page error boundary (delegates to RouteError)
+│   │       └── settings/
+│   │           ├── page.tsx         # /[workspaceSlug]/settings (+ generateMetadata)
+│   │           └── members/page.tsx # /[workspaceSlug]/settings/members (+ generateMetadata)
 │   └── api/
 │       ├── health/route.ts # Health check endpoint (DB connectivity)
 │       └── search/route.ts # Full-text search (GET ?q=&workspace_id=) → calls search_pages RPC
@@ -187,15 +207,20 @@ src/
 │   │   ├── code-highlight-plugin.tsx # Registers Prism-based syntax highlighting for code blocks
 │   │   ├── markdown-utils.ts        # Markdown ↔ Lexical conversion (export/import/download/parse)
 │   │   ├── draggable-block-plugin.tsx # Drag handle + drop indicator for block reordering
+│   │   ├── list-tab-indentation-plugin.tsx # Tab/Shift+Tab list indent/outdent
 │   │   ├── image-node.tsx           # ImageNode (DecoratorNode) with caption support
 │   │   ├── image-plugin.tsx         # Image upload to Supabase Storage, file drop handling
 │   │   ├── callout-node.tsx         # CalloutNode (ElementNode) with emoji + variant
 │   │   ├── callout-plugin.tsx       # Callout insert command + emoji rendering
 │   │   ├── collapsible-node.tsx     # CollapsibleContainer/Title/Content nodes (<details>/<summary>)
 │   │   └── collapsible-plugin.tsx   # Collapsible insert command + toggle handling
+│   ├── emoji-picker.tsx         # Floating emoji grid with search, used by page icon picker
+│   ├── page-icon.tsx            # Page icon display + emoji picker trigger (saves to pages.icon)
 │   ├── page-title.tsx           # Inline-editable page title (saves on blur/Enter)
-│   ├── page-view-client.tsx     # Client wrapper for page view (holds editor ref, renders title + menu + editor)
+│   ├── page-view-client.tsx     # Client wrapper for page view (holds editor ref, renders icon + title + menu + editor)
 │   ├── page-menu.tsx            # Page "..." dropdown: export as markdown, import markdown
+│   ├── relative-time.tsx        # Client component for "2 hours ago" timestamps (avoids hydration mismatch)
+│   ├── route-error.tsx          # Reusable error boundary UI (Sentry capture + retry button)
 │   ├── workspace-home.tsx       # Workspace home: page list or empty state with create CTA
 │   ├── workspace-settings-form.tsx # Edit workspace name/slug, delete workspace
 │   ├── members/             # Workspace member management components
@@ -203,7 +228,7 @@ src/
 │   │   ├── member-list.tsx        # Table of members with role badges, role change, remove
 │   │   ├── invite-form.tsx        # Email + role invite form (admin/owner only)
 │   │   ├── invite-accept.tsx      # Client component for accepting an invite token
-│   │   ├── pending-invite-list.tsx # Table of pending invites with revoke action
+│   │   ├── pending-invite-list.tsx # Table of pending invites with revoke + copyable invite link
 │   │   └── role-select.tsx        # Role picker dropdown (owner/admin/member)
 │   └── ui/                 # shadcn/ui components (base-nova style, base-ui primitives)
 │       ├── alert-dialog.tsx
@@ -221,6 +246,7 @@ src/
 │       └── tooltip.tsx
 ├── lib/
 │   ├── page-tree.ts        # Pure functions: tree building, reorder, nest/unnest, drop computation
+│   ├── retry.ts            # retryOnNetworkError helper (exponential backoff for transient failures)
 │   ├── sentry.ts           # captureSupabaseError helper (structured Sentry reporting)
 │   ├── utils.ts            # cn() utility (clsx + tailwind-merge)
 │   ├── types.ts            # Database entity types
@@ -237,44 +263,6 @@ Root config files:
 ├── sentry.server.config.ts    # Sentry server SDK config
 ├── sentry.edge.config.ts      # Sentry edge SDK config
 └── components.json            # shadcn/ui config (base-nova style, Tailwind v4)
-```
-
-Planned structure (added as features are built):
-
-```
-src/
-├── app/
-│   ├── (auth)/                        # Unauthenticated routes
-│   │   ├── sign-in/page.tsx           # /sign-in
-│   │   ├── sign-up/page.tsx           # /sign-up
-│   │   └── invite/[token]/page.tsx    # /invite/[token] — invite accept flow
-│   ├── (app)/                         # Authenticated routes
-│   │   ├── layout.tsx                 # App shell (sidebar + main content), passes userId
-│   │   └── [workspaceSlug]/
-│   │       ├── page.tsx               # /[workspaceSlug] (workspace home)
-│   │       ├── [pageId]/page.tsx      # /[workspaceSlug]/[pageId] (page view + Lexical editor)
-│   │       └── settings/
-│   │           ├── page.tsx           # /[workspaceSlug]/settings (name, slug, delete)
-│   │           └── members/page.tsx   # /[workspaceSlug]/settings/members
-│   └── api/
-│       ├── health/                    # Existing
-│       └── ...                        # Additional API routes as needed
-├── components/
-│   ├── ui/                 # shadcn/ui components
-│   ├── editor/             # Lexical editor + plugins
-│   │   ├── editor.tsx                 # Main editor: LexicalComposer + all plugins + auto-save
-│   │   ├── theme.ts                   # Lexical EditorThemeClasses (Tailwind classes for all node types)
-│   │   ├── slash-command-plugin.tsx    # "/" typeahead menu for inserting block types
-│   │   ├── floating-toolbar-plugin.tsx # Selection toolbar: bold, italic, underline, strikethrough, code, link
-│   │   ├── floating-link-editor-plugin.tsx # Link preview/edit/remove popover
-│   │   ├── code-highlight-plugin.tsx  # Registers Prism-based code highlighting
-│   │   └── markdown-utils.ts         # Markdown ↔ Lexical conversion utilities
-│   ├── sidebar/            # Sidebar, page tree, workspace switcher
-│   └── ...                 # Feature-specific components
-├── lib/
-│   ├── supabase/           # Existing
-│   └── types.ts            # Shared TypeScript types
-└── ...
 ```
 
 ## Observability

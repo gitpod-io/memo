@@ -704,7 +704,6 @@ await supabase.auth.signUp({
 });
 ```
 
-<<<<<<< HEAD
 ## Lexical Editor Plugins
 
 Editor plugins live in `src/components/editor/`. Each plugin is a separate file with
@@ -902,6 +901,82 @@ Rules:
 - Use `stable` for read-only functions, `volatile` for mutations.
 - Keep the function focused — one purpose per function.
 - Return a `table(...)` type for multi-row results so the client gets typed arrays.
+
+## Route-Level Error Boundaries
+
+Every route segment under `(app)/` should have an `error.tsx` that delegates to the
+shared `RouteError` component. This captures the error in Sentry and shows a retry button.
+
+```typescript
+// src/app/(app)/[workspaceSlug]/error.tsx
+"use client";
+
+import { RouteError } from "@/components/route-error";
+
+export default function WorkspaceError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return <RouteError error={error} reset={reset} />;
+}
+```
+
+The `RouteError` component (`src/components/route-error.tsx`) handles Sentry reporting
+and renders a centered error UI with a retry button. Route-level `error.tsx` files are
+thin wrappers — all logic lives in `RouteError`.
+
+## Dynamic Page Titles (generateMetadata)
+
+Route pages that display named entities export `generateMetadata` to set the browser
+tab title. The pattern fetches the entity name server-side:
+
+```typescript
+import type { Metadata } from "next";
+import { createClient } from "@/lib/supabase/server";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ workspaceSlug: string }>;
+}): Promise<Metadata> {
+  const { workspaceSlug } = await params;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("workspaces")
+    .select("name")
+    .eq("slug", workspaceSlug)
+    .maybeSingle();
+
+  return { title: data?.name ? `${data.name} — Memo` : "Memo" };
+}
+```
+
+Rules:
+- Suffix all titles with ` — Memo`.
+- Fall back to just `"Memo"` if the entity is not found.
+- Use `maybeSingle()` — never throw on missing data in metadata functions.
+
+## Loading Skeletons (loading.tsx)
+
+Each route segment under `(app)/` has a `loading.tsx` that renders a skeleton matching
+the shape of the page content. Skeletons use `bg-muted animate-pulse` with sharp corners.
+
+Rules:
+- Match the layout of the actual page (heading width, content rows, sidebar shape).
+- Use varying widths on skeleton rows to look natural (e.g. `maxWidth: ${55 + ((i * 13) % 35)}%`).
+- No rounded corners on skeletons — sharp edges per design spec.
+- No loading spinners — skeletons only.
+
+## Not-Found Pages
+
+Custom `not-found.tsx` files provide contextual 404 messages:
+- Root `not-found.tsx`: full-screen centered, links to `/`.
+- `(app)/not-found.tsx`: within the app shell, mentions workspace/page access.
+
+Pattern: `FileQuestion` icon (48px) + heading + description + "Go home" button.
 
 ## This file evolves
 

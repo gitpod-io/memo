@@ -149,6 +149,50 @@ Override shadcn defaults: set `--radius: 0` in the theme, then apply `rounded-sm
 - Drag handle: visible on hover, left edge.
 - "New Page" button: bottom of tree, full width, `text-muted-foreground`.
 
+### Page Icon (Editor)
+
+Above the page title in the editor view. Shows the page's emoji icon or a hover-triggered
+add button.
+
+- Position: above the title, left-aligned with the content area.
+- Default state (no icon): `SmilePlus` icon (20px, `text-muted-foreground`), visible on hover only.
+- With icon: emoji displayed at 40px, clickable to change.
+- Click opens the emoji picker floating below the icon.
+- Remove button: shown inside the emoji picker when an icon is set.
+
+### Emoji Picker
+
+Floating panel for selecting page icons. Uses `@floating-ui/react` for positioning.
+
+- Background: `bg-background`, border: `border`, shadow: `shadow-lg`.
+- Search input at top, auto-focused on open.
+- Grid layout: 8 columns, emoji buttons at 32px square.
+- Hover: `bg-muted` on emoji buttons.
+- Categories: scrollable, filtered by search query.
+- Close on Escape or click outside.
+- Sharp corners (no border-radius).
+
+### Not-Found Pages
+
+Centered layout with icon + heading + description + CTA button.
+
+- Icon: `FileQuestion` from lucide-react, 48px (`h-12 w-12`), `text-muted-foreground`.
+- Heading: `text-lg font-medium`.
+- Description: `text-sm text-muted-foreground`, max-width `max-w-sm`.
+- CTA: default Button linking to `/`.
+- Root not-found: full-screen (`min-h-screen`).
+- App not-found: within app shell (`min-h-[60vh]`).
+
+### Error Boundaries
+
+Centered layout matching not-found pages.
+
+- Icon: `AlertCircle` from lucide-react, 48px, `text-muted-foreground`.
+- Heading: `text-lg font-medium`, text: "Something went wrong".
+- Description: `text-sm text-muted-foreground`, shows `error.message`.
+- CTA: "Try again" button calling `reset()`.
+- Layout: `min-h-[60vh]`, centered with `flex flex-col items-center justify-center`.
+
 ---
 
 ## Components
