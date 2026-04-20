@@ -184,8 +184,9 @@ src/
 │   │           ├── page.tsx         # /[workspaceSlug]/settings (+ generateMetadata)
 │   │           └── members/page.tsx # /[workspaceSlug]/settings/members (+ generateMetadata)
 │   └── api/
-│       ├── health/route.ts # Health check endpoint (DB connectivity)
-│       └── search/route.ts # Full-text search (GET ?q=&workspace_id=) → calls search_pages RPC
+│       ├── account/route.ts # Account deletion (DELETE) → calls delete_account RPC
+│       ├── health/route.ts  # Health check endpoint (DB connectivity)
+│       └── search/route.ts  # Full-text search (GET ?q=&workspace_id=) → calls search_pages RPC
 ├── components/
 │   ├── auth/
 │   │   ├── oauth-buttons.tsx    # GitHub + Google buttons (disabled, "coming soon" tooltip)
@@ -218,6 +219,7 @@ src/
 │   │   ├── callout-plugin.tsx       # Callout insert command + emoji rendering
 │   │   ├── collapsible-node.tsx     # CollapsibleContainer/Title/Content nodes (<details>/<summary>)
 │   │   └── collapsible-plugin.tsx   # Collapsible insert command + toggle handling
+│   ├── delete-account-section.tsx # Account deletion danger zone with double-confirm dialog
 │   ├── emoji-picker.tsx         # Floating emoji grid with search, used by page icon picker
 │   ├── page-icon.tsx            # Page icon display + emoji picker trigger (saves to pages.icon)
 │   ├── page-title.tsx           # Inline-editable page title (saves on blur/Enter)
