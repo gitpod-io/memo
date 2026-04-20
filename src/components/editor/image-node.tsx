@@ -427,7 +427,10 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     writable.__caption = caption;
   }
 
-  setWidthAndHeight(width: number, height: number): void {
+  setWidthAndHeight(
+    width: number | undefined,
+    height: number | undefined,
+  ): void {
     const writable = this.getWritable();
     writable.__width = width;
     writable.__height = height;

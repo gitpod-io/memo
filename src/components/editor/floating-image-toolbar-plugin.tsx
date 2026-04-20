@@ -164,7 +164,7 @@ export function FloatingImageToolbarPlugin({
         if ($isImageNode(node)) {
           node.setSrc(newSrc);
           // Reset dimensions so the image renders at its new natural size
-          node.setWidthAndHeight(0, 0);
+          node.setWidthAndHeight(undefined, undefined);
         }
       });
       setCropOpen(false);
