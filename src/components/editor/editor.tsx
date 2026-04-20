@@ -30,6 +30,7 @@ import { editorTheme } from "@/components/editor/theme";
 import { SlashCommandPlugin } from "@/components/editor/slash-command-plugin";
 import { FloatingToolbarPlugin } from "@/components/editor/floating-toolbar-plugin";
 import { FloatingLinkEditorPlugin } from "@/components/editor/floating-link-editor-plugin";
+import { FloatingImageToolbarPlugin } from "@/components/editor/floating-image-toolbar-plugin";
 import { CodeHighlightPlugin } from "@/components/editor/code-highlight-plugin";
 import { DraggableBlockPlugin } from "@/components/editor/draggable-block-plugin";
 import { MARKDOWN_TRANSFORMERS } from "@/components/editor/markdown-utils";
@@ -216,6 +217,7 @@ export function Editor({ pageId, initialContent, editorRef }: EditorProps) {
           <>
             <FloatingToolbarPlugin anchorElem={floatingAnchorElem} />
             <FloatingLinkEditorPlugin anchorElem={floatingAnchorElem} />
+            <FloatingImageToolbarPlugin anchorElem={floatingAnchorElem} />
             <DraggableBlockPlugin anchorElem={floatingAnchorElem} />
           </>
         )}
