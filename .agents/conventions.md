@@ -525,6 +525,82 @@ test("editor loads on page", async ({ authenticatedPage: page }) => {
 - Authenticated tests require `TEST_USER_EMAIL` and `TEST_USER_PASSWORD` env vars
 - Run before pushing: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e`
 
+### Storybook
+
+Storybook uses `@storybook/react-vite` (not `@storybook/nextjs` — incompatible with Next.js 16).
+Config lives in `.storybook/`. Stories are co-located with components: `component.stories.tsx`
+next to `component.tsx`.
+
+#### Story file pattern
+
+```typescript
+import type { Meta, StoryObj } from "@storybook/react";
+import { ComponentName } from "./component-name";
+
+const meta: Meta<typeof ComponentName> = {
+  title: "Category/ComponentName",
+  component: ComponentName,
+  tags: ["autodocs"],
+};
+
+export { meta as default };
+type Story = StoryObj<typeof ComponentName>;
+
+export const Default: Story = {};
+
+export const WithVariant: Story = {
+  args: { variant: "destructive" },
+};
+```
+
+Key conventions:
+- `export { meta as default }` — named export pattern, consistent with project rules.
+- Title hierarchy: `UI/Button`, `Components/EmojiPicker`, `Auth/OAuthButtons`,
+  `Design System/Tokens`.
+- Cover: default state, all variants/sizes, disabled/error states, composition examples.
+- For components that depend on Supabase or server context, create visual-only stories
+  with mock data passed via args or decorators.
+
+#### Interaction tests
+
+Use `@storybook/test` for play functions that test user interactions:
+
+```typescript
+import { expect, userEvent, within } from "@storybook/test";
+
+export const Interactive: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByRole("button", { name: /open/i });
+    await userEvent.click(trigger);
+    await expect(canvas.getByRole("dialog")).toBeVisible();
+  },
+};
+```
+
+#### Visual regression testing
+
+Baselines live in `e2e/visual-regression.spec.ts-snapshots/` (committed to repo).
+The test in `e2e/visual-regression.spec.ts` screenshots every story at 1280×800.
+
+```bash
+# Run visual regression (requires Storybook served on port 6099)
+pnpm build-storybook
+python3 -m http.server 6099 -d storybook-static &
+STORYBOOK_URL=http://localhost:6099 pnpm test:visual
+
+# Regenerate baselines after intentional visual changes
+STORYBOOK_URL=http://localhost:6099 pnpm test:visual --update-snapshots
+
+# Clean up
+kill $(lsof -ti:6099) 2>/dev/null; rm -rf storybook-static
+```
+
+#### Running Storybook
+
+- Dev mode: `pnpm storybook` (port 6006)
+- Build: `pnpm build-storybook` (outputs to `storybook-static/`, gitignored)
+
 ## PR Workflow
 
 ### Issue-first rule

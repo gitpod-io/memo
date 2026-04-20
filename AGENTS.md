@@ -7,7 +7,8 @@ This repository is entirely agent-generated. No human writes code here.
 - Next.js 16 (App Router), TypeScript (strict), Tailwind CSS, shadcn/ui
 - Supabase: database (PostgreSQL), auth, realtime — via `@supabase/supabase-js`
 - Sentry (`@sentry/nextjs`) for error tracking
-- Vitest for unit/integration tests, Playwright for E2E
+- Storybook 8 (`@storybook/react-vite`) for component development and visual documentation
+- Vitest for unit/integration tests, Playwright for E2E and visual regression
 - Deployed on Vercel, domain: software-factory.dev
 
 ## Project Structure
@@ -19,6 +20,7 @@ src/components/ui/ → shadcn/ui components (do not edit)
 src/lib/           → Utilities, types, constants
 src/lib/supabase/  → Supabase clients (client.ts, server.ts, proxy.ts)
 supabase/migrations/ → Database migrations
+.storybook/        → Storybook config (main.ts, preview.ts, preview-head.html)
 .agents/           → Agent knowledge base (architecture, conventions, design)
 .ona/              → Automation definitions and skills
 docs/              → Product spec, decisions
@@ -37,6 +39,7 @@ metrics/           → Daily/weekly metrics snapshots
 - PRs with type `feat` or `fix` must reference an issue: `Closes #N`. Chore PRs (metrics, docs, deps) do not require an issue.
 - **Issue-first workflow:** Before creating a `feat` or `fix` PR, create a GitHub issue first (or find an existing one). Label it `status:in-progress` immediately. Add `Closes #N` to the PR description. This prevents the PR Reviewer from blocking the merge.
 - **Exception — `ona-user` PRs:** PRs created via interactive Ona sessions (user prompts) may use the `ona-user` label instead of linking an issue. The PR Reviewer will merge these without requiring `Closes #N`.
+- UI component PRs must include co-located `*.stories.tsx` files covering default state, variants, and interactive states. The PR Reviewer will request stories if they are missing.
 - Database changes require a migration: `npx supabase migration new <name>`
 - Environment variables: `NEXT_PUBLIC_` prefix only for browser-safe values.
 
@@ -45,6 +48,7 @@ metrics/           → Daily/weekly metrics snapshots
 - Unit tests (Vitest): utility functions, non-trivial logic, API route handlers
 - Integration tests (Vitest): API routes with mocked Supabase
 - E2E tests (Playwright): interactive features, critical user flows, new pages
+- Visual regression (Playwright): `pnpm test:visual` — screenshots Storybook stories and compares against committed baselines in `e2e/visual-regression.spec.ts-snapshots/`
 - Static analysis tests (Vitest): design spec compliance checks on source code
 - Skip tests for trivial layout-only components
 

@@ -119,8 +119,12 @@ action:
                 2. **Types** — define TypeScript types for new entities in `src/lib/types.ts` or co-located.
                 3. **Data access** — server-side queries, API routes.
                 4. **UI components** — build from leaf components up to page-level components.
-                5. **Page integration** — wire components into the App Router page.
-                6. **Tests** — unit tests for logic, integration tests for API routes.
+                5. **Storybook stories** — for every new or modified component in `src/components/`,
+                   create or update a co-located `*.stories.tsx` file. Stories must cover: default state,
+                   all variants/sizes, disabled/error states, and composition examples. See existing
+                   stories for patterns.
+                6. **Page integration** — wire components into the App Router page.
+                7. **Tests** — unit tests for logic, integration tests for API routes.
 
                 Rules during implementation:
                 - Follow every convention in AGENTS.md without exception.
@@ -144,8 +148,16 @@ action:
                    fixture from `e2e/fixtures/auth.ts` for authenticated tests. See
                    `.agents/conventions.md` → Testing → Playwright for patterns.
                 5. Run E2E tests: `pnpm test:e2e`
-                6. Fix any errors before proceeding.
-                7. If any acceptance criterion is NOT met, either fix it or explain in the PR body
+                6. If you created or modified UI components, run visual regression tests:
+                   Build Storybook (`pnpm build-storybook`), serve it on port 6099
+                   (`python3 -m http.server 6099 -d storybook-static &`), then run
+                   `STORYBOOK_URL=http://localhost:6099 pnpm test:visual`.
+                   If new stories were added, first run with `--update-snapshots` to generate
+                   baselines, then run again without the flag to confirm they pass.
+                   Commit the updated baselines in `e2e/visual-regression.spec.ts-snapshots/`.
+                   Clean up: `kill $(lsof -ti:6099) 2>/dev/null; rm -rf storybook-static`
+                7. Fix any errors before proceeding.
+                8. If any acceptance criterion is NOT met, either fix it or explain in the PR body
                    why it was descoped (and create a follow-up issue if needed).
 
                 ## Update Knowledge Base

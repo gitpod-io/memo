@@ -50,7 +50,23 @@ action:
                 | Dark mode | Uses token variables, not hardcoded light-only colors. |
                 | Borders | 1px solid border-border. No box-shadows except dropdowns/modals. |
 
-                ## Step 3 — Visual verification (Playwright screenshots)
+                ## Step 3 — Storybook visual regression
+
+                Run visual regression tests against Storybook to catch component-level
+                visual changes introduced by the PR.
+
+                1. Build Storybook: `pnpm build-storybook`
+                2. Serve the static build: `python3 -m http.server 6099 -d storybook-static &`
+                3. Run visual regression: `STORYBOOK_URL=http://localhost:6099 pnpm test:visual`
+                4. If tests fail, the PR introduced visual changes to existing components.
+                   Capture the diff images from `test-results/` for inclusion in the report.
+                5. Clean up: `kill $(lsof -ti:6099) 2>/dev/null; rm -rf storybook-static`
+
+                Visual regression failures are NOT automatically blocking — they indicate
+                intentional or unintentional visual changes. Include the diffs in the report
+                so a human can determine if the changes are acceptable.
+
+                ## Step 4 — Visual verification (Playwright screenshots)
 
                 Take screenshots of affected pages on the live site. Some routes require
                 authentication — use the test credentials to log in first.
@@ -184,7 +200,7 @@ action:
 
                 Clean up: `rm -f /tmp/ui-*.png`
 
-                ## Step 4 — Report
+                ## Step 5 — Report
 
                 If all checks pass:
                   Comment on the merged PR:
@@ -193,7 +209,9 @@ action:
                 If issues found:
                   1. Create a GitHub Issue:
                      - Title: `bug: UI does not match design spec after PR #<number>`
-                     - Body: list each violation with the file, line, what's wrong, and what the design spec says
+                     - Body: list each violation with the file, line, what's wrong, and what the design spec says.
+                       If Storybook visual regression diffs were found, include them in the issue body
+                       with a note about which stories changed.
                      - Labels: `bug`, `priority:2`, `status:backlog`
                   2. Comment on the merged PR:
                      > ⚠️ UI verification found design spec violations. See #<issue-number>.
