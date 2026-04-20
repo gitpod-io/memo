@@ -50,13 +50,10 @@ export function SignUpForm() {
       return;
     }
 
-    // When email confirmation is required, Supabase returns a user with
-    // an empty identities array. Show the confirmation screen instead of
-    // attempting to redirect.
-    if (
-      data.user &&
-      (!data.user.identities || data.user.identities.length === 0)
-    ) {
+    // When email confirmation is required, Supabase returns a user but no
+    // session. Check for a missing session rather than empty identities —
+    // Supabase populates identities even before confirmation.
+    if (data.user && !data.session) {
       setConfirmationPending(true);
       setLoading(false);
       return;
