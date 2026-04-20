@@ -1,8 +1,18 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { SidebarProvider } from "@/components/sidebar/sidebar-context";
-import { AppSidebar, SidebarToggle } from "@/components/sidebar/app-sidebar";
 import type { ReactNode } from "react";
+
+const AppSidebar = dynamic(
+  () =>
+    import("@/components/sidebar/app-sidebar").then((mod) => mod.AppSidebar),
+);
+
+const SidebarToggle = dynamic(
+  () =>
+    import("@/components/sidebar/app-sidebar").then((mod) => mod.SidebarToggle),
+);
 
 interface AppShellProps {
   userId: string;

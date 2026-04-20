@@ -88,9 +88,15 @@ describe("captureSupabaseError", () => {
     captureExceptionMock.mockClear();
   });
 
-  it("captures transient network errors at warning level", () => {
+  // captureSupabaseError uses lazyCaptureException which calls
+  // import("@sentry/nextjs").then(...). Flushing microtasks lets the
+  // mocked dynamic import resolve before assertions run.
+  const flush = () => new Promise((r) => setTimeout(r, 0));
+
+  it("captures transient network errors at warning level", async () => {
     const error = new Error("Failed to fetch");
     captureSupabaseError(error, "page-tree:workspace-lookup");
+    await flush();
 
     expect(captureExceptionMock).toHaveBeenCalledOnce();
     const [, opts] = captureExceptionMock.mock.calls[0];
@@ -98,24 +104,26 @@ describe("captureSupabaseError", () => {
     expect(opts.extra.operation).toBe("page-tree:workspace-lookup");
   });
 
-  it("captures PostgrestError with network details at warning level", () => {
+  it("captures PostgrestError with network details at warning level", async () => {
     const error = makePostgrestError({
       message: "request failed",
       details: "TypeError: Failed to fetch",
     });
     captureSupabaseError(error, "page-tree:fetch-pages");
+    await flush();
 
     expect(captureExceptionMock).toHaveBeenCalledOnce();
     const [, opts] = captureExceptionMock.mock.calls[0];
     expect(opts.level).toBe("warning");
   });
 
-  it("captures non-network errors at default (error) level", () => {
+  it("captures non-network errors at default (error) level", async () => {
     const error = makePostgrestError({
       message: "new row violates row-level security policy",
       code: "42501",
     });
     captureSupabaseError(error, "pages.insert");
+    await flush();
 
     expect(captureExceptionMock).toHaveBeenCalledOnce();
     const [, opts] = captureExceptionMock.mock.calls[0];
@@ -124,7 +132,7 @@ describe("captureSupabaseError", () => {
     expect(opts.extra.code).toBe("42501");
   });
 
-  it("includes PostgrestError fields in extra", () => {
+  it("includes PostgrestError fields in extra", async () => {
     const error = makePostgrestError({
       message: "duplicate key",
       code: "23505",
@@ -132,6 +140,7 @@ describe("captureSupabaseError", () => {
       hint: "",
     });
     captureSupabaseError(error, "pages.insert");
+    await flush();
 
     const [, opts] = captureExceptionMock.mock.calls[0];
     expect(opts.extra.code).toBe("23505");

@@ -1,6 +1,6 @@
 "use client";
 
-import * as Sentry from "@sentry/nextjs";
+import { lazyCaptureException } from "@/lib/capture";
 import { AlertCircle } from "lucide-react";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ export function RouteError({
   reset: () => void;
 }) {
   useEffect(() => {
-    Sentry.captureException(error);
+    lazyCaptureException(error);
   }, [error]);
 
   return (

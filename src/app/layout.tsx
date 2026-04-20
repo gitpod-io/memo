@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono } from "next/font/google";
-import { Toaster } from "sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Providers } from "@/components/providers";
 import "./globals.css";
 
 const jetbrainsMono = JetBrains_Mono({
@@ -25,14 +24,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${jetbrainsMono.variable} antialiased`}>
       <body className="min-h-screen">
-        <TooltipProvider>{children}</TooltipProvider>
-        <Toaster
-          theme="dark"
-          position="bottom-right"
-          toastOptions={{
-            className: "rounded-sm font-mono text-sm",
-          }}
-        />
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

@@ -1,6 +1,9 @@
-import * as Sentry from "@sentry/nextjs";
 import type { ErrorEvent } from "@sentry/nextjs";
 import { PostgrestError } from "@supabase/supabase-js";
+import { lazyCaptureException } from "@/lib/capture";
+
+// Re-export so existing imports keep working
+export { lazyCaptureException } from "@/lib/capture";
 
 /**
  * Error messages from Next.js internals that are caused by clients sending
@@ -74,9 +77,9 @@ export function captureSupabaseError(
   }
 
   if (isTransientNetworkError(error)) {
-    Sentry.captureException(error, { extra, level: "warning" });
+    lazyCaptureException(error, { extra, level: "warning" });
     return;
   }
 
-  Sentry.captureException(error, { extra });
+  lazyCaptureException(error, { extra });
 }

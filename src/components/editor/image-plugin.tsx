@@ -12,7 +12,7 @@ import {
   DROP_COMMAND,
   type LexicalCommand,
 } from "lexical";
-import * as Sentry from "@sentry/nextjs";
+import { lazyCaptureException } from "@/lib/capture";
 import { toast } from "sonner";
 import { $createImageNode, type ImagePayload } from "@/components/editor/image-node";
 import { createClient } from "@/lib/supabase/client";
@@ -118,7 +118,7 @@ export function ImagePlugin(): null {
               });
             })
             .catch((error) => {
-              Sentry.captureException(error);
+              lazyCaptureException(error);
               toast.error("Failed to upload image", { duration: 8000 });
             });
         }
@@ -168,7 +168,7 @@ export function openImagePicker(editor: ReturnType<typeof useLexicalComposerCont
         altText: file.name,
       });
     } catch (error) {
-      Sentry.captureException(error);
+      lazyCaptureException(error);
       toast.error("Failed to upload image", { duration: 8000 });
     }
   };

@@ -1,11 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 function GitHubIcon({ className }: { className?: string }) {
   return (
@@ -39,40 +34,26 @@ function GoogleIcon({ className }: { className?: string }) {
 export function OAuthButtons() {
   return (
     <div className="flex flex-col gap-2">
-      <Tooltip>
-        <TooltipTrigger
-          className="w-full"
-          render={
-            <Button
-              variant="outline"
-              className="w-full gap-2"
-              disabled
-              aria-label="Continue with GitHub — coming soon"
-            />
-          }
-        >
-          <GitHubIcon className="h-4 w-4" />
-          Continue with GitHub
-        </TooltipTrigger>
-        <TooltipContent>Coming soon</TooltipContent>
-      </Tooltip>
-      <Tooltip>
-        <TooltipTrigger
-          className="w-full"
-          render={
-            <Button
-              variant="outline"
-              className="w-full gap-2"
-              disabled
-              aria-label="Continue with Google — coming soon"
-            />
-          }
-        >
-          <GoogleIcon className="h-4 w-4" />
-          Continue with Google
-        </TooltipTrigger>
-        <TooltipContent>Coming soon</TooltipContent>
-      </Tooltip>
+      <Button
+        variant="outline"
+        className="w-full gap-2"
+        disabled
+        title="Coming soon"
+        aria-label="Continue with GitHub — coming soon"
+      >
+        <GitHubIcon className="h-4 w-4" />
+        Continue with GitHub
+      </Button>
+      <Button
+        variant="outline"
+        className="w-full gap-2"
+        disabled
+        title="Coming soon"
+        aria-label="Continue with Google — coming soon"
+      >
+        <GoogleIcon className="h-4 w-4" />
+        Continue with Google
+      </Button>
     </div>
   );
 }

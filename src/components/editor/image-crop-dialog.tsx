@@ -2,7 +2,7 @@
 
 import type { JSX } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import * as Sentry from "@sentry/nextjs";
+import { lazyCaptureException } from "@/lib/capture";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -217,7 +217,7 @@ export function ImageCropDialog({
 
       onCropComplete(result.url);
     } catch (error) {
-      Sentry.captureException(error);
+      lazyCaptureException(error);
       toast.error("Failed to crop image", { duration: 8000 });
     } finally {
       setIsSaving(false);
