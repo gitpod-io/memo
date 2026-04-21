@@ -84,7 +84,7 @@ jobs:
         run: supabase link --project-ref $SUPABASE_PROJECT_ID
 
       - name: Deploy migrations
-        run: supabase db push --yes
+        run: supabase db push --yes --include-all
 
       - name: Verify critical tables exist
         env:
