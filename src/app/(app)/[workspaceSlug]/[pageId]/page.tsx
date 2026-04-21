@@ -34,6 +34,40 @@ const PageViewClient = dynamic(
   },
 );
 
+const DatabaseViewClient = dynamic(
+  () =>
+    import("@/components/database/database-view-client").then(
+      (mod) => mod.DatabaseViewClient,
+    ),
+  {
+    loading: () => (
+      <>
+        <div className="flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="h-9 w-1/3 animate-pulse bg-muted" />
+          </div>
+        </div>
+        <div className="mt-6 space-y-3">
+          <div className="flex items-center gap-2 border-b border-white/[0.06] pb-2">
+            <div className="h-5 w-20 animate-pulse bg-muted" />
+            <div className="h-5 w-20 animate-pulse bg-muted" />
+          </div>
+          <div className="space-y-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex gap-2">
+                <div className="h-10 w-1/4 animate-pulse bg-muted" />
+                <div className="h-10 w-1/4 animate-pulse bg-muted" />
+                <div className="h-10 w-1/4 animate-pulse bg-muted" />
+                <div className="h-10 w-1/4 animate-pulse bg-muted" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </>
+    ),
+  },
+);
+
 export async function generateMetadata({
   params,
 }: {
@@ -155,22 +189,36 @@ export default async function PageView({
 
   // Supabase types jsonb columns as Json | null; narrow to Lexical's serialized state
   const initialContent = page.content as SerializedEditorState | null;
+  const isDatabase = page.is_database === true;
 
   return (
     <div className="mx-auto max-w-3xl p-6">
       <div className="mb-2">
         <PageBreadcrumb items={breadcrumbItems} />
       </div>
-      <PageViewClient
-        pageId={page.id}
-        pageTitle={page.title}
-        pageIcon={page.icon ?? null}
-        pageCoverUrl={page.cover_url ?? null}
-        initialContent={initialContent}
-        workspaceId={workspace.id}
-        workspaceSlug={workspaceSlug}
-        userId={user.id}
-      />
+      {isDatabase ? (
+        <DatabaseViewClient
+          pageId={page.id}
+          pageTitle={page.title}
+          pageIcon={page.icon ?? null}
+          pageCoverUrl={page.cover_url ?? null}
+          initialContent={initialContent}
+          workspaceId={workspace.id}
+          workspaceSlug={workspaceSlug}
+          userId={user.id}
+        />
+      ) : (
+        <PageViewClient
+          pageId={page.id}
+          pageTitle={page.title}
+          pageIcon={page.icon ?? null}
+          pageCoverUrl={page.cover_url ?? null}
+          initialContent={initialContent}
+          workspaceId={workspace.id}
+          workspaceSlug={workspaceSlug}
+          userId={user.id}
+        />
+      )}
       <Suspense fallback={null}>
         <PageBacklinks
           pageId={page.id}
