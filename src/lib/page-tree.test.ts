@@ -20,6 +20,7 @@ function makePage(overrides: Partial<Page> & { id: string }): Page {
     title: overrides.id,
     content: null,
     icon: null,
+    cover_url: null,
     position: 0,
     created_by: "user-1",
     created_at: "2024-01-01T00:00:00Z",

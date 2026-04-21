@@ -46,6 +46,7 @@ workspaces
         ├── parent_id → pages.id (nullable, enables nesting)
         ├── content: jsonb (Lexical editor state — NOT a separate blocks table)
         ├── icon: text (emoji character for page icon, nullable)
+        ├── cover_url: text (public URL of cover image in Supabase Storage, nullable)
         ├── position: integer (ordering among siblings)
         ├── created_by → profiles.id
         ├── deleted_at: timestamptz (nullable — NULL = active, non-null = trashed)
@@ -258,6 +259,7 @@ src/
 │   │   └── table-action-menu-plugin.tsx # Table cell context menu (add/delete rows/columns)
 │   ├── delete-account-section.tsx # Account deletion danger zone with double-confirm dialog
 │   ├── emoji-picker.tsx         # Floating emoji grid with search, used by page icon picker
+│   ├── page-cover.tsx           # Page cover image: upload, display, change, remove (saves to pages.cover_url)
 │   ├── page-icon.tsx            # Page icon display + emoji picker trigger (saves to pages.icon)
 │   ├── page-title.tsx           # Inline-editable page title (saves on blur/Enter)
 │   ├── page-breadcrumb.tsx       # Server component: breadcrumb nav (workspace → ancestors → current page)

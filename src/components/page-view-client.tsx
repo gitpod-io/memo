@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import type { LexicalEditor, SerializedEditorState } from "lexical";
 import { PageTitle } from "@/components/page-title";
 import { PageIcon } from "@/components/page-icon";
+import { PageCover } from "@/components/page-cover";
 
 const Editor = dynamic(
   () => import("@/components/editor/editor").then((mod) => mod.Editor),
@@ -32,6 +33,7 @@ interface PageViewClientProps {
   pageId: string;
   pageTitle: string;
   pageIcon: string | null;
+  pageCoverUrl: string | null;
   initialContent: SerializedEditorState | null;
   workspaceId: string;
   workspaceSlug: string;
@@ -42,6 +44,7 @@ export function PageViewClient({
   pageId,
   pageTitle,
   pageIcon,
+  pageCoverUrl,
   initialContent,
   workspaceId,
   workspaceSlug,
@@ -52,6 +55,11 @@ export function PageViewClient({
   return (
     <>
       <div className="group/page-header">
+        <PageCover
+          key={`cover-${pageId}`}
+          pageId={pageId}
+          initialCoverUrl={pageCoverUrl}
+        />
         <PageIcon key={`icon-${pageId}`} pageId={pageId} initialIcon={pageIcon} />
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
