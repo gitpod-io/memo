@@ -86,6 +86,31 @@ describe("GET /api/search", () => {
     expect(body.error).toBe("Unauthorized");
   });
 
+  it("returns 403 when RPC returns insufficient_privilege (42501)", async () => {
+    const mockGetUser = vi
+      .fn()
+      .mockResolvedValue({ data: { user: { id: "user-1" } } });
+    const insufficientPrivilegeError = Object.assign(
+      new Error("Not a member of this workspace"),
+      { code: "42501", details: null, hint: null },
+    );
+    const mockRpc = vi
+      .fn()
+      .mockResolvedValue({ data: null, error: insufficientPrivilegeError });
+    mockedCreateClient.mockResolvedValue({
+      auth: { getUser: mockGetUser },
+      rpc: mockRpc,
+    } as unknown as Awaited<ReturnType<typeof createClient>>);
+
+    const response = await GET(
+      makeRequest({ q: "test", workspace_id: "ws-1" }) as never,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body.error).toBe("Forbidden");
+  });
+
   it("returns 500 when RPC call fails", async () => {
     const mockGetUser = vi
       .fn()

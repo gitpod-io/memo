@@ -1077,6 +1077,30 @@ Additionally, `captureSupabaseError` automatically downgrades `PGRST205` errors 
 `warning` level as a safety net, but callers should still skip the call entirely for
 read operations on optional tables to avoid unnecessary noise.
 
+## Authorization Errors in API Routes (PostgreSQL 42501)
+
+When an RPC uses `RAISE EXCEPTION` to reject callers who lack access (e.g.
+non-members calling workspace-scoped functions), PostgreSQL returns error code
+`42501` (insufficient_privilege). This is an expected authorization check, not an
+application bug — API routes must return 403 and must NOT report to Sentry.
+
+Pattern: check for `42501` before calling `captureSupabaseError`:
+
+```typescript
+import { captureSupabaseError, isInsufficientPrivilegeError } from "@/lib/sentry";
+
+const { data, error } = await supabase.rpc("workspace_rpc", { ws_id: workspaceId });
+if (error) {
+  if (isInsufficientPrivilegeError(error)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  captureSupabaseError(error, "workspace_rpc");
+  return NextResponse.json({ error: "Operation failed" }, { status: 500 });
+}
+```
+
+Never return 500 for `42501` — it inflates Sentry error counts with non-bugs.
+
 ## This file evolves
 
 When you discover a new pattern that should be replicated, or an anti-pattern that

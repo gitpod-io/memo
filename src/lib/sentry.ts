@@ -56,6 +56,16 @@ export function isSchemaNotFoundError(error: Error): boolean {
 }
 
 /**
+ * True when PostgreSQL raises `insufficient_privilege` (42501). This occurs
+ * when an RPC uses `RAISE EXCEPTION` to reject callers who lack access
+ * (e.g. non-members calling workspace-scoped functions). It is an expected
+ * authorization check, not an application bug — API routes should return 403.
+ */
+export function isInsufficientPrivilegeError(error: Error): boolean {
+  return isPostgrestError(error) && error.code === "42501";
+}
+
+/**
  * True when the error is a transient network failure (e.g. offline, DNS
  * timeout, connection reset). These are not application bugs and should be
  * reported at warning level so they don't trigger error-level alerts.

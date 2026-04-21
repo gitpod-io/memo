@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/lib/supabase/server";
-import { captureSupabaseError } from "@/lib/sentry";
+import { captureSupabaseError, isInsufficientPrivilegeError } from "@/lib/sentry";
 
 export async function GET(request: NextRequest) {
   if (
@@ -47,6 +47,9 @@ export async function GET(request: NextRequest) {
     });
 
     if (error) {
+      if (isInsufficientPrivilegeError(error)) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
       captureSupabaseError(error, "search_pages");
       return NextResponse.json(
         { error: "Search failed" },
