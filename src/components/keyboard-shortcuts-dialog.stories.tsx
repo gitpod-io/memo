@@ -39,6 +39,7 @@ const macSections: ShortcutSection[] = [
       { keys: ["⌘", "K"], description: "Search pages" },
       { keys: ["⌘", "N"], description: "New page" },
       { keys: ["⌘", "\\"], description: "Toggle sidebar" },
+      { keys: ["⌘", "Shift", "F"], description: "Toggle focus mode" },
       { keys: ["?"], description: "Keyboard shortcuts" },
     ],
   },

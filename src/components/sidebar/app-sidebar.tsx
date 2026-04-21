@@ -43,7 +43,11 @@ function SidebarContent({
 }
 
 export function AppSidebar(props: AppSidebarProps) {
-  const { open, setOpen, isMobile } = useSidebar();
+  const { open, setOpen, isMobile, focusMode } = useSidebar();
+
+  if (focusMode) {
+    return null;
+  }
 
   if (isMobile) {
     return (

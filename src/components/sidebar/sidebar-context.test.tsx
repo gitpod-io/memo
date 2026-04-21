@@ -5,12 +5,13 @@ import { SidebarProvider, useSidebar } from "./sidebar-context";
 
 // Helper component that exposes sidebar context values for assertions
 function SidebarConsumer() {
-  const { open, isMobile, isMac, setOpen, toggle } = useSidebar();
+  const { open, isMobile, isMac, setOpen, toggle, focusMode, toggleFocusMode } = useSidebar();
   return (
     <div>
       <span data-testid="open">{String(open)}</span>
       <span data-testid="is-mobile">{String(isMobile)}</span>
       <span data-testid="is-mac">{String(isMac)}</span>
+      <span data-testid="focus-mode">{String(focusMode)}</span>
       <button data-testid="set-open-true" onClick={() => setOpen(true)}>
         Open
       </button>
@@ -19,6 +20,9 @@ function SidebarConsumer() {
       </button>
       <button data-testid="toggle" onClick={() => toggle()}>
         Toggle
+      </button>
+      <button data-testid="toggle-focus-mode" onClick={() => toggleFocusMode()}>
+        Toggle Focus Mode
       </button>
     </div>
   );
@@ -388,5 +392,179 @@ describe("useSidebar", () => {
     );
 
     spy.mockRestore();
+  });
+});
+
+describe("Focus mode", () => {
+  beforeEach(() => {
+    vi.stubGlobal("matchMedia", createMockMatchMedia(false));
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("defaults to focus mode off", () => {
+    render(
+      <SidebarProvider>
+        <SidebarConsumer />
+      </SidebarProvider>
+    );
+
+    expect(screen.getByTestId("focus-mode")).toHaveTextContent("false");
+  });
+
+  it("toggleFocusMode toggles focus mode on and off", () => {
+    render(
+      <SidebarProvider>
+        <SidebarConsumer />
+      </SidebarProvider>
+    );
+
+    expect(screen.getByTestId("focus-mode")).toHaveTextContent("false");
+
+    act(() => {
+      screen.getByTestId("toggle-focus-mode").click();
+    });
+    expect(screen.getByTestId("focus-mode")).toHaveTextContent("true");
+
+    act(() => {
+      screen.getByTestId("toggle-focus-mode").click();
+    });
+    expect(screen.getByTestId("focus-mode")).toHaveTextContent("false");
+  });
+
+  it("⌘+Shift+F toggles focus mode", () => {
+    render(
+      <SidebarProvider>
+        <SidebarConsumer />
+      </SidebarProvider>
+    );
+
+    expect(screen.getByTestId("focus-mode")).toHaveTextContent("false");
+
+    act(() => {
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "F",
+          shiftKey: true,
+          metaKey: true,
+          bubbles: true,
+        })
+      );
+    });
+
+    expect(screen.getByTestId("focus-mode")).toHaveTextContent("true");
+
+    act(() => {
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "F",
+          shiftKey: true,
+          metaKey: true,
+          bubbles: true,
+        })
+      );
+    });
+
+    expect(screen.getByTestId("focus-mode")).toHaveTextContent("false");
+  });
+
+  it("Ctrl+Shift+F also toggles focus mode", () => {
+    render(
+      <SidebarProvider>
+        <SidebarConsumer />
+      </SidebarProvider>
+    );
+
+    expect(screen.getByTestId("focus-mode")).toHaveTextContent("false");
+
+    act(() => {
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "F",
+          shiftKey: true,
+          ctrlKey: true,
+          bubbles: true,
+        })
+      );
+    });
+
+    expect(screen.getByTestId("focus-mode")).toHaveTextContent("true");
+  });
+
+  it("Escape exits focus mode", () => {
+    render(
+      <SidebarProvider>
+        <SidebarConsumer />
+      </SidebarProvider>
+    );
+
+    // Enter focus mode
+    act(() => {
+      screen.getByTestId("toggle-focus-mode").click();
+    });
+    expect(screen.getByTestId("focus-mode")).toHaveTextContent("true");
+
+    // Press Escape
+    act(() => {
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Escape",
+          bubbles: true,
+        })
+      );
+    });
+
+    expect(screen.getByTestId("focus-mode")).toHaveTextContent("false");
+  });
+
+  it("Escape does not exit focus mode when a dialog is open", () => {
+    render(
+      <SidebarProvider>
+        <SidebarConsumer />
+        <div data-state="open" role="dialog" />
+      </SidebarProvider>
+    );
+
+    // Enter focus mode
+    act(() => {
+      screen.getByTestId("toggle-focus-mode").click();
+    });
+    expect(screen.getByTestId("focus-mode")).toHaveTextContent("true");
+
+    // Press Escape — should be ignored because dialog is open
+    act(() => {
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Escape",
+          bubbles: true,
+        })
+      );
+    });
+
+    expect(screen.getByTestId("focus-mode")).toHaveTextContent("true");
+  });
+
+  it("Escape does nothing when focus mode is off", () => {
+    render(
+      <SidebarProvider>
+        <SidebarConsumer />
+      </SidebarProvider>
+    );
+
+    expect(screen.getByTestId("focus-mode")).toHaveTextContent("false");
+
+    act(() => {
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Escape",
+          bubbles: true,
+        })
+      );
+    });
+
+    expect(screen.getByTestId("focus-mode")).toHaveTextContent("false");
   });
 });
