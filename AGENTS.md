@@ -117,6 +117,7 @@ These automations work together to implement features and fix bugs autonomously:
 | Post-Merge Verifier | On PR merge | Smoke-tests production after merge |
 | UI Verifier | On PR merge | Checks design spec compliance |
 | Performance Monitor | Weekly | Checks latency, errors, build size |
+| Feedback Digest | Daily (8 AM UTC) | Posts categorized user feedback digest to Slack |
 | Needs-Human Requeue | Cron (30 min) | Re-queues issues after user responds |
 
 For full details on the development workflow, see `.ona/skills/development-workflow/SKILL.md`.
