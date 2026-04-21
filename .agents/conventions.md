@@ -1187,6 +1187,33 @@ and finally checks the message for the RLS violation pattern. This ensures
 custom RPC messages like "Not a member of this workspace" are correctly
 identified as authorization errors in catch blocks.
 
+### Client-side RLS skip pattern
+
+The same `isInsufficientPrivilegeError` guard applies to client-side code
+(`"use client"` components), not just API routes. When a Supabase mutation
+returns an RLS violation (e.g. workspace page limits, membership checks),
+skip `captureSupabaseError` — the user already sees a toast error:
+
+```typescript
+import {
+  captureSupabaseError,
+  isInsufficientPrivilegeError,
+  isSchemaNotFoundError,
+} from "@/lib/sentry";
+
+const { data, error } = await supabase.from("pages").insert({ ... }).select().single();
+if (error) {
+  if (!isSchemaNotFoundError(error) && !isInsufficientPrivilegeError(error)) {
+    captureSupabaseError(error, "page-tree:create-page");
+  }
+  toast.error("Failed to create page", { duration: 8000 });
+  return;
+}
+```
+
+Always guard both `isSchemaNotFoundError` and `isInsufficientPrivilegeError`
+before calling `captureSupabaseError` in client-side error handlers.
+
 ## Usage Event Tracking
 
 Product analytics events are recorded via two modules — `src/lib/track-event-server.ts`
