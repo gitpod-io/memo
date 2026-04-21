@@ -19,6 +19,7 @@ const BARE_CATCH_PERMANENT_ALLOWLIST = new Set([
   "src/app/api/health/route.ts", // intentionally silent, monitored externally
   "src/components/members/invite-form.tsx", // clipboard writeText — intentionally silent on permission denied
   "src/components/members/pending-invite-list.tsx", // clipboard writeText — intentionally silent on permission denied
+  "src/lib/use-persisted-expanded.ts", // localStorage read/write — intentionally silent in private browsing / SSR
 ]);
 
 /**
