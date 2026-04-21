@@ -191,10 +191,11 @@ export function TrashSection() {
       <button
         className="flex items-center gap-2 px-2 py-0.5 text-xs tracking-widest uppercase text-white/30 hover:text-white/50"
         onClick={() => setExpanded((prev) => !prev)}
+        aria-expanded={expanded}
       >
         <Trash2 className="h-3 w-3" />
         <span className="flex-1 text-left">Trash</span>
-        <span className="text-[10px] tabular-nums">{trashedPages.length}</span>
+        <span className="text-xs tabular-nums">{trashedPages.length}</span>
       </button>
 
       {expanded && (
