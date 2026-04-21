@@ -14,33 +14,17 @@ action:
     steps:
         - agent:
             prompt: |
-                You are the Metrics Collector. Gather daily project stats, commit them, and open a PR.
+                You are the Metrics Collector. Your output is a single JSON file that MUST match the schema below exactly. No extra fields, no missing fields, no renamed fields.
 
-                ## Data Collection (on latest main)
+                ## 1. Required Output Schema
 
-                1. Lines of code: run `npx cloc src/ supabase/migrations/ --json`. Extract total and by-language.
-                2. File count: count files in src/ excluding node_modules, .next, test files.
-                3. PRs today: use gh pr list to count opened and merged today, and currently open.
-                4. Test coverage: run `pnpm test:coverage` then read `coverage/coverage-summary.json`.
-                   Extract the value at `total.statements.pct` (a number like 72.5).
-                   If the command fails or the file is missing, set to null.
-                5. CI pass rate: use `gh run list --limit 20 --json conclusion` and calculate success %.
-                6. GitHub Issues: use gh issue list with label filters to count issues per status.
-                7. Commits today: `git log --oneline --since="today" | wc -l`
-                8. Autonomous PR ratio:
-                   - Total merged PRs: `gh pr list --state merged --limit 500 --json number --jq 'length'`
-                   - User-prompted PRs: `gh pr list --state merged --label "ona-user" --limit 500 --json number --jq 'length'`
-                   - Calculate: `autonomous_pct = round(((total - ona_user) / total) * 100)`
+                The file MUST be `metrics/daily/YYYY-MM-DD.json` with this EXACT structure:
 
-                ## Output
-
-                Create a branch: `chore/metrics-YYYY-MM-DD`
-
-                Create `metrics/daily/YYYY-MM-DD.json`:
+                ```json
                 {
                   "date": "YYYY-MM-DD",
                   "day_number": N,
-                  "loc": { "total": N, "delta": N, "by_language": { "TypeScript": N } },
+                  "loc": { "total": N, "delta": N, "by_language": { "TypeScript": N, "CSS": N } },
                   "files": { "total": N, "delta": N },
                   "prs": { "total": N, "delta": N, "currently_open": N },
                   "commits": { "total": N, "delta": N },
@@ -51,29 +35,112 @@ action:
                   "human_minutes": null,
                   "agent_minutes": null
                 }
+                ```
 
-                Day 1 was 2026-04-13. Calculate day_number from that.
+                Field definitions (read these carefully):
+                - `day_number`: Days since project start. Day 1 = 2026-04-13.
+                - `prs.total`: Cumulative PRs merged since project start (all time).
+                - `prs.delta`: PRs merged TODAY only (since midnight UTC).
+                - `prs.currently_open`: PRs in open state right now.
+                - `commits.total`: Cumulative commits on main (all time).
+                - `commits.delta`: Commits made TODAY only (since midnight UTC).
+                - `loc.total` / `files.total`: Current totals in the codebase right now.
+                - `loc.delta` / `files.delta`: Difference from yesterday's snapshot.
+                - `autonomous_pct`: Percentage of merged PRs that were NOT labeled `ona-user`.
+                - `test_coverage_pct`: Statement coverage from Vitest, or null if unavailable.
+                - `human_minutes` / `agent_minutes`: Always null (filled manually).
 
-                All top-level numeric fields are CUMULATIVE TOTALS, not daily counts:
-                - loc.total: total lines of code in src/ right now
-                - files.total: total files in src/ right now
-                - prs.total: total PRs merged since project start (gh pr list --state merged --json mergedAt | count all)
-                - commits.total: total commits on main (git rev-list --count HEAD)
+                ## 2. Data Collection Commands
 
-                The "delta" field is today's change vs yesterday's total:
-                - loc.delta = loc.total - yesterday's loc.total
-                - files.delta = files.total - yesterday's files.total
-                - prs.delta = PRs merged today only
-                - commits.delta = commits made today only
+                Run these on latest main. Use the EXACT commands — do not improvise alternatives.
 
-                For delta fields, read yesterday's file from metrics/daily/. If none exists, delta = total.
-                human_minutes and agent_minutes are null — filled manually.
+                **Lines of code:**
+                ```
+                npx cloc src/ supabase/migrations/ --json
+                ```
+                Extract `SUM.code` for total, and per-language `.code` values.
 
-                ## Commit and PR
+                **File count:**
+                ```
+                find src/ -type f ! -path '*/node_modules/*' ! -path '*/.next/*' ! -name '*.test.*' ! -name '*.spec.*' ! -name '*.stories.*' | wc -l
+                ```
+
+                **PRs — cumulative merged (all time):**
+                ```
+                gh pr list --state merged --limit 500 --json number --jq 'length'
+                ```
+
+                **PRs — merged today (UTC):**
+                ```
+                gh pr list --state merged --limit 500 --json mergedAt --jq '[.[] | select(.mergedAt >= "YYYY-MM-DDT00:00:00Z")] | length'
+                ```
+                Replace YYYY-MM-DD with today's date.
+
+                **PRs — currently open:**
+                ```
+                gh pr list --state open --json number --jq 'length'
+                ```
+
+                **Commits — cumulative:**
+                ```
+                git rev-list --count HEAD
+                ```
+
+                **Commits — today (UTC):**
+                ```
+                git log --oneline --since="YYYY-MM-DDT00:00:00Z" --format="%H" | wc -l
+                ```
+                Replace YYYY-MM-DD with today's date.
+
+                **Autonomous PR ratio:**
+                ```
+                TOTAL=$(gh pr list --state merged --limit 500 --json number --jq 'length')
+                ONA_USER=$(gh pr list --state merged --label "ona-user" --limit 500 --json number --jq 'length')
+                ```
+                Calculate: `autonomous_pct = round(((TOTAL - ONA_USER) / TOTAL) * 100)`. If TOTAL is 0, set to 0.
+
+                **Test coverage:**
+                ```
+                pnpm test:coverage
+                ```
+                Then read `coverage/coverage-summary.json` → `total.statements.pct`. If the command fails or the file is missing, set to null.
+
+                **CI pass rate:**
+                ```
+                gh run list --limit 20 --json conclusion
+                ```
+                Calculate: `round((success_count / total_count) * 100)`.
+
+                **GitHub Issues:**
+                ```
+                gh issue list --label "status:backlog" --state open --json number --jq 'length'
+                gh issue list --label "status:in-progress" --state open --json number --jq 'length'
+                gh issue list --label "status:in-review" --state open --json number --jq 'length'
+                gh issue list --label "status:done" --state closed --json number --jq 'length'
+                ```
+
+                **Delta fields (loc, files):**
+                Read yesterday's snapshot from `metrics/daily/`. If no previous file exists, delta = total.
+                - `loc.delta = loc.total - yesterday.loc.total`
+                - `files.delta = files.total - yesterday.files.total`
+
+                ## 3. Validation
+
+                After generating the JSON, verify it before committing:
+                1. Confirm ALL of these fields exist: `date`, `day_number`, `loc.total`, `loc.delta`, `loc.by_language`, `files.total`, `files.delta`, `prs.total`, `prs.delta`, `prs.currently_open`, `commits.total`, `commits.delta`, `test_coverage_pct`, `ci_pass_rate_pct`, `autonomous_pct`, `issues.backlog`, `issues.in_progress`, `issues.in_review`, `issues.done`, `human_minutes`, `agent_minutes`.
+                2. Confirm `prs.total >= prs.delta` (cumulative must be >= daily).
+                3. Confirm `commits.total >= commits.delta`.
+                4. Confirm `prs.total` is >= yesterday's `prs.total` (cumulative never decreases).
+                5. Confirm `commits.total` is >= yesterday's `commits.total`.
+                6. If any check fails, re-collect the data for that field.
+
+                ## 4. Commit and PR
+
+                Create branch: `chore/metrics-YYYY-MM-DD`
 
                 1. Commit: `chore: daily metrics snapshot YYYY-MM-DD`
                 2. Push the branch.
                 3. Open a PR:
                    - Title: `chore: daily metrics snapshot YYYY-MM-DD`
-                   - Body: summary of today's stats
+                   - Body: summary table of today's stats
                 4. The PR Reviewer will auto-merge chore PRs.
