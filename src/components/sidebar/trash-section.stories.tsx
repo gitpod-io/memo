@@ -62,10 +62,13 @@ export const Collapsed: Story = {
   render: () => (
     <div className="w-56 bg-muted p-2">
       <div className="flex flex-col gap-0.5">
-        <button className="flex items-center gap-2 px-2 py-0.5 text-xs tracking-widest uppercase text-white/30 hover:text-white/50">
+        <button
+          className="flex items-center gap-2 px-2 py-0.5 text-xs tracking-widest uppercase text-white/30 hover:text-white/50"
+          aria-expanded={false}
+        >
           <Trash2 className="h-3 w-3" />
           <span className="flex-1 text-left">Trash</span>
-          <span className="text-[10px] tabular-nums">3</span>
+          <span className="text-xs tabular-nums">3</span>
         </button>
       </div>
     </div>
@@ -76,10 +79,13 @@ export const Expanded: Story = {
   render: () => (
     <div className="w-56 bg-muted p-2">
       <div className="flex flex-col gap-0.5">
-        <button className="flex items-center gap-2 px-2 py-0.5 text-xs tracking-widest uppercase text-white/30 hover:text-white/50">
+        <button
+          className="flex items-center gap-2 px-2 py-0.5 text-xs tracking-widest uppercase text-white/30 hover:text-white/50"
+          aria-expanded={true}
+        >
           <Trash2 className="h-3 w-3" />
           <span className="flex-1 text-left">Trash</span>
-          <span className="text-[10px] tabular-nums">3</span>
+          <span className="text-xs tabular-nums">3</span>
         </button>
         <div className="flex flex-col gap-0.5">
           {mockTrashedPages.map((page) => (
@@ -103,10 +109,13 @@ export const SingleItem: Story = {
   render: () => (
     <div className="w-56 bg-muted p-2">
       <div className="flex flex-col gap-0.5">
-        <button className="flex items-center gap-2 px-2 py-0.5 text-xs tracking-widest uppercase text-white/30 hover:text-white/50">
+        <button
+          className="flex items-center gap-2 px-2 py-0.5 text-xs tracking-widest uppercase text-white/30 hover:text-white/50"
+          aria-expanded={true}
+        >
           <Trash2 className="h-3 w-3" />
           <span className="flex-1 text-left">Trash</span>
-          <span className="text-[10px] tabular-nums">1</span>
+          <span className="text-xs tabular-nums">1</span>
         </button>
         <div className="flex flex-col gap-0.5">
           <TrashItem icon="📝" title="Old Meeting Notes" />
