@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/lib/supabase/server";
-import { captureSupabaseError } from "@/lib/sentry";
+import { captureSupabaseError, isInsufficientPrivilegeError } from "@/lib/sentry";
 
 export async function DELETE() {
   if (
@@ -42,6 +42,9 @@ export async function DELETE() {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
+    if (error instanceof Error && isInsufficientPrivilegeError(error)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     Sentry.captureException(error);
     return NextResponse.json(
       { error: "Internal server error" },

@@ -38,6 +38,9 @@ export async function GET(
 
     return NextResponse.json({ versions: data ?? [] });
   } catch (error) {
+    if (error instanceof Error && isInsufficientPrivilegeError(error)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     Sentry.captureException(error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
@@ -103,6 +106,9 @@ export async function POST(
 
     return NextResponse.json({ version: data });
   } catch (error) {
+    if (error instanceof Error && isInsufficientPrivilegeError(error)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     Sentry.captureException(error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 
 // Mock Sentry
 vi.mock("@sentry/nextjs", () => ({
@@ -20,12 +21,27 @@ function createChain(result: { data: unknown; error: unknown }) {
   return new Proxy(chain, handler);
 }
 
+// Chainable query builder that throws when awaited
+function createThrowingChain(error: Error) {
+  const chain: Record<string, unknown> = {};
+  const handler: ProxyHandler<Record<string, unknown>> = {
+    get(_target, prop: string) {
+      if (prop === "then") {
+        return (_resolve: unknown, reject: (e: Error) => void) => reject(error);
+      }
+      return () => new Proxy(chain, handler);
+    },
+  };
+  return new Proxy(chain, handler);
+}
+
 let listResult: { data: unknown; error: unknown } = { data: [], error: null };
 let dedupResult: { data: unknown; error: unknown } = { data: null, error: null };
 let insertResult: { data: unknown; error: unknown } = {
   data: { id: "new-version-id", created_at: "2026-04-21T10:00:00Z" },
   error: null,
 };
+let throwOnInsert: Error | null = null;
 
 const mockGetUser = vi.fn();
 let callIndex = 0;
@@ -40,7 +56,10 @@ vi.mock("@/lib/supabase/server", () => ({
         if (idx === 0) return createChain(listResult);
         return createChain(dedupResult);
       },
-      insert: () => createChain(insertResult),
+      insert: () => {
+        if (throwOnInsert) return createThrowingChain(throwOnInsert);
+        return createChain(insertResult);
+      },
     }),
   }),
 }));
@@ -61,6 +80,7 @@ const mockParams = Promise.resolve({ pageId: "page-123" });
 beforeEach(() => {
   vi.clearAllMocks();
   callIndex = 0;
+  throwOnInsert = null;
   mockGetUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
   listResult = { data: [], error: null };
   dedupResult = { data: null, error: null };
@@ -164,5 +184,30 @@ describe("POST /api/pages/[pageId]/versions", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.skipped).toBe(true);
+  });
+
+  it("returns 403 when RLS violation is thrown as exception (MEMO-M regression)", async () => {
+    // Simulate Supabase throwing a 42501 error as an exception
+    // instead of returning it in { data, error }
+    const rlsError = Object.assign(
+      new Error("new row violates row-level security policy for table \"page_versions\""),
+      { code: "42501", details: null, hint: null },
+    );
+    throwOnInsert = rlsError;
+    // First select = dedup check (no existing version)
+    listResult = { data: null, error: null };
+
+    const res = await POST(
+      makeRequest("/api/pages/page-123/versions", {
+        method: "POST",
+        body: JSON.stringify({ content: { root: { children: [] } } }),
+      }),
+      { params: mockParams },
+    );
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.error).toBe("Forbidden");
+    // Must NOT report to Sentry at error level
+    expect(Sentry.captureException).not.toHaveBeenCalled();
   });
 });
