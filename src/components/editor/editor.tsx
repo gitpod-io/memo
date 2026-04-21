@@ -32,6 +32,7 @@ import type {
   SerializedEditorState,
 } from "lexical";
 import { lazyCaptureException } from "@/lib/capture";
+import { isTransientNetworkError } from "@/lib/sentry";
 import { editorTheme } from "@/components/editor/theme";
 import { SlashCommandPlugin } from "@/components/editor/slash-command-plugin";
 import { FloatingToolbarPlugin } from "@/components/editor/floating-toolbar-plugin";
@@ -224,7 +225,13 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ content: json }),
-            }).catch((err) => lazyCaptureException(err));
+            }).catch((err) => {
+              if (err instanceof Error && isTransientNetworkError(err)) {
+                lazyCaptureException(err, { level: "warning" });
+              } else {
+                lazyCaptureException(err);
+              }
+            });
           }
         } else {
           lazyCaptureException(error);
