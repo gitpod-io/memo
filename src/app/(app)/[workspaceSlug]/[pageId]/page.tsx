@@ -3,13 +3,17 @@ import { notFound } from "next/navigation";
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/server";
 import type { SerializedEditorState } from "lexical";
+import {
+  PageBreadcrumb,
+  type BreadcrumbItem,
+} from "@/components/page-breadcrumb";
 
 const PageViewClient = dynamic(
   () =>
     import("@/components/page-view-client").then((mod) => mod.PageViewClient),
   {
     loading: () => (
-      <div className="mx-auto max-w-3xl p-6">
+      <>
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
             <div className="h-9 w-1/3 animate-pulse bg-muted" />
@@ -21,7 +25,7 @@ const PageViewClient = dynamic(
           <div className="h-4 w-5/6 animate-pulse bg-muted" />
           <div className="h-4 w-4/6 animate-pulse bg-muted" />
         </div>
-      </div>
+      </>
     ),
   },
 );
@@ -69,7 +73,7 @@ export default async function PageView({
     supabase.auth.getUser(),
     supabase
       .from("workspaces")
-      .select("id")
+      .select("id, name")
       .eq("slug", workspaceSlug)
       .maybeSingle(),
   ]);
@@ -83,29 +87,59 @@ export default async function PageView({
     notFound();
   }
 
-  const { data: page } = await supabase
-    .from("pages")
-    .select("*")
-    .eq("id", pageId)
-    .eq("workspace_id", workspace.id)
-    .maybeSingle();
+  // Fetch page and ancestors in parallel
+  const [{ data: page }, { data: ancestors }] = await Promise.all([
+    supabase
+      .from("pages")
+      .select("*")
+      .eq("id", pageId)
+      .eq("workspace_id", workspace.id)
+      .maybeSingle(),
+    supabase.rpc("get_page_ancestors", { page_id: pageId }),
+  ]);
 
   if (!page) {
     notFound();
   }
 
+  // Build breadcrumb: workspace → ancestors → current page
+  const breadcrumbItems: BreadcrumbItem[] = [
+    {
+      id: workspace.id,
+      title: workspace.name,
+      href: `/${workspaceSlug}`,
+    },
+    ...((ancestors as { id: string; title: string; icon: string | null }[]) ?? []).map(
+      (ancestor) => ({
+        id: ancestor.id,
+        title: ancestor.title,
+        href: `/${workspaceSlug}/${ancestor.id}`,
+      }),
+    ),
+    {
+      id: page.id,
+      title: page.title,
+      href: `/${workspaceSlug}/${page.id}`,
+    },
+  ];
+
   // Supabase types jsonb columns as Json | null; narrow to Lexical's serialized state
   const initialContent = page.content as SerializedEditorState | null;
 
   return (
-    <PageViewClient
-      pageId={page.id}
-      pageTitle={page.title}
-      pageIcon={page.icon ?? null}
-      initialContent={initialContent}
-      workspaceId={workspace.id}
-      workspaceSlug={workspaceSlug}
-      userId={user.id}
-    />
+    <div className="mx-auto max-w-3xl p-6">
+      <div className="mb-2">
+        <PageBreadcrumb items={breadcrumbItems} />
+      </div>
+      <PageViewClient
+        pageId={page.id}
+        pageTitle={page.title}
+        pageIcon={page.icon ?? null}
+        initialContent={initialContent}
+        workspaceId={workspace.id}
+        workspaceSlug={workspaceSlug}
+        userId={user.id}
+      />
+    </div>
   );
 }
