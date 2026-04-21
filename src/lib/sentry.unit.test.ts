@@ -11,6 +11,7 @@ vi.mock("@sentry/nextjs", () => ({
 import {
   isTransientNetworkError,
   isSchemaNotFoundError,
+  isInsufficientPrivilegeError,
   captureSupabaseError,
   isNextjsInternalNoise,
 } from "./sentry";
@@ -105,6 +106,37 @@ describe("isSchemaNotFoundError", () => {
   it("returns false for generic errors", () => {
     const error = new Error("Something went wrong");
     expect(isSchemaNotFoundError(error)).toBe(false);
+  });
+});
+
+describe("isInsufficientPrivilegeError", () => {
+  it("detects PostgreSQL 42501 (insufficient_privilege)", () => {
+    const error = makePostgrestError({
+      message: "Not a member of this workspace",
+      code: "42501",
+    });
+    expect(isInsufficientPrivilegeError(error)).toBe(true);
+  });
+
+  it("returns false for other PostgrestError codes", () => {
+    const error = makePostgrestError({
+      message: "duplicate key",
+      code: "23505",
+    });
+    expect(isInsufficientPrivilegeError(error)).toBe(false);
+  });
+
+  it("returns false for PGRST205 errors", () => {
+    const error = makePostgrestError({
+      message: "Could not find the table",
+      code: "PGRST205",
+    });
+    expect(isInsufficientPrivilegeError(error)).toBe(false);
+  });
+
+  it("returns false for generic errors", () => {
+    const error = new Error("Something went wrong");
+    expect(isInsufficientPrivilegeError(error)).toBe(false);
   });
 });
 
