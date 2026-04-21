@@ -51,7 +51,9 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@/lib/sentry", () => ({
   captureSupabaseError: vi.fn(),
-  isInsufficientPrivilegeError: (err: { code: string }) => err.code === "42501",
+  isInsufficientPrivilegeError: (err: Error & { code?: string }) =>
+    err.code === "42501" ||
+    err.message?.includes("violates row-level security policy"),
 }));
 
 const { GET, POST } = await import("./route");

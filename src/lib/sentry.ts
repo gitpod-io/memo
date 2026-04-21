@@ -110,9 +110,17 @@ export function isSchemaNotFoundError(error: Error): boolean {
  * when an RPC uses `RAISE EXCEPTION` to reject callers who lack access
  * (e.g. non-members calling workspace-scoped functions). It is an expected
  * authorization check, not an application bug — API routes should return 403.
+ *
+ * Matches both PostgrestError objects (with `code` property) and generic
+ * Error instances whose message contains the RLS violation pattern. Supabase
+ * may surface 42501 errors as thrown exceptions without PostgrestError shape
+ * when the query builder promise rejects instead of returning `{ error }`.
  */
 export function isInsufficientPrivilegeError(error: Error): boolean {
-  return isPostgrestError(error) && error.code === "42501";
+  if (isPostgrestError(error)) {
+    return error.code === "42501";
+  }
+  return error.message.includes("violates row-level security policy");
 }
 
 /**

@@ -243,14 +243,21 @@ Check `supabase/migrations/` for constraint names. The naming convention is
 
 ### API route catch blocks
 
-All catch blocks in API routes must call `Sentry.captureException`:
+All catch blocks in API routes must call `Sentry.captureException`, but filter
+out expected authorization errors first. Supabase may throw RLS violations as
+generic `Error` instances (without PostgrestError shape) in catch blocks, so
+always check with `isInsufficientPrivilegeError` before reporting to Sentry:
 
 ```typescript
 import * as Sentry from "@sentry/nextjs";
+import { isInsufficientPrivilegeError } from "@/lib/sentry";
 
 try {
   // ... route logic
 } catch (error) {
+  if (error instanceof Error && isInsufficientPrivilegeError(error)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   Sentry.captureException(error);
   return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 }
