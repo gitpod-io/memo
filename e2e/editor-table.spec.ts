@@ -246,18 +246,99 @@ test.describe("Editor table blocks", () => {
     );
   });
 
-  // Bug: The TableActionMenuPlugin uses createPortal to render a trigger
-  // button into the table cell DOM, but Lexical's DOM reconciler removes
-  // the portaled content. The trigger button never appears in the DOM.
-  test.skip("user can add a row via the table action menu", async () => {
-    // Blocked by: table action menu trigger not rendering
+  test("user can add a row via the table action menu", async ({
+    authenticatedPage: page,
+  }) => {
+    const editor = page.locator('[contenteditable="true"]');
+    const table = await insertTable(page);
+
+    // Default: 3 rows (1 header + 2 body)
+    await expect(table.locator("tr")).toHaveCount(3);
+
+    // Focus the first header cell to activate the trigger
+    await focusFirstCell(page);
+
+    const trigger = page.locator('button[aria-label="Table cell actions"]');
+    await expect(trigger).toBeVisible({ timeout: 5_000 });
+    await trigger.click();
+
+    const insertBelow = page.getByText("Insert row below");
+    await expect(insertBelow).toBeVisible({ timeout: 3_000 });
+    await insertBelow.click();
+
+    // Now 4 rows
+    await expect(table.locator("tr")).toHaveCount(4, { timeout: 3_000 });
+    // Column count unchanged
+    await expect(table.locator("th")).toHaveCount(3);
   });
 
-  test.skip("user can add a column via the table action menu", async () => {
-    // Blocked by: table action menu trigger not rendering
+  test("user can add a column via the table action menu", async ({
+    authenticatedPage: page,
+  }) => {
+    const editor = page.locator('[contenteditable="true"]');
+    const table = await insertTable(page);
+
+    // Default: 3 columns
+    await expect(table.locator("th")).toHaveCount(3);
+
+    await focusFirstCell(page);
+
+    const trigger = page.locator('button[aria-label="Table cell actions"]');
+    await expect(trigger).toBeVisible({ timeout: 5_000 });
+    await trigger.click();
+
+    const insertRight = page.getByText("Insert column right");
+    await expect(insertRight).toBeVisible({ timeout: 3_000 });
+    await insertRight.click();
+
+    // Now 4 columns in the header row
+    await expect(table.locator("th")).toHaveCount(4, { timeout: 3_000 });
+    // Body rows also have 4 cells each (2 body rows × 4 = 8)
+    await expect(table.locator("td")).toHaveCount(8, { timeout: 3_000 });
+    // Row count unchanged
+    await expect(table.locator("tr")).toHaveCount(3);
   });
 
-  test.skip("user can delete a row and a column via the table action menu", async () => {
-    // Blocked by: table action menu trigger not rendering
+  test("user can delete a row and a column via the table action menu", async ({
+    authenticatedPage: page,
+  }) => {
+    const editor = page.locator('[contenteditable="true"]');
+    const table = await insertTable(page);
+
+    // Default: 3 rows, 3 columns
+    await expect(table.locator("tr")).toHaveCount(3);
+    await expect(table.locator("th")).toHaveCount(3);
+
+    // Click into a body cell (first td) to delete a body row
+    const firstTd = table.locator("td").first();
+    await expect(firstTd).toBeVisible({ timeout: 3_000 });
+    await firstTd.click();
+    await page.waitForTimeout(500);
+
+    const trigger = page.locator('button[aria-label="Table cell actions"]');
+    await expect(trigger).toBeVisible({ timeout: 5_000 });
+    await trigger.click();
+
+    const deleteRow = page.getByText("Delete row");
+    await expect(deleteRow).toBeVisible({ timeout: 3_000 });
+    await deleteRow.click();
+
+    // Now 2 rows (1 header + 1 body)
+    await expect(table.locator("tr")).toHaveCount(2, { timeout: 3_000 });
+
+    // Focus a cell again to delete a column
+    await focusFirstCell(page);
+
+    await expect(trigger).toBeVisible({ timeout: 5_000 });
+    await trigger.click();
+
+    const deleteCol = page.getByText("Delete column");
+    await expect(deleteCol).toBeVisible({ timeout: 3_000 });
+    await deleteCol.click();
+
+    // Now 2 columns
+    await expect(table.locator("th")).toHaveCount(2, { timeout: 3_000 });
+    // 1 body row × 2 columns = 2 td cells
+    await expect(table.locator("td")).toHaveCount(2, { timeout: 3_000 });
   });
 });
