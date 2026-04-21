@@ -374,3 +374,51 @@ export const FullDocument: Story = {
     </div>
   ),
 };
+
+export const AutoLinks: Story = {
+  render: () => (
+    <div className="mx-auto max-w-2xl space-y-1">
+      <h2 className={editorTheme.heading?.h2}>Auto-linked URLs</h2>
+      <p className={editorTheme.paragraph}>
+        URLs typed in the editor are auto-linked:{" "}
+        <a href="https://example.com" className={editorTheme.link}>
+          https://example.com
+        </a>
+      </p>
+      <p className={editorTheme.paragraph}>
+        URLs with paths and query strings:{" "}
+        <a
+          href="https://example.com/docs?page=1#intro"
+          className={editorTheme.link}
+        >
+          https://example.com/docs?page=1#intro
+        </a>
+      </p>
+      <p className={editorTheme.paragraph}>
+        Bare www URLs are also detected:{" "}
+        <a href="https://www.example.com" className={editorTheme.link}>
+          www.example.com
+        </a>
+      </p>
+      <h2 className={editorTheme.heading?.h2}>Auto-linked emails</h2>
+      <p className={editorTheme.paragraph}>
+        Email addresses become mailto links:{" "}
+        <a href="mailto:user@example.com" className={editorTheme.link}>
+          user@example.com
+        </a>
+      </p>
+      <h2 className={editorTheme.heading?.h2}>Mixed content</h2>
+      <p className={editorTheme.paragraph}>
+        Visit{" "}
+        <a href="https://github.com" className={editorTheme.link}>
+          https://github.com
+        </a>{" "}
+        or email{" "}
+        <a href="mailto:support@example.com" className={editorTheme.link}>
+          support@example.com
+        </a>{" "}
+        for help.
+      </p>
+    </div>
+  ),
+};

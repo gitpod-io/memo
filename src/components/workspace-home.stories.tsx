@@ -1,6 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { FileText, Plus } from "lucide-react";
+import { FileText, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RelativeTime } from "@/components/relative-time";
 
 const meta: Meta = {
@@ -19,25 +27,43 @@ const mockPages = [
     id: "p1",
     title: "Getting Started",
     icon: "🚀",
+    created_at: new Date(Date.now() - 10 * 86_400_000).toISOString(),
     updated_at: new Date(Date.now() - 2 * 3_600_000).toISOString(),
   },
   {
     id: "p2",
     title: "API Reference",
     icon: null,
+    created_at: new Date(Date.now() - 7 * 86_400_000).toISOString(),
     updated_at: new Date(Date.now() - 86_400_000).toISOString(),
   },
   {
     id: "p3",
     title: "Design System",
     icon: "🎨",
+    created_at: new Date(Date.now() - 5 * 86_400_000).toISOString(),
     updated_at: new Date(Date.now() - 3 * 86_400_000).toISOString(),
   },
   {
     id: "p4",
     title: "",
     icon: null,
+    created_at: new Date(Date.now() - 2 * 86_400_000).toISOString(),
     updated_at: new Date(Date.now() - 5 * 86_400_000).toISOString(),
+  },
+  {
+    id: "p5",
+    title: "Architecture Overview",
+    icon: "🏗️",
+    created_at: new Date(Date.now() - 14 * 86_400_000).toISOString(),
+    updated_at: new Date(Date.now() - 6 * 3_600_000).toISOString(),
+  },
+  {
+    id: "p6",
+    title: "Meeting Notes",
+    icon: "📝",
+    created_at: new Date(Date.now() - 1 * 86_400_000).toISOString(),
+    updated_at: new Date(Date.now() - 30 * 60_000).toISOString(),
   },
 ];
 
@@ -89,6 +115,41 @@ function PageItem({
   );
 }
 
+function SortFilterBar() {
+  return (
+    <div className="mb-3 flex items-center gap-2">
+      <div className="relative flex-1">
+        <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Filter pages…"
+          className="pl-8"
+          aria-label="Filter pages by title"
+        />
+      </div>
+      <Select defaultValue="updated_desc">
+        <SelectTrigger
+          size="sm"
+          className="w-auto shrink-0"
+          aria-label="Sort pages"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="updated_desc">Last modified</SelectItem>
+          <SelectItem value="title_asc">Title A-Z</SelectItem>
+          <SelectItem value="title_desc">Title Z-A</SelectItem>
+          <SelectItem value="created_desc">
+            Date created (newest)
+          </SelectItem>
+          <SelectItem value="created_asc">
+            Date created (oldest)
+          </SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 // WorkspaceHome uses next/navigation and Supabase. These stories
 // render the visual appearance with static data.
 export const WithPages: Story = {
@@ -101,15 +162,21 @@ export const WithPages: Story = {
           New Page
         </Button>
       </div>
-      <div className="mt-6 flex flex-col gap-0.5">
-        {mockPages.map((page) => (
-          <PageItem
-            key={page.id}
-            icon={page.icon}
-            title={page.title}
-            timeStr={page.updated_at}
-          />
-        ))}
+      <div className="mt-6">
+        <h2 className="mb-2 text-xs uppercase tracking-widest text-white/30">
+          All Pages
+        </h2>
+        <SortFilterBar />
+        <div className="flex flex-col gap-0.5">
+          {mockPages.map((page) => (
+            <PageItem
+              key={page.id}
+              icon={page.icon}
+              title={page.title}
+              timeStr={page.updated_at}
+            />
+          ))}
+        </div>
       </div>
     </div>
   ),
@@ -140,15 +207,70 @@ export const WithRecentVisits: Story = {
           ))}
         </div>
       </div>
-      <div className="mt-6 flex flex-col gap-0.5">
-        {mockPages.map((page) => (
-          <PageItem
-            key={page.id}
-            icon={page.icon}
-            title={page.title}
-            timeStr={page.updated_at}
-          />
-        ))}
+      <div className="mt-6">
+        <h2 className="mb-2 text-xs uppercase tracking-widest text-white/30">
+          All Pages
+        </h2>
+        <SortFilterBar />
+        <div className="flex flex-col gap-0.5">
+          {mockPages.map((page) => (
+            <PageItem
+              key={page.id}
+              icon={page.icon}
+              title={page.title}
+              timeStr={page.updated_at}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  ),
+};
+
+export const FilterNoResults: Story = {
+  render: () => (
+    <div className="mx-auto max-w-3xl p-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">My Workspace</h1>
+        <Button size="sm">
+          <Plus className="h-4 w-4" />
+          New Page
+        </Button>
+      </div>
+      <div className="mt-6">
+        <h2 className="mb-2 text-xs uppercase tracking-widest text-white/30">
+          All Pages
+        </h2>
+        <div className="mb-3 flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Filter pages…"
+              defaultValue="nonexistent"
+              className="pl-8"
+              aria-label="Filter pages by title"
+            />
+          </div>
+          <Select defaultValue="updated_desc">
+            <SelectTrigger
+              size="sm"
+              className="w-auto shrink-0"
+              aria-label="Sort pages"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="updated_desc">Last modified</SelectItem>
+              <SelectItem value="title_asc">Title A-Z</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Search className="h-8 w-8 text-muted-foreground" />
+          <p className="mt-2 text-sm text-muted-foreground">
+            No pages match your filter
+          </p>
+        </div>
       </div>
     </div>
   ),
