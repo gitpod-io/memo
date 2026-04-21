@@ -89,3 +89,24 @@ export const SingleSegment: Story = {
     ],
   },
 };
+
+export const DatabaseRowPage: Story = {
+  args: {
+    items: [
+      { id: "ws", title: "My Workspace", href: "/my-workspace" },
+      { id: "db1", title: "Task Tracker", href: "/my-workspace/db1", isDatabase: true },
+      { id: "row1", title: "Fix login bug", href: "/my-workspace/row1" },
+    ],
+  },
+};
+
+export const NestedDatabaseRow: Story = {
+  args: {
+    items: [
+      { id: "ws", title: "Team Workspace", href: "/team" },
+      { id: "p1", title: "Projects", href: "/team/p1" },
+      { id: "db1", title: "Sprint Board", href: "/team/db1", isDatabase: true },
+      { id: "row1", title: "Implement auth flow", href: "/team/row1" },
+    ],
+  },
+};
