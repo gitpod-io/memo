@@ -147,11 +147,63 @@ test.describe("Editor table blocks", () => {
   // --- Skipped tests: blocked by pre-existing bugs ---
   // These are tracked as separate bug issues.
 
-  // Bug: Tab inside a table cell removes the entire table from the DOM
-  // instead of navigating to the next cell. The TablePlugin has
-  // hasTabHandler={true} but the Tab handler doesn't work correctly.
-  test.skip("user can navigate between cells with Tab", async () => {
-    // Blocked by: Tab inside table cell deletes the table
+  test("user can navigate between cells with Tab", async ({
+    authenticatedPage: page,
+  }) => {
+    const editor = page.locator('[contenteditable="true"]');
+    const table = await insertTable(page);
+
+    // Focus the first header cell and type text
+    await focusFirstCell(page);
+    await page.keyboard.type("A1");
+    await expect(table.locator("th").first()).toContainText("A1", {
+      timeout: 3_000,
+    });
+
+    // The table must still exist after typing
+    await expect(editor.locator("table")).toBeVisible();
+
+    // Press Tab — cursor should move to the next cell
+    await page.keyboard.press("Tab");
+    await page.waitForTimeout(300);
+
+    // The table must still be in the DOM after pressing Tab
+    await expect(editor.locator("table")).toBeVisible({ timeout: 3_000 });
+
+    // Type in the second cell to prove the cursor moved
+    await page.keyboard.type("B1");
+    await expect(table.locator("th").nth(1)).toContainText("B1", {
+      timeout: 3_000,
+    });
+
+    // Press Tab again to move to the third header cell
+    await page.keyboard.press("Tab");
+    await page.waitForTimeout(300);
+    await page.keyboard.type("C1");
+    await expect(table.locator("th").nth(2)).toContainText("C1", {
+      timeout: 3_000,
+    });
+
+    // Press Tab once more to wrap to the first body row
+    await page.keyboard.press("Tab");
+    await page.waitForTimeout(300);
+    await page.keyboard.type("A2");
+    await expect(table.locator("td").first()).toContainText("A2", {
+      timeout: 3_000,
+    });
+
+    // Shift+Tab should move back to the previous cell (third header)
+    await page.keyboard.press("Shift+Tab");
+    await page.waitForTimeout(300);
+    await page.keyboard.type("-end");
+    await expect(table.locator("th").nth(2)).toContainText("C1-end", {
+      timeout: 3_000,
+    });
+
+    // Table structure should be unchanged throughout
+    await expect(table.locator("th")).toHaveCount(3);
+    await expect(table.locator("td")).toHaveCount(6);
+    await expect(table.locator("tr")).toHaveCount(3);
   });
 
   // Bug: Table cell content is lost after page reload. The table structure

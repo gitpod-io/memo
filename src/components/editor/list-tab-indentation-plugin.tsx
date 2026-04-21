@@ -3,7 +3,11 @@
 import { useEffect } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $isListItemNode } from "@lexical/list";
-import { $getNearestBlockElementAncestorOrThrow } from "@lexical/utils";
+import {
+  $findMatchingParent,
+  $getNearestBlockElementAncestorOrThrow,
+} from "@lexical/utils";
+import { $isTableCellNode } from "@lexical/table";
 import {
   $getSelection,
   $isRangeSelection,
@@ -22,6 +26,13 @@ const MAX_LIST_INDENT = 7;
  * canIndent(), so Tab in the middle/end of a list item inserts a tab
  * character instead of nesting. This plugin intercepts Tab at a higher
  * priority and dispatches INDENT/OUTDENT commands when inside a list item.
+ *
+ * Explicitly yields to the TablePlugin's Tab handler (registered at
+ * COMMAND_PRIORITY_CRITICAL) when the selection is inside a table cell.
+ * Without this guard, $getNearestBlockElementAncestorOrThrow can throw
+ * in edge cases within table cells, preventing the event from being
+ * handled and causing the browser's default Tab behaviour to corrupt
+ * the table DOM.
  */
 export function ListTabIndentationPlugin(): null {
   const [editor] = useLexicalComposerContext();
@@ -36,6 +47,12 @@ export function ListTabIndentationPlugin(): null {
         }
 
         const anchor = selection.anchor.getNode();
+
+        // Let the TablePlugin handle Tab inside table cells.
+        if ($findMatchingParent(anchor, $isTableCellNode) !== null) {
+          return false;
+        }
+
         const block = $getNearestBlockElementAncestorOrThrow(anchor);
 
         if (!$isListItemNode(block)) {
