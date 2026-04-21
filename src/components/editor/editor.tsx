@@ -38,6 +38,7 @@ import { FloatingToolbarPlugin } from "@/components/editor/floating-toolbar-plug
 import { FloatingLinkEditorPlugin } from "@/components/editor/floating-link-editor-plugin";
 import { FloatingImageToolbarPlugin } from "@/components/editor/floating-image-toolbar-plugin";
 import { CodeHighlightPlugin } from "@/components/editor/code-highlight-plugin";
+import { CodeLanguageSelectorPlugin } from "@/components/editor/code-language-selector-plugin";
 import { DraggableBlockPlugin } from "@/components/editor/draggable-block-plugin";
 import { MARKDOWN_TRANSFORMERS } from "@/components/editor/markdown-utils";
 import { ImageNode } from "@/components/editor/image-node";
@@ -321,6 +322,7 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
             <HorizontalRulePlugin />
             <MarkdownShortcutPlugin transformers={MARKDOWN_TRANSFORMERS} />
             <CodeHighlightPlugin />
+            <CodeLanguageSelectorPlugin />
             <ImagePlugin />
             <CalloutPlugin />
             <CollapsiblePlugin />
