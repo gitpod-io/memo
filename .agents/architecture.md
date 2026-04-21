@@ -314,6 +314,19 @@ src/components/database/
   └── new-database-dialog.tsx      # Dialog for creating a new database
 ```
 
+### Row-as-page rendering flow
+
+When a database row is opened as a full page (clicking a row title in table view):
+
+1. `[pageId]/page.tsx` fetches the page and its ancestors via `get_page_ancestors` RPC
+2. The RPC returns `is_database` for each ancestor — the immediate parent (last ancestor) is checked
+3. If `parent.is_database === true` and the page itself is not a database, it's a row page
+4. Server component loads the parent database's `database_properties` and the row's `row_values` in parallel
+5. `RowPropertiesHeader` (client component) renders between breadcrumb and `PageViewClient`
+6. Property values are inline-editable using the same `getPropertyTypeConfig()` registry
+7. Computed properties (`created_time`, `updated_time`, `created_by`) derive values from page metadata
+8. Breadcrumb shows `Table2` icon for database ancestors via `isDatabase` flag on `BreadcrumbItem`
+
 ### Key design decisions
 
 - **Client-side filtering/sorting**: all rows loaded, filtered/sorted in browser. Server-side deferred.

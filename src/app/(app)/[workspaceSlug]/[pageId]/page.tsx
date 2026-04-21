@@ -11,6 +11,7 @@ import {
   type BreadcrumbItem,
 } from "@/components/page-breadcrumb";
 import { PageBacklinks } from "@/components/page-backlinks";
+import type { DatabaseProperty, RowValue } from "@/lib/types";
 
 const PageViewClient = dynamic(
   () =>
@@ -30,6 +31,25 @@ const PageViewClient = dynamic(
           <div className="h-4 w-4/6 animate-pulse bg-muted" />
         </div>
       </>
+    ),
+  },
+);
+
+const RowPropertiesHeader = dynamic(
+  () =>
+    import("@/components/database/row-properties-header").then(
+      (mod) => mod.RowPropertiesHeader,
+    ),
+  {
+    loading: () => (
+      <div className="mb-4 space-y-2">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4">
+            <div className="h-4 w-32 animate-pulse bg-muted" />
+            <div className="h-4 w-48 animate-pulse bg-muted" />
+          </div>
+        ))}
+      </div>
     ),
   },
 );
@@ -142,6 +162,52 @@ export default async function PageView({
     notFound();
   }
 
+  // Detect if this page is a database row (parent is a database page)
+  const typedAncestors =
+    (ancestors as {
+      id: string;
+      title: string;
+      icon: string | null;
+      is_database: boolean;
+    }[]) ?? [];
+
+  // The immediate parent is the last ancestor (ordered root-first by the RPC)
+  const immediateParent =
+    typedAncestors.length > 0
+      ? typedAncestors[typedAncestors.length - 1]
+      : null;
+  const isRowPage =
+    !page.is_database &&
+    immediateParent !== null &&
+    immediateParent.is_database === true;
+
+  // If this is a database row, load the parent database's properties and this row's values
+  let rowProperties: DatabaseProperty[] = [];
+  const rowValues: Record<string, RowValue> = {};
+
+  if (isRowPage && immediateParent) {
+    const [propsResult, valsResult] = await Promise.all([
+      supabase
+        .from("database_properties")
+        .select("*")
+        .eq("database_id", immediateParent.id)
+        .order("position"),
+      supabase
+        .from("row_values")
+        .select("*")
+        .eq("row_id", page.id),
+    ]);
+
+    if (!propsResult.error && propsResult.data) {
+      rowProperties = propsResult.data as DatabaseProperty[];
+    }
+    if (!valsResult.error && valsResult.data) {
+      for (const val of valsResult.data as RowValue[]) {
+        rowValues[val.property_id] = val;
+      }
+    }
+  }
+
   // Build breadcrumb: workspace → ancestors → current page
   const breadcrumbItems: BreadcrumbItem[] = [
     {
@@ -149,13 +215,12 @@ export default async function PageView({
       title: workspace.name,
       href: `/${workspaceSlug}`,
     },
-    ...((ancestors as { id: string; title: string; icon: string | null }[]) ?? []).map(
-      (ancestor) => ({
-        id: ancestor.id,
-        title: ancestor.title,
-        href: `/${workspaceSlug}/${ancestor.id}`,
-      }),
-    ),
+    ...typedAncestors.map((ancestor) => ({
+      id: ancestor.id,
+      title: ancestor.title,
+      href: `/${workspaceSlug}/${ancestor.id}`,
+      isDatabase: ancestor.is_database === true,
+    })),
     {
       id: page.id,
       title: page.title,
@@ -208,16 +273,28 @@ export default async function PageView({
           userId={user.id}
         />
       ) : (
-        <PageViewClient
-          pageId={page.id}
-          pageTitle={page.title}
-          pageIcon={page.icon ?? null}
-          pageCoverUrl={page.cover_url ?? null}
-          initialContent={initialContent}
-          workspaceId={workspace.id}
-          workspaceSlug={workspaceSlug}
-          userId={user.id}
-        />
+        <>
+          {isRowPage && rowProperties.length > 0 && (
+            <RowPropertiesHeader
+              pageId={page.id}
+              properties={rowProperties}
+              values={rowValues}
+              pageCreatedAt={page.created_at}
+              pageUpdatedAt={page.updated_at}
+              pageCreatedBy={page.created_by}
+            />
+          )}
+          <PageViewClient
+            pageId={page.id}
+            pageTitle={page.title}
+            pageIcon={page.icon ?? null}
+            pageCoverUrl={page.cover_url ?? null}
+            initialContent={initialContent}
+            workspaceId={workspace.id}
+            workspaceSlug={workspaceSlug}
+            userId={user.id}
+          />
+        </>
       )}
       <Suspense fallback={null}>
         <PageBacklinks
