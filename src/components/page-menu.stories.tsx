@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { Copy, Download, MoreHorizontal, Star, StarOff, Upload } from "lucide-react";
+import { Copy, Download, History, MoreHorizontal, Star, StarOff, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -40,6 +40,10 @@ export const Default: Story = {
           Duplicate
         </DropdownMenuItem>
         <DropdownMenuItem>
+          <History className="h-4 w-4" />
+          Version history
+        </DropdownMenuItem>
+        <DropdownMenuItem>
           <Download className="h-4 w-4" />
           Export as Markdown
         </DropdownMenuItem>
@@ -68,6 +72,10 @@ export const MenuOpen: Story = {
         <DropdownMenuItem>
           <Copy className="h-4 w-4" />
           Duplicate
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <History className="h-4 w-4" />
+          Version history
         </DropdownMenuItem>
         <DropdownMenuItem>
           <Download className="h-4 w-4" />
@@ -99,6 +107,10 @@ export const MenuOpenFavorited: Story = {
         <DropdownMenuItem>
           <Copy className="h-4 w-4" />
           Duplicate
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <History className="h-4 w-4" />
+          Version history
         </DropdownMenuItem>
         <DropdownMenuItem>
           <Download className="h-4 w-4" />

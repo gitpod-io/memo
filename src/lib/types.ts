@@ -97,6 +97,14 @@ export interface FavoriteWithPage extends Favorite {
   pages: Pick<Page, "id" | "title" | "icon">;
 }
 
+export interface PageVersion {
+  id: string;
+  page_id: string;
+  content: Record<string, unknown> | null;
+  created_at: string;
+  created_by: string;
+}
+
 export interface PageLink {
   id: string;
   workspace_id: string;

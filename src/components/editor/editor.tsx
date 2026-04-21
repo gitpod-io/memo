@@ -57,6 +57,7 @@ import { WordCountPlugin } from "@/components/editor/word-count-plugin";
 import { getClient } from "@/lib/supabase/lazy-client";
 
 const SAVE_DEBOUNCE_MS = 500;
+const VERSION_SAVE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 /** Extract all PageLinkNode pageIds from a serialized editor state. */
 function extractPageLinkIds(
@@ -136,6 +137,7 @@ interface EditorProps {
   workspaceId: string;
   initialContent: SerializedEditorState | null;
   editorRef?: React.MutableRefObject<LexicalEditor | null>;
+  readOnly?: boolean;
 }
 
 function validateUrl(url: string): boolean {
@@ -165,7 +167,7 @@ function EditorRefPlugin({
   return null;
 }
 
-export function Editor({ pageId, workspaceId, initialContent, editorRef }: EditorProps) {
+export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnly }: EditorProps) {
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
@@ -173,6 +175,7 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef }: Edito
   const lastSavedRef = useRef<string>(
     initialContent ? JSON.stringify(initialContent) : ""
   );
+  const lastVersionSavedAtRef = useRef<number>(0);
   const [floatingAnchorElem, setFloatingAnchorElem] =
     useState<HTMLDivElement | null>(null);
 
@@ -211,6 +214,17 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef }: Edito
           syncPageLinks(pageId, workspaceId, linkedPageIds).catch((err) =>
             lazyCaptureException(err),
           );
+
+          // Save a version snapshot at intervals (every 5 minutes)
+          const now = Date.now();
+          if (now - lastVersionSavedAtRef.current >= VERSION_SAVE_INTERVAL_MS) {
+            lastVersionSavedAtRef.current = now;
+            fetch(`/api/pages/${pageId}/versions`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ content: json }),
+            }).catch((err) => lazyCaptureException(err));
+          }
         } else {
           lazyCaptureException(error);
           setSaveStatus("error");
@@ -243,6 +257,7 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef }: Edito
   const initialConfig = {
     namespace: "MemoEditor",
     theme: editorTheme,
+    editable: !readOnly,
     nodes: [
       HeadingNode,
       QuoteNode,
@@ -276,61 +291,84 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef }: Edito
         <div className="relative -ml-8 pl-8" ref={onFloatingAnchorRef}>
           <RichTextPlugin
             contentEditable={
-              <ContentEditable
-                className="outline-none min-h-[200px] text-sm"
-                aria-placeholder="Type '/' for commands"
-                placeholder={
-                  <div className="pointer-events-none absolute top-0.5 left-8 text-sm text-muted-foreground">
-                    Type &apos;/&apos; for commands
-                  </div>
-                }
-              />
+              readOnly ? (
+                <ContentEditable
+                  className="outline-none min-h-[200px] text-sm opacity-70"
+                />
+              ) : (
+                <ContentEditable
+                  className="outline-none min-h-[200px] text-sm"
+                  aria-placeholder="Type '/' for commands"
+                  placeholder={
+                    <div className="pointer-events-none absolute top-0.5 left-8 text-sm text-muted-foreground">
+                      Type &apos;/&apos; for commands
+                    </div>
+                  }
+                />
+              )
             }
             ErrorBoundary={LexicalErrorBoundary}
           />
         </div>
-        <HistoryPlugin />
-        <ListPlugin />
-        <CheckListPlugin />
-        <ListTabIndentationPlugin />
-        <LinkPlugin validateUrl={validateUrl} />
-        <ClickableLinkPlugin />
-        <HorizontalRulePlugin />
-        <MarkdownShortcutPlugin transformers={MARKDOWN_TRANSFORMERS} />
-        <CodeHighlightPlugin />
-        <ImagePlugin />
-        <CalloutPlugin />
-        <CollapsiblePlugin />
-        <PageLinkPlugin />
-        <TablePlugin
-          hasCellMerge={false}
-          hasCellBackgroundColor={false}
-          hasTabHandler={true}
-        />
-        <TableActionMenuPlugin />
-        {editorRef && <EditorRefPlugin editorRef={editorRef} />}
-        <OnChangePlugin
-          onChange={handleChange}
-          ignoreSelectionChange
-        />
-        <SlashCommandPlugin />
-        {floatingAnchorElem && (
+        {!readOnly && (
           <>
-            <FloatingToolbarPlugin anchorElem={floatingAnchorElem} />
-            <FloatingLinkEditorPlugin anchorElem={floatingAnchorElem} />
-            <FloatingImageToolbarPlugin anchorElem={floatingAnchorElem} />
-            <DraggableBlockPlugin anchorElem={floatingAnchorElem} />
+            <HistoryPlugin />
+            <ListPlugin />
+            <CheckListPlugin />
+            <ListTabIndentationPlugin />
+            <LinkPlugin validateUrl={validateUrl} />
+            <ClickableLinkPlugin />
+            <HorizontalRulePlugin />
+            <MarkdownShortcutPlugin transformers={MARKDOWN_TRANSFORMERS} />
+            <CodeHighlightPlugin />
+            <ImagePlugin />
+            <CalloutPlugin />
+            <CollapsiblePlugin />
+            <PageLinkPlugin />
+            <TablePlugin
+              hasCellMerge={false}
+              hasCellBackgroundColor={false}
+              hasTabHandler={true}
+            />
+            <TableActionMenuPlugin />
+            <OnChangePlugin
+              onChange={handleChange}
+              ignoreSelectionChange
+            />
+            <SlashCommandPlugin />
+            {floatingAnchorElem && (
+              <>
+                <FloatingToolbarPlugin anchorElem={floatingAnchorElem} />
+                <FloatingLinkEditorPlugin anchorElem={floatingAnchorElem} />
+                <FloatingImageToolbarPlugin anchorElem={floatingAnchorElem} />
+                <DraggableBlockPlugin anchorElem={floatingAnchorElem} />
+              </>
+            )}
+            <WordCountPlugin />
           </>
         )}
-        <WordCountPlugin />
-      </LexicalComposer>
-      <div className="mt-2 h-5 text-xs text-muted-foreground">
-        {saveStatus === "saving" && "Saving..."}
-        {saveStatus === "saved" && "Saved"}
-        {saveStatus === "error" && (
-          <span className="text-destructive">Save failed</span>
+        {readOnly && (
+          <>
+            <ListPlugin />
+            <CodeHighlightPlugin />
+          </>
         )}
-      </div>
+        {editorRef && <EditorRefPlugin editorRef={editorRef} />}
+      </LexicalComposer>
+      {!readOnly && (
+        <div className="mt-2 h-5 text-xs text-muted-foreground">
+          {saveStatus === "saving" && "Saving..."}
+          {saveStatus === "saved" && "Saved"}
+          {saveStatus === "error" && (
+            <span className="text-destructive">Save failed</span>
+          )}
+        </div>
+      )}
+      {readOnly && (
+        <div className="mt-2 h-5 text-xs text-muted-foreground">
+          Previewing version (read-only)
+        </div>
+      )}
     </div>
   );
 }

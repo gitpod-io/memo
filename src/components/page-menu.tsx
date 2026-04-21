@@ -2,7 +2,7 @@
 
 import { useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, Download, MoreHorizontal, Star, StarOff, Upload } from "lucide-react";
+import { Copy, Download, History, MoreHorizontal, Star, StarOff, Upload } from "lucide-react";
 import { toast } from "@/lib/toast";
 import type { LexicalEditor } from "lexical";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ interface PageMenuProps {
   workspaceSlug: string;
   userId: string;
   editorRef: React.MutableRefObject<LexicalEditor | null>;
+  onVersionHistoryOpen?: () => void;
 }
 
 export function PageMenu({
@@ -39,6 +40,7 @@ export function PageMenu({
   workspaceSlug,
   userId,
   editorRef,
+  onVersionHistoryOpen,
 }: PageMenuProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -237,6 +239,10 @@ export function PageMenu({
           <DropdownMenuItem onClick={handleDuplicate}>
             <Copy className="h-4 w-4" />
             Duplicate
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onVersionHistoryOpen}>
+            <History className="h-4 w-4" />
+            Version history
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleExport}>
             <Download className="h-4 w-4" />

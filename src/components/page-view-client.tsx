@@ -1,11 +1,13 @@
 "use client";
 
-import { useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { LexicalEditor, SerializedEditorState } from "lexical";
 import { PageTitle } from "@/components/page-title";
 import { PageIcon } from "@/components/page-icon";
 import { PageCover } from "@/components/page-cover";
+import { VersionHistoryPanel } from "@/components/version-history-panel";
+
 
 const Editor = dynamic(
   () => import("@/components/editor/editor").then((mod) => mod.Editor),
@@ -51,6 +53,36 @@ export function PageViewClient({
   userId,
 }: PageViewClientProps) {
   const editorRef = useRef<LexicalEditor | null>(null);
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
+  const [previewContent, setPreviewContent] = useState<SerializedEditorState | null>(null);
+
+  const handlePreview = useCallback((content: SerializedEditorState) => {
+    setPreviewContent(content);
+  }, []);
+
+  const handleRestore = useCallback(
+    (content: SerializedEditorState) => {
+      // Update the live editor with the restored content
+      const editor = editorRef.current;
+      if (editor) {
+        const editorState = editor.parseEditorState(JSON.stringify(content));
+        editor.setEditorState(editorState);
+      }
+      setPreviewContent(null);
+    },
+    [],
+  );
+
+  const handleExitPreview = useCallback(() => {
+    setPreviewContent(null);
+  }, []);
+
+  const handleVersionHistoryOpen = useCallback(() => {
+    setVersionHistoryOpen(true);
+  }, []);
+
+  // When previewing a version, show a read-only editor with that content
+  const isPreviewMode = previewContent !== null;
 
   return (
     <>
@@ -72,18 +104,37 @@ export function PageViewClient({
             workspaceSlug={workspaceSlug}
             userId={userId}
             editorRef={editorRef}
+            onVersionHistoryOpen={handleVersionHistoryOpen}
           />
         </div>
       </div>
       <div className="mt-4">
-        <Editor
-          key={pageId}
-          pageId={pageId}
-          workspaceId={workspaceId}
-          initialContent={initialContent}
-          editorRef={editorRef}
-        />
+        {isPreviewMode ? (
+          <Editor
+            key={`preview-${pageId}`}
+            pageId={pageId}
+            workspaceId={workspaceId}
+            initialContent={previewContent}
+            readOnly
+          />
+        ) : (
+          <Editor
+            key={pageId}
+            pageId={pageId}
+            workspaceId={workspaceId}
+            initialContent={initialContent}
+            editorRef={editorRef}
+          />
+        )}
       </div>
+      <VersionHistoryPanel
+        open={versionHistoryOpen}
+        onOpenChange={setVersionHistoryOpen}
+        pageId={pageId}
+        onPreview={handlePreview}
+        onRestore={handleRestore}
+        onExitPreview={handleExitPreview}
+      />
     </>
   );
 }
