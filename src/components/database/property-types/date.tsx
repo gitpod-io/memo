@@ -166,7 +166,7 @@ function DatePicker({
   return (
     <div
       ref={containerRef}
-      className="w-64 border border-border bg-background p-3 shadow-md"
+      className="w-64 rounded-sm border border-border bg-background p-3 shadow-md"
     >
       {/* Header */}
       <div className="mb-2 flex items-center justify-between">
