@@ -41,6 +41,54 @@ const mockPages = [
   },
 ];
 
+const mockRecentVisits = [
+  {
+    page_id: "p3",
+    title: "Design System",
+    icon: "🎨",
+    visited_at: new Date(Date.now() - 10 * 60_000).toISOString(),
+  },
+  {
+    page_id: "p1",
+    title: "Getting Started",
+    icon: "🚀",
+    visited_at: new Date(Date.now() - 45 * 60_000).toISOString(),
+  },
+  {
+    page_id: "p2",
+    title: "API Reference",
+    icon: null,
+    visited_at: new Date(Date.now() - 3 * 3_600_000).toISOString(),
+  },
+];
+
+function PageItem({
+  icon,
+  title,
+  timeStr,
+}: {
+  icon: string | null;
+  title: string;
+  timeStr: string;
+}) {
+  return (
+    <button className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-white/[0.04]">
+      <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+        {icon ? (
+          <span className="text-sm">{icon}</span>
+        ) : (
+          <FileText className="h-4 w-4 text-muted-foreground" />
+        )}
+      </span>
+      <span className="flex-1 truncate">{title || "Untitled"}</span>
+      <RelativeTime
+        dateStr={timeStr}
+        className="text-xs text-muted-foreground"
+      />
+    </button>
+  );
+}
+
 // WorkspaceHome uses next/navigation and Supabase. These stories
 // render the visual appearance with static data.
 export const WithPages: Story = {
@@ -55,25 +103,51 @@ export const WithPages: Story = {
       </div>
       <div className="mt-6 flex flex-col gap-0.5">
         {mockPages.map((page) => (
-          <button
+          <PageItem
             key={page.id}
-            className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-white/[0.04]"
-          >
-            <span className="flex h-4 w-4 shrink-0 items-center justify-center">
-              {page.icon ? (
-                <span className="text-sm">{page.icon}</span>
-              ) : (
-                <FileText className="h-4 w-4 text-muted-foreground" />
-              )}
-            </span>
-            <span className="flex-1 truncate">
-              {page.title || "Untitled"}
-            </span>
-            <RelativeTime
-              dateStr={page.updated_at}
-              className="text-xs text-muted-foreground"
+            icon={page.icon}
+            title={page.title}
+            timeStr={page.updated_at}
+          />
+        ))}
+      </div>
+    </div>
+  ),
+};
+
+export const WithRecentVisits: Story = {
+  render: () => (
+    <div className="mx-auto max-w-3xl p-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">My Workspace</h1>
+        <Button size="sm">
+          <Plus className="h-4 w-4" />
+          New Page
+        </Button>
+      </div>
+      <div className="mt-6">
+        <h2 className="mb-2 text-xs uppercase tracking-widest text-white/30">
+          Recently Visited
+        </h2>
+        <div className="flex flex-col gap-0.5">
+          {mockRecentVisits.map((visit) => (
+            <PageItem
+              key={visit.page_id}
+              icon={visit.icon}
+              title={visit.title}
+              timeStr={visit.visited_at}
             />
-          </button>
+          ))}
+        </div>
+      </div>
+      <div className="mt-6 flex flex-col gap-0.5">
+        {mockPages.map((page) => (
+          <PageItem
+            key={page.id}
+            icon={page.icon}
+            title={page.title}
+            timeStr={page.updated_at}
+          />
         ))}
       </div>
     </div>

@@ -65,3 +65,19 @@ export interface Page {
   created_at: string;
   updated_at: string;
 }
+
+export interface PageVisit {
+  id: string;
+  workspace_id: string;
+  user_id: string;
+  page_id: string;
+  visited_at: string;
+}
+
+// Joined type for recent visits query (page_visits joined with pages)
+export interface RecentPageVisit {
+  page_id: string;
+  visited_at: string;
+  title: string;
+  icon: string | null;
+}
