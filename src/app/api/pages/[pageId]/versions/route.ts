@@ -65,7 +65,17 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json() as { content: Record<string, unknown> | null };
+    let body: { content: Record<string, unknown> | null };
+    try {
+      body = await request.json() as typeof body;
+    } catch (_e) {
+      // Malformed/empty body is a client error, not an application bug — return 400 without Sentry capture
+      return NextResponse.json(
+        { error: "Invalid JSON in request body" },
+        { status: 400 },
+      );
+    }
+
     if (body.content === undefined) {
       return NextResponse.json(
         { error: "Missing required field: content" },
