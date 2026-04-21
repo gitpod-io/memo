@@ -1054,6 +1054,29 @@ Custom `not-found.tsx` files provide contextual 404 messages:
 
 Pattern: `FileQuestion` icon (48px) + heading + description + "Go home" button.
 
+## Graceful Degradation for Optional Features
+
+When a feature depends on a database table that may not exist yet (e.g. migration
+not applied), the code must degrade silently instead of flooding Sentry with errors.
+
+Pattern: check for `PGRST205` (schema-not-found) before calling `captureSupabaseError`:
+
+```typescript
+import { captureSupabaseError, isSchemaNotFoundError } from "@/lib/sentry";
+
+const { data, error } = await supabase.from("optional_table").select("*");
+if (error) {
+  // Table missing — degrade gracefully, don't report to Sentry
+  if (isSchemaNotFoundError(error)) return;
+  captureSupabaseError(error, "feature:operation");
+  return;
+}
+```
+
+Additionally, `captureSupabaseError` automatically downgrades `PGRST205` errors to
+`warning` level as a safety net, but callers should still skip the call entirely for
+read operations on optional tables to avoid unnecessary noise.
+
 ## This file evolves
 
 When you discover a new pattern that should be replicated, or an anti-pattern that

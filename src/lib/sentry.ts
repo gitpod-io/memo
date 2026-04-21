@@ -46,6 +46,16 @@ export function isNextjsInternalNoise(event: ErrorEvent): boolean {
 }
 
 /**
+ * True when PostgREST cannot find a table in its schema cache (PGRST205).
+ * This happens when a migration hasn't been applied or the schema cache is
+ * stale. It's a deployment issue, not an application bug, so it should be
+ * reported at warning level.
+ */
+export function isSchemaNotFoundError(error: Error): boolean {
+  return isPostgrestError(error) && error.code === "PGRST205";
+}
+
+/**
  * True when the error is a transient network failure (e.g. offline, DNS
  * timeout, connection reset). These are not application bugs and should be
  * reported at warning level so they don't trigger error-level alerts.
@@ -90,7 +100,7 @@ export function captureSupabaseError(
     extra.hint = error.hint;
   }
 
-  if (isTransientNetworkError(error)) {
+  if (isTransientNetworkError(error) || isSchemaNotFoundError(error)) {
     lazyCaptureException(error, { extra, level: "warning" });
     return;
   }

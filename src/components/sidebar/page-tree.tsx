@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { getClient } from "@/lib/supabase/lazy-client";
-import { captureSupabaseError } from "@/lib/sentry";
+import { captureSupabaseError, isSchemaNotFoundError } from "@/lib/sentry";
 import { retryOnNetworkError } from "@/lib/retry";
 import { Button } from "@/components/ui/button";
 import {
@@ -163,6 +163,8 @@ export function PageTree({ userId }: PageTreeProps) {
       if (cancelled) return;
 
       if (error) {
+        // Table missing (migration not applied yet) — degrade gracefully
+        if (isSchemaNotFoundError(error)) return;
         captureSupabaseError(error, "page-tree:fetch-favorites");
         return;
       }
@@ -200,7 +202,9 @@ export function PageTree({ userId }: PageTreeProps) {
           .eq("id", existingFavId);
 
         if (error) {
-          captureSupabaseError(error, "page-tree:remove-favorite");
+          if (!isSchemaNotFoundError(error)) {
+            captureSupabaseError(error, "page-tree:remove-favorite");
+          }
           toast.error("Failed to remove favorite", { duration: 8000 });
           // Revert
           setFavoriteMap((prev) => new Map(prev).set(pageId, existingFavId));
@@ -220,7 +224,9 @@ export function PageTree({ userId }: PageTreeProps) {
           .single();
 
         if (error) {
-          captureSupabaseError(error, "page-tree:add-favorite");
+          if (!isSchemaNotFoundError(error)) {
+            captureSupabaseError(error, "page-tree:add-favorite");
+          }
           toast.error("Failed to add favorite", { duration: 8000 });
           return;
         }

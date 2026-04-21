@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { FileText, StarOff } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { getClient } from "@/lib/supabase/lazy-client";
-import { captureSupabaseError } from "@/lib/sentry";
+import { captureSupabaseError, isSchemaNotFoundError } from "@/lib/sentry";
 import { retryOnNetworkError } from "@/lib/retry";
 import type { FavoriteWithPage } from "@/lib/types";
 
@@ -80,6 +80,8 @@ export function FavoritesSection({ userId }: FavoritesSectionProps) {
       if (cancelled) return;
 
       if (error) {
+        // Table missing (migration not applied yet) — degrade gracefully
+        if (isSchemaNotFoundError(error)) return;
         captureSupabaseError(error, "favorites:fetch");
         return;
       }
@@ -108,7 +110,9 @@ export function FavoritesSection({ userId }: FavoritesSectionProps) {
         .eq("id", favoriteId);
 
       if (error) {
-        captureSupabaseError(error, "favorites:remove");
+        if (!isSchemaNotFoundError(error)) {
+          captureSupabaseError(error, "favorites:remove");
+        }
         toast.error("Failed to remove favorite", { duration: 8000 });
         // Revert — trigger re-fetch
         setFavRefetchKey((k) => k + 1);
@@ -211,7 +215,9 @@ export function useFavorite({
       if (cancelled) return;
 
       if (error) {
-        captureSupabaseError(error, "favorites:check");
+        if (!isSchemaNotFoundError(error)) {
+          captureSupabaseError(error, "favorites:check");
+        }
       }
 
       setFavoriteId(data?.id ?? null);
@@ -237,7 +243,9 @@ export function useFavorite({
         .eq("id", favoriteId);
 
       if (error) {
-        captureSupabaseError(error, "favorites:toggle-remove");
+        if (!isSchemaNotFoundError(error)) {
+          captureSupabaseError(error, "favorites:toggle-remove");
+        }
         toast.error("Failed to remove favorite", { duration: 8000 });
         // Revert
         setFavoriteId(favoriteId);
@@ -257,7 +265,9 @@ export function useFavorite({
         .single();
 
       if (error) {
-        captureSupabaseError(error, "favorites:toggle-add");
+        if (!isSchemaNotFoundError(error)) {
+          captureSupabaseError(error, "favorites:toggle-add");
+        }
         toast.error("Failed to add favorite", { duration: 8000 });
         return;
       }
