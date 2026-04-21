@@ -277,7 +277,7 @@ Database page (is_database = true)
 5. Filters and sorts are applied client-side on the loaded row data
 6. Cell edits write to `row_values` via Supabase (debounced auto-save)
 
-### Component structure (planned)
+### Component structure
 
 ```
 src/components/database/
