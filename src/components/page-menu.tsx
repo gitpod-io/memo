@@ -2,7 +2,7 @@
 
 import { useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Download, MoreHorizontal, Upload } from "lucide-react";
+import { Copy, Download, MoreHorizontal, Upload } from "lucide-react";
 import { toast } from "@/lib/toast";
 import type { LexicalEditor } from "lexical";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ interface PageMenuProps {
 }
 
 export function PageMenu({
+  pageId,
   pageTitle,
   workspaceId,
   workspaceSlug,
@@ -40,6 +41,72 @@ export function PageMenu({
 }: PageMenuProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDuplicate = useCallback(async () => {
+    const supabase = await getClient();
+
+    // Fetch the source page to get content, icon, and parent_id
+    const { data: sourcePage, error: fetchError } = await supabase
+      .from("pages")
+      .select("content, icon, parent_id, position")
+      .eq("id", pageId)
+      .single();
+
+    if (fetchError || !sourcePage) {
+      if (fetchError) captureSupabaseError(fetchError, "page-menu:duplicate-fetch");
+      toast.error("Failed to duplicate page", { duration: 8000 });
+      return;
+    }
+
+    // Find the next available position among siblings
+    let siblingQuery = supabase
+      .from("pages")
+      .select("position")
+      .eq("workspace_id", workspaceId);
+
+    if (sourcePage.parent_id) {
+      siblingQuery = siblingQuery.eq("parent_id", sourcePage.parent_id);
+    } else {
+      siblingQuery = siblingQuery.is("parent_id", null);
+    }
+
+    const { data: siblings } = await siblingQuery;
+    const nextPosition = siblings && siblings.length > 0
+      ? Math.max(...siblings.map((s) => s.position)) + 1
+      : 0;
+
+    const duplicateTitle = (pageTitle.trim() || "Untitled") + " (copy)";
+
+    const { data: newPage, error: insertError } = await supabase
+      .from("pages")
+      .insert({
+        workspace_id: workspaceId,
+        parent_id: sourcePage.parent_id,
+        title: duplicateTitle,
+        content: sourcePage.content
+          ? JSON.parse(JSON.stringify(sourcePage.content))
+          : null,
+        icon: sourcePage.icon,
+        position: nextPosition,
+        created_by: userId,
+      })
+      .select("id")
+      .single();
+
+    if (insertError) {
+      captureSupabaseError(insertError, "page-menu:duplicate-insert");
+      toast.error("Failed to duplicate page", { duration: 8000 });
+      return;
+    }
+    if (!newPage) {
+      toast.error("Failed to duplicate page", { duration: 8000 });
+      return;
+    }
+
+    toast.success("Page duplicated");
+    router.push(`/${workspaceSlug}/${newPage.id}`);
+    router.refresh();
+  }, [pageId, pageTitle, workspaceId, workspaceSlug, userId, router]);
 
   const handleExport = useCallback(() => {
     const editor = editorRef.current;
@@ -146,6 +213,10 @@ export function PageMenu({
           <MoreHorizontal className="h-4 w-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent side="bottom" align="end" sideOffset={4}>
+          <DropdownMenuItem onClick={handleDuplicate}>
+            <Copy className="h-4 w-4" />
+            Duplicate
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={handleExport}>
             <Download className="h-4 w-4" />
             Export as Markdown
