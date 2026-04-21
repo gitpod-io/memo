@@ -32,7 +32,6 @@ import type {
   SerializedEditorState,
 } from "lexical";
 import { lazyCaptureException } from "@/lib/capture";
-import { isTransientNetworkError } from "@/lib/sentry";
 import { editorTheme } from "@/components/editor/theme";
 import { SlashCommandPlugin } from "@/components/editor/slash-command-plugin";
 import { FloatingToolbarPlugin } from "@/components/editor/floating-toolbar-plugin";
@@ -218,7 +217,10 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
             lazyCaptureException(err),
           );
 
-          // Save a version snapshot at intervals (every 5 minutes)
+          // Save a version snapshot at intervals (every 5 minutes).
+          // Failures are silently dropped — the page content is already
+          // saved and the next interval will retry. Reporting these to
+          // Sentry is pure noise (see #384).
           const now = Date.now();
           if (now - lastVersionSavedAtRef.current >= VERSION_SAVE_INTERVAL_MS) {
             lastVersionSavedAtRef.current = now;
@@ -226,12 +228,10 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ content: json }),
-            }).catch((err) => {
-              if (err instanceof Error && isTransientNetworkError(err)) {
-                lazyCaptureException(err, { level: "warning" });
-              } else {
-                lazyCaptureException(err);
-              }
+            }).catch(() => {
+              // Reset so the next content save retries immediately
+              // instead of waiting another full interval.
+              lastVersionSavedAtRef.current = 0;
             });
           }
         } else {

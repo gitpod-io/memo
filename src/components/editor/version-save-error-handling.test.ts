@@ -3,11 +3,11 @@ import { readFileSync } from "fs";
 import { join } from "path";
 
 /**
- * Regression test for #364: version save fetch must downgrade transient
- * network errors to warning level instead of reporting at error level.
+ * Regression test for #384: version save fetch failures must be silently
+ * dropped — no Sentry reporting at all. The page content is already saved
+ * via PATCH and the next 5-minute interval will retry the version snapshot.
  *
- * This is a static analysis test that verifies the editor source code
- * contains the correct error handling pattern for the version save fetch.
+ * Supersedes the #364 test which only downgraded to warning level.
  */
 describe("version save error handling", () => {
   const editorSource = readFileSync(
@@ -15,22 +15,25 @@ describe("version save error handling", () => {
     "utf-8",
   );
 
-  it("imports isTransientNetworkError", () => {
-    expect(editorSource).toContain("isTransientNetworkError");
+  it("does not import isTransientNetworkError (no longer needed for version saves)", () => {
+    // The version save catch no longer distinguishes transient vs other errors —
+    // all failures are silently dropped. The import should be removed.
+    expect(editorSource).not.toContain("isTransientNetworkError");
   });
 
-  it("does not call lazyCaptureException directly in version save catch without checking for transient errors", () => {
-    // The old buggy pattern: .catch((err) => lazyCaptureException(err))
-    // on the version save fetch. Verify this single-expression catch
-    // pattern is NOT used for the /versions endpoint fetch.
-    const versionFetchRegex =
-      /fetch\([^)]*\/versions[^)]*\)[\s\S]*?\.catch\(\(err\)\s*=>\s*lazyCaptureException\(err\)\s*\)/;
-    expect(editorSource).not.toMatch(versionFetchRegex);
+  it("does not call lazyCaptureException in the version save catch", () => {
+    // Extract the version save fetch block and verify it contains no
+    // lazyCaptureException call. The catch handler should only reset
+    // the timer so the next save retries immediately.
+    const versionFetchBlock = editorSource.match(
+      /fetch\([^)]*\/versions[\s\S]*?\.catch\([\s\S]*?\)/,
+    );
+    expect(versionFetchBlock).not.toBeNull();
+    expect(versionFetchBlock![0]).not.toContain("lazyCaptureException");
+    expect(versionFetchBlock![0]).not.toContain("captureException");
   });
 
-  it("downgrades transient network errors to warning level in version save catch", () => {
-    // Verify the catch handler checks isTransientNetworkError and passes
-    // level: "warning" for transient errors.
-    expect(editorSource).toContain('lazyCaptureException(err, { level: "warning" })');
+  it("resets lastVersionSavedAtRef on failure so the next save retries immediately", () => {
+    expect(editorSource).toContain("lastVersionSavedAtRef.current = 0");
   });
 });
