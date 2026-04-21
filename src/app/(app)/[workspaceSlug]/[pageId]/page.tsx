@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/server";
+import { captureSupabaseError } from "@/lib/sentry";
 import type { SerializedEditorState } from "lexical";
 import {
   PageBreadcrumb,
@@ -122,6 +123,24 @@ export default async function PageView({
       href: `/${workspaceSlug}/${page.id}`,
     },
   ];
+
+  // Record page visit (non-blocking — fire and forget so it doesn't delay rendering)
+  void supabase
+    .from("page_visits")
+    .upsert(
+      {
+        workspace_id: workspace.id,
+        user_id: user.id,
+        page_id: page.id,
+        visited_at: new Date().toISOString(),
+      },
+      { onConflict: "workspace_id,user_id,page_id" },
+    )
+    .then(({ error }) => {
+      if (error) {
+        captureSupabaseError(error, "page-view:record-visit");
+      }
+    });
 
   // Supabase types jsonb columns as Json | null; narrow to Lexical's serialized state
   const initialContent = page.content as SerializedEditorState | null;

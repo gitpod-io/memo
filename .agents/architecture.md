@@ -50,6 +50,14 @@ workspaces
         ├── created_by → profiles.id
         └── search_vector: tsvector (generated, title weight A + content text weight B, GIN indexed)
 
+page_visits (tracks recently visited pages per user per workspace)
+  ├── workspace_id → workspaces.id
+  ├── user_id → auth.users.id
+  ├── page_id → pages.id
+  ├── visited_at: timestamptz (updated on each visit via upsert)
+  ├── Constraint: unique(workspace_id, user_id, page_id)
+  └── RLS: users can only read/write their own visits
+
 Sign-up flow (atomic, via DB trigger):
   1. auth.users row created by Supabase Auth
   2. handle_new_user trigger fires → creates:

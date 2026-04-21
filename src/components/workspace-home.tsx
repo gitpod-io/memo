@@ -7,6 +7,7 @@ import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError } from "@/lib/sentry";
 import { Button } from "@/components/ui/button";
 import { RelativeTime } from "@/components/relative-time";
+import type { RecentPageVisit } from "@/lib/types";
 
 interface WorkspaceHomeProps {
   workspace: { id: string; name: string; slug: string };
@@ -17,12 +18,14 @@ interface WorkspaceHomeProps {
     updated_at: string;
   }[];
   userId: string;
+  recentVisits?: RecentPageVisit[];
 }
 
 export function WorkspaceHome({
   workspace,
   pages,
   userId,
+  recentVisits = [],
 }: WorkspaceHomeProps) {
   const router = useRouter();
 
@@ -79,6 +82,39 @@ export function WorkspaceHome({
           New Page
         </Button>
       </div>
+      {recentVisits.length > 0 && (
+        <div className="mt-6">
+          <h2 className="mb-2 text-xs uppercase tracking-widest text-white/30">
+            Recently Visited
+          </h2>
+          <div className="flex flex-col gap-0.5">
+            {recentVisits.map((visit) => (
+              <button
+                key={visit.page_id}
+                className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-white/[0.04]"
+                onClick={() =>
+                  router.push(`/${workspace.slug}/${visit.page_id}`)
+                }
+              >
+                <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+                  {visit.icon ? (
+                    <span className="text-sm">{visit.icon}</span>
+                  ) : (
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </span>
+                <span className="flex-1 truncate">
+                  {visit.title || "Untitled"}
+                </span>
+                <RelativeTime
+                  dateStr={visit.visited_at}
+                  className="text-xs text-muted-foreground"
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="mt-6 flex flex-col gap-0.5">
         {pages.map((page) => (
           <button

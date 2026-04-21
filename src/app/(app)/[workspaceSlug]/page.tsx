@@ -44,18 +44,42 @@ export default async function WorkspacePage({
     notFound();
   }
 
-  const { data: pages } = await supabase
-    .from("pages")
-    .select("id, title, parent_id, position, icon, updated_at")
-    .eq("workspace_id", workspace.id)
-    .is("parent_id", null)
-    .order("position", { ascending: true });
+  const userId = user?.id ?? "";
+
+  // Fetch pages and recent visits in parallel
+  const [{ data: pages }, { data: recentVisitRows }] = await Promise.all([
+    supabase
+      .from("pages")
+      .select("id, title, parent_id, position, icon, updated_at")
+      .eq("workspace_id", workspace.id)
+      .is("parent_id", null)
+      .order("position", { ascending: true }),
+    supabase
+      .from("page_visits")
+      .select("page_id, visited_at, pages!inner(title, icon)")
+      .eq("workspace_id", workspace.id)
+      .eq("user_id", userId)
+      .order("visited_at", { ascending: false })
+      .limit(5),
+  ]);
+
+  // Normalize the joined rows into a flat shape
+  const recentVisits = (recentVisitRows ?? []).map((row) => {
+    const page = row.pages as unknown as { title: string; icon: string | null };
+    return {
+      page_id: row.page_id as string,
+      visited_at: row.visited_at as string,
+      title: page.title,
+      icon: page.icon,
+    };
+  });
 
   return (
     <WorkspaceHome
       workspace={workspace}
       pages={pages ?? []}
-      userId={user?.id ?? ""}
+      userId={userId}
+      recentVisits={recentVisits}
     />
   );
 }
