@@ -8,7 +8,7 @@ import { PageTitle } from "@/components/page-title";
 import { PageIcon } from "@/components/page-icon";
 import { PageCover } from "@/components/page-cover";
 import { ViewTabs } from "@/components/database/view-tabs";
-import { loadDatabase } from "@/lib/database";
+import { loadDatabase, loadWorkspaceMembers } from "@/lib/database";
 import type {
   DatabaseProperty,
   DatabaseRow,
@@ -130,23 +130,36 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     [views, activeViewId],
   );
 
-  // Load database data on mount
+  // Load database data and workspace members on mount
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       setLoading(true);
-      const { data, error } = await loadDatabase(pageId);
+      const [dbResult, membersResult] = await Promise.all([
+        loadDatabase(pageId),
+        loadWorkspaceMembers(workspaceId),
+      ]);
       if (cancelled) return;
 
-      if (error || !data) {
+      if (dbResult.error || !dbResult.data) {
         setLoading(false);
         return;
       }
 
-      setProperties(data.properties);
-      setViews(data.views);
-      setRows(data.rows);
+      // Inject _members into person and created_by properties so renderers
+      // can resolve user IDs to display names and avatars.
+      const members = membersResult.data ?? [];
+      const enrichedProperties = dbResult.data.properties.map((prop) => {
+        if (prop.type === "person" || prop.type === "created_by") {
+          return { ...prop, config: { ...prop.config, _members: members } };
+        }
+        return prop;
+      });
+
+      setProperties(enrichedProperties);
+      setViews(dbResult.data.views);
+      setRows(dbResult.data.rows);
       setLoading(false);
     }
 
@@ -154,7 +167,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     return () => {
       cancelled = true;
     };
-  }, [pageId]);
+  }, [pageId, workspaceId]);
 
   // Handle view tab change — update URL ?view= param
   const handleViewChange = useCallback(

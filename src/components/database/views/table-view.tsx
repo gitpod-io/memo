@@ -24,6 +24,11 @@ import type {
   PropertyType,
   RowValue,
 } from "@/lib/types";
+import {
+  isComputedType,
+  buildComputedValue,
+  getPropertyTypeConfig,
+} from "@/components/database/property-types";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -469,15 +474,24 @@ function TableRow({
         const isEditing =
           editingCell?.rowId === row.page.id &&
           editingCell?.propertyId === prop.id;
-        const cellValue = row.values[prop.id];
+
+        // Computed types derive values from page metadata, not row_values
+        const cellValue = isComputedType(prop.type)
+          ? undefined
+          : row.values[prop.id];
+        const computedValue = isComputedType(prop.type)
+          ? buildComputedValue(prop.type, row.page)
+          : undefined;
 
         return (
           <TableCell
             key={prop.id}
             rowId={row.page.id}
             propertyId={prop.id}
+            property={prop}
             propertyType={prop.type}
             value={cellValue}
+            computedValue={computedValue}
             isEditing={isEditing}
             rowHeightClass={rowHeightClass}
             rowIndex={rowIndex}
@@ -508,8 +522,11 @@ function TableRow({
 interface TableCellProps {
   rowId: string;
   propertyId: string;
+  property: DatabaseProperty;
   propertyType: PropertyType;
   value: RowValue | undefined;
+  /** Synthetic value for computed types (created_time, updated_time, created_by). */
+  computedValue?: Record<string, unknown>;
   isEditing: boolean;
   rowHeightClass: string;
   rowIndex: number;
@@ -522,8 +539,10 @@ interface TableCellProps {
 function TableCell({
   rowId,
   propertyId,
+  property,
   propertyType,
   value,
+  computedValue,
   isEditing,
   rowHeightClass,
   rowIndex,
@@ -605,6 +624,26 @@ function TableCell({
         </button>
       </div>
     );
+  }
+
+  // Computed types use registry renderers with synthesized values
+  if (computedValue) {
+    const config = getPropertyTypeConfig(propertyType);
+    if (config) {
+      const { Renderer } = config;
+      return (
+        <div
+          className={cn(
+            "flex items-center border-b border-white/[0.06] p-2",
+            "cursor-default",
+            rowHeightClass,
+          )}
+          role="gridcell"
+        >
+          <Renderer value={computedValue} property={property} />
+        </div>
+      );
+    }
   }
 
   return (
