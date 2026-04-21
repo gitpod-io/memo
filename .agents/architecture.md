@@ -73,6 +73,7 @@ Sign-up flow (atomic, via DB trigger):
 | Floating UI | `@floating-ui/react` | Positioning for slash command menu, floating toolbar, link editor (same as Lexical playground) |
 | Image storage | Supabase Storage | Bucket for uploaded images, public URL stored in ImageNode |
 | Full-text search | PostgreSQL `tsvector` + `tsquery` | Generated column on pages combining title (weight A) + extracted content text (weight B), GIN index, `search_pages` RPC |
+| Page ancestors | PostgreSQL recursive CTE | `get_page_ancestors` RPC walks `parent_id` chain to build breadcrumb path. Returns ancestors root-first. `security invoker` respects RLS. |
 
 ## Lexical Editor — Implementation Plan
 
@@ -223,6 +224,7 @@ src/
 │   ├── emoji-picker.tsx         # Floating emoji grid with search, used by page icon picker
 │   ├── page-icon.tsx            # Page icon display + emoji picker trigger (saves to pages.icon)
 │   ├── page-title.tsx           # Inline-editable page title (saves on blur/Enter)
+│   ├── page-breadcrumb.tsx       # Server component: breadcrumb nav (workspace → ancestors → current page)
 │   ├── page-view-client.tsx     # Client wrapper for page view (holds editor ref, renders icon + title + menu + editor)
 │   ├── page-menu.tsx            # Page "..." dropdown: export as markdown, import markdown
 │   ├── relative-time.tsx        # Client component for "2 hours ago" timestamps (avoids hydration mismatch)

@@ -50,7 +50,7 @@ export function PageViewClient({
   const editorRef = useRef<LexicalEditor | null>(null);
 
   return (
-    <div className="mx-auto max-w-3xl p-6">
+    <>
       <div className="group/page-header">
         <PageIcon key={`icon-${pageId}`} pageId={pageId} initialIcon={pageIcon} />
         <div className="flex items-start gap-2">
@@ -75,6 +75,6 @@ export function PageViewClient({
           editorRef={editorRef}
         />
       </div>
-    </div>
+    </>
   );
 }
