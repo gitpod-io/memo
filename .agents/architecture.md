@@ -77,6 +77,18 @@ page_links (tracks which pages link to which other pages via inline PageLinkNode
   Populated by application logic on auto-save (diffing PageLinkNode entries).
   RLS: workspace members can read/insert/delete links in their workspace.
 
+page_versions (snapshots of page content for version history and restore)
+  ├── page_id → pages.id (ON DELETE CASCADE)
+  ├── content: jsonb (Lexical editor state snapshot)
+  ├── created_at: timestamptz
+  ├── created_by → profiles.id
+  └── Index: (page_id, created_at DESC) for efficient listing
+  RLS: workspace members can read/insert versions for pages in their workspace.
+  Versions are immutable — no update/delete policies. Pruning via security definer functions:
+  `purge_old_page_versions()` removes versions older than 30 days,
+  `prune_excess_page_versions(page_id)` keeps only the latest 50 per page.
+  Created every 5 minutes during auto-save (deduplicated — skipped if content unchanged).
+
 Sign-up flow (atomic, via DB trigger):
   1. auth.users row created by Supabase Auth
   2. handle_new_user trigger fires → creates:
@@ -219,6 +231,8 @@ src/
 │   └── api/
 │       ├── account/route.ts # Account deletion (DELETE) → calls delete_account RPC
 │       ├── health/route.ts  # Health check endpoint (DB connectivity)
+│       ├── pages/[pageId]/versions/route.ts       # GET: list versions, POST: create version snapshot
+│       ├── pages/[pageId]/versions/[versionId]/route.ts # GET: single version content, POST: restore version
 │       └── search/route.ts  # Full-text search (GET ?q=&workspace_id=) → calls search_pages RPC
 ├── components/
 │   ├── auth/
@@ -265,7 +279,8 @@ src/
 │   ├── page-breadcrumb.tsx       # Server component: breadcrumb nav (workspace → ancestors → current page)
 │   ├── page-backlinks.tsx        # Server component: backlinks section (queries page_links, shows linking pages)
 │   ├── page-view-client.tsx     # Client wrapper for page view (holds editor ref, renders icon + title + menu + editor)
-│   ├── page-menu.tsx            # Page "..." dropdown: export as markdown, import markdown
+│   ├── page-menu.tsx            # Page "..." dropdown: favorites, duplicate, version history, export/import markdown
+│   ├── version-history-panel.tsx # Sheet panel: lists page versions, preview, restore
 │   ├── relative-time.tsx        # Client component for "2 hours ago" timestamps (avoids hydration mismatch)
 │   ├── route-error.tsx          # Reusable error boundary UI (Sentry capture + retry button)
 │   ├── workspace-home.tsx       # Workspace home: page list or empty state with create CTA
