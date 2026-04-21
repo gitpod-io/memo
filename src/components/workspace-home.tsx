@@ -209,7 +209,9 @@ export function WorkspaceHome({
               className="w-auto shrink-0"
               aria-label="Sort pages"
             >
-              <SelectValue />
+              <SelectValue>
+                {(value: string) => SORT_LABELS[value as SortOption] ?? value}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {(Object.entries(SORT_LABELS) as [SortOption, string][]).map(
@@ -223,11 +225,15 @@ export function WorkspaceHome({
           </Select>
         </div>
         {filteredAndSorted.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Search className="h-8 w-8 text-muted-foreground" />
-            <p className="mt-2 text-sm text-muted-foreground">
+          <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
+            <Search className="h-12 w-12 text-muted-foreground" />
+            <h3 className="text-lg font-medium">No matches</h3>
+            <p className="text-sm text-muted-foreground">
               No pages match your filter
             </p>
+            <Button variant="outline" size="sm" onClick={() => setFilter("")}>
+              Clear filter
+            </Button>
           </div>
         ) : (
           <div className="flex flex-col gap-0.5">
