@@ -81,3 +81,16 @@ export interface RecentPageVisit {
   title: string;
   icon: string | null;
 }
+
+export interface Favorite {
+  id: string;
+  workspace_id: string;
+  user_id: string;
+  page_id: string;
+  created_at: string;
+}
+
+// Joined type for displaying favorites with page info
+export interface FavoriteWithPage extends Favorite {
+  pages: Pick<Page, "id" | "title" | "icon">;
+}

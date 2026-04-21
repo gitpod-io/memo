@@ -2,7 +2,7 @@
 
 import { useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, Download, MoreHorizontal, Upload } from "lucide-react";
+import { Copy, Download, MoreHorizontal, Star, StarOff, Upload } from "lucide-react";
 import { toast } from "@/lib/toast";
 import type { LexicalEditor } from "lexical";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
 import { lazyCaptureException } from "@/lib/capture";
 import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError } from "@/lib/sentry";
+import { useFavorite } from "@/components/sidebar/favorites-section";
 
 interface PageMenuProps {
   pageId: string;
@@ -41,6 +42,11 @@ export function PageMenu({
 }: PageMenuProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { isFavorited, toggle: toggleFavorite } = useFavorite({
+    workspaceId,
+    userId,
+    pageId,
+  });
 
   const handleDuplicate = useCallback(async () => {
     const supabase = await getClient();
@@ -213,6 +219,19 @@ export function PageMenu({
           <MoreHorizontal className="h-4 w-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent side="bottom" align="end" sideOffset={4}>
+          <DropdownMenuItem onClick={toggleFavorite}>
+            {isFavorited ? (
+              <>
+                <StarOff className="h-4 w-4" />
+                Remove from favorites
+              </>
+            ) : (
+              <>
+                <Star className="h-4 w-4" />
+                Add to favorites
+              </>
+            )}
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={handleDuplicate}>
             <Copy className="h-4 w-4" />
             Duplicate

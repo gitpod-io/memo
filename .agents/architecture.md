@@ -58,6 +58,14 @@ page_visits (tracks recently visited pages per user per workspace)
   ├── Constraint: unique(workspace_id, user_id, page_id)
   └── RLS: users can only read/write their own visits
 
+favorites
+  ├── workspace_id → workspaces.id
+  ├── user_id → profiles.id
+  ├── page_id → pages.id
+  ├── created_at: timestamptz
+  └── UNIQUE(workspace_id, user_id, page_id)
+  RLS: users can only read/write their own favorites within workspaces they're members of.
+
 Sign-up flow (atomic, via DB trigger):
   1. auth.users row created by Supabase Auth
   2. handle_new_user trigger fires → creates:
@@ -207,7 +215,8 @@ src/
 │   │   ├── workspace-switcher.tsx # Dropdown listing all workspaces, create workspace trigger
 │   │   ├── create-workspace-dialog.tsx # Dialog for creating a new workspace
 │   │   ├── page-search.tsx      # Full-text search input + results dropdown (debounced, 300ms)
-│   │   ├── page-tree.tsx        # Hierarchical page tree with CRUD, drag-and-drop, nest/unnest (uses lib/page-tree.ts)
+│   │   ├── favorites-section.tsx # Per-user favorites list + useFavorite hook for toggle
+│   │   ├── page-tree.tsx        # Hierarchical page tree with CRUD, drag-and-drop, nest/unnest, favorites toggle (uses lib/page-tree.ts)
 │   │   └── user-menu.tsx        # User dropdown with settings link + sign-out
 │   ├── editor/                  # Lexical block editor
 │   │   ├── editor.tsx               # Main editor: LexicalComposer, plugins, auto-save to Supabase
