@@ -53,12 +53,14 @@ export default async function WorkspacePage({
       .select("id, title, parent_id, position, icon, updated_at")
       .eq("workspace_id", workspace.id)
       .is("parent_id", null)
+      .is("deleted_at", null)
       .order("position", { ascending: true }),
     supabase
       .from("page_visits")
-      .select("page_id, visited_at, pages!inner(title, icon)")
+      .select("page_id, visited_at, pages!inner(title, icon, deleted_at)")
       .eq("workspace_id", workspace.id)
       .eq("user_id", userId)
+      .is("pages.deleted_at", null)
       .order("visited_at", { ascending: false })
       .limit(5),
   ]);

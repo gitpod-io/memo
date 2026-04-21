@@ -71,9 +71,10 @@ export function FavoritesSection({ userId }: FavoritesSectionProps) {
         const supabase = await getClient();
         return supabase
           .from("favorites")
-          .select("*, pages(id, title, icon)")
+          .select("*, pages!inner(id, title, icon, deleted_at)")
           .eq("workspace_id", workspaceId)
           .eq("user_id", userId)
+          .is("pages.deleted_at", null)
           .order("created_at", { ascending: true });
       });
 

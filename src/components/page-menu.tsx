@@ -68,7 +68,8 @@ export function PageMenu({
     let siblingQuery = supabase
       .from("pages")
       .select("position")
-      .eq("workspace_id", workspaceId);
+      .eq("workspace_id", workspaceId)
+      .is("deleted_at", null);
 
     if (sourcePage.parent_id) {
       siblingQuery = siblingQuery.eq("parent_id", sourcePage.parent_id);
@@ -167,7 +168,8 @@ export function PageMenu({
         const { count } = await supabase
           .from("pages")
           .select("id", { count: "exact", head: true })
-          .eq("workspace_id", workspaceId);
+          .eq("workspace_id", workspaceId)
+          .is("deleted_at", null);
 
         const { data: newPage, error } = await supabase
           .from("pages")

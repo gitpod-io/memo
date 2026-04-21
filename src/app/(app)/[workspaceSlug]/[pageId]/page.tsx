@@ -54,6 +54,7 @@ export async function generateMetadata({
     .select("title")
     .eq("id", pageId)
     .eq("workspace_id", workspace.id)
+    .is("deleted_at", null)
     .maybeSingle();
 
   return {
@@ -95,6 +96,7 @@ export default async function PageView({
       .select("*")
       .eq("id", pageId)
       .eq("workspace_id", workspace.id)
+      .is("deleted_at", null)
       .maybeSingle(),
     supabase.rpc("get_page_ancestors", { page_id: pageId }),
   ]);
