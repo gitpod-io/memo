@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { Table2 } from "lucide-react";
 
 export interface BreadcrumbItem {
   id: string;
   title: string;
   href: string;
+  /** When true, renders a grid icon before the title (database pages). */
+  isDatabase?: boolean;
 }
 
 interface PageBreadcrumbProps {
@@ -36,6 +39,9 @@ export function PageBreadcrumb({
               <span className="shrink-0" aria-hidden="true">
                 ›
               </span>
+            )}
+            {item.isDatabase && (
+              <Table2 className="h-3 w-3 shrink-0" aria-hidden="true" />
             )}
             {isLast ? (
               <span className="truncate" title={displayTitle}>
