@@ -45,6 +45,16 @@ vi.mock("@/lib/supabase/client", () => ({
           }),
         };
       }
+      if (table === "favorites") {
+        return {
+          select: () => ({
+            eq: () => ({
+              eq: () =>
+                Promise.resolve({ data: [], error: null }),
+            }),
+          }),
+        };
+      }
       return {};
     },
   }),

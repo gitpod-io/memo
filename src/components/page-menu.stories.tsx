@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { Copy, Download, MoreHorizontal, Upload } from "lucide-react";
+import { Copy, Download, MoreHorizontal, Star, StarOff, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -32,6 +32,10 @@ export const Default: Story = {
       </DropdownMenuTrigger>
       <DropdownMenuContent side="bottom" align="end" sideOffset={4}>
         <DropdownMenuItem>
+          <Star className="h-4 w-4" />
+          Add to favorites
+        </DropdownMenuItem>
+        <DropdownMenuItem>
           <Copy className="h-4 w-4" />
           Duplicate
         </DropdownMenuItem>
@@ -57,6 +61,41 @@ export const MenuOpen: Story = {
         <MoreHorizontal className="h-4 w-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent side="bottom" align="end" sideOffset={4}>
+        <DropdownMenuItem>
+          <Star className="h-4 w-4" />
+          Add to favorites
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <Copy className="h-4 w-4" />
+          Duplicate
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <Download className="h-4 w-4" />
+          Export as Markdown
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <Upload className="h-4 w-4" />
+          Import Markdown
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ),
+};
+
+export const MenuOpenFavorited: Story = {
+  name: "Menu Open (Favorited)",
+  render: () => (
+    <DropdownMenu defaultOpen>
+      <DropdownMenuTrigger
+        render={<Button variant="ghost" size="icon" aria-label="Page actions" />}
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="bottom" align="end" sideOffset={4}>
+        <DropdownMenuItem>
+          <StarOff className="h-4 w-4" />
+          Remove from favorites
+        </DropdownMenuItem>
         <DropdownMenuItem>
           <Copy className="h-4 w-4" />
           Duplicate

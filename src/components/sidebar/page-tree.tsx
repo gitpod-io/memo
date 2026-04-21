@@ -9,6 +9,8 @@ import {
   GripVertical,
   MoreHorizontal,
   Plus,
+  Star,
+  StarOff,
   Trash2,
 } from "lucide-react";
 import { toast } from "@/lib/toast";
@@ -63,6 +65,10 @@ export function PageTree({ userId }: PageTreeProps) {
     id: string;
     position: "before" | "after" | "inside";
   } | null>(null);
+
+  // Map of page_id → favorite row id for quick lookup and deletion
+  const [favoriteMap, setFavoriteMap] = useState<Map<string, string>>(new Map());
+  const [favRefetchKey, setFavRefetchKey] = useState(0);
 
   const workspaceSlug = params.workspaceSlug;
 
@@ -128,6 +134,105 @@ export function PageTree({ userId }: PageTreeProps) {
       cancelled = true;
     };
   }, [workspaceId]);
+
+  // Re-sync when other components change favorites
+  useEffect(() => {
+    function handleFavoritesChanged() {
+      setFavRefetchKey((k) => k + 1);
+    }
+    window.addEventListener("favorites-changed", handleFavoritesChanged);
+    return () => window.removeEventListener("favorites-changed", handleFavoritesChanged);
+  }, []);
+
+  // Fetch favorites for this user + workspace
+  useEffect(() => {
+    if (!workspaceId) return;
+
+    let cancelled = false;
+
+    async function fetchFavorites() {
+      const { data, error } = await retryOnNetworkError(async () => {
+        const supabase = await getClient();
+        return supabase
+          .from("favorites")
+          .select("id, page_id")
+          .eq("workspace_id", workspaceId)
+          .eq("user_id", userId);
+      });
+
+      if (cancelled) return;
+
+      if (error) {
+        captureSupabaseError(error, "page-tree:fetch-favorites");
+        return;
+      }
+
+      if (data) {
+        setFavoriteMap(new Map(data.map((f) => [f.page_id, f.id])));
+      }
+    }
+
+    fetchFavorites();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [workspaceId, userId, favRefetchKey]);
+
+  const handleToggleFavorite = useCallback(
+    async (pageId: string) => {
+      if (!workspaceId) return;
+
+      const existingFavId = favoriteMap.get(pageId);
+      const supabase = await getClient();
+
+      if (existingFavId) {
+        // Remove — optimistic
+        setFavoriteMap((prev) => {
+          const next = new Map(prev);
+          next.delete(pageId);
+          return next;
+        });
+
+        const { error } = await supabase
+          .from("favorites")
+          .delete()
+          .eq("id", existingFavId);
+
+        if (error) {
+          captureSupabaseError(error, "page-tree:remove-favorite");
+          toast.error("Failed to remove favorite", { duration: 8000 });
+          // Revert
+          setFavoriteMap((prev) => new Map(prev).set(pageId, existingFavId));
+        } else {
+          window.dispatchEvent(new CustomEvent("favorites-changed"));
+        }
+      } else {
+        // Add
+        const { data, error } = await supabase
+          .from("favorites")
+          .insert({
+            workspace_id: workspaceId,
+            user_id: userId,
+            page_id: pageId,
+          })
+          .select("id")
+          .single();
+
+        if (error) {
+          captureSupabaseError(error, "page-tree:add-favorite");
+          toast.error("Failed to add favorite", { duration: 8000 });
+          return;
+        }
+
+        if (data) {
+          setFavoriteMap((prev) => new Map(prev).set(pageId, data.id));
+          window.dispatchEvent(new CustomEvent("favorites-changed"));
+        }
+      }
+    },
+    [workspaceId, userId, favoriteMap],
+  );
 
   const tree = useMemo(() => buildTree(pages), [pages]);
 
@@ -518,6 +623,8 @@ export function PageTree({ userId }: PageTreeProps) {
               onDrop={handleDrop}
               onDragEnd={handleDragEnd}
               pages={pages}
+              favoriteMap={favoriteMap}
+              onToggleFavorite={handleToggleFavorite}
             />
           ))}
         </div>
@@ -587,6 +694,8 @@ interface PageTreeItemProps {
   onDrop: (e: React.DragEvent) => void;
   onDragEnd: () => void;
   pages: Page[];
+  favoriteMap: Map<string, string>;
+  onToggleFavorite: (pageId: string) => void;
 }
 
 function PageTreeItem({
@@ -612,6 +721,8 @@ function PageTreeItem({
   onDrop,
   onDragEnd,
   pages,
+  favoriteMap,
+  onToggleFavorite,
 }: PageTreeItemProps) {
   const { page } = node;
   const hasChildren = node.children.length > 0;
@@ -619,6 +730,7 @@ function PageTreeItem({
   const isSelected = selectedPageId === page.id;
   const isDragged = draggedId === page.id;
   const isDropTarget = dropTarget?.id === page.id;
+  const isFavorited = favoriteMap.has(page.id);
 
   const siblings = getSortedSiblings(pages, page.parent_id);
   const siblingIdx = siblings.findIndex((p) => p.id === page.id);
@@ -724,6 +836,19 @@ function PageTreeItem({
                 <Plus className="h-4 w-4" />
                 Add sub-page
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onToggleFavorite(page.id)}>
+                {isFavorited ? (
+                  <>
+                    <StarOff className="h-4 w-4" />
+                    Remove from favorites
+                  </>
+                ) : (
+                  <>
+                    <Star className="h-4 w-4" />
+                    Add to favorites
+                  </>
+                )}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onDuplicate(page)}>
                 <Copy className="h-4 w-4" />
                 Duplicate
@@ -791,6 +916,8 @@ function PageTreeItem({
               onDrop={onDrop}
               onDragEnd={onDragEnd}
               pages={pages}
+              favoriteMap={favoriteMap}
+              onToggleFavorite={onToggleFavorite}
             />
           ))}
         </div>
