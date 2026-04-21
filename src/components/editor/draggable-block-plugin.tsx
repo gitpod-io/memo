@@ -161,6 +161,7 @@ export function DraggableBlockPlugin({
   const targetBlockElemRef = useRef<HTMLElement | null>(null);
   const isDraggingRef = useRef(false);
   const [showTurnIntoMenu, setShowTurnIntoMenu] = useState(false);
+  const [menuTopPosition, setMenuTopPosition] = useState<string | null>(null);
   const turnIntoMenuRef = useRef<HTMLDivElement>(null);
 
   // Track the hovered block element for showing the drag handle
@@ -368,7 +369,12 @@ export function DraggableBlockPlugin({
         }
       });
 
-      setShowTurnIntoMenu((prev) => !prev);
+      setShowTurnIntoMenu((prev) => {
+        if (!prev && menuRef.current) {
+          setMenuTopPosition(menuRef.current.style.top);
+        }
+        return !prev;
+      });
     },
     [editor],
   );
@@ -422,12 +428,12 @@ export function DraggableBlockPlugin({
         <GripVertical className="h-5 w-5 text-muted-foreground hover:text-foreground" />
       </div>
       {/* Turn Into menu (shown on click) */}
-      {showTurnIntoMenu && menuRef.current && (
+      {showTurnIntoMenu && menuTopPosition && (
         <div
           ref={turnIntoMenuRef}
           className="absolute z-50"
           style={{
-            top: menuRef.current.style.top,
+            top: menuTopPosition,
             left: "24px",
           }}
         >

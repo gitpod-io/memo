@@ -1,7 +1,7 @@
 "use client";
 
 import type { JSX } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
   COMMAND_PRIORITY_LOW,
@@ -54,7 +54,10 @@ export function TurnIntoMenu({
     );
   }, [editor]);
 
-  const options = activeType ? getTargetOptions(activeType) : [];
+  const options = useMemo(
+    () => (activeType ? getTargetOptions(activeType) : []),
+    [activeType],
+  );
 
   const handleSelect = useCallback(
     (option: TurnIntoOption) => {
@@ -96,10 +99,14 @@ export function TurnIntoMenu({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [options, highlightedIndex, handleSelect, onClose]);
 
-  // Reset highlighted index when options change
-  useEffect(() => {
+  // Reset highlighted index when the active block type changes.
+  // Derived state: track which activeType the current index belongs to,
+  // and reset when it diverges — avoids setState-in-effect.
+  const [highlightedForType, setHighlightedForType] = useState(activeType);
+  if (highlightedForType !== activeType) {
+    setHighlightedForType(activeType);
     setHighlightedIndex(0);
-  }, [activeType]);
+  }
 
   // Scroll highlighted item into view
   useEffect(() => {
