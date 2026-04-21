@@ -9,20 +9,13 @@ import {
 } from "react";
 import Link from "next/link";
 import {
-  Calendar,
-  CheckSquare,
-  Clock,
+  ArrowDown,
+  ArrowUp,
   FileText,
-  Hash,
-  Link as LinkIcon,
-  List,
-  Mail,
-  Phone,
   Plus,
-  Type,
-  User,
-  Users,
 } from "lucide-react";
+import { PROPERTY_TYPE_ICON } from "@/lib/property-icons";
+import type { SortRule } from "@/lib/database-filters";
 import { cn } from "@/lib/utils";
 import type {
   DatabaseProperty,
@@ -47,29 +40,6 @@ const ROW_HEIGHT_CLASS: Record<NonNullable<DatabaseViewConfig["row_height"]>, st
 };
 
 // ---------------------------------------------------------------------------
-// Property type → icon mapping
-// ---------------------------------------------------------------------------
-
-const PROPERTY_TYPE_ICON: Record<PropertyType, React.ComponentType<{ className?: string }>> = {
-  text: Type,
-  number: Hash,
-  select: List,
-  multi_select: List,
-  checkbox: CheckSquare,
-  date: Calendar,
-  url: LinkIcon,
-  email: Mail,
-  phone: Phone,
-  person: User,
-  files: FileText,
-  relation: LinkIcon,
-  formula: Hash,
-  created_time: Clock,
-  updated_time: Clock,
-  created_by: Users,
-};
-
-// ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
 
@@ -88,6 +58,10 @@ export interface TableViewProps {
   onColumnWidthsChange?: (widths: Record<string, number>) => void;
   /** Called when a column header is clicked (for property config). */
   onColumnHeaderClick?: (propertyId: string) => void;
+  /** Active sort rules (for displaying sort indicators in column headers). */
+  sorts?: SortRule[];
+  /** Called when a column header sort indicator is clicked. Cycles: unsorted → asc → desc → unsorted. */
+  onSortToggle?: (propertyId: string) => void;
   /** Loading state — shows skeleton. */
   loading?: boolean;
 }
@@ -115,6 +89,8 @@ export function TableView({
   onAddColumn,
   onColumnWidthsChange,
   onColumnHeaderClick,
+  sorts = [],
+  onSortToggle,
   loading = false,
 }: TableViewProps) {
   // Column widths: merge persisted widths with defaults.
@@ -344,20 +320,43 @@ export function TableView({
 
         {visibleProperties.map((prop) => {
           const Icon = PROPERTY_TYPE_ICON[prop.type];
+          const sortRule = sorts.find((s) => s.property_id === prop.id);
           return (
             <div
               key={prop.id}
               className="group/header sticky top-0 z-10 border-b border-white/[0.06] bg-muted p-2"
               role="columnheader"
             >
-              <button
-                type="button"
-                className="flex w-full items-center gap-1.5 text-left text-xs font-medium uppercase tracking-widest text-muted-foreground hover:text-foreground"
-                onClick={() => onColumnHeaderClick?.(prop.id)}
-              >
-                <Icon className="h-3 w-3 shrink-0" />
-                <span className="truncate">{prop.name}</span>
-              </button>
+              <div className="flex w-full items-center gap-1.5">
+                <button
+                  type="button"
+                  className="flex min-w-0 flex-1 items-center gap-1.5 text-left text-xs font-medium uppercase tracking-widest text-muted-foreground hover:text-foreground"
+                  onClick={() => onColumnHeaderClick?.(prop.id)}
+                >
+                  <Icon className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{prop.name}</span>
+                </button>
+                {/* Sort indicator — click to cycle */}
+                {onSortToggle && (
+                  <button
+                    type="button"
+                    onClick={() => onSortToggle(prop.id)}
+                    className={cn(
+                      "shrink-0",
+                      sortRule
+                        ? "text-muted-foreground"
+                        : "text-transparent group-hover/header:text-muted-foreground/50",
+                    )}
+                    aria-label={`Sort by ${prop.name}`}
+                  >
+                    {sortRule?.direction === "desc" ? (
+                      <ArrowDown className="h-3 w-3" />
+                    ) : (
+                      <ArrowUp className="h-3 w-3" />
+                    )}
+                  </button>
+                )}
+              </div>
               {/* Resize handle */}
               <div
                 className={cn(
