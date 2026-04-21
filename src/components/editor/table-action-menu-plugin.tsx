@@ -176,19 +176,22 @@ function TableActionMenu({
  * document.body instead of into the Lexical-managed cell DOM.
  * Portaling React content into Lexical DOM nodes causes removeChild
  * errors when Lexical reconciles the table (e.g. on Tab cell navigation).
+ *
+ * The trigger position is kept in sync with the active cell via
+ * scroll/resize listeners so it doesn't drift when the page scrolls.
  */
 export function TableActionMenuPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [tableCellNode, setTableCellNode] = useState<TableCellNode | null>(
     null
   );
+  const [cellDom, setCellDom] = useState<HTMLElement | null>(null);
   const [menuPosition, setMenuPosition] = useState<{
     x: number;
     y: number;
   } | null>(null);
 
   const handleClose = useCallback(() => {
-    setTableCellNode(null);
     setMenuPosition(null);
   }, []);
 
@@ -198,18 +201,30 @@ export function TableActionMenuPlugin(): JSX.Element | null {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           setTableCellNode(null);
+          setCellDom(null);
           return;
         }
         const anchor = selection.anchor.getNode();
         const cellNode = $getTableCellNodeFromLexicalNode(anchor);
         if (cellNode) {
           setTableCellNode(cellNode);
+          const element = editor.getElementByKey(cellNode.getKey());
+          setCellDom(element);
         } else {
           setTableCellNode(null);
+          setCellDom(null);
         }
       });
     });
   }, [editor]);
+
+  // Close the dropdown menu on scroll so it doesn't float detached
+  useEffect(() => {
+    if (!menuPosition) return;
+    const handleScroll = () => setMenuPosition(null);
+    window.addEventListener("scroll", handleScroll, true);
+    return () => window.removeEventListener("scroll", handleScroll, true);
+  }, [menuPosition]);
 
   const handleMenuOpen = useCallback(
     (event: React.MouseEvent) => {
@@ -220,22 +235,15 @@ export function TableActionMenuPlugin(): JSX.Element | null {
     []
   );
 
-  if (!tableCellNode) {
+  if (!tableCellNode || !cellDom) {
     return null;
   }
-
-  // Compute the cell rect during render — no effect needed
-  const cellDom = editor.getElementByKey(tableCellNode.getKey());
-  if (!cellDom) {
-    return null;
-  }
-  const cellRect = cellDom.getBoundingClientRect();
 
   return createPortal(
     <>
       <TableCellMenuTrigger
         onMenuOpen={handleMenuOpen}
-        cellRect={cellRect}
+        cellDom={cellDom}
       />
       {menuPosition && (
         <TableActionMenu
@@ -250,20 +258,47 @@ export function TableActionMenuPlugin(): JSX.Element | null {
   );
 }
 
+/**
+ * Trigger button that tracks the active cell's position via
+ * getBoundingClientRect in an effect, with scroll/resize listeners
+ * to stay anchored when the viewport changes.
+ */
 function TableCellMenuTrigger({
   onMenuOpen,
-  cellRect,
+  cellDom,
 }: {
   onMenuOpen: (event: React.MouseEvent) => void;
-  cellRect: DOMRect;
+  cellDom: HTMLElement;
 }) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const updatePosition = useCallback(() => {
+    const button = buttonRef.current;
+    if (!button) return;
+    const rect = cellDom.getBoundingClientRect();
+    button.style.top = `${rect.top + 2}px`;
+    button.style.left = `${rect.right - 22}px`;
+  }, [cellDom]);
+
+  // Position on mount and whenever the cell element changes
+  useEffect(() => {
+    updatePosition();
+  }, [updatePosition]);
+
+  // Re-position on scroll and resize
+  useEffect(() => {
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
+    return () => {
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [updatePosition]);
+
   return (
     <button
+      ref={buttonRef}
       className="fixed z-40 flex h-5 w-5 items-center justify-center text-muted-foreground opacity-60 hover:opacity-100 focus:opacity-100"
-      style={{
-        top: cellRect.top + 2,
-        left: cellRect.right - 22,
-      }}
       onClick={onMenuOpen}
       aria-label="Table cell actions"
     >
