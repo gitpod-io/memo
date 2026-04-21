@@ -33,6 +33,14 @@ const BoardView = dynamic(
   { ssr: false },
 );
 
+const ListView = dynamic(
+  () =>
+    import("@/components/database/views/list-view").then(
+      (mod) => mod.ListView,
+    ),
+  { ssr: false },
+);
+
 // Dynamically import the editor only when the database page has content above the grid
 const Editor = dynamic(
   () => import("@/components/editor/editor").then((mod) => mod.Editor),
@@ -250,6 +258,13 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                 />
               ) : activeView?.type === "board" ? (
                 <BoardView
+                  rows={rows}
+                  properties={properties}
+                  viewConfig={activeView.config}
+                  workspaceSlug={workspaceSlug}
+                />
+              ) : activeView?.type === "list" ? (
+                <ListView
                   rows={rows}
                   properties={properties}
                   viewConfig={activeView.config}
