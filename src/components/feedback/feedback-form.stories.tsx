@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { MessageSquarePlus } from "lucide-react";
+import { ImagePlus, Loader2, MessageSquarePlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 
-// FeedbackForm depends on fetch and sonner toast.
+// FeedbackForm depends on fetch, sonner toast, and html-to-image.
 // These stories render the visual appearance with static data.
 
 const meta: Meta = {
@@ -21,6 +21,10 @@ const TYPES = [
   { value: "feature", label: "Feature" },
   { value: "general", label: "General" },
 ] as const;
+
+// 1x1 blue PNG data URL for screenshot thumbnail previews in stories
+const PLACEHOLDER_SCREENSHOT =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAIAAAD/gAIDAAAAOklEQVR4nO3BAQEAAACCIP+vbkhAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB8GXHmAAFMqLKZAAAAAElFTkSuQmCC";
 
 function TypeSelector({ selected }: { selected: string }) {
   return (
@@ -45,16 +49,74 @@ function TypeSelector({ selected }: { selected: string }) {
   );
 }
 
+function ScreenshotSection({
+  screenshot,
+  loading,
+}: {
+  screenshot: string | null;
+  loading?: boolean;
+}) {
+  if (loading) {
+    return (
+      <div className="flex h-20 items-center justify-center border border-white/[0.06] bg-muted">
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-xs text-muted-foreground">Capturing…</span>
+      </div>
+    );
+  }
+
+  if (screenshot) {
+    return (
+      <>
+        <div className="group relative inline-block">
+          <img
+            src={screenshot}
+            alt="Screenshot preview"
+            className="h-20 w-auto border border-white/[0.06] object-cover"
+          />
+          <button
+            type="button"
+            className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center bg-destructive text-destructive-foreground opacity-100"
+            aria-label="Remove screenshot"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+        <button
+          type="button"
+          className="self-start text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Replace image
+        </button>
+      </>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className="flex h-20 items-center justify-center gap-2 border border-dashed border-white/[0.06] text-muted-foreground transition-colors hover:border-white/[0.12] hover:text-foreground"
+    >
+      <ImagePlus className="h-4 w-4" />
+      <span className="text-xs">Upload screenshot</span>
+    </button>
+  );
+}
+
 function FormShell({
   selectedType = "general",
   message = "",
   includeTitle = true,
   submitting = false,
+  screenshot = null,
+  screenshotLoading = false,
 }: {
   selectedType?: string;
   message?: string;
   includeTitle?: boolean;
   submitting?: boolean;
+  screenshot?: string | null;
+  screenshotLoading?: boolean;
 }) {
   const charCount = message.length;
   const atLimit = charCount >= 500;
@@ -90,6 +152,14 @@ function FormShell({
         >
           {charCount}/500
         </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label>Screenshot</Label>
+        <ScreenshotSection
+          screenshot={screenshot}
+          loading={screenshotLoading}
+        />
       </div>
 
       <div className="flex items-center gap-2">
@@ -135,6 +205,38 @@ export const FeatureTypeSelected: Story = {
   render: () => <FormShell selectedType="feature" />,
 };
 
+/** Form with a screenshot thumbnail displayed */
+export const WithScreenshot: Story = {
+  render: () => (
+    <FormShell
+      message="The sidebar overlaps the editor on narrow viewports."
+      selectedType="bug"
+      screenshot={PLACEHOLDER_SCREENSHOT}
+    />
+  ),
+};
+
+/** Form without a screenshot — shows upload placeholder */
+export const WithoutScreenshot: Story = {
+  render: () => (
+    <FormShell
+      message="Would love a dark mode toggle."
+      selectedType="feature"
+      screenshot={null}
+    />
+  ),
+};
+
+/** Form while screenshot capture is in progress */
+export const ScreenshotCapturing: Story = {
+  render: () => (
+    <FormShell
+      message=""
+      screenshotLoading
+    />
+  ),
+};
+
 /** Character counter near the 500-char limit */
 export const NearCharacterLimit: Story = {
   render: () => (
@@ -159,6 +261,7 @@ export const Submitting: Story = {
     <FormShell
       message="The editor crashes when I paste a large table from Google Sheets."
       selectedType="bug"
+      screenshot={PLACEHOLDER_SCREENSHOT}
       submitting
     />
   ),

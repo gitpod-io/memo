@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { MessageSquarePlus } from "lucide-react";
+import { ImagePlus, Loader2, MessageSquarePlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +14,8 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { toast } from "@/lib/toast";
+import { useScreenshot, uploadScreenshot } from "@/lib/use-screenshot";
+import { createClient } from "@/lib/supabase/client";
 import type { FeedbackType } from "@/lib/types";
 
 const MAX_MESSAGE_LENGTH = 500;
@@ -51,7 +53,7 @@ export function FeedbackForm({ defaultOpen = false }: FeedbackFormProps) {
               Help us improve Memo. Your feedback is anonymous to other users.
             </SheetDescription>
           </SheetHeader>
-          <FeedbackFormContent onClose={() => setOpen(false)} />
+          <FeedbackFormContent onClose={() => setOpen(false)} isOpen={open} />
         </SheetContent>
       </Sheet>
     </>
@@ -60,22 +62,42 @@ export function FeedbackForm({ defaultOpen = false }: FeedbackFormProps) {
 
 interface FeedbackFormContentProps {
   onClose: () => void;
+  /** Whether the form sheet is open — triggers screenshot capture */
+  isOpen?: boolean;
   /** Override initial type for Storybook */
   initialType?: FeedbackType;
   /** Override initial message for Storybook */
   initialMessage?: string;
+  /** Override screenshot data URL for Storybook */
+  initialScreenshot?: string | null;
+  /** Override screenshot loading state for Storybook */
+  initialScreenshotLoading?: boolean;
 }
 
 export function FeedbackFormContent({
   onClose,
+  isOpen = false,
   initialType = "general",
   initialMessage = "",
+  initialScreenshot,
+  initialScreenshotLoading,
 }: FeedbackFormContentProps) {
   const [type, setType] = useState<FeedbackType>(initialType);
   const [message, setMessage] = useState(initialMessage);
   const [includePageTitle, setIncludePageTitle] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const screenshot = useScreenshot(isOpen);
+
+  // Allow Storybook overrides
+  const screenshotDataUrl =
+    initialScreenshot !== undefined ? initialScreenshot : screenshot.dataUrl;
+  const screenshotLoading =
+    initialScreenshotLoading !== undefined
+      ? initialScreenshotLoading
+      : screenshot.loading;
 
   const charCount = message.length;
   const atLimit = charCount >= MAX_MESSAGE_LENGTH;
@@ -89,6 +111,30 @@ export function FeedbackFormContent({
 
       setSubmitting(true);
 
+      // Upload screenshot if present
+      let screenshotUrl: string | null = null;
+      const blob = screenshot.toBlob();
+      if (blob) {
+        try {
+          const supabase = createClient();
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          if (user) {
+            screenshotUrl = await uploadScreenshot(blob, user.id);
+            if (!screenshotUrl) {
+              toast.error("Screenshot upload failed — submitting without it", {
+                duration: 8000,
+              });
+            }
+          }
+        } catch (_uploadErr) {
+          toast.error("Screenshot upload failed — submitting without it", {
+            duration: 8000,
+          });
+        }
+      }
+
       const payload = {
         type,
         message: message.trim(),
@@ -98,6 +144,7 @@ export function FeedbackFormContent({
           includePageTitle && typeof document !== "undefined"
             ? document.title
             : null,
+        screenshot_url: screenshotUrl,
         metadata: {
           user_agent:
             typeof navigator !== "undefined" ? navigator.userAgent : null,
@@ -135,7 +182,27 @@ export function FeedbackFormContent({
         setSubmitting(false);
       }
     },
-    [type, message, includePageTitle, isValid, submitting, onClose],
+    [
+      type,
+      message,
+      includePageTitle,
+      isValid,
+      submitting,
+      onClose,
+      screenshot,
+    ],
+  );
+
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        screenshot.replaceWithFile(file);
+      }
+      // Reset input so the same file can be re-selected
+      e.target.value = "";
+    },
+    [screenshot],
   );
 
   return (
@@ -191,6 +258,61 @@ export function FeedbackFormContent({
         >
           {charCount}/{MAX_MESSAGE_LENGTH}
         </div>
+      </div>
+
+      {/* Screenshot section */}
+      <div className="flex flex-col gap-1.5">
+        <Label>Screenshot</Label>
+        {screenshotLoading ? (
+          <div className="flex h-20 items-center justify-center border border-white/[0.06] bg-muted">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-xs text-muted-foreground">
+              Capturing…
+            </span>
+          </div>
+        ) : screenshotDataUrl ? (
+          <div className="group relative inline-block">
+            <img
+              src={screenshotDataUrl}
+              alt="Screenshot preview"
+              className="h-20 w-auto border border-white/[0.06] object-cover"
+            />
+            <button
+              type="button"
+              onClick={screenshot.remove}
+              className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center bg-destructive text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
+              aria-label="Remove screenshot"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex h-20 items-center justify-center gap-2 border border-dashed border-white/[0.06] text-muted-foreground transition-colors hover:border-white/[0.12] hover:text-foreground"
+          >
+            <ImagePlus className="h-4 w-4" />
+            <span className="text-xs">Upload screenshot</span>
+          </button>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          onChange={handleFileChange}
+          className="hidden"
+          aria-label="Upload screenshot"
+        />
+        {screenshotDataUrl && (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="self-start text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Replace image
+          </button>
+        )}
       </div>
 
       {/* Include page title checkbox */}
