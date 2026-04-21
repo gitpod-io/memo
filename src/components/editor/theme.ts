@@ -65,4 +65,12 @@ export const editorTheme: EditorThemeClasses = {
   },
   link: "text-accent underline cursor-pointer hover:text-accent/80",
   horizontalRule: "mt-3 mb-3 border-t border-white/[0.06]",
+  table: "mt-3 w-full border-collapse border border-white/[0.06] text-sm",
+  tableCell:
+    "relative border border-white/[0.06] px-3 py-2 text-sm text-foreground align-top",
+  tableCellHeader:
+    "relative border border-white/[0.06] px-3 py-2 text-sm font-medium text-foreground bg-muted align-top",
+  tableRow: "",
+  tableCellSelected: "bg-white/[0.08]",
+  tableSelected: "outline-2 outline-accent outline",
 };

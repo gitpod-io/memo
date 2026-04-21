@@ -280,6 +280,7 @@ Each block is a full-width element with consistent vertical spacing.
 | Code block | 12px (`mt-3`) | `bg-muted rounded-sm p-4 font-mono text-sm` |
 | Divider | 12px (`mt-3 mb-3`) | `border-t border-white/[0.06]` |
 | Callout | 12px (`mt-3`) | `bg-muted p-4`, emoji left, sharp corners |
+| Table | 12px (`mt-3`) | Full width, `border-collapse`, `border border-white/[0.06]`, header row `bg-muted font-medium` |
 | Image | 12px (`mt-3`) | Max width 100%, centered, optional caption |
 
 ### Slash Command Menu

@@ -38,7 +38,9 @@ import {
   MessageSquare,
   ChevronRight,
   Link,
+  Grid3X3,
 } from "lucide-react";
+import { INSERT_TABLE_COMMAND } from "@lexical/table";
 import type { JSX, ReactElement } from "react";
 import { openImagePicker } from "@/components/editor/image-plugin";
 import { INSERT_CALLOUT_COMMAND } from "@/components/editor/callout-plugin";
@@ -186,6 +188,17 @@ export function SlashCommandPlugin(): JSX.Element | null {
         icon: <Minus className="h-5 w-5" />,
         onSelect: () => {
           editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined);
+        },
+      }),
+      new SlashCommandOption("Table", {
+        description: "Insert a 3×3 table",
+        icon: <Grid3X3 className="h-5 w-5" />,
+        onSelect: () => {
+          editor.dispatchCommand(INSERT_TABLE_COMMAND, {
+            columns: "3",
+            rows: "3",
+            includeHeaders: { rows: true, columns: false },
+          });
         },
       }),
       new SlashCommandOption("Image", {
