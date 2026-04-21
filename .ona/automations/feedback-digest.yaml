@@ -1,12 +1,12 @@
 name: Feedback Digest
-description: Reads new user feedback and usage events daily, then posts a categorized digest to Slack.
+description: Reads new user feedback and usage events hourly, then posts a categorized digest to Slack.
 triggers:
     - context:
         projects:
             projectIds:
                 - 019d8bf4-1ded-7317-be2f-555e8fb55ff9
       time:
-        cronExpression: "0 8 * * *"
+        cronExpression: "0 * * * *"
     - context:
         projects:
             projectIds:
@@ -43,9 +43,8 @@ action:
                   -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}"
                 ```
 
-                If the result is an empty array, post a brief message to Slack:
-                "📊 **Feedback Digest — YYYY-MM-DD** — No new feedback today."
-                Then stop.
+                If the result is an empty array, stop — do nothing. Do not post to Slack
+                when there is no new feedback.
 
                 ## Step 2: Query usage events (past 7 days)
 
@@ -157,7 +156,7 @@ action:
                 ## Rules
 
                 - Do NOT auto-file GitHub issues. Only propose actions in the Slack digest.
-                - If no new feedback exists, post a brief "no new feedback" message or skip.
+                - If no new feedback exists, stop silently. Do not post to Slack.
                 - If Supabase or Slack calls fail, report the error clearly — do not silently exit.
                 - Keep the digest concise. Summarize, do not dump raw data.
                 - Use real data only. Do not fabricate feedback or usage numbers.
