@@ -37,11 +37,13 @@ import {
   ImageIcon,
   MessageSquare,
   ChevronRight,
+  Link,
 } from "lucide-react";
 import type { JSX, ReactElement } from "react";
 import { openImagePicker } from "@/components/editor/image-plugin";
 import { INSERT_CALLOUT_COMMAND } from "@/components/editor/callout-plugin";
 import { INSERT_COLLAPSIBLE_COMMAND } from "@/components/editor/collapsible-plugin";
+import { OPEN_PAGE_LINK_MENU_COMMAND } from "@/components/editor/page-link-plugin";
 
 class SlashCommandOption extends MenuOption {
   title: string;
@@ -205,6 +207,13 @@ export function SlashCommandPlugin(): JSX.Element | null {
         icon: <ChevronRight className="h-5 w-5" />,
         onSelect: () => {
           editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined);
+        },
+      }),
+      new SlashCommandOption("Link to page", {
+        description: "Insert a link to another page",
+        icon: <Link className="h-5 w-5" />,
+        onSelect: () => {
+          editor.dispatchCommand(OPEN_PAGE_LINK_MENU_COMMAND, undefined);
         },
       }),
     ],

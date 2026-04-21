@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import dynamic from "next/dynamic";
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { captureSupabaseError } from "@/lib/sentry";
 import type { SerializedEditorState } from "lexical";
@@ -8,6 +9,7 @@ import {
   PageBreadcrumb,
   type BreadcrumbItem,
 } from "@/components/page-breadcrumb";
+import { PageBacklinks } from "@/components/page-backlinks";
 
 const PageViewClient = dynamic(
   () =>
@@ -159,6 +161,13 @@ export default async function PageView({
         workspaceSlug={workspaceSlug}
         userId={user.id}
       />
+      <Suspense fallback={null}>
+        <PageBacklinks
+          pageId={page.id}
+          workspaceId={workspace.id}
+          workspaceSlug={workspaceSlug}
+        />
+      </Suspense>
     </div>
   );
 }

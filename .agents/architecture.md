@@ -66,6 +66,15 @@ favorites
   └── UNIQUE(workspace_id, user_id, page_id)
   RLS: users can only read/write their own favorites within workspaces they're members of.
 
+page_links (tracks which pages link to which other pages via inline PageLinkNode)
+  ├── workspace_id → workspaces.id
+  ├── source_page_id → pages.id (the page containing the link)
+  ├── target_page_id → pages.id (the page being linked to)
+  ├── created_at: timestamptz
+  └── UNIQUE(source_page_id, target_page_id)
+  Populated by application logic on auto-save (diffing PageLinkNode entries).
+  RLS: workspace members can read/insert/delete links in their workspace.
+
 Sign-up flow (atomic, via DB trigger):
   1. auth.users row created by Supabase Auth
   2. handle_new_user trigger fires → creates:
@@ -128,6 +137,7 @@ Pin to a specific version to avoid breaking changes.
 | CalloutPlugin | N/A (custom) | Implemented |
 | CollapsiblePlugin (toggle blocks) | `plugins/CollapsibleExtension` | Implemented |
 | ListTabIndentationPlugin | N/A (custom) | Implemented |
+| PageLinkPlugin (`[[` trigger + search) | N/A (custom) | Implemented |
 | ToolbarPlugin (top toolbar) | `plugins/ToolbarPlugin` | Deferred |
 
 ### Custom nodes
@@ -139,6 +149,7 @@ Pin to a specific version to avoid breaking changes.
 | CollapsibleContainerNode | ElementNode | `<details>` wrapper for toggle blocks | Implemented |
 | CollapsibleTitleNode | ElementNode | `<summary>` title for toggle blocks | Implemented |
 | CollapsibleContentNode | ElementNode | Content area for toggle blocks | Implemented |
+| PageLinkNode | DecoratorNode | Inline page link pill (stores pageId, renders title + icon) | Implemented |
 | DividerNode | HorizontalRuleNode (`@lexical/react`) | Horizontal divider | Built-in |
 
 ### Skipped plugins (not needed for MVP)
@@ -236,12 +247,15 @@ src/
 │   │   ├── callout-node.tsx         # CalloutNode (ElementNode) with emoji + variant
 │   │   ├── callout-plugin.tsx       # Callout insert command + emoji rendering
 │   │   ├── collapsible-node.tsx     # CollapsibleContainer/Title/Content nodes (<details>/<summary>)
+│   │   ├── page-link-node.tsx         # PageLinkNode (DecoratorNode) — inline page link pill with realtime title/icon updates
+│   │   ├── page-link-plugin.tsx       # [[ trigger detection, page search dropdown, INSERT_PAGE_LINK_COMMAND
 │   │   └── collapsible-plugin.tsx   # Collapsible insert command + toggle handling
 │   ├── delete-account-section.tsx # Account deletion danger zone with double-confirm dialog
 │   ├── emoji-picker.tsx         # Floating emoji grid with search, used by page icon picker
 │   ├── page-icon.tsx            # Page icon display + emoji picker trigger (saves to pages.icon)
 │   ├── page-title.tsx           # Inline-editable page title (saves on blur/Enter)
 │   ├── page-breadcrumb.tsx       # Server component: breadcrumb nav (workspace → ancestors → current page)
+│   ├── page-backlinks.tsx        # Server component: backlinks section (queries page_links, shows linking pages)
 │   ├── page-view-client.tsx     # Client wrapper for page view (holds editor ref, renders icon + title + menu + editor)
 │   ├── page-menu.tsx            # Page "..." dropdown: export as markdown, import markdown
 │   ├── relative-time.tsx        # Client component for "2 hours ago" timestamps (avoids hydration mismatch)
