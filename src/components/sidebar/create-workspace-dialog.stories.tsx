@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { WORKSPACE_LIMIT } from "@/lib/workspace";
 
 const meta: Meta = {
   title: "Sidebar/CreateWorkspaceDialog",
@@ -60,7 +61,7 @@ export const AtLimit: Story = {
         <DialogHeader>
           <DialogTitle>Create workspace</DialogTitle>
           <DialogDescription>
-            You&apos;ve reached the limit of 5 workspaces.
+            You&apos;ve reached the limit of {WORKSPACE_LIMIT} workspaces.
           </DialogDescription>
         </DialogHeader>
         <p className="text-xs text-muted-foreground">
