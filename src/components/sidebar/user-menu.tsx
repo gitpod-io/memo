@@ -1,7 +1,8 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { LogOut, Settings, User, Users } from "lucide-react";
+import { Keyboard, LogOut, Settings, User, Users } from "lucide-react";
+import { useSidebar } from "@/components/sidebar/sidebar-context";
 import { getClient } from "@/lib/supabase/lazy-client";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +21,7 @@ interface UserMenuProps {
 export function UserMenu({ displayName, email }: UserMenuProps) {
   const router = useRouter();
   const params = useParams<{ workspaceSlug?: string }>();
+  const { setShortcutsOpen } = useSidebar();
 
   async function handleSignOut() {
     const supabase = await getClient();
@@ -66,6 +68,10 @@ export function UserMenu({ displayName, email }: UserMenuProps) {
         <DropdownMenuItem onClick={handleMembers}>
           <Users className="h-4 w-4" />
           Members
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setShortcutsOpen(true)}>
+          <Keyboard className="h-4 w-4" />
+          Keyboard shortcuts
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
