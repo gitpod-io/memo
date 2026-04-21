@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 
 vi.mock("@sentry/nextjs", () => ({
   captureException: vi.fn(),
@@ -210,5 +211,33 @@ describe("POST /api/pages/[pageId]/versions/[versionId] (restore)", () => {
       { params: mockParams },
     );
     expect(res.status).toBe(403);
+  });
+
+  it("returns 400 on empty request body (#380)", async () => {
+    const res = await POST(
+      makeRequest("/api/pages/page-123/versions/version-456", {
+        method: "POST",
+        body: "",
+      }),
+      { params: mockParams },
+    );
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe("Invalid JSON in request body");
+    expect(Sentry.captureException).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 on malformed JSON body (#380)", async () => {
+    const res = await POST(
+      makeRequest("/api/pages/page-123/versions/version-456", {
+        method: "POST",
+        body: "{not valid json",
+      }),
+      { params: mockParams },
+    );
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe("Invalid JSON in request body");
+    expect(Sentry.captureException).not.toHaveBeenCalled();
   });
 });

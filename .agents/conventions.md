@@ -263,6 +263,29 @@ try {
 }
 ```
 
+### Safe `request.json()` parsing in API routes
+
+`request.json()` throws a `SyntaxError` when the body is empty or malformed JSON.
+This is a client error, not an application bug — it must return 400 without reaching
+the generic catch block (which would report it to Sentry at error level).
+
+Wrap `request.json()` in its own try-catch before the main route logic:
+
+```typescript
+let body: { content: Record<string, unknown> | null };
+try {
+  body = await request.json() as typeof body;
+} catch (_e) {
+  // Malformed/empty body is a client error — return 400 without Sentry capture
+  return NextResponse.json(
+    { error: "Invalid JSON in request body" },
+    { status: 400 },
+  );
+}
+```
+
+Use `catch (_e)` (not bare `catch {}`) to satisfy the static analysis convention.
+
 ### Client-side mutations
 
 Client-side mutations must show `toast.error()` on failure in addition to Sentry

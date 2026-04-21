@@ -69,7 +69,17 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json() as { action: string };
+    let body: { action: string };
+    try {
+      body = await request.json() as typeof body;
+    } catch (_e) {
+      // Malformed/empty body is a client error, not an application bug — return 400 without Sentry capture
+      return NextResponse.json(
+        { error: "Invalid JSON in request body" },
+        { status: 400 },
+      );
+    }
+
     if (body.action !== "restore") {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }

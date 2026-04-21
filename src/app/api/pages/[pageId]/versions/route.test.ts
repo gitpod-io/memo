@@ -154,6 +154,34 @@ describe("POST /api/pages/[pageId]/versions", () => {
     expect(res.status).toBe(400);
   });
 
+  it("returns 400 on empty request body (#380)", async () => {
+    const res = await POST(
+      makeRequest("/api/pages/page-123/versions", {
+        method: "POST",
+        body: "",
+      }),
+      { params: mockParams },
+    );
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe("Invalid JSON in request body");
+    expect(Sentry.captureException).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 on malformed JSON body (#380)", async () => {
+    const res = await POST(
+      makeRequest("/api/pages/page-123/versions", {
+        method: "POST",
+        body: "{invalid json",
+      }),
+      { params: mockParams },
+    );
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe("Invalid JSON in request body");
+    expect(Sentry.captureException).not.toHaveBeenCalled();
+  });
+
   it("creates a version on success", async () => {
     // First select = dedup check (no existing version)
     listResult = { data: null, error: null };
