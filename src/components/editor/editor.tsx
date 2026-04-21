@@ -44,13 +44,89 @@ import {
   CollapsibleContentNode,
 } from "@/components/editor/collapsible-node";
 import { CollapsiblePlugin } from "@/components/editor/collapsible-plugin";
+import { PageLinkNode } from "@/components/editor/page-link-node";
+import { PageLinkPlugin } from "@/components/editor/page-link-plugin";
 import { WordCountPlugin } from "@/components/editor/word-count-plugin";
 import { getClient } from "@/lib/supabase/lazy-client";
 
 const SAVE_DEBOUNCE_MS = 500;
 
+/** Extract all PageLinkNode pageIds from a serialized editor state. */
+function extractPageLinkIds(
+  state: SerializedEditorState,
+): string[] {
+  const ids: string[] = [];
+
+  function walk(node: Record<string, unknown>) {
+    if (node.type === "page-link" && typeof node.pageId === "string") {
+      ids.push(node.pageId);
+    }
+    const children = node.children;
+    if (Array.isArray(children)) {
+      for (const child of children) {
+        walk(child as Record<string, unknown>);
+      }
+    }
+  }
+
+  const root = state.root;
+  if (root && typeof root === "object") {
+    walk(root as Record<string, unknown>);
+  }
+
+  // Deduplicate
+  return [...new Set(ids)];
+}
+
+/** Sync page_links table to match the current set of linked page IDs. */
+async function syncPageLinks(
+  pageId: string,
+  workspaceId: string,
+  linkedPageIds: string[],
+): Promise<void> {
+  const supabase = await getClient();
+
+  // Fetch current links from this page
+  const { data: existing } = await supabase
+    .from("page_links")
+    .select("id, target_page_id")
+    .eq("source_page_id", pageId);
+
+  const currentLinks = existing ?? [];
+  const currentTargetIds = new Set(currentLinks.map((l) => l.target_page_id));
+  const desiredTargetIds = new Set(linkedPageIds);
+
+  // Links to add
+  const toAdd = linkedPageIds.filter((id) => !currentTargetIds.has(id));
+  // Links to remove
+  const toRemove = currentLinks.filter(
+    (l) => !desiredTargetIds.has(l.target_page_id),
+  );
+
+  if (toAdd.length > 0) {
+    await supabase.from("page_links").insert(
+      toAdd.map((targetId) => ({
+        workspace_id: workspaceId,
+        source_page_id: pageId,
+        target_page_id: targetId,
+      })),
+    );
+  }
+
+  if (toRemove.length > 0) {
+    await supabase
+      .from("page_links")
+      .delete()
+      .in(
+        "id",
+        toRemove.map((l) => l.id),
+      );
+  }
+}
+
 interface EditorProps {
   pageId: string;
+  workspaceId: string;
   initialContent: SerializedEditorState | null;
   editorRef?: React.MutableRefObject<LexicalEditor | null>;
 }
@@ -82,7 +158,7 @@ function EditorRefPlugin({
   return null;
 }
 
-export function Editor({ pageId, initialContent, editorRef }: EditorProps) {
+export function Editor({ pageId, workspaceId, initialContent, editorRef }: EditorProps) {
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
@@ -122,13 +198,19 @@ export function Editor({ pageId, initialContent, editorRef }: EditorProps) {
         if (!error) {
           lastSavedRef.current = serialized;
           setSaveStatus("saved");
+
+          // Sync page_links in the background after successful save
+          const linkedPageIds = extractPageLinkIds(json);
+          syncPageLinks(pageId, workspaceId, linkedPageIds).catch((err) =>
+            lazyCaptureException(err),
+          );
         } else {
           lazyCaptureException(error);
           setSaveStatus("error");
         }
       }, SAVE_DEBOUNCE_MS);
     },
-    [pageId]
+    [pageId, workspaceId]
   );
 
   useEffect(() => {
@@ -168,6 +250,7 @@ export function Editor({ pageId, initialContent, editorRef }: EditorProps) {
       CollapsibleContainerNode,
       CollapsibleTitleNode,
       CollapsibleContentNode,
+      PageLinkNode,
     ],
     onError: (error: Error) => {
       lazyCaptureException(error);
@@ -208,6 +291,7 @@ export function Editor({ pageId, initialContent, editorRef }: EditorProps) {
         <ImagePlugin />
         <CalloutPlugin />
         <CollapsiblePlugin />
+        <PageLinkPlugin />
         {editorRef && <EditorRefPlugin editorRef={editorRef} />}
         <OnChangePlugin
           onChange={handleChange}

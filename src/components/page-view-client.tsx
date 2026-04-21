@@ -71,6 +71,7 @@ export function PageViewClient({
         <Editor
           key={pageId}
           pageId={pageId}
+          workspaceId={workspaceId}
           initialContent={initialContent}
           editorRef={editorRef}
         />

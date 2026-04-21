@@ -94,3 +94,16 @@ export interface Favorite {
 export interface FavoriteWithPage extends Favorite {
   pages: Pick<Page, "id" | "title" | "icon">;
 }
+
+export interface PageLink {
+  id: string;
+  workspace_id: string;
+  source_page_id: string;
+  target_page_id: string;
+  created_at: string;
+}
+
+// Joined type for backlinks query (page_links joined with source page)
+export interface BacklinkWithPage extends PageLink {
+  source_page: Pick<Page, "id" | "title" | "icon">;
+}
