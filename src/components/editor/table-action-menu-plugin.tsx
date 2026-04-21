@@ -188,6 +188,7 @@ export function TableActionMenuPlugin(): JSX.Element | null {
     y: number;
   } | null>(null);
   const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
+  const [isCellHovered, setIsCellHovered] = useState(false);
 
   const handleClose = useCallback(() => {
     setTableCellNode(null);
@@ -243,6 +244,26 @@ export function TableActionMenuPlugin(): JSX.Element | null {
     };
   }, [editor, tableCellNode]);
 
+  // Show the trigger button when hovering the active cell. Since the
+  // button is portalled to document.body, CSS parent-hover selectors
+  // can't reach it — use JS listeners on the cell DOM instead.
+  useEffect(() => {
+    if (!tableCellNode) return;
+
+    const cellDom = editor.getElementByKey(tableCellNode.getKey());
+    if (!cellDom) return;
+
+    const onEnter = () => setIsCellHovered(true);
+    const onLeave = () => setIsCellHovered(false);
+    cellDom.addEventListener("mouseenter", onEnter);
+    cellDom.addEventListener("mouseleave", onLeave);
+    return () => {
+      cellDom.removeEventListener("mouseenter", onEnter);
+      cellDom.removeEventListener("mouseleave", onLeave);
+      setIsCellHovered(false);
+    };
+  }, [editor, tableCellNode]);
+
   const handleMenuOpen = useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault();
@@ -262,6 +283,7 @@ export function TableActionMenuPlugin(): JSX.Element | null {
         <TableCellMenuTrigger
           onMenuOpen={handleMenuOpen}
           cellRect={triggerRect}
+          isCellHovered={isCellHovered}
         />,
         document.body
       )}
@@ -280,13 +302,15 @@ export function TableActionMenuPlugin(): JSX.Element | null {
 function TableCellMenuTrigger({
   onMenuOpen,
   cellRect,
+  isCellHovered,
 }: {
   onMenuOpen: (event: React.MouseEvent) => void;
   cellRect: DOMRect;
+  isCellHovered: boolean;
 }) {
   return (
     <button
-      className="fixed z-40 flex h-5 w-5 items-center justify-center text-muted-foreground opacity-0 hover:opacity-100 focus:opacity-100"
+      className={`fixed z-40 flex h-5 w-5 items-center justify-center text-muted-foreground hover:opacity-100 focus:opacity-100 ${isCellHovered ? "opacity-60" : "opacity-0"}`}
       style={{
         top: cellRect.top + 2,
         left: cellRect.right - 22,
