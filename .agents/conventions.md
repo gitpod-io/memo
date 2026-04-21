@@ -1164,6 +1164,53 @@ falling through to `Sentry.captureException`:
 This prevents 42501 errors from being reported at error level in Sentry and
 ensures the client receives 403 instead of 500.
 
+## Usage Event Tracking
+
+Product analytics events are recorded via two modules — `src/lib/track-event-server.ts`
+(server) and `src/lib/track-event.ts` (client). They are separate files to avoid
+pulling `next/headers` into client bundles.
+
+### Server components and API routes
+
+```typescript
+import { trackEvent } from "@/lib/track-event-server";
+
+// Fire-and-forget — use `void` to silence the floating promise lint
+void trackEvent("page.viewed", user.id, {
+  workspaceId: workspace.id,
+  pagePath: `/${workspaceSlug}/${pageId}`,
+  metadata: { page_id: page.id },
+});
+```
+
+`trackEvent` dynamically imports the Supabase server client. Errors are captured
+in Sentry via `captureSupabaseError` but never thrown.
+
+### Client components
+
+```typescript
+import { trackEventClient } from "@/lib/track-event";
+
+// Pass the already-available Supabase browser client
+trackEventClient(supabase, "page.created", userId, {
+  workspaceId,
+  metadata: { page_id: newPage.id, source: "sidebar" },
+});
+```
+
+`trackEventClient` is synchronous (returns `void`). It wraps the insert in
+`Promise.resolve()` to handle Supabase's `PromiseLike` return type and attaches
+`.catch()` for error capture.
+
+### Rules
+
+- One `trackEvent`/`trackEventClient` call per action — no wrapping or middleware.
+- Place the call after the action succeeds (after error checks, before navigation).
+- Include `workspaceId` when available. Include relevant entity IDs in `metadata`.
+- Never `await` the tracking call — it must not block the user action.
+- When the Supabase client isn't already available (e.g. `handleExport`), use
+  `getClient().then(supabase => trackEventClient(...)).catch(() => {})`.
+
 ## This file evolves
 
 When you discover a new pattern that should be replicated, or an anti-pattern that

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Copy, Send } from "lucide-react";
 import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError } from "@/lib/sentry";
+import { trackEventClient } from "@/lib/track-event";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -140,6 +141,11 @@ export function InviteForm({
       setSending(false);
       return;
     }
+
+    trackEventClient(supabase, "member.invited", currentUserId, {
+      workspaceId,
+      metadata: { role },
+    });
 
     const link = `${window.location.origin}/invite/${token}`;
     setSending(false);

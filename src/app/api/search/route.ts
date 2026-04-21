@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/lib/supabase/server";
 import { captureSupabaseError, isInsufficientPrivilegeError } from "@/lib/sentry";
+import { trackEvent } from "@/lib/track-event-server";
 
 export async function GET(request: NextRequest) {
   if (
@@ -56,6 +57,11 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    void trackEvent("search.used", user.user.id, {
+      workspaceId: workspaceId,
+      metadata: { result_count: data?.length ?? 0 },
+    });
 
     return NextResponse.json({ results: data ?? [] });
   } catch (error) {

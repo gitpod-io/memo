@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { captureSupabaseError } from "@/lib/sentry";
+import { trackEvent } from "@/lib/track-event-server";
 import type { SerializedEditorState } from "lexical";
 import {
   PageBreadcrumb,
@@ -145,6 +146,12 @@ export default async function PageView({
         captureSupabaseError(error, "page-view:record-visit");
       }
     });
+
+  void trackEvent("page.viewed", user.id, {
+    workspaceId: workspace.id,
+    pagePath: `/${workspaceSlug}/${pageId}`,
+    metadata: { page_id: page.id },
+  });
 
   // Supabase types jsonb columns as Json | null; narrow to Lexical's serialized state
   const initialContent = page.content as SerializedEditorState | null;
