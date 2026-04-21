@@ -68,7 +68,7 @@ function FocusModeHintInner() {
       >
         <Minimize2 className="h-3 w-3" />
         Exit focus mode
-        <kbd className="ml-1 text-[10px] text-white/30">{shortcutLabel}</kbd>
+        <kbd className="ml-1 text-xs text-white/30">{shortcutLabel}</kbd>
       </Button>
     </div>
   );
