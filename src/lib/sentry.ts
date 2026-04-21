@@ -136,15 +136,31 @@ export function isInsufficientPrivilegeError(error: Error): boolean {
 }
 
 /**
+ * Node.js native fetch (undici) wraps the real network error in the `cause`
+ * property. These substrings in the cause message indicate transient failures.
+ */
+const NODE_FETCH_CAUSE_PATTERNS = [
+  "ECONNRESET",
+  "ENOTFOUND",
+  "ETIMEDOUT",
+  "UND_ERR_SOCKET",
+];
+
+/**
  * True when the error is a transient network failure (e.g. offline, DNS
  * timeout, connection reset). These are not application bugs and should be
  * reported at warning level so they don't trigger error-level alerts.
+ *
+ * Checks both browser-style fetch errors (top-level message) and Node.js
+ * native fetch errors (undici), which use `"fetch failed"` as the message
+ * and wrap the real cause (ECONNRESET, ENOTFOUND, etc.) in `error.cause`.
  */
 export function isTransientNetworkError(error: Error): boolean {
   const msg = error.message;
   const details = isPostgrestError(error) ? error.details : "";
 
-  return (
+  // Browser-style fetch errors
+  if (
     msg === "TypeError: Failed to fetch" ||
     details === "TypeError: Failed to fetch" ||
     msg === "Failed to fetch" ||
@@ -152,7 +168,25 @@ export function isTransientNetworkError(error: Error): boolean {
     msg === "NetworkError when attempting to fetch resource." ||
     msg === "The Internet connection appears to be offline." ||
     msg === "Network request failed"
-  );
+  ) {
+    return true;
+  }
+
+  // Node.js native fetch (undici): top-level message is "fetch failed"
+  if (msg === "fetch failed") {
+    return true;
+  }
+
+  // Node.js native fetch wraps the real error in the cause chain
+  const causeMsg = error.cause instanceof Error ? error.cause.message : "";
+  if (
+    causeMsg &&
+    NODE_FETCH_CAUSE_PATTERNS.some((pattern) => causeMsg.includes(pattern))
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
