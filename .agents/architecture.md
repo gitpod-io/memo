@@ -47,10 +47,42 @@ workspaces
         ├── content: jsonb (Lexical editor state — NOT a separate blocks table)
         ├── icon: text (emoji character for page icon, nullable)
         ├── cover_url: text (public URL of cover image in Supabase Storage, nullable)
+        ├── is_database: boolean (default false — when true, page is a database container)
         ├── position: integer (ordering among siblings)
         ├── created_by → profiles.id
         ├── deleted_at: timestamptz (nullable — NULL = active, non-null = trashed)
         └── search_vector: tsvector (generated, title weight A + content text weight B, GIN indexed)
+        When is_database = true:
+        ├── child pages (parent_id = this page) are database rows
+        ├── has many: database_properties (schema columns)
+        ├── has many: database_views (saved views: table, board, list, calendar, gallery)
+        └── row pages have many: row_values (property values per row per property)
+
+database_properties (schema definition — columns of a database)
+  ├── database_id → pages.id (ON DELETE CASCADE, where is_database = true)
+  ├── name: text (unique per database)
+  ├── type: text (text | number | select | multi_select | checkbox | date | url | email | phone | person | files | relation | formula | created_time | updated_time | created_by)
+  ├── config: jsonb (type-specific: select options, number format, formula expression, relation target)
+  ├── position: integer (column ordering)
+  └── Index: (database_id, position)
+  RLS: workspace members can CRUD properties for databases in their workspace.
+
+database_views (saved views on a database)
+  ├── database_id → pages.id (ON DELETE CASCADE)
+  ├── name: text (default 'Default view')
+  ├── type: text (table | board | list | calendar | gallery)
+  ├── config: jsonb (visible_properties, sorts, filters, plus type-specific config)
+  ├── position: integer (view tab ordering)
+  └── Index: (database_id, position)
+  RLS: workspace members can CRUD views for databases in their workspace.
+
+row_values (property values for each database row)
+  ├── row_id → pages.id (ON DELETE CASCADE — the row page)
+  ├── property_id → database_properties.id (ON DELETE CASCADE)
+  ├── value: jsonb (format depends on property type)
+  ├── UNIQUE(row_id, property_id)
+  └── Index: GIN on (property_id, value) for filtering
+  RLS: workspace members can CRUD values for rows in their workspace.
 
 page_visits (tracks recently visited pages per user per workspace)
   ├── workspace_id → workspaces.id
@@ -138,6 +170,9 @@ Sign-up flow (atomic, via DB trigger):
 | Full-text search | PostgreSQL `tsvector` + `tsquery` | Generated column on pages combining title (weight A) + extracted content text (weight B), GIN index, `search_pages` RPC |
 | Page ancestors | PostgreSQL recursive CTE | `get_page_ancestors` RPC walks `parent_id` chain to build breadcrumb path. Returns ancestors root-first. `security invoker` respects RLS. |
 | Soft delete | `deleted_at` column + RPCs | Pages are soft-deleted (moved to trash) instead of hard-deleted. `soft_delete_page` and `restore_page` RPCs use recursive CTEs to handle sub-pages. RLS policies split into active/trashed. `purge_old_trash` function for 30-day auto-purge, scheduled via Vercel Cron (`GET /api/cron/purge-trash` at 3 AM UTC daily) with pg_cron as a secondary mechanism when available. |
+| Database views | Pages with `is_database = true` | Databases are special pages. Rows are child pages. Schema in `database_properties`, values in `row_values`, views in `database_views`. Reuses all page infrastructure (RLS, search, trash, versioning, backlinks). Client-side filtering/sorting initially. |
+| Property type registry | `Record<PropertyType, {Renderer, Editor}>` | Extensible pattern — new property types added without modifying view components. Each type provides a cell renderer and inline editor. |
+| Inline databases | Lexical `DatabaseNode` (DecoratorNode) | Embeds a database view inside any page. Stores `databaseId` + `viewId`. Compact rendering with expand-to-full-page button. |
 
 ## Lexical Editor — Implementation Plan
 
@@ -179,6 +214,7 @@ Pin to a specific version to avoid breaking changes.
 | ListTabIndentationPlugin | N/A (custom) | Implemented |
 | PageLinkPlugin (`[[` trigger + search) | N/A (custom) | Implemented |
 | TablePlugin + TableActionMenuPlugin | `plugins/TablePlugin` | Implemented |
+| DatabasePlugin (inline database block) | N/A (custom) | Planned |
 | ToolbarPlugin (top toolbar) | `plugins/ToolbarPlugin` | Deferred |
 
 ### Custom nodes
@@ -191,6 +227,7 @@ Pin to a specific version to avoid breaking changes.
 | CollapsibleTitleNode | ElementNode | `<summary>` title for toggle blocks | Implemented |
 | CollapsibleContentNode | ElementNode | Content area for toggle blocks | Implemented |
 | PageLinkNode | DecoratorNode | Inline page link pill (stores pageId, renders title + icon) | Implemented |
+| DatabaseNode | DecoratorNode | Inline database embed (stores databaseId + viewId, renders compact view) | Planned |
 | DividerNode | HorizontalRuleNode (`@lexical/react`) | Horizontal divider | Built-in |
 
 ### Skipped plugins (not needed for MVP)
@@ -214,6 +251,77 @@ Auto-save: debounce 500ms on editor change → write to Supabase
 3. Client component hydrates, initializes Lexical editor with saved content from `pages.content`
 4. User edits content → Lexical editor state changes → debounced auto-save writes `editorState.toJSON()` to Supabase
 5. Errors captured by Sentry (client via `instrumentation-client.ts`, server via `src/instrumentation.ts`)
+
+## Database Views — Architecture
+
+Databases are pages with `is_database = true`. This reuses all existing page infrastructure
+(RLS, nesting, breadcrumbs, favorites, trash, search, version history, backlinks).
+
+### How it works
+
+```
+Database page (is_database = true)
+  ├── content: jsonb (optional Lexical content rendered above the database grid)
+  ├── database_properties[] (schema — the columns)
+  ├── database_views[] (saved views — table, board, list, calendar, gallery)
+  └── child pages (parent_id = database page) = rows
+       └── row_values[] (property values per row per property)
+```
+
+### Rendering flow
+
+1. `[pageId]/page.tsx` fetches the page and checks `is_database`
+2. If true, renders `DatabaseViewClient` instead of the standard `PageViewClient`
+3. `DatabaseViewClient` loads properties, views, and rows via Supabase
+4. Active view type determines which view component renders (TableView, BoardView, etc.)
+5. Filters and sorts are applied client-side on the loaded row data
+6. Cell edits write to `row_values` via Supabase (debounced auto-save)
+
+### Component structure (planned)
+
+```
+src/components/database/
+  ├── database-view-client.tsx     # Main client component: loads data, manages view state
+  ├── view-tabs.tsx                # Horizontal tab bar for switching views
+  ├── filter-bar.tsx               # Active filter pills + add filter UI
+  ├── sort-menu.tsx                # Sort configuration dropdown
+  ├── property-config.tsx          # Column header dropdown: rename, type change, delete
+  ├── property-editor.tsx          # Inline cell editor (dispatches to type-specific editors)
+  ├── property-renderer.tsx        # Cell renderer (dispatches to type-specific renderers)
+  ├── property-types/              # Registry of type-specific renderers and editors
+  │   ├── index.ts                 # PropertyTypeRegistry: Record<PropertyType, {Renderer, Editor}>
+  │   ├── text.tsx
+  │   ├── number.tsx
+  │   ├── select.tsx
+  │   ├── multi-select.tsx
+  │   ├── checkbox.tsx
+  │   ├── date.tsx
+  │   ├── url.tsx
+  │   ├── email.tsx
+  │   ├── phone.tsx
+  │   ├── person.tsx
+  │   ├── files.tsx
+  │   ├── relation.tsx
+  │   ├── formula.tsx
+  │   └── computed.tsx             # created_time, updated_time, created_by (read-only)
+  ├── views/
+  │   ├── table-view.tsx           # Spreadsheet grid with resizable columns
+  │   ├── board-view.tsx           # Kanban columns grouped by select property
+  │   ├── list-view.tsx            # Compact vertical list
+  │   ├── calendar-view.tsx        # Month grid with date-positioned items
+  │   └── gallery-view.tsx         # Responsive card grid with cover + title
+  ├── row-properties-header.tsx    # Properties displayed above editor when row opened as page
+  └── new-database-dialog.tsx      # Dialog for creating a new database
+```
+
+### Key design decisions
+
+- **Client-side filtering/sorting**: all rows loaded, filtered/sorted in browser. Server-side deferred.
+- **Property type registry**: `Record<PropertyType, { Renderer, Editor }>` pattern for extensibility.
+- **Formula evaluation**: simple recursive descent parser, evaluated at render time on the client.
+- **Select option colors**: fixed palette of 8-10 muted colors from the design token set.
+- **No new routes**: existing `[pageId]/page.tsx` handles both pages and databases.
+- **Inline databases**: `DatabaseNode` (Lexical DecoratorNode) stores `databaseId` + `viewId`, renders compact view.
 
 ## Component Map
 
@@ -295,7 +403,26 @@ src/
 │   │   ├── page-link-node.tsx         # PageLinkNode (DecoratorNode) — inline page link pill with realtime title/icon updates
 │   │   ├── page-link-plugin.tsx       # [[ trigger detection, page search dropdown, INSERT_PAGE_LINK_COMMAND
 │   │   ├── collapsible-plugin.tsx   # Collapsible insert command + toggle handling
-│   │   └── table-action-menu-plugin.tsx # Table cell context menu (add/delete rows/columns)
+│   │   ├── table-action-menu-plugin.tsx # Table cell context menu (add/delete rows/columns)
+│   │   ├── database-node.tsx        # DatabaseNode (DecoratorNode) — inline database embed (planned)
+│   │   └── database-plugin.tsx      # Database insert command + inline rendering (planned)
+│   ├── database/                # Database views system (planned)
+│   │   ├── database-view-client.tsx     # Main client component: loads data, manages view state
+│   │   ├── view-tabs.tsx                # Horizontal tab bar for switching views
+│   │   ├── filter-bar.tsx               # Active filter pills + add filter UI
+│   │   ├── sort-menu.tsx                # Sort configuration dropdown
+│   │   ├── property-config.tsx          # Column header dropdown: rename, type change, delete
+│   │   ├── property-editor.tsx          # Inline cell editor (dispatches to type-specific editors)
+│   │   ├── property-renderer.tsx        # Cell renderer (dispatches to type-specific renderers)
+│   │   ├── property-types/              # Registry of type-specific renderers and editors
+│   │   ├── views/
+│   │   │   ├── table-view.tsx           # Spreadsheet grid with resizable columns
+│   │   │   ├── board-view.tsx           # Kanban columns grouped by select property
+│   │   │   ├── list-view.tsx            # Compact vertical list
+│   │   │   ├── calendar-view.tsx        # Month grid with date-positioned items
+│   │   │   └── gallery-view.tsx         # Responsive card grid with cover + title
+│   │   ├── row-properties-header.tsx    # Properties displayed above editor when row opened as page
+│   │   └── new-database-dialog.tsx      # Dialog for creating a new database
 │   ├── delete-account-section.tsx # Account deletion danger zone with double-confirm dialog
 │   ├── emoji-picker.tsx         # Floating emoji grid with search, used by page icon picker
 │   ├── page-cover.tsx           # Page cover image: upload, display, change, remove (saves to pages.cover_url)

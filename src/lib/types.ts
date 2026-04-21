@@ -61,6 +61,7 @@ export interface Page {
   content: Record<string, unknown> | null;
   icon: string | null;
   cover_url: string | null;
+  is_database: boolean;
   position: number;
   created_by: string;
   created_at: string;
@@ -116,6 +117,97 @@ export interface PageLink {
 // Joined type for backlinks query (page_links joined with source page)
 export interface BacklinkWithPage extends PageLink {
   source_page: Pick<Page, "id" | "title" | "icon">;
+}
+
+// Database views types
+
+export type PropertyType =
+  | "text"
+  | "number"
+  | "select"
+  | "multi_select"
+  | "checkbox"
+  | "date"
+  | "url"
+  | "email"
+  | "phone"
+  | "person"
+  | "files"
+  | "relation"
+  | "formula"
+  | "created_time"
+  | "updated_time"
+  | "created_by";
+
+export type DatabaseViewType =
+  | "table"
+  | "board"
+  | "list"
+  | "calendar"
+  | "gallery";
+
+export interface SelectOption {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export interface DatabaseProperty {
+  id: string;
+  database_id: string;
+  name: string;
+  type: PropertyType;
+  config: Record<string, unknown>;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DatabaseViewConfig {
+  visible_properties?: string[];
+  sorts?: { property_id: string; direction: "asc" | "desc" }[];
+  filters?: {
+    property_id: string;
+    operator: string;
+    value: unknown;
+  }[];
+  // Table-specific
+  column_widths?: Record<string, number>;
+  row_height?: "compact" | "default" | "tall";
+  // Board-specific
+  group_by?: string;
+  hide_empty_groups?: boolean;
+  // Calendar-specific
+  date_property?: string;
+  // Gallery-specific
+  card_size?: "small" | "medium" | "large";
+  cover_property?: string | null;
+}
+
+export interface DatabaseView {
+  id: string;
+  database_id: string;
+  name: string;
+  type: DatabaseViewType;
+  config: DatabaseViewConfig;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RowValue {
+  id: string;
+  row_id: string;
+  property_id: string;
+  value: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+// Joined type for loading a database row with all its property values
+export interface DatabaseRow {
+  page: Pick<Page, "id" | "title" | "icon" | "cover_url" | "created_at" | "updated_at" | "created_by">;
+  values: Record<string, RowValue>; // keyed by property_id
 }
 
 export type FeedbackType = "bug" | "feature" | "general";
