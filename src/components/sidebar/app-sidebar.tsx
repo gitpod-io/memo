@@ -15,6 +15,7 @@ import { FavoritesSection } from "@/components/sidebar/favorites-section";
 import { PageTree } from "@/components/sidebar/page-tree";
 import { TrashSection } from "@/components/sidebar/trash-section";
 import { UserMenu } from "@/components/sidebar/user-menu";
+import { FeedbackForm } from "@/components/feedback/feedback-form";
 
 interface AppSidebarProps {
   userId: string;
@@ -37,6 +38,7 @@ function SidebarContent({
       <PageTree userId={userId} />
       <TrashSection />
       <Separator className="bg-white/[0.06]" />
+      <FeedbackForm />
       <UserMenu displayName={displayName} email={email} />
     </div>
   );
