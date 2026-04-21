@@ -5,7 +5,11 @@ import { useParams, useRouter } from "next/navigation";
 import { FileText, StarOff } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { getClient } from "@/lib/supabase/lazy-client";
-import { captureSupabaseError, isSchemaNotFoundError } from "@/lib/sentry";
+import {
+  captureSupabaseError,
+  isInsufficientPrivilegeError,
+  isSchemaNotFoundError,
+} from "@/lib/sentry";
 import { retryOnNetworkError } from "@/lib/retry";
 import type { FavoriteWithPage } from "@/lib/types";
 
@@ -81,8 +85,9 @@ export function FavoritesSection({ userId }: FavoritesSectionProps) {
       if (cancelled) return;
 
       if (error) {
-        // Table missing (migration not applied yet) — degrade gracefully
-        if (isSchemaNotFoundError(error)) return;
+        // Table missing or RLS rejection — degrade gracefully
+        if (isSchemaNotFoundError(error) || isInsufficientPrivilegeError(error))
+          return;
         captureSupabaseError(error, "favorites:fetch");
         return;
       }
@@ -111,7 +116,10 @@ export function FavoritesSection({ userId }: FavoritesSectionProps) {
         .eq("id", favoriteId);
 
       if (error) {
-        if (!isSchemaNotFoundError(error)) {
+        if (
+          !isSchemaNotFoundError(error) &&
+          !isInsufficientPrivilegeError(error)
+        ) {
           captureSupabaseError(error, "favorites:remove");
         }
         toast.error("Failed to remove favorite", { duration: 8000 });
@@ -216,7 +224,10 @@ export function useFavorite({
       if (cancelled) return;
 
       if (error) {
-        if (!isSchemaNotFoundError(error)) {
+        if (
+          !isSchemaNotFoundError(error) &&
+          !isInsufficientPrivilegeError(error)
+        ) {
           captureSupabaseError(error, "favorites:check");
         }
       }
@@ -244,7 +255,10 @@ export function useFavorite({
         .eq("id", favoriteId);
 
       if (error) {
-        if (!isSchemaNotFoundError(error)) {
+        if (
+          !isSchemaNotFoundError(error) &&
+          !isInsufficientPrivilegeError(error)
+        ) {
           captureSupabaseError(error, "favorites:toggle-remove");
         }
         toast.error("Failed to remove favorite", { duration: 8000 });
@@ -266,7 +280,10 @@ export function useFavorite({
         .single();
 
       if (error) {
-        if (!isSchemaNotFoundError(error)) {
+        if (
+          !isSchemaNotFoundError(error) &&
+          !isInsufficientPrivilegeError(error)
+        ) {
           captureSupabaseError(error, "favorites:toggle-add");
         }
         toast.error("Failed to add favorite", { duration: 8000 });

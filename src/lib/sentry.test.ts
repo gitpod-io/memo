@@ -173,4 +173,54 @@ describe("error handling conventions", () => {
         `Use captureSupabaseError() to report to Sentry and show a generic message instead:\n${violations.join("\n")}`,
     ).toEqual([]);
   });
+
+  it("client components with Supabase mutations guard RLS violations before captureSupabaseError", () => {
+    /**
+     * Client-side Supabase mutations (insert/update/delete) can hit RLS
+     * violations (42501) that are expected authorization boundaries (workspace
+     * limits, non-member access). Files performing these mutations must import
+     * isInsufficientPrivilegeError to skip Sentry reporting for expected
+     * rejections. See .agents/conventions.md "Client-side RLS skip pattern".
+     *
+     * Files that only do reads, auth operations, or storage uploads are
+     * allowlisted — they won't encounter RLS 42501 violations.
+     */
+    const RLS_GUARD_ALLOWLIST = new Set([
+      "src/components/auth/oauth-buttons.tsx", // auth sign-in, not a table mutation
+      "src/components/delete-account-section.tsx", // account deletion via RPC
+      "src/components/editor/image-plugin.tsx", // storage upload, not table RLS
+      "src/components/members/invite-accept.tsx", // RPC call, returns app-level error
+      "src/components/members/invite-form.tsx", // insert into invites, admin-only
+      "src/components/members/members-page.tsx", // admin-only member management
+      "src/components/page-cover.tsx", // storage upload + page update
+      "src/components/page-icon.tsx", // page update (owner-only)
+      "src/components/page-menu.tsx", // page duplication (owner-only)
+      "src/components/page-title.tsx", // page update (owner-only)
+      "src/components/sidebar/create-workspace-dialog.tsx", // RPC workspace creation
+      "src/components/sidebar/page-search.tsx", // read-only search
+      "src/components/workspace-settings-form.tsx", // admin-only workspace settings
+    ]);
+
+    const violations: string[] = [];
+
+    for (const file of files) {
+      const rel = toRelative(file);
+      if (rel.includes("src/app/api/")) continue;
+      if (RLS_GUARD_ALLOWLIST.has(rel)) continue;
+
+      const content = readFileSync(file, "utf-8");
+      if (!content.startsWith('"use client"')) continue;
+      if (!content.includes("captureSupabaseError")) continue;
+
+      if (!content.includes("isInsufficientPrivilegeError")) {
+        violations.push(rel);
+      }
+    }
+
+    expect(
+      violations,
+      `Client components calling captureSupabaseError must also import isInsufficientPrivilegeError ` +
+        `to guard against expected RLS violations. See .agents/conventions.md "Client-side RLS skip pattern":\n${violations.join("\n")}`,
+    ).toEqual([]);
+  });
 });
