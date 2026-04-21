@@ -19,7 +19,6 @@ import {
   $createQuoteNode,
   $isHeadingNode,
   $isQuoteNode,
-  type HeadingTagType,
 } from "@lexical/rich-text";
 import { $createCodeNode, $isCodeNode } from "@lexical/code";
 import {
@@ -204,7 +203,7 @@ export function TurnIntoPlugin(): null {
           const children = currentBlock.getChildren();
           const newBlock = createBlockNode(targetType);
           if (newBlock && $isElementNode(newBlock)) {
-            children.forEach((child) => (newBlock as ElementNode).append(child));
+            children.forEach((child) => newBlock.append(child));
             currentBlock.replace(newBlock);
             newBlock.selectEnd();
           }
@@ -253,11 +252,11 @@ function createBlockNode(targetType: BlockType): ElementNode | null {
     case "paragraph":
       return $createParagraphNode();
     case "h1":
-      return $createHeadingNode("h1" as HeadingTagType);
+      return $createHeadingNode("h1");
     case "h2":
-      return $createHeadingNode("h2" as HeadingTagType);
+      return $createHeadingNode("h2");
     case "h3":
-      return $createHeadingNode("h3" as HeadingTagType);
+      return $createHeadingNode("h3");
     case "quote":
       return $createQuoteNode();
     case "code":
