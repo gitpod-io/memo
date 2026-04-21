@@ -2,7 +2,7 @@
 
 import { useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, Download, History, MoreHorizontal, Star, StarOff, Upload } from "lucide-react";
+import { Copy, Download, History, Maximize2, MoreHorizontal, Star, StarOff, Upload } from "lucide-react";
 import { toast } from "@/lib/toast";
 import type { LexicalEditor } from "lexical";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import { lazyCaptureException } from "@/lib/capture";
 import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError } from "@/lib/sentry";
 import { useFavorite } from "@/components/sidebar/favorites-section";
+import { useSidebar } from "@/components/sidebar/sidebar-context";
 
 interface PageMenuProps {
   pageId: string;
@@ -44,6 +45,7 @@ export function PageMenu({
 }: PageMenuProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toggleFocusMode, isMac } = useSidebar();
   const { isFavorited, toggle: toggleFavorite } = useFavorite({
     workspaceId,
     userId,
@@ -243,6 +245,13 @@ export function PageMenu({
           <DropdownMenuItem onClick={onVersionHistoryOpen}>
             <History className="h-4 w-4" />
             Version history
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={toggleFocusMode}>
+            <Maximize2 className="h-4 w-4" />
+            Focus mode
+            <span className="ml-auto text-xs text-muted-foreground">
+              {isMac ? "⌘⇧F" : "Ctrl+Shift+F"}
+            </span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleExport}>
             <Download className="h-4 w-4" />

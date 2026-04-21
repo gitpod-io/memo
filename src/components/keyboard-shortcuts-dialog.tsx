@@ -28,6 +28,7 @@ function getShortcutSections(isMac: boolean): ShortcutSection[] {
         { keys: [mod, "K"], description: "Search pages" },
         { keys: [mod, "N"], description: "New page" },
         { keys: [mod, "\\"], description: "Toggle sidebar" },
+        { keys: [mod, "Shift", "F"], description: "Toggle focus mode" },
         { keys: ["?"], description: "Keyboard shortcuts" },
       ],
     },

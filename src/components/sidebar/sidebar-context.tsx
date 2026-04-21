@@ -22,6 +22,8 @@ interface SidebarContextValue {
   focusSearch: () => void;
   shortcutsOpen: boolean;
   setShortcutsOpen: (open: boolean) => void;
+  focusMode: boolean;
+  toggleFocusMode: () => void;
 }
 
 const SidebarContext = createContext<SidebarContextValue | null>(null);
@@ -40,6 +42,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   );
   const searchRef = useRef<RefObject<HTMLInputElement | null> | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
 
   useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
@@ -71,6 +74,36 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
       searchRef.current?.current?.focus();
     });
   }, []);
+
+  const toggleFocusMode = useCallback(() => setFocusMode((prev) => !prev), []);
+
+  // ⌘+Shift+F keyboard shortcut to toggle focus mode
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      // ⌘+Shift+F or Ctrl+Shift+F toggles focus mode
+      if (
+        e.key === "F" &&
+        e.shiftKey &&
+        (e.metaKey || e.ctrlKey)
+      ) {
+        e.preventDefault();
+        toggleFocusMode();
+        return;
+      }
+      // Escape exits focus mode (only when no dialog/popover/dropdown is open)
+      if (e.key === "Escape" && focusMode) {
+        const hasOpenOverlay =
+          document.querySelector("[data-state='open'][role='dialog']") !== null ||
+          document.querySelector("[data-radix-popper-content-wrapper]") !== null;
+        if (!hasOpenOverlay) {
+          e.preventDefault();
+          setFocusMode(false);
+        }
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [toggleFocusMode, focusMode]);
 
   // ⌘+\ keyboard shortcut to toggle sidebar
   useEffect(() => {
@@ -129,6 +162,8 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
         focusSearch,
         shortcutsOpen,
         setShortcutsOpen,
+        focusMode,
+        toggleFocusMode,
       }}
     >
       {children}
