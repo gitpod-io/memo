@@ -154,11 +154,40 @@ test.describe("Editor table blocks", () => {
     // Blocked by: Tab inside table cell deletes the table
   });
 
-  // Bug: Table cell content is lost after page reload. The table structure
-  // (rows/columns) is preserved but all cell text content is empty after
-  // deserialization.
-  test.skip("table cell content persists after reload", async () => {
-    // Blocked by: table cell content not serialized/deserialized correctly
+  test("table cell content persists after reload", async ({
+    authenticatedPage: page,
+  }) => {
+    // Insert a table and wait for the insertion to be saved
+    const insertSave = waitForContentSave(page);
+    await insertTable(page);
+    await insertSave;
+
+    // Focus the first header cell and type text
+    await focusFirstCell(page);
+    const cellSave = waitForContentSave(page);
+    await page.keyboard.type("Hello");
+    await cellSave;
+
+    // Extra wait to ensure save is fully committed to the database
+    await page.waitForTimeout(500);
+
+    // Reload the page
+    await page.reload({ waitUntil: "domcontentloaded" });
+
+    const editor = page.locator('[contenteditable="true"]');
+    await expect(editor).toBeVisible({ timeout: 10_000 });
+
+    // The table should be visible with the cell content preserved
+    const reloadedTable = editor.locator("table");
+    await expect(reloadedTable).toBeVisible({ timeout: 10_000 });
+    await expect(reloadedTable.locator("th").first()).toContainText("Hello", {
+      timeout: 5_000,
+    });
+
+    // Table structure should also be intact
+    await expect(reloadedTable.locator("th")).toHaveCount(3);
+    await expect(reloadedTable.locator("td")).toHaveCount(6);
+    await expect(reloadedTable.locator("tr")).toHaveCount(3);
   });
 
   // Bug: The TableActionMenuPlugin uses createPortal to render a trigger
