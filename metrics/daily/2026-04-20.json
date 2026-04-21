@@ -1,11 +1,13 @@
 {
   "date": "2026-04-20",
+  "day_number": 8,
   "loc": { "total": 12592, "delta": 261, "by_language": { "TypeScript": 12403, "CSS": 189 } },
   "files": { "total": 90, "delta": 3 },
-  "prs": { "opened_today": 2, "merged_today": 1, "currently_open": 2 },
-  "commits_today": 1,
+  "prs": { "total": 182, "delta": 27, "currently_open": 0 },
+  "commits": { "total": 205, "delta": 27 },
   "test_coverage_pct": null,
   "ci_pass_rate_pct": 100,
+  "autonomous_pct": 82,
   "issues": { "backlog": 1, "in_progress": 0, "in_review": 0, "done": 95 },
   "human_minutes": null,
   "agent_minutes": null
