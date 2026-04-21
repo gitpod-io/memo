@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { Download, MoreHorizontal, Upload } from "lucide-react";
+import { Copy, Download, MoreHorizontal, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -32,6 +32,10 @@ export const Default: Story = {
       </DropdownMenuTrigger>
       <DropdownMenuContent side="bottom" align="end" sideOffset={4}>
         <DropdownMenuItem>
+          <Copy className="h-4 w-4" />
+          Duplicate
+        </DropdownMenuItem>
+        <DropdownMenuItem>
           <Download className="h-4 w-4" />
           Export as Markdown
         </DropdownMenuItem>
@@ -53,6 +57,10 @@ export const MenuOpen: Story = {
         <MoreHorizontal className="h-4 w-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent side="bottom" align="end" sideOffset={4}>
+        <DropdownMenuItem>
+          <Copy className="h-4 w-4" />
+          Duplicate
+        </DropdownMenuItem>
         <DropdownMenuItem>
           <Download className="h-4 w-4" />
           Export as Markdown

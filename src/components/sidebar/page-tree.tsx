@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ChevronRight,
+  Copy,
   FileText,
   GripVertical,
   MoreHorizontal,
@@ -174,6 +175,42 @@ export function PageTree({ userId }: PageTreeProps) {
         setExpanded((prev) => new Set(prev).add(parentId));
       }
 
+      router.push(`/${workspaceSlug}/${newPage.id}`);
+    },
+    [workspaceId, workspaceSlug, pages, userId, router],
+  );
+
+  const handleDuplicate = useCallback(
+    async (page: Page) => {
+      if (!workspaceId || !workspaceSlug) return;
+
+      const nextPosition = getNextSiblingPosition(pages, page.parent_id);
+      const duplicateTitle = (page.title || "Untitled") + " (copy)";
+
+      const supabase = await getClient();
+      const { data: newPage, error } = await supabase
+        .from("pages")
+        .insert({
+          workspace_id: workspaceId,
+          parent_id: page.parent_id,
+          title: duplicateTitle,
+          content: page.content ? JSON.parse(JSON.stringify(page.content)) : null,
+          icon: page.icon,
+          position: nextPosition,
+          created_by: userId,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        captureSupabaseError(error, "page-tree:duplicate-page");
+        toast.error("Failed to duplicate page", { duration: 8000 });
+        return;
+      }
+      if (!newPage) return;
+
+      setPages((prev) => [...prev, newPage]);
+      toast.success("Page duplicated");
       router.push(`/${workspaceSlug}/${newPage.id}`);
     },
     [workspaceId, workspaceSlug, pages, userId, router],
@@ -467,6 +504,7 @@ export function PageTree({ userId }: PageTreeProps) {
                 router.push(`/${workspaceSlug}/${pageId}`)
               }
               onCreate={handleCreate}
+              onDuplicate={handleDuplicate}
               onDelete={setDeleteTarget}
               onMoveUp={handleMoveUp}
               onMoveDown={handleMoveDown}
@@ -535,6 +573,7 @@ interface PageTreeItemProps {
   workspaceSlug: string;
   onNavigate: (pageId: string) => void;
   onCreate: (parentId: string | null) => void;
+  onDuplicate: (page: Page) => void;
   onDelete: (node: TreeNode) => void;
   onMoveUp: (page: Page) => void;
   onMoveDown: (page: Page) => void;
@@ -559,6 +598,7 @@ function PageTreeItem({
   workspaceSlug,
   onNavigate,
   onCreate,
+  onDuplicate,
   onDelete,
   onMoveUp,
   onMoveDown,
@@ -684,6 +724,10 @@ function PageTreeItem({
                 <Plus className="h-4 w-4" />
                 Add sub-page
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onDuplicate(page)}>
+                <Copy className="h-4 w-4" />
+                Duplicate
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               {canMoveUp && (
                 <DropdownMenuItem onClick={() => onMoveUp(page)}>
@@ -733,6 +777,7 @@ function PageTreeItem({
               workspaceSlug={workspaceSlug}
               onNavigate={onNavigate}
               onCreate={onCreate}
+              onDuplicate={onDuplicate}
               onDelete={onDelete}
               onMoveUp={onMoveUp}
               onMoveDown={onMoveDown}
