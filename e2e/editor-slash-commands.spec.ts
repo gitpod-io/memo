@@ -33,14 +33,14 @@ test.describe("Editor slash commands", () => {
     await page.keyboard.press("Enter");
     await page.keyboard.type("/head");
 
-    // Should show heading options, filtered
+    // Should show heading options, filtered.
+    // "head" matches Heading 1/2/3 and their "Turn into" variants (up to 6).
     const options = page.locator('[role="option"]');
     await expect(options.first()).toBeVisible({ timeout: 3_000 });
 
     const count = await options.count();
-    // "head" should match Heading 1, Heading 2, Heading 3
     expect(count).toBeGreaterThanOrEqual(1);
-    expect(count).toBeLessThanOrEqual(3);
+    expect(count).toBeLessThanOrEqual(6);
   });
 
   test("selecting a heading option inserts a heading block", async ({
@@ -57,8 +57,11 @@ test.describe("Editor slash commands", () => {
     await page.keyboard.press("Enter");
     await page.keyboard.type("/");
 
-    // Wait for menu
-    const heading1Option = page.locator('[role="option"]').filter({ hasText: "Heading 1" });
+    // Wait for menu — use exact text match on the title span to avoid
+    // matching "Turn into Heading 1" alongside "Heading 1"
+    const heading1Option = page
+      .locator('[role="option"]')
+      .filter({ has: page.locator("span.font-medium", { hasText: /^Heading 1$/ }) });
     await expect(heading1Option).toBeVisible({ timeout: 3_000 });
     await heading1Option.click();
 
