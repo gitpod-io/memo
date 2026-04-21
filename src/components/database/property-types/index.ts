@@ -12,6 +12,7 @@ import { UrlRenderer, UrlEditor } from "./url";
 import { EmailRenderer, EmailEditor } from "./email";
 import { PhoneRenderer, PhoneEditor } from "./phone";
 import { PersonRenderer, PersonEditor } from "./person";
+import { FilesRenderer, FilesEditor } from "./files";
 
 // ---------------------------------------------------------------------------
 // Shared prop interfaces
@@ -87,6 +88,7 @@ const registry: Partial<Record<PropertyType, PropertyTypeConfig>> = {
   email: { Renderer: EmailRenderer, Editor: EmailEditor },
   phone: { Renderer: PhoneRenderer, Editor: PhoneEditor },
   person: { Renderer: PersonRenderer, Editor: PersonEditor },
+  files: { Renderer: FilesRenderer, Editor: FilesEditor },
 };
 
 /**
