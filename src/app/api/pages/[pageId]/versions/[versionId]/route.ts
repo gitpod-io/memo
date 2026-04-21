@@ -47,12 +47,10 @@ export async function GET(
 }
 
 /**
- * POST /api/pages/[pageId]/versions/[versionId]/restore
- * Handled via query param ?action=restore on this route.
- *
- * Actually, let's use POST on this route with action in body.
+ * POST /api/pages/[pageId]/versions/[versionId]
  * Restores a version: saves current content as a new version, then
  * replaces page content with the selected version's content.
+ * Body: { action: "restore" }
  */
 export async function POST(
   request: NextRequest,
