@@ -20,9 +20,10 @@ function SignInFormInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const confirmed = searchParams.get("confirmed") === "true";
+  const oauthError = searchParams.get("error");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(oauthError);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {

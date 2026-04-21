@@ -17,7 +17,7 @@ Browser
 
 Supabase
   ├── PostgreSQL → profiles, workspaces, members, workspace_invites, pages
-  ├── Auth → email/password (OAuth deferred — buttons rendered with "coming soon")
+  ├── Auth → email/password + OAuth (GitHub, Google)
   ├── Storage → image uploads for editor
   ├── DB Triggers → handle_new_user (profile + personal workspace + owner membership)
   └── RLS → row-level security per workspace membership
@@ -80,7 +80,7 @@ Sign-up flow (atomic, via DB trigger):
 |---|---|---|
 | Editor library | **Lexical** (Meta, MIT) | Full control, MIT license, Meta-backed. Build from lexical-playground reference, adapt to Tailwind + shadcn/ui. |
 | Content storage | Lexical JSON in PostgreSQL `jsonb` | `editorState.toJSON()` stored in `pages.content`. No separate blocks table. |
-| Auth | Supabase Auth — email/password | OAuth (GitHub, Google) deferred to post-MVP. Buttons rendered with "coming soon" tooltip. |
+| Auth | Supabase Auth — email/password + OAuth | GitHub and Google OAuth via `signInWithOAuth`. Callback at `/auth/callback` handles both email confirmation and OAuth code exchange. |
 | Workspace model | Personal + team workspaces | Auto-created personal workspace on sign-up (non-deletable). Max 3 created workspaces per user. Unlimited joined via invite. |
 | Realtime | Deferred to post-MVP | Yjs + Supabase Realtime adds complexity. Ship single-user editing first. |
 | Styling | Tailwind v4 + shadcn/ui | No custom CSS, consistent design system |
@@ -175,7 +175,7 @@ src/
 │   ├── not-found.tsx       # Root 404 page
 │   ├── globals.css         # Tailwind v4 theme — dark-only oklch tokens, --radius: 0
 │   ├── auth/
-│   │   └── callback/route.ts # Email confirmation redirect (exchanges code → signs out → /sign-in?confirmed=true)
+│   │   └── callback/route.ts # Auth callback: email confirmation (sign out → /sign-in?confirmed) + OAuth (keep session → workspace redirect)
 │   ├── (auth)/             # Unauthenticated route group
 │   │   ├── layout.tsx      # Centered card layout for auth pages
 │   │   ├── sign-in/
@@ -206,7 +206,7 @@ src/
 │       └── search/route.ts  # Full-text search (GET ?q=&workspace_id=) → calls search_pages RPC
 ├── components/
 │   ├── auth/
-│   │   ├── oauth-buttons.tsx    # GitHub + Google buttons (disabled, "coming soon" tooltip)
+│   │   ├── oauth-buttons.tsx    # GitHub + Google OAuth sign-in buttons (signInWithOAuth)
 │   │   └── sign-out-button.tsx  # Sign-out button (clears session, redirects to /sign-in)
 │   ├── sidebar/             # App shell sidebar components
 │   │   ├── app-shell.tsx        # Client wrapper: SidebarProvider + sidebar + main layout
