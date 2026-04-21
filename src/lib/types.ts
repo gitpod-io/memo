@@ -117,3 +117,29 @@ export interface PageLink {
 export interface BacklinkWithPage extends PageLink {
   source_page: Pick<Page, "id" | "title" | "icon">;
 }
+
+export type FeedbackType = "bug" | "feature" | "general";
+export type FeedbackStatus = "new" | "reviewed" | "actioned" | "dismissed";
+
+export interface UserFeedback {
+  id: string;
+  user_id: string;
+  type: FeedbackType;
+  message: string;
+  page_path: string | null;
+  page_title: string | null;
+  screenshot_url: string | null;
+  metadata: Record<string, unknown> | null;
+  status: FeedbackStatus;
+  created_at: string;
+}
+
+export interface UsageEvent {
+  id: string;
+  event_name: string;
+  user_id: string;
+  workspace_id: string | null;
+  page_path: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}

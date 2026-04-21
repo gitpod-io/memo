@@ -89,6 +89,30 @@ page_versions (snapshots of page content for version history and restore)
   `prune_excess_page_versions(page_id)` keeps only the latest 50 per page.
   Created every 5 minutes during auto-save (deduplicated — skipped if content unchanged).
 
+user_feedback (user-submitted feedback: bugs, features, general)
+  ├── user_id → auth.users.id (ON DELETE CASCADE)
+  ├── type: text (check: bug | feature | general)
+  ├── message: text (not null)
+  ├── page_path: text (nullable — URL path where feedback was submitted)
+  ├── page_title: text (nullable)
+  ├── screenshot_url: text (nullable — public URL in feedback-screenshots bucket)
+  ├── metadata: jsonb (nullable)
+  ├── status: text (check: new | reviewed | actioned | dismissed, default 'new')
+  └── created_at: timestamptz
+  RLS: authenticated users can INSERT where user_id = auth.uid(). No SELECT/UPDATE/DELETE for regular users.
+
+usage_events (server-side product analytics)
+  ├── event_name: text (not null)
+  ├── user_id → auth.users.id (ON DELETE CASCADE)
+  ├── workspace_id: uuid (nullable)
+  ├── page_path: text (nullable)
+  ├── metadata: jsonb (nullable)
+  ├── created_at: timestamptz
+  └── Index: (event_name, created_at) for efficient digest queries
+  RLS: authenticated users can INSERT where user_id = auth.uid(). No SELECT/UPDATE/DELETE for regular users.
+
+Storage bucket: feedback-screenshots (public, 5 MB limit, png/jpeg/webp)
+
 Sign-up flow (atomic, via DB trigger):
   1. auth.users row created by Supabase Auth
   2. handle_new_user trigger fires → creates:
