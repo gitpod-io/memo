@@ -50,18 +50,23 @@ documentation, and project planning.
 7. **Members** — workspace owner/admin can invite users by email, roles (owner, admin, member), remove members. Users can be members of unlimited workspaces via invites.
 8. **App shell** — sidebar with page tree, workspace switcher, search, user menu. Responsive (sidebar collapses on mobile).
 
-### Out of Scope (MVP)
+### Post-MVP: Database Views
+
+9. **Database views** — Notion-style databases with structured properties, multiple view types, and rows-as-pages. Databases are special pages (`is_database = true`) that can also be embedded inline via a Lexical `DatabaseNode`. Full spec in `spec.md`.
+   - **View types**: Table, Board (Kanban), List, Calendar (month grid), Gallery (card grid)
+   - **Property types**: text, number, select, multi-select, checkbox, date, URL, email, phone, person, files, relation, formula, created_time, updated_time, created_by
+   - **Features**: multiple named views per database, sort by any property, filter with type-appropriate operators (AND-combined), inline cell editing, row opens as full page with Lexical editor
+   - **Inline databases**: `DatabaseNode` (Lexical DecoratorNode) embeds a database view inside any page, with expand-to-full-page
+
+### Out of Scope
 
 - Realtime collaboration (live cursors, co-editing) — post-MVP via Yjs
-- Database views / tables (Notion-style databases)
 - Third-party integrations (Slack, GitHub, etc.)
 - AI writing features
 - Offline support
 - Mobile native apps
 - Light mode
 - Comments on pages
-- Version history
-- OAuth providers (GitHub, Google) — buttons shown but non-functional
 
 ## Data Model
 
@@ -116,10 +121,47 @@ pages
   title: text (default '')
   content: jsonb (Lexical editor state JSON)
   icon: text (emoji, nullable)
+  is_database: boolean (default false — when true, page acts as a database container)
   position: integer (ordering among siblings)
   created_by: uuid (references profiles.id)
   created_at: timestamptz
   updated_at: timestamptz
+
+  When is_database = true:
+  - Child pages (parent_id = this page) are database rows
+  - database_properties defines the schema (columns)
+  - database_views defines saved views (table, board, list, calendar, gallery)
+  - Regular page features (icon, cover, content) still work — content renders above the database grid
+
+database_properties (schema definition — columns of a database)
+  id: uuid (PK)
+  database_id: uuid (references pages.id, on delete cascade)
+  name: text (not null)
+  type: text (not null — text | number | select | multi_select | checkbox | date | url | email | phone | person | files | relation | formula | created_time | updated_time | created_by)
+  config: jsonb (type-specific: select options, number format, formula expression, relation target)
+  position: integer (column ordering)
+  created_at: timestamptz
+  updated_at: timestamptz
+  UNIQUE(database_id, name)
+
+database_views (saved views on a database)
+  id: uuid (PK)
+  database_id: uuid (references pages.id, on delete cascade)
+  name: text (not null, default 'Default view')
+  type: text (not null — table | board | list | calendar | gallery)
+  config: jsonb (visible_properties, sorts, filters, plus type-specific config)
+  position: integer (view tab ordering)
+  created_at: timestamptz
+  updated_at: timestamptz
+
+row_values (property values for each database row)
+  id: uuid (PK)
+  row_id: uuid (references pages.id, on delete cascade — the row page)
+  property_id: uuid (references database_properties.id, on delete cascade)
+  value: jsonb (format depends on property type)
+  created_at: timestamptz
+  updated_at: timestamptz
+  UNIQUE(row_id, property_id)
 ```
 
 All tables have RLS enabled. Policies enforce workspace membership for all operations.
@@ -149,6 +191,36 @@ Each feature maps to one or more GitHub Issues. Phases map to priority labels:
 8. **Search** — full-text search across page titles and content within a workspace. Search UI in sidebar. PostgreSQL `tsvector`/`tsquery`. _Depends on: #5 (Pages CRUD)._
 9. **Import/Export** — Markdown import (upload .md → create page) and export (page → download .md). Uses `@lexical/markdown` transforms. _Depends on: #6 (Lexical editor — core)._
 10. **Members** — invite users by email, accept invite flow, role management (owner, admin, member), remove members. Only owner/admin can manage members. _Depends on: #4 (Workspace CRUD)._
+
+### Phase 4: Database Views — Foundation (`priority:1`)
+
+11. **Database schema migration** — Add `is_database` to pages, create `database_properties`, `database_views`, `row_values` tables with RLS. _No dependencies beyond existing schema._
+12. **Database CRUD operations** — Create/delete/rename databases. Property CRUD, row CRUD, view CRUD via Supabase. _Depends on: #11._
+13. **Table view component** — Spreadsheet grid with column headers, inline cell editing, add row/column, column resize. _Depends on: #12._
+14. **Property type renderers & editors** — Cell renderer and editor for: text, number, select, multi-select, checkbox, date, URL, email, phone. Registry pattern for extensibility. _Depends on: #12._
+15. **Database page detection & routing** — `[pageId]/page.tsx` detects `is_database`, renders database view. View tabs UI. _Depends on: #13._
+16. **Row-as-page support** — Clicking a row opens full page with properties header + Lexical editor. _Depends on: #14, #15._
+
+### Phase 5: Database Views — Additional Views (`priority:2`)
+
+17. **Sort & filter engine** — Client-side sort/filter on row data. Filter bar UI. Persisted per-view. _Depends on: #13._
+18. **Board view component** — Kanban grouped by select property. Drag cards between columns. _Depends on: #14, #17._
+19. **List view component** — Compact row list with title + visible properties. _Depends on: #14, #17._
+20. **Multi-view management** — Create, rename, delete, reorder views. View type picker. Independent config per view. _Depends on: #17._
+
+### Phase 6: Database Views — Advanced (`priority:2`)
+
+21. **Calendar view component** — Month grid, items on date cells, prev/next navigation. _Depends on: #14, #17._
+22. **Gallery view component** — Responsive card grid with cover image + title. _Depends on: #14, #17._
+23. **Person property type** — Member avatar picker, stores user IDs. _Depends on: #14._
+24. **Files property type** — Upload to Supabase Storage, render thumbnails. _Depends on: #14._
+25. **Relation property type** — Link rows across databases, render as pills. _Depends on: #14._
+
+### Phase 7: Database Views — Inline & Formulas (`priority:3`)
+
+26. **DatabaseNode (inline database block)** — Lexical DecoratorNode, slash command, compact view, expand button. _Depends on: #15, #20._
+27. **Formula property type** — Simple expression parser: math, string concat, if/else, now(), date math, prop() refs. _Depends on: #14._
+28. **Database in sidebar** — Grid icon for database pages, "New Database" in sidebar create menu. _Depends on: #15._
 
 ## Acceptance Criteria
 
@@ -220,6 +292,36 @@ These criteria are used by the Feature Planner to create GitHub Issues and by th
 - [ ] Member list visible in workspace settings
 - [ ] Personal workspace owner cannot be removed from their own personal workspace
 
+### Database Views
+- [ ] User can create a database from the sidebar ("New Database" button)
+- [ ] Database pages show a grid icon in the sidebar page tree
+- [ ] User can define properties (columns) with name and type
+- [ ] User can add, edit, and delete rows in table view
+- [ ] Inline cell editing works for all basic property types
+- [ ] Select/multi-select properties support creating new options inline
+- [ ] Database page shows optional rich text content above the database grid
+- [ ] Clicking a row opens it as a full page with properties header + Lexical editor
+- [ ] Row page shows breadcrumb: workspace → database → row
+- [ ] Created time, Updated time, Created by properties auto-derive from page metadata
+- [ ] User can create multiple views per database (table, board, list, calendar, gallery)
+- [ ] View tabs appear above the database, active view highlighted
+- [ ] Each view stores independent configuration (visible properties, sort, filter)
+- [ ] Table view: resizable columns, column reorder, add row/column
+- [ ] Board view: Kanban grouped by select property, drag cards between columns
+- [ ] List view: compact rows with title + visible properties
+- [ ] Calendar view: month grid, items on date cells, prev/next month navigation
+- [ ] Gallery view: card grid with cover image + title
+- [ ] User can sort by any property (ascending/descending), multiple sort rules
+- [ ] User can filter by property value with type-appropriate operators
+- [ ] Active filters shown as pills in filter bar, persisted per-view
+- [ ] User can insert a database block via slash command (`/database`)
+- [ ] Inline database renders a compact view with expand-to-full-page button
+- [ ] Person property shows member avatars, picker searches workspace members
+- [ ] Files property supports upload and renders thumbnails
+- [ ] Relation property links to rows in another database, renders as pills
+- [ ] Formula property evaluates simple expressions referencing other properties
+- [ ] All database data respects workspace RLS policies
+
 ### App Shell
 - [ ] Sidebar: workspace switcher, search, page tree, settings, user menu
 - [ ] Sidebar collapses on mobile (Sheet component)
@@ -236,7 +338,8 @@ These criteria are used by the Feature Planner to create GitHub Issues and by th
 /sign-up                          → (auth)/sign-up/page.tsx
 /                                 → redirect to personal workspace
 /[workspaceSlug]                  → (app)/[workspaceSlug]/page.tsx (workspace home / page list)
-/[workspaceSlug]/[pageId]         → (app)/[workspaceSlug]/[pageId]/page.tsx (page editor)
+/[workspaceSlug]/[pageId]         → (app)/[workspaceSlug]/[pageId]/page.tsx (page editor OR database view when is_database=true)
+/[workspaceSlug]/[pageId]?view=x  → database with specific view selected
 /[workspaceSlug]/settings         → (app)/[workspaceSlug]/settings/page.tsx (workspace settings)
 /[workspaceSlug]/settings/members → (app)/[workspaceSlug]/settings/members/page.tsx
 /invite/[token]                   → (auth)/invite/[token]/page.tsx (accept workspace invite)
@@ -260,3 +363,10 @@ Implementation hints for the Feature Builder. Reference `.agents/architecture.md
 - **Personal workspace creation**: Use a Supabase DB trigger on `auth.users` insert (or a `handle_new_user` function) that creates the profile, workspace (`is_personal = true`), and owner membership row atomically.
 - **Workspace creation limit**: Enforce via a PostgreSQL `BEFORE INSERT` trigger on `workspaces` that checks `SELECT count(*) FROM workspaces WHERE created_by = NEW.created_by` and raises an exception if ≥ 3. Also enforce client-side by disabling the "Create workspace" button when the count is reached.
 - **Personal workspace protection**: RLS policy on `workspaces` prevents `DELETE` where `is_personal = true`. The UI hides the delete option for personal workspaces.
+- **Database rows are pages**: each row in a database is a child page (`parent_id` = database page ID). This means search, favorites, trash, version history, and backlinks work on database rows automatically.
+- **Property type registry**: implement as `Record<PropertyType, { Renderer, Editor }>` so new types can be added without modifying view components.
+- **Client-side filtering/sorting**: load all rows and filter/sort in the browser for the initial implementation. Server-side filtering deferred until databases grow large.
+- **Calendar view**: build with Tailwind grid, no external calendar library.
+- **Formula evaluation**: simple recursive descent parser on the client. Evaluate at render time, not stored.
+- **Select option colors**: fixed palette of 8-10 muted colors derived from the design token set.
+- **DatabaseNode**: Lexical DecoratorNode referencing a database page ID. Renders compact view inline, expand icon opens full page.

@@ -308,6 +308,171 @@ Each block is a full-width element with consistent vertical spacing.
 
 ---
 
+## Database Views
+
+Database views render structured data within the existing page layout. When a page has
+`is_database = true`, the page view renders optional Lexical content above a database grid.
+
+### Layout
+
+```
+┌──────────────────────────────────────────────┐
+│  [Breadcrumb]                                │
+│  [Icon] [Title]                    [Menu]    │
+│  [Optional Lexical content above]            │
+│                                              │
+│  [View Tab 1] [View Tab 2] [+]   [Filter] [Sort] │
+│  ┌──────────────────────────────────────────┐│
+│  │  Database view (table/board/list/etc.)   ││
+│  │                                          ││
+│  └──────────────────────────────────────────┘│
+└──────────────────────────────────────────────┘
+```
+
+### View Tabs
+
+- Horizontal tab bar above the database grid, `text-sm`.
+- Active tab: `border-b-2 border-accent`, `text-foreground`.
+- Inactive tabs: `text-muted-foreground`, hover `text-foreground`.
+- `+` button at end of tab bar: opens dropdown to pick view type.
+- Tab icons: `Table2` (table), `Columns3` (board), `List` (list), `Calendar` (calendar), `LayoutGrid` (gallery) from lucide-react, 14px.
+- Tab bar background: transparent, `border-b border-white/[0.06]`.
+
+### Filter & Sort Bar
+
+- Position: between view tabs and the database grid.
+- Background: `bg-muted p-2`, sharp corners.
+- Active filters: `Badge` components with property name, operator, value. `variant="secondary"`, `text-xs`.
+- Remove filter: `X` icon (12px) on each badge, hover `text-destructive`.
+- `+ Add filter` button: `ghost` variant, `text-xs text-muted-foreground`.
+- Sort indicator in column headers: `ArrowUp` / `ArrowDown` icon (12px), `text-muted-foreground`.
+
+### Table View
+
+- Full-width spreadsheet grid within `max-w-3xl` content area (can overflow with horizontal scroll).
+- Column headers: `bg-muted`, `text-xs font-medium text-muted-foreground`, `uppercase tracking-widest`, `p-2`, `border-b border-white/[0.06]`.
+- Column resize: drag handle on right edge of header, `cursor-col-resize`, 2px `bg-accent` indicator while dragging.
+- Cells: `p-2 text-sm`, `border-b border-white/[0.06]`. Click to edit inline.
+- Row hover: `bg-white/[0.02]`.
+- Add row: button at bottom of table, full width, `text-muted-foreground`, `+ New`.
+- Add column: `+` button at right end of header row, `text-muted-foreground`.
+- Row height options: compact (`h-8`), default (`h-10`), tall (`h-14`).
+
+### Board View
+
+- Horizontal scrollable container of columns.
+- Column: `w-72`, `bg-muted/50`, `p-2`, sharp corners.
+- Column header: `text-xs font-medium uppercase tracking-widest text-muted-foreground`, `mb-2`.
+- Cards: `bg-muted`, `border border-white/[0.06]`, `p-3`, sharp corners, `mb-1.5`.
+- Card title: `text-sm font-medium`, truncated to 2 lines.
+- Card properties: `text-xs text-muted-foreground`, below title.
+- Drag: card at 50% opacity, `shadow-lg`, drop indicator as 2px `bg-accent` line.
+- Add card: `+ New` button at bottom of each column, `text-xs text-muted-foreground`.
+- Uncategorized column: labeled "No status" (or property name), listed last.
+
+### List View
+
+- Compact vertical list, one row per line.
+- Row: `flex items-center gap-2 px-3 py-2 text-sm`, `hover:bg-white/[0.04]`.
+- Title: `flex-1 truncate`, left side.
+- Visible properties: right side, `text-xs text-muted-foreground`, `gap-3`.
+- Click row to open as page.
+
+### Calendar View
+
+- Month grid: 7 columns (Sun–Sat), variable rows.
+- Header: month name + year (`text-lg font-medium`), prev/next buttons (`ChevronLeft`/`ChevronRight`, `ghost` variant), today button.
+- Day headers: `text-xs uppercase tracking-widest text-muted-foreground`, `text-center`.
+- Day cells: `min-h-24`, `border border-white/[0.06]`, `p-1`.
+- Today cell: `bg-accent/10`.
+- Other month days: `text-muted-foreground/50`.
+- Items in cells: `text-xs`, truncated, `bg-muted px-1 py-0.5 mb-0.5`, sharp corners. Max 3 visible, then "+N more" link.
+- Click cell: creates new row with that date pre-filled.
+- Click item: opens row as page.
+
+### Gallery View
+
+- Responsive card grid: `grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3`.
+- Card sizes: small (`h-40`), medium (`h-52`), large (`h-64`).
+- Card: `bg-muted`, `border border-white/[0.06]`, sharp corners, `overflow-hidden`.
+- Cover image: fills top portion of card, `object-cover`. No cover: `bg-muted` placeholder with `ImageIcon` (24px, `text-muted-foreground/30`).
+- Title: below cover, `p-3 text-sm font-medium`, truncated to 2 lines.
+- Click card: opens row as page.
+
+### Property Cells
+
+Inline cell rendering and editing patterns for each property type:
+
+| Type | Renderer | Editor |
+|---|---|---|
+| Text | Plain text, truncated | Input field, auto-focus |
+| Number | Right-aligned, formatted | Input `type="number"` |
+| Select | Colored badge | Dropdown with options, create new inline |
+| Multi-select | Multiple colored badges, wrapping | Dropdown with checkboxes, create new inline |
+| Checkbox | Centered checkbox icon | Toggle on click (no separate edit mode) |
+| Date | Formatted date string (`MMM D, YYYY`) | Date picker popover |
+| URL | Truncated link, `text-accent`, external icon | Input field |
+| Email | Truncated email, `text-accent` | Input field |
+| Phone | Formatted phone | Input field |
+| Person | Avatar circle(s), 20px | Member search dropdown |
+| Files | Thumbnail or file icon + name | Upload button + file list |
+| Relation | Page link pills (like PageLinkNode) | Database row search dropdown |
+| Formula | Computed value (read-only, `text-muted-foreground`) | Not editable |
+| Created time | Formatted timestamp (read-only) | Not editable |
+| Updated time | Formatted timestamp (read-only) | Not editable |
+| Created by | Avatar + name (read-only) | Not editable |
+
+### Select Option Colors
+
+Fixed palette of muted colors for select and multi-select options:
+
+| Name | Background | Text |
+|---|---|---|
+| Gray | `bg-white/[0.08]` | `text-foreground` |
+| Blue | `bg-blue-500/20` | `text-blue-400` |
+| Green | `bg-green-500/20` | `text-green-400` |
+| Yellow | `bg-yellow-500/20` | `text-yellow-400` |
+| Orange | `bg-orange-500/20` | `text-orange-400` |
+| Red | `bg-red-500/20` | `text-red-400` |
+| Purple | `bg-purple-500/20` | `text-purple-400` |
+| Pink | `bg-pink-500/20` | `text-pink-400` |
+| Cyan | `bg-cyan-500/20` | `text-cyan-400` |
+
+### Row-as-Page Properties Header
+
+When a database row is opened as a full page, properties display above the Lexical editor:
+
+- Position: between breadcrumb and page title.
+- Layout: vertical list of property name + value pairs.
+- Property name: `text-xs text-muted-foreground`, `w-32` fixed width, right-aligned.
+- Property value: `text-sm`, inline-editable (click to edit).
+- Separator: `border-b border-white/[0.06]` between the properties header and the editor content.
+- Collapse: if more than 5 properties, show first 5 with "Show N more" toggle.
+
+### Database in Sidebar
+
+- Database pages show `Table2` icon (16px) instead of `FileText` in the page tree.
+- "New Database" option in the sidebar create menu (alongside "New Page").
+- Database child pages (rows) are NOT shown in the sidebar tree — only the database page itself.
+
+### Inline Database Block
+
+- Spacing above: 12px (`mt-3`), same as table/code/callout blocks.
+- Border: `border border-white/[0.06]`, sharp corners.
+- Header: database title (linked, `text-sm font-medium text-accent`) + expand icon (`Maximize2`, 14px).
+- Compact view: shows the selected view with max 5 rows, no filter/sort bar.
+- Click expand: navigates to the database full page.
+
+### Empty Database
+
+- Centered empty state within the database grid area.
+- Icon: `Table2` from lucide-react, 48px, `text-muted-foreground`.
+- Heading: `text-lg font-medium`, "No rows yet".
+- Description: `text-sm text-muted-foreground`, "Add your first row to get started."
+- CTA: `Button` default variant, "Add a row".
+
+---
+
 ## Interaction Patterns
 
 ### Loading States
