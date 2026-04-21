@@ -88,7 +88,7 @@ export function SelectDropdown({
   return (
     <div
       ref={containerRef}
-      className="w-56 border border-border bg-background shadow-md"
+      className="w-56 rounded-sm border border-border bg-background shadow-md"
     >
       <div className="p-1.5">
         <Input
