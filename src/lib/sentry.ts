@@ -118,14 +118,19 @@ export function isSchemaNotFoundError(error: Error): boolean {
  * (e.g. non-members calling workspace-scoped functions). It is an expected
  * authorization check, not an application bug — API routes should return 403.
  *
- * Matches both PostgrestError objects (with `code` property) and generic
- * Error instances whose message contains the RLS violation pattern. Supabase
- * may surface 42501 errors as thrown exceptions without PostgrestError shape
- * when the query builder promise rejects instead of returning `{ error }`.
+ * Matches three shapes:
+ * 1. PostgrestError objects with `code: "42501"` (from `{ data, error }` path)
+ * 2. Generic Error with a `code` property set to `"42501"` (thrown by Supabase
+ *    when an RPC rejects via RAISE EXCEPTION with errcode — the error object
+ *    has `code` but lacks `details`/`hint` so it fails the PostgrestError check)
+ * 3. Generic Error whose message contains the RLS violation pattern
  */
 export function isInsufficientPrivilegeError(error: Error): boolean {
   if (isPostgrestError(error)) {
     return error.code === "42501";
+  }
+  if ("code" in error && (error as Record<string, unknown>).code === "42501") {
+    return true;
   }
   return error.message.includes("violates row-level security policy");
 }
