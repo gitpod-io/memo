@@ -12,6 +12,11 @@ import { UrlRenderer, UrlEditor } from "./url";
 import { EmailRenderer, EmailEditor } from "./email";
 import { PhoneRenderer, PhoneEditor } from "./phone";
 import { PersonRenderer, PersonEditor } from "./person";
+import {
+  CreatedTimeRenderer,
+  UpdatedTimeRenderer,
+  CreatedByRenderer,
+} from "./computed";
 
 // ---------------------------------------------------------------------------
 // Shared prop interfaces
@@ -73,7 +78,8 @@ export function nextOptionColor(existingCount: number): SelectOptionColor {
 
 export interface PropertyTypeConfig {
   Renderer: React.FC<RendererProps>;
-  Editor: React.FC<EditorProps>;
+  /** null for read-only computed types (created_time, updated_time, created_by). */
+  Editor: React.FC<EditorProps> | null;
 }
 
 const registry: Partial<Record<PropertyType, PropertyTypeConfig>> = {
@@ -87,14 +93,78 @@ const registry: Partial<Record<PropertyType, PropertyTypeConfig>> = {
   email: { Renderer: EmailRenderer, Editor: EmailEditor },
   phone: { Renderer: PhoneRenderer, Editor: PhoneEditor },
   person: { Renderer: PersonRenderer, Editor: PersonEditor },
+  created_time: { Renderer: CreatedTimeRenderer, Editor: null },
+  updated_time: { Renderer: UpdatedTimeRenderer, Editor: null },
+  created_by: { Renderer: CreatedByRenderer, Editor: null },
 };
 
 /**
  * Look up the renderer and editor for a property type.
- * Returns undefined for types not yet implemented (person, files, relation, formula, computed).
+ * Returns undefined for types not yet implemented (files, relation, formula).
+ * Computed types (created_time, updated_time, created_by) have Editor: null.
  */
 export function getPropertyTypeConfig(
   type: PropertyType,
 ): PropertyTypeConfig | undefined {
   return registry[type];
+}
+
+// ---------------------------------------------------------------------------
+// Property type groups — for property type picker dropdowns
+// ---------------------------------------------------------------------------
+
+/** Standard editable property types. */
+export const STANDARD_PROPERTY_TYPES: readonly PropertyType[] = [
+  "text",
+  "number",
+  "select",
+  "multi_select",
+  "checkbox",
+  "date",
+  "url",
+  "email",
+  "phone",
+  "person",
+] as const;
+
+/** Auto-derived read-only property types shown under "Advanced" in type pickers. */
+export const ADVANCED_PROPERTY_TYPES: readonly PropertyType[] = [
+  "created_time",
+  "updated_time",
+  "created_by",
+] as const;
+
+// ---------------------------------------------------------------------------
+// Computed type helpers
+// ---------------------------------------------------------------------------
+
+/** Property types that derive values from page metadata, not row_values. */
+const COMPUTED_TYPES: ReadonlySet<PropertyType> = new Set([
+  "created_time",
+  "updated_time",
+  "created_by",
+]);
+
+export function isComputedType(type: PropertyType): boolean {
+  return COMPUTED_TYPES.has(type);
+}
+
+/**
+ * Build a synthetic value object for computed property types from page metadata.
+ * View components call this instead of reading from row_values.
+ */
+export function buildComputedValue(
+  type: PropertyType,
+  page: { created_at: string; updated_at: string; created_by: string },
+): Record<string, unknown> {
+  switch (type) {
+    case "created_time":
+      return { created_at: page.created_at };
+    case "updated_time":
+      return { updated_at: page.updated_at };
+    case "created_by":
+      return { created_by: page.created_by };
+    default:
+      return {};
+  }
 }
