@@ -38,6 +38,9 @@ importers:
       '@lexical/selection':
         specifier: 0.31.0
         version: 0.31.0
+      '@lexical/table':
+        specifier: 0.31.0
+        version: 0.31.0
       '@lexical/utils':
         specifier: 0.31.0
         version: 0.31.0

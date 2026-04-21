@@ -219,6 +219,64 @@ export const Collapsible: Story = {
   ),
 };
 
+export const Table: Story = {
+  render: () => (
+    <div className="mx-auto max-w-2xl">
+      <table className={editorTheme.table}>
+        <thead>
+          <tr className={editorTheme.tableRow}>
+            <th className={editorTheme.tableCellHeader}>Feature</th>
+            <th className={editorTheme.tableCellHeader}>Status</th>
+            <th className={editorTheme.tableCellHeader}>Priority</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr className={editorTheme.tableRow}>
+            <td className={editorTheme.tableCell}>Rich text editor</td>
+            <td className={editorTheme.tableCell}>Done</td>
+            <td className={editorTheme.tableCell}>P1</td>
+          </tr>
+          <tr className={editorTheme.tableRow}>
+            <td className={editorTheme.tableCell}>
+              <strong className={editorTheme.text?.bold}>Table blocks</strong>
+            </td>
+            <td className={editorTheme.tableCell}>
+              <em className={editorTheme.text?.italic}>In progress</em>
+            </td>
+            <td className={editorTheme.tableCell}>
+              <code className={editorTheme.text?.code}>P2</code>
+            </td>
+          </tr>
+          <tr className={editorTheme.tableRow}>
+            <td className={editorTheme.tableCell}>Realtime collab</td>
+            <td className={editorTheme.tableCell}>Planned</td>
+            <td className={editorTheme.tableCell}>P3</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  ),
+};
+
+export const TableMinimal: Story = {
+  render: () => (
+    <div className="mx-auto max-w-2xl">
+      <table className={editorTheme.table}>
+        <tbody>
+          <tr className={editorTheme.tableRow}>
+            <td className={editorTheme.tableCell}>Cell 1</td>
+            <td className={editorTheme.tableCell}>Cell 2</td>
+          </tr>
+          <tr className={editorTheme.tableRow}>
+            <td className={editorTheme.tableCell}>Cell 3</td>
+            <td className={editorTheme.tableCell}>Cell 4</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  ),
+};
+
 export const FullDocument: Story = {
   render: () => (
     <div className="mx-auto max-w-2xl">
@@ -280,6 +338,29 @@ export const FullDocument: Story = {
           </span>
         </code>
       </pre>
+
+      <h3 className={editorTheme.heading?.h3}>Comparison Table</h3>
+      <table className={editorTheme.table}>
+        <thead>
+          <tr className={editorTheme.tableRow}>
+            <th className={editorTheme.tableCellHeader}>Tool</th>
+            <th className={editorTheme.tableCellHeader}>Language</th>
+            <th className={editorTheme.tableCellHeader}>License</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr className={editorTheme.tableRow}>
+            <td className={editorTheme.tableCell}>Lexical</td>
+            <td className={editorTheme.tableCell}>TypeScript</td>
+            <td className={editorTheme.tableCell}>MIT</td>
+          </tr>
+          <tr className={editorTheme.tableRow}>
+            <td className={editorTheme.tableCell}>ProseMirror</td>
+            <td className={editorTheme.tableCell}>JavaScript</td>
+            <td className={editorTheme.tableCell}>MIT</td>
+          </tr>
+        </tbody>
+      </table>
 
       <hr className={editorTheme.horizontalRule} />
 

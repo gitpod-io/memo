@@ -121,6 +121,7 @@ referencing the playground for patterns. All UI rebuilt with Tailwind + shadcn/u
 | `@lexical/selection` | Selection utilities |
 | `@lexical/utils` | Shared utilities |
 | `@lexical/markdown` | Markdown import/export transforms |
+| `@lexical/table` | Table nodes and utilities |
 | `@lexical/clipboard` | Copy/paste handling |
 
 Pin to a specific version to avoid breaking changes.
@@ -140,6 +141,7 @@ Pin to a specific version to avoid breaking changes.
 | CollapsiblePlugin (toggle blocks) | `plugins/CollapsibleExtension` | Implemented |
 | ListTabIndentationPlugin | N/A (custom) | Implemented |
 | PageLinkPlugin (`[[` trigger + search) | N/A (custom) | Implemented |
+| TablePlugin + TableActionMenuPlugin | `plugins/TablePlugin` | Implemented |
 | ToolbarPlugin (top toolbar) | `plugins/ToolbarPlugin` | Deferred |
 
 ### Custom nodes
@@ -157,7 +159,7 @@ Pin to a specific version to avoid breaking changes.
 ### Skipped plugins (not needed for MVP)
 
 ExcalidrawPlugin, EquationsPlugin, PollPlugin, FigmaExtension, MentionsPlugin,
-SpeechToTextPlugin, AutocompletePlugin, CommentPlugin, TablePlugin, LayoutPlugin,
+SpeechToTextPlugin, AutocompletePlugin, CommentPlugin, LayoutPlugin,
 DateTimeExtension, VersionsPlugin.
 
 ### Content storage flow
@@ -235,7 +237,7 @@ src/
 │   ├── editor/                  # Lexical block editor
 │   │   ├── editor.tsx               # Main editor: LexicalComposer, plugins, auto-save to Supabase
 │   │   ├── theme.ts                 # EditorThemeClasses mapping Lexical nodes to Tailwind classes
-│   │   ├── slash-command-plugin.tsx  # "/" typeahead: paragraph, h1-h3, lists, code, quote, divider, image, callout, toggle
+│   │   ├── slash-command-plugin.tsx  # "/" typeahead: paragraph, h1-h3, lists, code, quote, divider, table, image, callout, toggle
 │   │   ├── floating-toolbar-plugin.tsx # Selection toolbar: bold, italic, underline, strikethrough, code, link
 │   │   ├── floating-link-editor-plugin.tsx # Link preview/edit/remove popover (⌘+K)
 │   │   ├── code-highlight-plugin.tsx # Registers Prism-based syntax highlighting for code blocks
@@ -252,7 +254,8 @@ src/
 │   │   ├── collapsible-node.tsx     # CollapsibleContainer/Title/Content nodes (<details>/<summary>)
 │   │   ├── page-link-node.tsx         # PageLinkNode (DecoratorNode) — inline page link pill with realtime title/icon updates
 │   │   ├── page-link-plugin.tsx       # [[ trigger detection, page search dropdown, INSERT_PAGE_LINK_COMMAND
-│   │   └── collapsible-plugin.tsx   # Collapsible insert command + toggle handling
+│   │   ├── collapsible-plugin.tsx   # Collapsible insert command + toggle handling
+│   │   └── table-action-menu-plugin.tsx # Table cell context menu (add/delete rows/columns)
 │   ├── delete-account-section.tsx # Account deletion danger zone with double-confirm dialog
 │   ├── emoji-picker.tsx         # Floating emoji grid with search, used by page icon picker
 │   ├── page-icon.tsx            # Page icon display + emoji picker trigger (saves to pages.icon)

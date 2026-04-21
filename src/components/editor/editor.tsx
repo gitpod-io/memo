@@ -19,6 +19,12 @@ import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { ListNode, ListItemNode } from "@lexical/list";
 import { CodeNode, CodeHighlightNode } from "@lexical/code";
 import { LinkNode } from "@lexical/link";
+import { TablePlugin } from "@lexical/react/LexicalTablePlugin";
+import {
+  TableNode,
+  TableRowNode,
+  TableCellNode,
+} from "@lexical/table";
 import { HorizontalRuleNode } from "@lexical/react/LexicalHorizontalRuleNode";
 import type {
   EditorState,
@@ -46,6 +52,7 @@ import {
 import { CollapsiblePlugin } from "@/components/editor/collapsible-plugin";
 import { PageLinkNode } from "@/components/editor/page-link-node";
 import { PageLinkPlugin } from "@/components/editor/page-link-plugin";
+import { TableActionMenuPlugin } from "@/components/editor/table-action-menu-plugin";
 import { WordCountPlugin } from "@/components/editor/word-count-plugin";
 import { getClient } from "@/lib/supabase/lazy-client";
 
@@ -251,6 +258,9 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef }: Edito
       CollapsibleTitleNode,
       CollapsibleContentNode,
       PageLinkNode,
+      TableNode,
+      TableRowNode,
+      TableCellNode,
     ],
     onError: (error: Error) => {
       lazyCaptureException(error);
@@ -292,6 +302,12 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef }: Edito
         <CalloutPlugin />
         <CollapsiblePlugin />
         <PageLinkPlugin />
+        <TablePlugin
+          hasCellMerge={false}
+          hasCellBackgroundColor={false}
+          hasTabHandler={true}
+        />
+        <TableActionMenuPlugin />
         {editorRef && <EditorRefPlugin editorRef={editorRef} />}
         <OnChangePlugin
           onChange={handleChange}
