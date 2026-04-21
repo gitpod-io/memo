@@ -44,6 +44,7 @@ import {
   CollapsibleContentNode,
 } from "@/components/editor/collapsible-node";
 import { CollapsiblePlugin } from "@/components/editor/collapsible-plugin";
+import { WordCountPlugin } from "@/components/editor/word-count-plugin";
 import { getClient } from "@/lib/supabase/lazy-client";
 
 const SAVE_DEBOUNCE_MS = 500;
@@ -221,6 +222,7 @@ export function Editor({ pageId, initialContent, editorRef }: EditorProps) {
             <DraggableBlockPlugin anchorElem={floatingAnchorElem} />
           </>
         )}
+        <WordCountPlugin />
       </LexicalComposer>
       <div className="mt-2 h-5 text-xs text-muted-foreground">
         {saveStatus === "saving" && "Saving..."}
