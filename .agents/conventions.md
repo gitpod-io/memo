@@ -1101,6 +1101,26 @@ if (error) {
 
 Never return 500 for `42501` — it inflates Sentry error counts with non-bugs.
 
+### Outer catch blocks must also check for 42501
+
+Supabase can throw RLS violations as exceptions (e.g. via `.single()` or async
+rejection) instead of returning them in `{ data, error }`. The outer `catch`
+block in every API route must check for `isInsufficientPrivilegeError` before
+falling through to `Sentry.captureException`:
+
+```typescript
+} catch (error) {
+  if (error instanceof Error && isInsufficientPrivilegeError(error)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  Sentry.captureException(error);
+  return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+}
+```
+
+This prevents 42501 errors from being reported at error level in Sentry and
+ensures the client receives 403 instead of 500.
+
 ## This file evolves
 
 When you discover a new pattern that should be replicated, or an anti-pattern that

@@ -59,6 +59,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ results: data ?? [] });
   } catch (error) {
+    if (error instanceof Error && isInsufficientPrivilegeError(error)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     Sentry.captureException(error);
     return NextResponse.json(
       { error: "Internal server error" },
