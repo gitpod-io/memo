@@ -147,6 +147,7 @@ export function TableView({
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
   const resizeStartX = useRef(0);
   const resizeStartWidth = useRef(0);
+  const prevResizingColumn = useRef<string | null>(null);
 
   const rowHeight = viewConfig.row_height ?? "default";
   const rowHeightClass = ROW_HEIGHT_CLASS[rowHeight];
@@ -194,11 +195,6 @@ export function TableView({
 
     const handleMouseUp = () => {
       setResizingColumn(null);
-      // Persist widths after resize ends
-      setColumnWidths((current) => {
-        onColumnWidthsChange?.(current);
-        return current;
-      });
     };
 
     document.addEventListener("mousemove", handleMouseMove);
@@ -208,6 +204,14 @@ export function TableView({
       document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [resizingColumn, onColumnWidthsChange]);
+
+  // Persist column widths after a resize ends
+  useEffect(() => {
+    if (prevResizingColumn.current !== null && resizingColumn === null) {
+      onColumnWidthsChange?.(columnWidths);
+    }
+    prevResizingColumn.current = resizingColumn;
+  }, [resizingColumn, columnWidths, onColumnWidthsChange]);
 
   // --- Cell editing ---
 
@@ -256,8 +260,8 @@ export function TableView({
   );
 
   const handleCellBlur = useCallback(
-    (rowId: string, propertyId: string, newValue: string) => {
-      onCellUpdate?.(rowId, propertyId, { value: newValue });
+    (rowId: string, propertyId: string, newValue: Record<string, unknown>) => {
+      onCellUpdate?.(rowId, propertyId, newValue);
       stopEditing();
     },
     [onCellUpdate, stopEditing],
@@ -428,7 +432,7 @@ interface TableRowProps {
   editingCell: EditingCell | null;
   onStartEditing: (rowId: string, propertyId: string) => void;
   onCellKeyDown: (e: React.KeyboardEvent, rowIndex: number, colIndex: number) => void;
-  onCellBlur: (rowId: string, propertyId: string, newValue: string) => void;
+  onCellBlur: (rowId: string, propertyId: string, newValue: Record<string, unknown>) => void;
 }
 
 function TableRow({
@@ -513,7 +517,7 @@ interface TableCellProps {
   colIndex: number;
   onStartEditing: (rowId: string, propertyId: string) => void;
   onKeyDown: (e: React.KeyboardEvent, rowIndex: number, colIndex: number) => void;
-  onBlur: (rowId: string, propertyId: string, newValue: string) => void;
+  onBlur: (rowId: string, propertyId: string, newValue: Record<string, unknown>) => void;
 }
 
 function TableCell({
@@ -560,7 +564,7 @@ function TableCell({
           defaultValue={displayValue}
           className="h-full w-full bg-transparent px-2 text-sm text-foreground outline-none ring-2 ring-inset ring-accent"
           onKeyDown={(e) => onKeyDown(e, rowIndex, colIndex)}
-          onBlur={(e) => onBlur(rowId, propertyId, e.target.value)}
+          onBlur={(e) => onBlur(rowId, propertyId, { value: e.target.value })}
         />
       </div>
     );
@@ -579,7 +583,7 @@ function TableCell({
       >
         <button
           type="button"
-          onClick={() => onBlur(rowId, propertyId, String(!checked))}
+          onClick={() => onBlur(rowId, propertyId, { value: !checked })}
           className={cn(
             "flex h-4 w-4 items-center justify-center border",
             checked
