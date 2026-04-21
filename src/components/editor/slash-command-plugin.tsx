@@ -164,7 +164,7 @@ export function SlashCommandPlugin(): JSX.Element | null {
           editor.update(() => {
             const selection = $getSelection();
             if ($isRangeSelection(selection)) {
-              const node = $createCodeNode();
+              const node = $createCodeNode("plain");
               selection.insertNodes([node]);
             }
           });

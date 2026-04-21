@@ -22,7 +22,7 @@ export const editorTheme: EditorThemeClasses = {
       "editor-checklist-unchecked relative mt-0.5 list-none pl-6",
     olDepth: ["list-decimal", "list-[lower-alpha]", "list-[lower-roman]"],
   },
-  code: "mt-3 block bg-muted rounded-sm p-4 font-mono text-sm overflow-x-auto",
+  code: "mt-3 block relative bg-muted rounded-sm p-4 font-mono text-sm overflow-x-auto",
   codeHighlight: {
     atrule: "text-primary",
     attr: "text-primary",
