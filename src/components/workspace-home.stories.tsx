@@ -115,6 +115,14 @@ function PageItem({
   );
 }
 
+const SORT_LABELS: Record<string, string> = {
+  updated_desc: "Last modified",
+  title_asc: "Title A-Z",
+  title_desc: "Title Z-A",
+  created_desc: "Date created (newest)",
+  created_asc: "Date created (oldest)",
+};
+
 function SortFilterBar() {
   return (
     <div className="mb-3 flex items-center gap-2">
@@ -132,7 +140,9 @@ function SortFilterBar() {
           className="w-auto shrink-0"
           aria-label="Sort pages"
         >
-          <SelectValue />
+          <SelectValue>
+            {(value: string) => SORT_LABELS[value] ?? value}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="updated_desc">Last modified</SelectItem>
@@ -257,7 +267,9 @@ export const FilterNoResults: Story = {
               className="w-auto shrink-0"
               aria-label="Sort pages"
             >
-              <SelectValue />
+              <SelectValue>
+                {(value: string) => SORT_LABELS[value] ?? value}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="updated_desc">Last modified</SelectItem>
@@ -265,11 +277,15 @@ export const FilterNoResults: Story = {
             </SelectContent>
           </Select>
         </div>
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Search className="h-8 w-8 text-muted-foreground" />
-          <p className="mt-2 text-sm text-muted-foreground">
+        <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
+          <Search className="h-12 w-12 text-muted-foreground" />
+          <h3 className="text-lg font-medium">No matches</h3>
+          <p className="text-sm text-muted-foreground">
             No pages match your filter
           </p>
+          <Button variant="outline" size="sm">
+            Clear filter
+          </Button>
         </div>
       </div>
     </div>
