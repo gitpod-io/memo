@@ -3,12 +3,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
+import { toast } from "sonner";
 import type { SerializedEditorState } from "lexical";
 import { PageTitle } from "@/components/page-title";
 import { PageIcon } from "@/components/page-icon";
 import { PageCover } from "@/components/page-cover";
-import { ViewTabs } from "@/components/database/view-tabs";
-import { loadDatabase, loadWorkspaceMembers } from "@/lib/database";
+import { ViewTabs, VIEW_TYPE_LABELS } from "@/components/database/view-tabs";
+import {
+  addView,
+  deleteView,
+  loadDatabase,
+  loadWorkspaceMembers,
+  reorderViews,
+  updateView,
+} from "@/lib/database";
 import type {
   DatabaseProperty,
   DatabaseRow,
@@ -187,6 +195,116 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     [router, searchParams],
   );
 
+  // Create a new view with sensible defaults per type
+  const handleAddView = useCallback(
+    async (type: DatabaseViewType) => {
+      const name = `${VIEW_TYPE_LABELS[type]} view`;
+      const { data: newView, error } = await addView(pageId, name, type, {});
+      if (error || !newView) {
+        toast.error("Failed to create view", { duration: 8000 });
+        return;
+      }
+      setViews((prev) => [...prev, newView]);
+      // Switch to the new view
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("view", newView.id);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [pageId, router, searchParams],
+  );
+
+  // Rename a view
+  const handleRenameView = useCallback(
+    async (viewId: string, newName: string) => {
+      const { data: updated, error } = await updateView(viewId, {
+        name: newName,
+      });
+      if (error || !updated) {
+        toast.error("Failed to rename view", { duration: 8000 });
+        return;
+      }
+      setViews((prev) =>
+        prev.map((v) => (v.id === viewId ? { ...v, name: newName } : v)),
+      );
+    },
+    [],
+  );
+
+  // Delete a view (with last-view protection handled by deleteView)
+  const handleDeleteView = useCallback(
+    async (viewId: string) => {
+      const { error } = await deleteView(viewId);
+      if (error) {
+        toast.error(error.message || "Failed to delete view", {
+          duration: 8000,
+        });
+        return;
+      }
+      setViews((prev) => {
+        const remaining = prev.filter((v) => v.id !== viewId);
+        // If the deleted view was active, switch to the first remaining view
+        if (viewId === activeViewId && remaining.length > 0) {
+          const params = new URLSearchParams(searchParams.toString());
+          params.set("view", remaining[0].id);
+          router.replace(`?${params.toString()}`, { scroll: false });
+        }
+        return remaining;
+      });
+    },
+    [activeViewId, router, searchParams],
+  );
+
+  // Duplicate a view — copy config and create with " (copy)" suffix
+  const handleDuplicateView = useCallback(
+    async (viewId: string) => {
+      const source = views.find((v) => v.id === viewId);
+      if (!source) return;
+
+      const name = `${source.name} (copy)`;
+      const { data: newView, error } = await addView(
+        pageId,
+        name,
+        source.type,
+        { ...source.config },
+      );
+      if (error || !newView) {
+        toast.error("Failed to duplicate view", { duration: 8000 });
+        return;
+      }
+      setViews((prev) => [...prev, newView]);
+      // Switch to the duplicated view
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("view", newView.id);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [pageId, views, router, searchParams],
+  );
+
+  // Reorder views by updating position values
+  const handleReorderViews = useCallback(
+    async (orderedIds: string[]) => {
+      // Optimistic update — reorder locally first
+      setViews((prev) => {
+        const viewMap = new Map(prev.map((v) => [v.id, v]));
+        return orderedIds
+          .map((id, i) => {
+            const v = viewMap.get(id);
+            return v ? { ...v, position: i } : null;
+          })
+          .filter((v): v is DatabaseView => v !== null);
+      });
+
+      const { error } = await reorderViews(pageId, orderedIds);
+      if (error) {
+        toast.error("Failed to reorder views", { duration: 8000 });
+        // Reload to restore correct order
+        const { data } = await loadDatabase(pageId);
+        if (data) setViews(data.views);
+      }
+    },
+    [pageId],
+  );
+
   // Check if there's Lexical content to render above the database
   const hasContent =
     initialContent !== null &&
@@ -237,6 +355,11 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                 views={views}
                 activeViewId={activeViewId}
                 onViewChange={handleViewChange}
+                onAddView={handleAddView}
+                onRenameView={handleRenameView}
+                onDeleteView={handleDeleteView}
+                onDuplicateView={handleDuplicateView}
+                onReorderViews={handleReorderViews}
               />
             )}
 
