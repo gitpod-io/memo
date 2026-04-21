@@ -178,6 +178,11 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
     initialContent ? JSON.stringify(initialContent) : ""
   );
   const lastVersionSavedAtRef = useRef<number>(0);
+  // Track the latest pending state so we always save the most recent content
+  // and only show "Saved" when the persisted state matches the latest state.
+  const pendingJsonRef = useRef<SerializedEditorState | null>(null);
+  const pendingSerializedRef = useRef<string | null>(null);
+  const isSavingRef = useRef(false);
   const [floatingAnchorElem, setFloatingAnchorElem] =
     useState<HTMLDivElement | null>(null);
 
@@ -187,6 +192,11 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
     }
   }, []);
 
+  // Persist the latest pending content to Supabase. Serialises one save at
+  // a time: if new changes arrive while a PATCH is in-flight, another save
+  // is scheduled automatically once the current one completes. This prevents
+  // an earlier save (e.g. empty table) from overwriting a later one (table
+  // with cell text) — the root cause of #402.
   const handleChange = useCallback(
     (editorState: EditorState) => {
       const json = editorState.toJSON();
@@ -194,25 +204,52 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
 
       if (serialized === lastSavedRef.current) return;
 
+      // Always store the latest state so the save sends the newest content
+      pendingJsonRef.current = json;
+      pendingSerializedRef.current = serialized;
+
       setSaveStatus("saving");
 
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
       }
 
-      saveTimerRef.current = setTimeout(async () => {
+      // If a save is already in-flight, don't start a new timer — the
+      // in-flight save will re-schedule when it completes.
+      if (isSavingRef.current) return;
+
+      const doSave = async () => {
+        const pendingJson = pendingJsonRef.current;
+        const pendingSerialized = pendingSerializedRef.current;
+        if (!pendingJson || !pendingSerialized) return;
+
+        // Snapshot and clear so concurrent changes accumulate in a new pending slot
+        pendingJsonRef.current = null;
+        pendingSerializedRef.current = null;
+        isSavingRef.current = true;
+
         const supabase = await getClient();
         const { error } = await supabase
           .from("pages")
-          .update({ content: json })
+          .update({ content: pendingJson })
           .eq("id", pageId);
 
+        isSavingRef.current = false;
+
         if (!error) {
-          lastSavedRef.current = serialized;
-          setSaveStatus("saved");
+          lastSavedRef.current = pendingSerialized;
+
+          // If new changes arrived while this save was in-flight, re-save
+          // instead of showing "Saved".
+          if (pendingSerializedRef.current !== null) {
+            if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+            saveTimerRef.current = setTimeout(doSave, SAVE_DEBOUNCE_MS);
+          } else {
+            setSaveStatus("saved");
+          }
 
           // Sync page_links in the background after successful save
-          const linkedPageIds = extractPageLinkIds(json);
+          const linkedPageIds = extractPageLinkIds(pendingJson);
           syncPageLinks(pageId, workspaceId, linkedPageIds).catch((err) =>
             lazyCaptureException(err),
           );
@@ -227,7 +264,7 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
             fetch(`/api/pages/${pageId}/versions`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ content: json }),
+              body: JSON.stringify({ content: pendingJson }),
             }).catch(() => {
               // Reset so the next content save retries immediately
               // instead of waiting another full interval.
@@ -238,9 +275,11 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
           lazyCaptureException(error);
           setSaveStatus("error");
         }
-      }, SAVE_DEBOUNCE_MS);
+      };
+
+      saveTimerRef.current = setTimeout(doSave, SAVE_DEBOUNCE_MS);
     },
-    [pageId, workspaceId]
+    [pageId, workspaceId],
   );
 
   useEffect(() => {
