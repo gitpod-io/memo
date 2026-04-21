@@ -137,7 +137,7 @@ export default async function PageView({
       { onConflict: "workspace_id,user_id,page_id" },
     )
     .then(({ error }) => {
-      if (error) {
+      if (error && error.code !== "23503") {
         captureSupabaseError(error, "page-view:record-visit");
       }
     });
