@@ -4,7 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getClient } from "@/lib/supabase/lazy-client";
-import { captureSupabaseError } from "@/lib/sentry";
+import {
+  captureSupabaseError,
+  isInsufficientPrivilegeError,
+} from "@/lib/sentry";
 import { Input } from "@/components/ui/input";
 import {
   Tooltip,
@@ -162,7 +165,9 @@ export function PersonEditor({
         .single();
 
       if (dbError || !dbPage) {
-        if (dbError) captureSupabaseError(dbError, "person-editor:db-lookup");
+        if (dbError && !isInsufficientPrivilegeError(dbError)) {
+          captureSupabaseError(dbError, "person-editor:db-lookup");
+        }
         if (!cancelled) setLoading(false);
         return;
       }
@@ -175,7 +180,9 @@ export function PersonEditor({
         .eq("workspace_id", dbPage.workspace_id);
 
       if (membersError) {
-        captureSupabaseError(membersError, "person-editor:members");
+        if (!isInsufficientPrivilegeError(membersError)) {
+          captureSupabaseError(membersError, "person-editor:members");
+        }
         if (!cancelled) setLoading(false);
         return;
       }
