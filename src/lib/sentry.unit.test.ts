@@ -135,9 +135,23 @@ describe("isInsufficientPrivilegeError", () => {
     expect(isInsufficientPrivilegeError(error)).toBe(false);
   });
 
-  it("returns false for generic errors", () => {
+  it("returns false for generic errors without RLS message", () => {
     const error = new Error("Something went wrong");
     expect(isInsufficientPrivilegeError(error)).toBe(false);
+  });
+
+  it("detects RLS violation from generic Error message (MEMO-W regression)", () => {
+    const error = new Error(
+      'new row violates row-level security policy for table "page_versions"',
+    );
+    expect(isInsufficientPrivilegeError(error)).toBe(true);
+  });
+
+  it("detects RLS violation from generic Error with different table name", () => {
+    const error = new Error(
+      'new row violates row-level security policy for table "pages"',
+    );
+    expect(isInsufficientPrivilegeError(error)).toBe(true);
   });
 });
 

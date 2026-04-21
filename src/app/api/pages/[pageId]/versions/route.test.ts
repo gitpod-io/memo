@@ -66,7 +66,9 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@/lib/sentry", () => ({
   captureSupabaseError: vi.fn(),
-  isInsufficientPrivilegeError: (err: { code: string }) => err.code === "42501",
+  isInsufficientPrivilegeError: (err: Error & { code?: string }) =>
+    err.code === "42501" ||
+    err.message?.includes("violates row-level security policy"),
 }));
 
 const { GET, POST } = await import("./route");
@@ -208,6 +210,29 @@ describe("POST /api/pages/[pageId]/versions", () => {
     const body = await res.json();
     expect(body.error).toBe("Forbidden");
     // Must NOT report to Sentry at error level
+    expect(Sentry.captureException).not.toHaveBeenCalled();
+  });
+
+  it("returns 403 when RLS violation is thrown without PostgrestError shape (MEMO-W regression)", async () => {
+    // Simulate Supabase throwing a plain Error without code/details/hint.
+    // This is the exact scenario from MEMO-W: the error has the RLS message
+    // but lacks PostgrestError properties, so the duck-type check fails.
+    const rlsError = new Error(
+      'new row violates row-level security policy for table "page_versions"',
+    );
+    throwOnInsert = rlsError;
+    listResult = { data: null, error: null };
+
+    const res = await POST(
+      makeRequest("/api/pages/page-123/versions", {
+        method: "POST",
+        body: JSON.stringify({ content: { root: { children: [] } } }),
+      }),
+      { params: mockParams },
+    );
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.error).toBe("Forbidden");
     expect(Sentry.captureException).not.toHaveBeenCalled();
   });
 });
