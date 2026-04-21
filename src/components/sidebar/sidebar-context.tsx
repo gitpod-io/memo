@@ -10,6 +10,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
+import { KeyboardShortcutsDialog } from "@/components/keyboard-shortcuts-dialog";
 
 interface SidebarContextValue {
   open: boolean;
@@ -19,6 +20,8 @@ interface SidebarContextValue {
   isMac: boolean;
   registerSearchRef: (ref: RefObject<HTMLInputElement | null>) => void;
   focusSearch: () => void;
+  shortcutsOpen: boolean;
+  setShortcutsOpen: (open: boolean) => void;
 }
 
 const SidebarContext = createContext<SidebarContextValue | null>(null);
@@ -36,6 +39,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     () => typeof navigator !== "undefined" && navigator.platform.toUpperCase().includes("MAC")
   );
   const searchRef = useRef<RefObject<HTMLInputElement | null> | null>(null);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
@@ -92,6 +96,27 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [focusSearch]);
 
+  // ? keyboard shortcut to open keyboard shortcuts dialog
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== "?" || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (!(e.target instanceof HTMLElement)) return;
+      const tag = e.target.tagName;
+      if (
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        e.target.isContentEditable ||
+        e.target.closest("[data-lexical-editor]")
+      ) {
+        return;
+      }
+      e.preventDefault();
+      setShortcutsOpen(true);
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   return (
     <SidebarContext.Provider
       value={{
@@ -102,9 +127,15 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
         isMac,
         registerSearchRef,
         focusSearch,
+        shortcutsOpen,
+        setShortcutsOpen,
       }}
     >
       {children}
+      <KeyboardShortcutsDialog
+        open={shortcutsOpen}
+        onOpenChange={setShortcutsOpen}
+      />
     </SidebarContext.Provider>
   );
 }
