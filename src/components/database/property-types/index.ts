@@ -17,6 +17,7 @@ import {
   UpdatedTimeRenderer,
   CreatedByRenderer,
 } from "./computed";
+import { RelationRenderer, RelationEditor } from "./relation";
 
 // ---------------------------------------------------------------------------
 // Shared prop interfaces
@@ -96,11 +97,12 @@ const registry: Partial<Record<PropertyType, PropertyTypeConfig>> = {
   created_time: { Renderer: CreatedTimeRenderer, Editor: null },
   updated_time: { Renderer: UpdatedTimeRenderer, Editor: null },
   created_by: { Renderer: CreatedByRenderer, Editor: null },
+  relation: { Renderer: RelationRenderer, Editor: RelationEditor },
 };
 
 /**
  * Look up the renderer and editor for a property type.
- * Returns undefined for types not yet implemented (files, relation, formula).
+ * Returns undefined for types not yet implemented (files, formula).
  * Computed types (created_time, updated_time, created_by) have Editor: null.
  */
 export function getPropertyTypeConfig(
