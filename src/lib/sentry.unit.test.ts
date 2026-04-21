@@ -72,6 +72,56 @@ describe("isTransientNetworkError", () => {
     expect(isTransientNetworkError(error)).toBe(true);
   });
 
+  it("detects Node.js native fetch 'fetch failed' message", () => {
+    const error = new Error("fetch failed");
+    expect(isTransientNetworkError(error)).toBe(true);
+  });
+
+  it("detects ECONNRESET in error cause chain (Node.js native fetch)", () => {
+    const cause = new Error(
+      "Client network socket disconnected before secure TLS connection was established",
+    );
+    cause.message += " (ECONNRESET)";
+    const error = new Error("fetch failed", { cause });
+    expect(isTransientNetworkError(error)).toBe(true);
+  });
+
+  it("detects ENOTFOUND in error cause chain (DNS failure)", () => {
+    const cause = new Error("getaddrinfo ENOTFOUND example.com");
+    const error = new Error("fetch failed", { cause });
+    expect(isTransientNetworkError(error)).toBe(true);
+  });
+
+  it("detects ETIMEDOUT in error cause chain (connection timeout)", () => {
+    const cause = new Error("connect ETIMEDOUT 10.0.0.1:443");
+    const error = new Error("fetch failed", { cause });
+    expect(isTransientNetworkError(error)).toBe(true);
+  });
+
+  it("detects UND_ERR_SOCKET in error cause chain (undici socket error)", () => {
+    const cause = new Error("other side closed - Loss of signal (UND_ERR_SOCKET)");
+    const error = new Error("fetch failed", { cause });
+    expect(isTransientNetworkError(error)).toBe(true);
+  });
+
+  it("detects cause chain errors even when top-level message is not 'fetch failed'", () => {
+    const cause = new Error("connect ECONNRESET 10.0.0.1:443");
+    const error = new Error("request to https://example.com failed", { cause });
+    expect(isTransientNetworkError(error)).toBe(true);
+  });
+
+  it("returns false when cause exists but is not a transient network error", () => {
+    const cause = new Error("SQLITE_BUSY: database is locked");
+    const error = new Error("fetch failed", { cause });
+    // "fetch failed" message alone is enough to be transient
+    expect(isTransientNetworkError(error)).toBe(true);
+  });
+
+  it("returns false when cause is not an Error instance", () => {
+    const error = new Error("some error", { cause: "string cause" });
+    expect(isTransientNetworkError(error)).toBe(false);
+  });
+
   it("returns false for a regular PostgrestError", () => {
     const error = makePostgrestError({
       message: "new row violates row-level security policy",
@@ -242,6 +292,20 @@ describe("captureSupabaseError", () => {
     expect(opts.level).toBe("warning");
     expect(opts.extra.operation).toBe("page-tree:create-page");
     expect(opts.extra.code).toBe("42501");
+  });
+
+  it("captures Node.js native fetch errors at warning level (MEMO-15)", async () => {
+    const cause = new Error(
+      "Client network socket disconnected before secure TLS connection was established (ECONNRESET)",
+    );
+    const error = new Error("fetch failed", { cause });
+    captureSupabaseError(error, "usage-events:track");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [, opts] = captureExceptionMock.mock.calls[0];
+    expect(opts.level).toBe("warning");
+    expect(opts.extra.operation).toBe("usage-events:track");
   });
 
   it("captures non-network, non-RLS errors at default (error) level", async () => {
