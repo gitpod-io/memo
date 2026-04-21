@@ -2,29 +2,55 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Handles the email confirmation redirect from Supabase Auth.
- * Supabase appends `?code=<auth_code>` to the callback URL.
- * This route exchanges the code for a session, then redirects
- * the user to the sign-in page with a confirmed=true param.
+ * Handles auth redirects from Supabase: email confirmation and OAuth callbacks.
+ *
+ * Email confirmation: exchanges code → signs out → redirects to /sign-in?confirmed=true
+ * OAuth sign-in: exchanges code → keeps session → redirects to user's workspace
+ * Errors: redirects to /sign-in with error description as query param
  */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
 
-  if (code) {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-
-    if (!error) {
-      // Sign the user out so they land on the sign-in page with a fresh
-      // session prompt. The confirmation was successful — they can now
-      // sign in with their credentials.
-      await supabase.auth.signOut();
-      return NextResponse.redirect(`${origin}/sign-in?confirmed=true`);
-    }
+  // OAuth providers may redirect with error params on denied permission or failure
+  const errorParam = searchParams.get("error_description") || searchParams.get("error");
+  if (errorParam) {
+    const url = new URL("/sign-in", origin);
+    url.searchParams.set("error", errorParam);
+    return NextResponse.redirect(url);
   }
 
-  // If the code is missing or exchange failed, redirect to sign-in
-  // without the success message so the user can try again.
-  return NextResponse.redirect(`${origin}/sign-in`);
+  if (!code) {
+    return NextResponse.redirect(`${origin}/sign-in`);
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+  if (error) {
+    const url = new URL("/sign-in", origin);
+    url.searchParams.set("error", error.message);
+    return NextResponse.redirect(url);
+  }
+
+  // Determine if this is an OAuth sign-in or email confirmation.
+  // OAuth users have an identity with a provider other than "email".
+  const isOAuth = data.user?.app_metadata?.provider !== "email";
+
+  if (isOAuth) {
+    // OAuth sign-in: session is active, redirect to the user's workspace
+    const { data: membership } = await supabase
+      .from("members")
+      .select("workspaces(slug)")
+      .eq("user_id", data.user.id)
+      .limit(1)
+      .maybeSingle();
+
+    const slug = (membership?.workspaces as unknown as { slug: string } | null)?.slug;
+    return NextResponse.redirect(`${origin}/${slug ?? ""}`);
+  }
+
+  // Email confirmation: sign out so they land on sign-in with a success message
+  await supabase.auth.signOut();
+  return NextResponse.redirect(`${origin}/sign-in?confirmed=true`);
 }

@@ -1,6 +1,11 @@
 "use client";
 
+import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { captureSupabaseError } from "@/lib/sentry";
 import { Button } from "@/components/ui/button";
+
+type OAuthProvider = "github" | "google";
 
 function GitHubIcon({ className }: { className?: string }) {
   return (
@@ -32,28 +37,56 @@ function GoogleIcon({ className }: { className?: string }) {
 }
 
 export function OAuthButtons() {
+  const [loadingProvider, setLoadingProvider] = useState<OAuthProvider | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleOAuthSignIn(provider: OAuthProvider) {
+    setError(null);
+    setLoadingProvider(provider);
+
+    const supabase = createClient();
+    const redirectTo = `${window.location.origin}/auth/callback`;
+
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo },
+    });
+
+    if (oauthError) {
+      captureSupabaseError(oauthError as unknown as Error, `oauth.signIn.${provider}`);
+      setError(oauthError.message);
+      setLoadingProvider(null);
+    }
+    // On success the browser redirects to the provider's consent page.
+  }
+
   return (
     <div className="flex flex-col gap-2">
       <Button
         variant="outline"
         className="w-full gap-2"
-        disabled
-        title="Coming soon"
-        aria-label="Continue with GitHub — coming soon"
+        disabled={loadingProvider !== null}
+        onClick={() => handleOAuthSignIn("github")}
+        aria-label="Continue with GitHub"
       >
         <GitHubIcon className="h-4 w-4" />
-        Continue with GitHub
+        {loadingProvider === "github" ? "Redirecting…" : "Continue with GitHub"}
       </Button>
       <Button
         variant="outline"
         className="w-full gap-2"
-        disabled
-        title="Coming soon"
-        aria-label="Continue with Google — coming soon"
+        disabled={loadingProvider !== null}
+        onClick={() => handleOAuthSignIn("google")}
+        aria-label="Continue with Google"
       >
         <GoogleIcon className="h-4 w-4" />
-        Continue with Google
+        {loadingProvider === "google" ? "Redirecting…" : "Continue with Google"}
       </Button>
+      {error && (
+        <p className="text-xs text-destructive" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
