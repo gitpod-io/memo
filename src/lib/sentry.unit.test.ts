@@ -10,6 +10,7 @@ vi.mock("@sentry/nextjs", () => ({
 
 import {
   isTransientNetworkError,
+  isSchemaNotFoundError,
   captureSupabaseError,
   isNextjsInternalNoise,
 } from "./sentry";
@@ -83,6 +84,30 @@ describe("isTransientNetworkError", () => {
   });
 });
 
+describe("isSchemaNotFoundError", () => {
+  it("detects PGRST205 (table not found in schema cache)", () => {
+    const error = makePostgrestError({
+      message: "Could not find the table 'public.favorites' in the schema cache",
+      code: "PGRST205",
+      hint: "Perhaps you meant the table 'public.profiles'",
+    });
+    expect(isSchemaNotFoundError(error)).toBe(true);
+  });
+
+  it("returns false for other PostgrestError codes", () => {
+    const error = makePostgrestError({
+      message: "new row violates row-level security policy",
+      code: "42501",
+    });
+    expect(isSchemaNotFoundError(error)).toBe(false);
+  });
+
+  it("returns false for generic errors", () => {
+    const error = new Error("Something went wrong");
+    expect(isSchemaNotFoundError(error)).toBe(false);
+  });
+});
+
 describe("captureSupabaseError", () => {
   beforeEach(() => {
     captureExceptionMock.mockClear();
@@ -115,6 +140,22 @@ describe("captureSupabaseError", () => {
     expect(captureExceptionMock).toHaveBeenCalledOnce();
     const [, opts] = captureExceptionMock.mock.calls[0];
     expect(opts.level).toBe("warning");
+  });
+
+  it("captures PGRST205 schema-not-found errors at warning level", async () => {
+    const error = makePostgrestError({
+      message: "Could not find the table 'public.favorites' in the schema cache",
+      code: "PGRST205",
+      hint: "Perhaps you meant the table 'public.profiles'",
+    });
+    captureSupabaseError(error, "page-tree:fetch-favorites");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [, opts] = captureExceptionMock.mock.calls[0];
+    expect(opts.level).toBe("warning");
+    expect(opts.extra.operation).toBe("page-tree:fetch-favorites");
+    expect(opts.extra.code).toBe("PGRST205");
   });
 
   it("captures non-network errors at default (error) level", async () => {
