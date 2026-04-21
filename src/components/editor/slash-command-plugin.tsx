@@ -46,6 +46,11 @@ import { openImagePicker } from "@/components/editor/image-plugin";
 import { INSERT_CALLOUT_COMMAND } from "@/components/editor/callout-plugin";
 import { INSERT_COLLAPSIBLE_COMMAND } from "@/components/editor/collapsible-plugin";
 import { OPEN_PAGE_LINK_MENU_COMMAND } from "@/components/editor/page-link-plugin";
+import {
+  TURN_INTO_COMMAND,
+  TURN_INTO_OPTIONS,
+} from "@/components/editor/turn-into-plugin";
+import { ArrowRightLeft } from "lucide-react";
 
 class SlashCommandOption extends MenuOption {
   title: string;
@@ -229,6 +234,21 @@ export function SlashCommandPlugin(): JSX.Element | null {
           editor.dispatchCommand(OPEN_PAGE_LINK_MENU_COMMAND, undefined);
         },
       }),
+      // "Turn into" options — appear when user types /turn
+      ...TURN_INTO_OPTIONS.map(
+        (opt) =>
+          new SlashCommandOption(`Turn into ${opt.label}`, {
+            description: `Transform block to ${opt.label.toLowerCase()}`,
+            icon: <ArrowRightLeft className="h-5 w-5" />,
+            onSelect: () => {
+              editor.update(() => {
+                editor.dispatchCommand(TURN_INTO_COMMAND, {
+                  targetType: opt.type,
+                });
+              });
+            },
+          }),
+      ),
     ],
     [editor]
   );
