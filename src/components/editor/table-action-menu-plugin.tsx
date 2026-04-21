@@ -171,6 +171,12 @@ function TableActionMenu({
   );
 }
 
+/**
+ * Renders the menu trigger as a fixed-position overlay portaled to
+ * document.body instead of into the Lexical-managed cell DOM.
+ * Portaling React content into Lexical DOM nodes causes removeChild
+ * errors when Lexical reconciles the table (e.g. on Tab cell navigation).
+ */
 export function TableActionMenuPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [tableCellNode, setTableCellNode] = useState<TableCellNode | null>(
@@ -218,18 +224,19 @@ export function TableActionMenuPlugin(): JSX.Element | null {
     return null;
   }
 
-  // Render a small menu trigger button in the top-right of the active cell
+  // Compute the cell rect during render — no effect needed
   const cellDom = editor.getElementByKey(tableCellNode.getKey());
   if (!cellDom) {
     return null;
   }
+  const cellRect = cellDom.getBoundingClientRect();
 
-  return (
+  return createPortal(
     <>
-      {createPortal(
-        <TableCellMenuTrigger onMenuOpen={handleMenuOpen} />,
-        cellDom
-      )}
+      <TableCellMenuTrigger
+        onMenuOpen={handleMenuOpen}
+        cellRect={cellRect}
+      />
       {menuPosition && (
         <TableActionMenu
           editor={editor}
@@ -238,21 +245,27 @@ export function TableActionMenuPlugin(): JSX.Element | null {
           anchorPosition={menuPosition}
         />
       )}
-    </>
+    </>,
+    document.body
   );
 }
 
 function TableCellMenuTrigger({
   onMenuOpen,
+  cellRect,
 }: {
   onMenuOpen: (event: React.MouseEvent) => void;
+  cellRect: DOMRect;
 }) {
   return (
     <button
-      className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center text-muted-foreground opacity-0 hover:opacity-100 focus:opacity-100 [td:hover>&]:opacity-60 [th:hover>&]:opacity-60"
+      className="fixed z-40 flex h-5 w-5 items-center justify-center text-muted-foreground opacity-60 hover:opacity-100 focus:opacity-100"
+      style={{
+        top: cellRect.top + 2,
+        left: cellRect.right - 22,
+      }}
       onClick={onMenuOpen}
       aria-label="Table cell actions"
-      contentEditable={false}
     >
       <MoreHorizontal className="h-3.5 w-3.5" />
     </button>
