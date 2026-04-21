@@ -17,6 +17,7 @@ import { toast } from "@/lib/toast";
 import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError, isSchemaNotFoundError } from "@/lib/sentry";
 import { retryOnNetworkError } from "@/lib/retry";
+import { usePersistedExpanded } from "@/lib/use-persisted-expanded";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -57,7 +58,6 @@ export function PageTree({ userId }: PageTreeProps) {
   const params = useParams<{ workspaceSlug?: string; pageId?: string }>();
   const [pages, setPages] = useState<Page[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [deleteTarget, setDeleteTarget] = useState<TreeNode | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -73,6 +73,8 @@ export function PageTree({ userId }: PageTreeProps) {
   const workspaceSlug = params.workspaceSlug;
 
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const { expanded, setExpanded, removeFromPersisted } =
+    usePersistedExpanded(workspaceId);
 
   useEffect(() => {
     if (!workspaceSlug) return;
@@ -252,7 +254,7 @@ export function PageTree({ userId }: PageTreeProps) {
       }
       return next;
     });
-  }, []);
+  }, [setExpanded]);
 
   const handleCreate = useCallback(
     async (parentId: string | null) => {
@@ -288,7 +290,7 @@ export function PageTree({ userId }: PageTreeProps) {
 
       router.push(`/${workspaceSlug}/${newPage.id}`);
     },
-    [workspaceId, workspaceSlug, pages, userId, router],
+    [workspaceId, workspaceSlug, pages, userId, router, setExpanded],
   );
 
   const handleDuplicate = useCallback(
@@ -358,6 +360,7 @@ export function PageTree({ userId }: PageTreeProps) {
         ...getDescendantIds(deleteTarget),
       ]);
       setPages((prev) => prev.filter((p) => !removedIds.has(p.id)));
+      removeFromPersisted(removedIds);
 
       if (params.pageId && removedIds.has(params.pageId)) {
         router.push(`/${workspaceSlug}`);
