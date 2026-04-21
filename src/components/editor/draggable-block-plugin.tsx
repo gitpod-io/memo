@@ -1,7 +1,7 @@
 "use client";
 
 import type { JSX } from "react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
@@ -10,6 +10,7 @@ import {
   type LexicalEditor,
 } from "lexical";
 import { GripVertical } from "lucide-react";
+import { TurnIntoMenu } from "@/components/editor/turn-into-menu";
 
 const DRAG_DATA_FORMAT = "application/x-memo-drag-block";
 const DRAGGABLE_BLOCK_MENU_CLASSNAME = "memo-draggable-block-menu";
@@ -159,6 +160,8 @@ export function DraggableBlockPlugin({
   const draggingBlockElemRef = useRef<HTMLElement | null>(null);
   const targetBlockElemRef = useRef<HTMLElement | null>(null);
   const isDraggingRef = useRef(false);
+  const [showTurnIntoMenu, setShowTurnIntoMenu] = useState(false);
+  const turnIntoMenuRef = useRef<HTMLDivElement>(null);
 
   // Track the hovered block element for showing the drag handle
   const handleMouseMove = useCallback(
@@ -226,6 +229,7 @@ export function DraggableBlockPlugin({
       if (!dataTransfer) return;
 
       isDraggingRef.current = true;
+      setShowTurnIntoMenu(false);
 
       // Find the Lexical node key for this DOM element
       let nodeKey: string | null = null;
@@ -347,6 +351,50 @@ export function DraggableBlockPlugin({
     [anchorElem, editor]
   );
 
+  // Click on the drag handle opens the "Turn into" menu after selecting the block
+  const handleHandleClick = useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const target = targetBlockElemRef.current;
+      if (!target) return;
+
+      // Place the cursor inside the target block so the Turn Into plugin
+      // knows which block to transform.
+      editor.update(() => {
+        const node = $getNearestNodeFromDOMNode(target);
+        if (node) {
+          node.selectStart();
+        }
+      });
+
+      setShowTurnIntoMenu((prev) => !prev);
+    },
+    [editor],
+  );
+
+  const handleCloseTurnIntoMenu = useCallback(() => {
+    setShowTurnIntoMenu(false);
+  }, []);
+
+  // Close the Turn Into menu when clicking outside
+  useEffect(() => {
+    if (!showTurnIntoMenu) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (
+        turnIntoMenuRef.current?.contains(target) ||
+        menuRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setShowTurnIntoMenu(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showTurnIntoMenu]);
+
   useEffect(() => {
     anchorElem.addEventListener("dragover", handleDragOver);
     anchorElem.addEventListener("drop", handleDrop);
@@ -366,12 +414,26 @@ export function DraggableBlockPlugin({
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onMouseLeave={handleMenuMouseLeave}
-        aria-label="Drag to reorder block"
+        onClick={handleHandleClick}
+        aria-label="Drag to reorder block, click for block menu"
         role="button"
         tabIndex={0}
       >
         <GripVertical className="h-5 w-5 text-muted-foreground hover:text-foreground" />
       </div>
+      {/* Turn Into menu (shown on click) */}
+      {showTurnIntoMenu && menuRef.current && (
+        <div
+          ref={turnIntoMenuRef}
+          className="absolute z-50"
+          style={{
+            top: menuRef.current.style.top,
+            left: "24px",
+          }}
+        >
+          <TurnIntoMenu onClose={handleCloseTurnIntoMenu} />
+        </div>
+      )}
       {/* Drop indicator line */}
       <div
         ref={dropIndicatorRef}

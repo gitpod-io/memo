@@ -56,6 +56,7 @@ import { PageLinkPlugin } from "@/components/editor/page-link-plugin";
 import { TableActionMenuPlugin } from "@/components/editor/table-action-menu-plugin";
 import { WordCountPlugin } from "@/components/editor/word-count-plugin";
 import { EditorAutoLinkPlugin } from "@/components/editor/auto-link-plugin";
+import { TurnIntoPlugin } from "@/components/editor/turn-into-plugin";
 import { getClient } from "@/lib/supabase/lazy-client";
 
 const SAVE_DEBOUNCE_MS = 500;
@@ -387,6 +388,7 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
               ignoreSelectionChange
             />
             <SlashCommandPlugin />
+            <TurnIntoPlugin />
             {floatingAnchorElem && (
               <>
                 <FloatingToolbarPlugin anchorElem={floatingAnchorElem} />
