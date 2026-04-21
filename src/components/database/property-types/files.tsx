@@ -6,6 +6,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 import { lazyCaptureException } from "@/lib/capture";
+import { getClient } from "@/lib/supabase/lazy-client";
+import {
+  captureSupabaseError,
+  isInsufficientPrivilegeError,
+  isSchemaNotFoundError,
+} from "@/lib/sentry";
 import type { RendererProps, EditorProps } from "./index";
 
 // ---------------------------------------------------------------------------
@@ -66,7 +72,6 @@ async function uploadFile(file: File): Promise<FileEntry | null> {
   }
 
   try {
-    const { getClient } = await import("@/lib/supabase/lazy-client");
     const supabase = await getClient();
     const ext = getExtension(file.name) || "bin";
     const fileName = `${crypto.randomUUID()}.${ext}`;
@@ -80,11 +85,6 @@ async function uploadFile(file: File): Promise<FileEntry | null> {
       });
 
     if (error) {
-      const {
-        captureSupabaseError,
-        isInsufficientPrivilegeError,
-        isSchemaNotFoundError,
-      } = await import("@/lib/sentry");
       if (!isSchemaNotFoundError(error) && !isInsufficientPrivilegeError(error)) {
         captureSupabaseError(error, "files-property:upload");
       }
