@@ -16,11 +16,19 @@ import type {
   DatabaseViewType,
 } from "@/lib/types";
 
-// Dynamically import the table view to code-split database view components
+// Dynamically import view components to code-split database view types
 const TableView = dynamic(
   () =>
     import("@/components/database/views/table-view").then(
       (mod) => mod.TableView,
+    ),
+  { ssr: false },
+);
+
+const BoardView = dynamic(
+  () =>
+    import("@/components/database/views/board-view").then(
+      (mod) => mod.BoardView,
     ),
   { ssr: false },
 );
@@ -222,6 +230,13 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
             <div className="mt-0">
               {activeView?.type === "table" ? (
                 <TableView
+                  rows={rows}
+                  properties={properties}
+                  viewConfig={activeView.config}
+                  workspaceSlug={workspaceSlug}
+                />
+              ) : activeView?.type === "board" ? (
+                <BoardView
                   rows={rows}
                   properties={properties}
                   viewConfig={activeView.config}
