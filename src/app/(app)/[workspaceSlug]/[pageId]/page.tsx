@@ -156,6 +156,7 @@ export default async function PageView({
         pageId={page.id}
         pageTitle={page.title}
         pageIcon={page.icon ?? null}
+        pageCoverUrl={page.cover_url ?? null}
         initialContent={initialContent}
         workspaceId={workspace.id}
         workspaceSlug={workspaceSlug}

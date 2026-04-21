@@ -60,6 +60,7 @@ export interface Page {
   title: string;
   content: Record<string, unknown> | null;
   icon: string | null;
+  cover_url: string | null;
   position: number;
   created_by: string;
   created_at: string;
