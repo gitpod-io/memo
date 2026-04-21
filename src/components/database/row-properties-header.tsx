@@ -142,7 +142,7 @@ function PropertyValueCell({
     );
   }
 
-  if (editing) {
+  if (editing && config.Editor) {
     const Editor = config.Editor;
     return (
       <div className="min-w-0 flex-1">
