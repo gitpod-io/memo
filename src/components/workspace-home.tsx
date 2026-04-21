@@ -6,6 +6,7 @@ import { FileText, Plus, Search } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError } from "@/lib/sentry";
+import { trackEventClient } from "@/lib/track-event";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -119,6 +120,11 @@ export function WorkspaceHome({
       return;
     }
     if (!newPage) return;
+
+    trackEventClient(supabase, "page.created", userId, {
+      workspaceId: workspace.id,
+      metadata: { page_id: newPage.id, source: "workspace-home" },
+    });
 
     router.push(`/${workspace.slug}/${newPage.id}`);
     router.refresh();

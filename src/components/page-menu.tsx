@@ -21,6 +21,7 @@ import {
 import { lazyCaptureException } from "@/lib/capture";
 import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError } from "@/lib/sentry";
+import { trackEventClient } from "@/lib/track-event";
 import { useFavorite } from "@/components/sidebar/favorites-section";
 import { useSidebar } from "@/components/sidebar/sidebar-context";
 
@@ -130,13 +131,22 @@ export function PageMenu({
       const markdown = exportEditorToMarkdown(editor);
       const filename = (pageTitle.trim() || "Untitled") + ".md";
       downloadMarkdown(markdown, filename);
+
+      getClient().then((supabase) => {
+        trackEventClient(supabase, "editor.export", userId, {
+          workspaceId,
+          metadata: { page_id: pageId },
+        });
+      }).catch(() => {
+        // Client init failed — skip tracking silently
+      });
     } catch (error) {
       lazyCaptureException(error);
       toast.error("Export failed", {
         duration: 8000,
       });
     }
-  }, [editorRef, pageTitle]);
+  }, [editorRef, pageTitle, userId, workspaceId, pageId]);
 
   const handleImportClick = useCallback(() => {
     fileInputRef.current?.click();
@@ -201,6 +211,11 @@ export function PageMenu({
           });
           return;
         }
+
+        trackEventClient(supabase, "editor.import", userId, {
+          workspaceId,
+          metadata: { page_id: newPage.id },
+        });
 
         router.push(`/${workspaceSlug}/${newPage.id}`);
         router.refresh();

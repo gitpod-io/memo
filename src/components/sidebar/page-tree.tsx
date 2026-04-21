@@ -16,6 +16,7 @@ import {
 import { toast } from "@/lib/toast";
 import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError, isSchemaNotFoundError } from "@/lib/sentry";
+import { trackEventClient } from "@/lib/track-event";
 import { retryOnNetworkError } from "@/lib/retry";
 import { usePersistedExpanded } from "@/lib/use-persisted-expanded";
 import { Button } from "@/components/ui/button";
@@ -222,6 +223,10 @@ export function PageTree({ userId }: PageTreeProps) {
           // Revert
           setFavoriteMap((prev) => new Map(prev).set(pageId, existingFavId));
         } else {
+          trackEventClient(supabase, "sidebar.favorites.toggle", userId, {
+            workspaceId,
+            metadata: { page_id: pageId, action: "remove" },
+          });
           window.dispatchEvent(new CustomEvent("favorites-changed"));
         }
       } else {
@@ -245,6 +250,10 @@ export function PageTree({ userId }: PageTreeProps) {
         }
 
         if (data) {
+          trackEventClient(supabase, "sidebar.favorites.toggle", userId, {
+            workspaceId,
+            metadata: { page_id: pageId, action: "add" },
+          });
           setFavoriteMap((prev) => new Map(prev).set(pageId, data.id));
           window.dispatchEvent(new CustomEvent("favorites-changed"));
         }
@@ -292,6 +301,11 @@ export function PageTree({ userId }: PageTreeProps) {
         return;
       }
       if (!newPage) return;
+
+      trackEventClient(supabase, "page.created", userId, {
+        workspaceId,
+        metadata: { page_id: newPage.id, source: "sidebar" },
+      });
 
       setPages((prev) => [...prev, newPage]);
 
@@ -365,6 +379,11 @@ export function PageTree({ userId }: PageTreeProps) {
       captureSupabaseError(error, "page-tree:soft-delete-page");
       toast.error("Failed to delete page", { duration: 8000 });
     } else {
+      trackEventClient(supabase, "page.deleted", userId, {
+        workspaceId: workspaceId ?? undefined,
+        metadata: { page_id: deleteTarget.page.id },
+      });
+
       const removedIds = new Set([
         deleteTarget.page.id,
         ...getDescendantIds(deleteTarget),

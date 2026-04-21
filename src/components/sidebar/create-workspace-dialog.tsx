@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError } from "@/lib/sentry";
+import { trackEventClient } from "@/lib/track-event";
 import { generateSlug, WORKSPACE_LIMIT } from "@/lib/workspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +66,17 @@ export function CreateWorkspaceDialog({
       setLoading(false);
       return;
     }
+
+    // Fire-and-forget: get user ID for tracking without blocking navigation
+    supabase.auth.getUser().then(({ data: authData }) => {
+      if (authData.user) {
+        trackEventClient(supabase, "workspace.created", authData.user.id, {
+          workspaceId: data!.id,
+        });
+      }
+    }).catch(() => {
+      // Auth lookup failed — skip tracking silently
+    });
 
     onOpenChange(false);
     setName("");

@@ -59,6 +59,11 @@ vi.mock("@/lib/supabase/client", () => ({
           }),
         };
       }
+      if (table === "usage_events") {
+        return {
+          insert: () => Promise.resolve({ error: null }),
+        };
+      }
       return {};
     },
   }),

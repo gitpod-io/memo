@@ -37,6 +37,16 @@ vi.mock("@/lib/supabase/client", () => ({
         },
       };
     },
+    auth: {
+      getUser: () =>
+        Promise.resolve({ data: { user: { id: "user-123" } }, error: null }),
+    },
+    from: (table: string) => {
+      if (table === "usage_events") {
+        return { insert: () => Promise.resolve({ error: null }) };
+      }
+      return {};
+    },
   }),
 }));
 
