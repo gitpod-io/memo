@@ -153,6 +153,30 @@ describe("isInsufficientPrivilegeError", () => {
     );
     expect(isInsufficientPrivilegeError(error)).toBe(true);
   });
+
+  it("detects custom RPC 42501 thrown as Error with code property (MEMO-14 regression)", () => {
+    const error = Object.assign(
+      new Error("Not a member of this workspace"),
+      { code: "42501" },
+    );
+    expect(isInsufficientPrivilegeError(error)).toBe(true);
+  });
+
+  it("detects RPC 42501 with code but without details/hint (non-PostgrestError shape)", () => {
+    const error = Object.assign(
+      new Error("Workspace access denied"),
+      { code: "42501", details: null, hint: null },
+    );
+    expect(isInsufficientPrivilegeError(error)).toBe(true);
+  });
+
+  it("returns false for generic Error with non-42501 code property", () => {
+    const error = Object.assign(
+      new Error("duplicate key"),
+      { code: "23505" },
+    );
+    expect(isInsufficientPrivilegeError(error)).toBe(false);
+  });
 });
 
 describe("captureSupabaseError", () => {

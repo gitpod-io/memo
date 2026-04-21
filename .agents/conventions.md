@@ -1164,6 +1164,21 @@ falling through to `Sentry.captureException`:
 This prevents 42501 errors from being reported at error level in Sentry and
 ensures the client receives 403 instead of 500.
 
+### Custom RPC RAISE EXCEPTION with errcode 42501
+
+When a PostgreSQL RPC uses `RAISE EXCEPTION '...' USING errcode = '42501'`,
+Supabase may surface the error in two ways:
+
+1. **`{ data, error }` path** — the error is a PostgrestError with `code: "42501"`
+2. **Thrown exception** — the error is a generic `Error` with a `code` property
+   but without `details`/`hint`, so it fails the `isPostgrestError` duck-type check
+
+`isInsufficientPrivilegeError` handles both shapes: it checks `isPostgrestError`
+first, then falls back to checking for a `code` property with value `"42501"`,
+and finally checks the message for the RLS violation pattern. This ensures
+custom RPC messages like "Not a member of this workspace" are correctly
+identified as authorization errors in catch blocks.
+
 ## Usage Event Tracking
 
 Product analytics events are recorded via two modules — `src/lib/track-event-server.ts`

@@ -169,6 +169,29 @@ describe("GET /api/search", () => {
     expect(body.results).toEqual(mockResults);
   });
 
+  it("returns 403 when RPC throws 42501 in catch block (MEMO-14 regression)", async () => {
+    const mockGetUser = vi
+      .fn()
+      .mockResolvedValue({ data: { user: { id: "user-1" } } });
+    const thrownError = Object.assign(
+      new Error("Not a member of this workspace"),
+      { code: "42501" },
+    );
+    const mockRpc = vi.fn().mockRejectedValue(thrownError);
+    mockedCreateClient.mockResolvedValue({
+      auth: { getUser: mockGetUser },
+      rpc: mockRpc,
+    } as unknown as Awaited<ReturnType<typeof createClient>>);
+
+    const response = await GET(
+      makeRequest({ q: "test", workspace_id: "ws-1" }) as never,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body.error).toBe("Forbidden");
+  });
+
   it("returns 200 with empty array when no results", async () => {
     const mockGetUser = vi
       .fn()
