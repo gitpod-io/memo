@@ -113,7 +113,7 @@ Sign-up flow (atomic, via DB trigger):
 | Image storage | Supabase Storage | Bucket for uploaded images, public URL stored in ImageNode |
 | Full-text search | PostgreSQL `tsvector` + `tsquery` | Generated column on pages combining title (weight A) + extracted content text (weight B), GIN index, `search_pages` RPC |
 | Page ancestors | PostgreSQL recursive CTE | `get_page_ancestors` RPC walks `parent_id` chain to build breadcrumb path. Returns ancestors root-first. `security invoker` respects RLS. |
-| Soft delete | `deleted_at` column + RPCs | Pages are soft-deleted (moved to trash) instead of hard-deleted. `soft_delete_page` and `restore_page` RPCs use recursive CTEs to handle sub-pages. RLS policies split into active/trashed. `purge_old_trash` function for 30-day auto-purge. |
+| Soft delete | `deleted_at` column + RPCs | Pages are soft-deleted (moved to trash) instead of hard-deleted. `soft_delete_page` and `restore_page` RPCs use recursive CTEs to handle sub-pages. RLS policies split into active/trashed. `purge_old_trash` function for 30-day auto-purge, scheduled via Vercel Cron (`GET /api/cron/purge-trash` at 3 AM UTC daily) with pg_cron as a secondary mechanism when available. |
 
 ## Lexical Editor — Implementation Plan
 
@@ -233,7 +233,8 @@ src/
 │       ├── health/route.ts  # Health check endpoint (DB connectivity)
 │       ├── pages/[pageId]/versions/route.ts       # GET: list versions, POST: create version snapshot
 │       ├── pages/[pageId]/versions/[versionId]/route.ts # GET: single version content, POST: restore version
-│       └── search/route.ts  # Full-text search (GET ?q=&workspace_id=) → calls search_pages RPC
+│       ├── search/route.ts  # Full-text search (GET ?q=&workspace_id=) → calls search_pages RPC
+│       └── cron/purge-trash/route.ts # Vercel Cron: purges pages trashed >30 days (CRON_SECRET auth)
 ├── components/
 │   ├── auth/
 │   │   ├── oauth-buttons.tsx    # GitHub + Google OAuth sign-in buttons (signInWithOAuth)

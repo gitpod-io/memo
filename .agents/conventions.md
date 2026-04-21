@@ -86,6 +86,19 @@ export function PageList() {
 }
 ```
 
+### Admin client (service-role, no user session)
+
+For server-only operations without a user session (cron jobs, webhooks), use the
+admin client. It uses `SUPABASE_SECRET_KEY` (service role) and must never be
+imported from client code.
+
+```typescript
+import { createAdminClient } from "@/lib/supabase/admin";
+
+const supabase = createAdminClient();
+const { data, error } = await supabase.rpc("purge_old_trash");
+```
+
 ### Proxy (session refresh)
 
 Next.js 16 uses `src/proxy.ts` instead of `src/middleware.ts`. The proxy refreshes
