@@ -20,7 +20,16 @@ export const test = base.extend<{ authenticatedPage: Page }>({
     const page = await context.newPage();
 
     await page.goto("/sign-in");
-    await page.fill('input[type="email"]', email);
+
+    // Wait for React hydration to complete before filling controlled inputs.
+    // The sign-in form uses controlled inputs (value + onChange) which reset
+    // to empty string during hydration. Filling before hydration completes
+    // causes the email value to be cleared.
+    const emailInput = page.locator('input[type="email"]');
+    await emailInput.waitFor({ state: "visible", timeout: 10_000 });
+    await page.waitForTimeout(500);
+
+    await emailInput.fill(email);
     await page.fill('input[type="password"]', password);
     await page.click('button[type="submit"]');
     await page.waitForURL((url) => !url.pathname.includes("/sign-in"), {
