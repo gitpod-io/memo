@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { ImagePlus, Loader2, MessageSquarePlus, X } from "lucide-react";
+import { ImagePlus, MessageSquarePlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -264,12 +264,7 @@ export function FeedbackFormContent({
       <div className="flex flex-col gap-1.5">
         <Label>Screenshot</Label>
         {screenshotLoading ? (
-          <div className="flex h-20 items-center justify-center border border-white/[0.06] bg-muted">
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            <span className="ml-2 text-xs text-muted-foreground">
-              Capturing…
-            </span>
-          </div>
+          <div className="h-20 animate-pulse border border-white/[0.06] bg-muted" />
         ) : screenshotDataUrl ? (
           <div className="group relative inline-block">
             <img
@@ -280,7 +275,7 @@ export function FeedbackFormContent({
             <button
               type="button"
               onClick={screenshot.remove}
-              className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center bg-destructive text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
+              className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center bg-destructive text-destructive-foreground opacity-0 transition-opacity before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-[''] group-hover:opacity-100"
               aria-label="Remove screenshot"
             >
               <X className="h-3 w-3" />
