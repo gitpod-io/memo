@@ -69,6 +69,7 @@ export function PageTree({ userId }: PageTreeProps) {
   // Map of page_id → favorite row id for quick lookup and deletion
   const [favoriteMap, setFavoriteMap] = useState<Map<string, string>>(new Map());
   const [favRefetchKey, setFavRefetchKey] = useState(0);
+  const [pagesRefetchKey, setPagesRefetchKey] = useState(0);
 
   const workspaceSlug = params.workspaceSlug;
 
@@ -114,6 +115,7 @@ export function PageTree({ userId }: PageTreeProps) {
           .from("pages")
           .select("*")
           .eq("workspace_id", workspaceId)
+          .is("deleted_at", null)
           .order("position", { ascending: true });
       });
 
@@ -135,7 +137,16 @@ export function PageTree({ userId }: PageTreeProps) {
     return () => {
       cancelled = true;
     };
-  }, [workspaceId]);
+  }, [workspaceId, pagesRefetchKey]);
+
+  // Re-sync when pages are restored from trash
+  useEffect(() => {
+    function handlePagesChanged() {
+      setPagesRefetchKey((k) => k + 1);
+    }
+    window.addEventListener("pages-changed", handlePagesChanged);
+    return () => window.removeEventListener("pages-changed", handlePagesChanged);
+  }, []);
 
   // Re-sync when other components change favorites
   useEffect(() => {
@@ -346,13 +357,12 @@ export function PageTree({ userId }: PageTreeProps) {
     setDeleting(true);
 
     const supabase = await getClient();
-    const { error } = await supabase
-      .from("pages")
-      .delete()
-      .eq("id", deleteTarget.page.id);
+    const { error } = await supabase.rpc("soft_delete_page", {
+      page_id: deleteTarget.page.id,
+    });
 
     if (error) {
-      captureSupabaseError(error, "page-tree:delete-page");
+      captureSupabaseError(error, "page-tree:soft-delete-page");
       toast.error("Failed to delete page", { duration: 8000 });
     } else {
       const removedIds = new Set([
@@ -365,6 +375,9 @@ export function PageTree({ userId }: PageTreeProps) {
       if (params.pageId && removedIds.has(params.pageId)) {
         router.push(`/${workspaceSlug}`);
       }
+
+      toast("Page moved to trash", { duration: 4000 });
+      window.dispatchEvent(new CustomEvent("trash-changed"));
     }
 
     setDeleting(false);
@@ -657,11 +670,11 @@ export function PageTree({ userId }: PageTreeProps) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete page</AlertDialogTitle>
+            <AlertDialogTitle>Move to trash</AlertDialogTitle>
             <AlertDialogDescription>
               {deleteTarget && deleteTarget.children.length > 0
-                ? `Are you sure you want to delete "${deleteTarget.page.title || "Untitled"}" and its ${deleteTarget.children.length} sub-page${deleteTarget.children.length === 1 ? "" : "s"}? This action cannot be undone.`
-                : `Are you sure you want to delete "${deleteTarget?.page.title || "Untitled"}"? This action cannot be undone.`}
+                ? `"${deleteTarget.page.title || "Untitled"}" and its ${deleteTarget.children.length} sub-page${deleteTarget.children.length === 1 ? "" : "s"} will be moved to trash. You can restore them later.`
+                : `"${deleteTarget?.page.title || "Untitled"}" will be moved to trash. You can restore it later.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -671,7 +684,7 @@ export function PageTree({ userId }: PageTreeProps) {
               onClick={handleDelete}
               disabled={deleting}
             >
-              {deleting ? "Deleting…" : "Delete"}
+              {deleting ? "Moving…" : "Move to trash"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

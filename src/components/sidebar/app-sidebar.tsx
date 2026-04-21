@@ -13,6 +13,7 @@ import { WorkspaceSwitcher } from "@/components/sidebar/workspace-switcher";
 import { PageSearch } from "@/components/sidebar/page-search";
 import { FavoritesSection } from "@/components/sidebar/favorites-section";
 import { PageTree } from "@/components/sidebar/page-tree";
+import { TrashSection } from "@/components/sidebar/trash-section";
 import { UserMenu } from "@/components/sidebar/user-menu";
 
 interface AppSidebarProps {
@@ -34,6 +35,7 @@ function SidebarContent({
       <Separator className="bg-white/[0.06]" />
       <FavoritesSection userId={userId} />
       <PageTree userId={userId} />
+      <TrashSection />
       <Separator className="bg-white/[0.06]" />
       <UserMenu displayName={displayName} email={email} />
     </div>
