@@ -83,16 +83,23 @@ function hasNoFirstPartyFrames(
 ): boolean {
   if (!frames || frames.length === 0) return true;
 
-  return frames.every((frame) => {
-    const filename = frame.filename ?? frame.abs_path ?? "";
-    // First-party frames reference source files under src/ or the app root.
-    // Third-party frames are webpack chunks, node_modules, or anonymous.
-    return (
-      !filename.includes("/src/") &&
-      !filename.includes("src/") &&
-      !filename.startsWith("app://")
-    );
-  });
+  return !frames.some((frame) => isFirstPartyFrame(frame));
+}
+
+/**
+ * A frame is first-party when it references application source code rather
+ * than bundled third-party libraries. In production builds, Sentry prefixes
+ * all client-side frames with `app://` — both first-party and third-party.
+ * Third-party frames land in `_next/static/chunks/` with hash-based filenames
+ * (e.g. `01jr_next_dist_compiled_react-dom_08~fs09._.js`). First-party frames
+ * reference source paths containing `/src/` or `webpack-internal:///`.
+ */
+function isFirstPartyFrame(frame: {
+  filename?: string;
+  abs_path?: string;
+}): boolean {
+  const filename = frame.filename ?? frame.abs_path ?? "";
+  return filename.includes("/src/") || filename.includes("webpack-internal:");
 }
 
 /**
@@ -160,7 +167,11 @@ export function captureSupabaseError(
     extra.hint = error.hint;
   }
 
-  if (isTransientNetworkError(error) || isSchemaNotFoundError(error)) {
+  if (
+    isTransientNetworkError(error) ||
+    isSchemaNotFoundError(error) ||
+    isInsufficientPrivilegeError(error)
+  ) {
     lazyCaptureException(error, { extra, level: "warning" });
     return;
   }

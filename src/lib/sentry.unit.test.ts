@@ -191,10 +191,25 @@ describe("captureSupabaseError", () => {
     expect(opts.extra.code).toBe("PGRST205");
   });
 
-  it("captures non-network errors at default (error) level", async () => {
+  it("captures RLS violations (42501) at warning level (MEMO-E)", async () => {
     const error = makePostgrestError({
-      message: "new row violates row-level security policy",
+      message: "new row violates row-level security policy for table \"pages\"",
       code: "42501",
+    });
+    captureSupabaseError(error, "page-tree:create-page");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [, opts] = captureExceptionMock.mock.calls[0];
+    expect(opts.level).toBe("warning");
+    expect(opts.extra.operation).toBe("page-tree:create-page");
+    expect(opts.extra.code).toBe("42501");
+  });
+
+  it("captures non-network, non-RLS errors at default (error) level", async () => {
+    const error = makePostgrestError({
+      message: "duplicate key value violates unique constraint",
+      code: "23505",
     });
     captureSupabaseError(error, "pages.insert");
     await flush();
@@ -203,7 +218,7 @@ describe("captureSupabaseError", () => {
     const [, opts] = captureExceptionMock.mock.calls[0];
     expect(opts.level).toBeUndefined();
     expect(opts.extra.operation).toBe("pages.insert");
-    expect(opts.extra.code).toBe("42501");
+    expect(opts.extra.code).toBe("23505");
   });
 
   it("includes PostgrestError fields in extra", async () => {
@@ -364,7 +379,7 @@ describe("isReactLexicalDomConflict", () => {
     expect(isReactLexicalDomConflict(event)).toBe(false);
   });
 
-  it("returns false when first-party frames use app:// scheme", () => {
+  it("detects the error with app:// third-party chunk frames (MEMO-11)", () => {
     const event = makeSentryEventWithStack([
       {
         type: "NotFoundError",
@@ -373,6 +388,40 @@ describe("isReactLexicalDomConflict", () => {
         stacktrace: {
           frames: [
             { abs_path: "app:///_next/static/chunks/main.js" },
+            { filename: "app:///_next/static/chunks/01jr_next_dist_compiled_react-dom_08~fs09._.js" },
+          ],
+        },
+      },
+    ]);
+    expect(isReactLexicalDomConflict(event)).toBe(true);
+  });
+
+  it("returns false when first-party frames use app:// with /src/ path", () => {
+    const event = makeSentryEventWithStack([
+      {
+        type: "NotFoundError",
+        value:
+          "Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.",
+        stacktrace: {
+          frames: [
+            { abs_path: "app:///_next/static/chunks/main.js" },
+            { filename: "app:///src/components/editor/editor.tsx" },
+          ],
+        },
+      },
+    ]);
+    expect(isReactLexicalDomConflict(event)).toBe(false);
+  });
+
+  it("returns false when first-party frames use webpack-internal:// scheme", () => {
+    const event = makeSentryEventWithStack([
+      {
+        type: "NotFoundError",
+        value:
+          "Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.",
+        stacktrace: {
+          frames: [
+            { filename: "webpack-internal:///src/components/editor/editor.tsx" },
           ],
         },
       },
