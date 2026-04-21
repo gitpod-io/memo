@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { FileText, Plus, Search } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { getClient } from "@/lib/supabase/lazy-client";
-import { captureSupabaseError } from "@/lib/sentry";
+import {
+  captureSupabaseError,
+  isInsufficientPrivilegeError,
+  isSchemaNotFoundError,
+} from "@/lib/sentry";
 import { trackEventClient } from "@/lib/track-event";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -115,7 +119,12 @@ export function WorkspaceHome({
       .single();
 
     if (error) {
-      captureSupabaseError(error, "workspace-home:create-page");
+      if (
+        !isSchemaNotFoundError(error) &&
+        !isInsufficientPrivilegeError(error)
+      ) {
+        captureSupabaseError(error, "workspace-home:create-page");
+      }
       toast.error("Failed to create page", { duration: 8000 });
       return;
     }

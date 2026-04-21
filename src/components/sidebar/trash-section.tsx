@@ -5,7 +5,11 @@ import { useParams, useRouter } from "next/navigation";
 import { FileText, RotateCcw, Trash2, X } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { getClient } from "@/lib/supabase/lazy-client";
-import { captureSupabaseError } from "@/lib/sentry";
+import {
+  captureSupabaseError,
+  isInsufficientPrivilegeError,
+  isSchemaNotFoundError,
+} from "@/lib/sentry";
 import { retryOnNetworkError } from "@/lib/retry";
 import { Button } from "@/components/ui/button";
 import {
@@ -66,7 +70,12 @@ export function TrashSection() {
     }).then(({ data, error }) => {
       if (cancelled) return;
       if (error) {
-        captureSupabaseError(error, "trash:workspace-lookup");
+        if (
+          !isSchemaNotFoundError(error) &&
+          !isInsufficientPrivilegeError(error)
+        ) {
+          captureSupabaseError(error, "trash:workspace-lookup");
+        }
         return;
       }
       if (data) setWorkspaceId(data.id);
@@ -97,7 +106,12 @@ export function TrashSection() {
       if (cancelled) return;
 
       if (error) {
-        captureSupabaseError(error, "trash:fetch");
+        if (
+          !isSchemaNotFoundError(error) &&
+          !isInsufficientPrivilegeError(error)
+        ) {
+          captureSupabaseError(error, "trash:fetch");
+        }
         return;
       }
 
@@ -125,7 +139,12 @@ export function TrashSection() {
       });
 
       if (error) {
-        captureSupabaseError(error, "trash:restore");
+        if (
+          !isSchemaNotFoundError(error) &&
+          !isInsufficientPrivilegeError(error)
+        ) {
+          captureSupabaseError(error, "trash:restore");
+        }
         toast.error("Failed to restore page", { duration: 8000 });
       } else {
         setTrashedPages((prev) => prev.filter((p) => p.id !== page.id));
@@ -149,7 +168,12 @@ export function TrashSection() {
       .eq("id", permanentDeleteTarget.id);
 
     if (error) {
-      captureSupabaseError(error, "trash:permanent-delete");
+      if (
+        !isSchemaNotFoundError(error) &&
+        !isInsufficientPrivilegeError(error)
+      ) {
+        captureSupabaseError(error, "trash:permanent-delete");
+      }
       toast.error("Failed to permanently delete page", { duration: 8000 });
     } else {
       setTrashedPages((prev) =>
@@ -172,7 +196,12 @@ export function TrashSection() {
     });
 
     if (error) {
-      captureSupabaseError(error, "trash:empty");
+      if (
+        !isSchemaNotFoundError(error) &&
+        !isInsufficientPrivilegeError(error)
+      ) {
+        captureSupabaseError(error, "trash:empty");
+      }
       toast.error("Failed to empty trash", { duration: 8000 });
     } else {
       setTrashedPages([]);

@@ -1187,6 +1187,35 @@ and finally checks the message for the RLS violation pattern. This ensures
 custom RPC messages like "Not a member of this workspace" are correctly
 identified as authorization errors in catch blocks.
 
+### Client-side RLS skip pattern
+
+Client-side Supabase operations (e.g. sidebar page-tree inserts) can also hit
+RLS violations — typically when a user exceeds workspace limits. The user already
+sees a toast error, so reporting to Sentry is pure noise. Skip
+`captureSupabaseError` for both `isSchemaNotFoundError` and
+`isInsufficientPrivilegeError`:
+
+```typescript
+import {
+  captureSupabaseError,
+  isInsufficientPrivilegeError,
+  isSchemaNotFoundError,
+} from "@/lib/sentry";
+
+const { data, error } = await supabase.from("table").insert({ ... }).select().single();
+if (error) {
+  if (!isSchemaNotFoundError(error) && !isInsufficientPrivilegeError(error)) {
+    captureSupabaseError(error, "feature:operation");
+  }
+  toast.error("Failed to do thing", { duration: 8000 });
+  return;
+}
+```
+
+This applies to any client-side mutation where the RLS rejection is an expected
+authorization boundary (workspace limits, non-member access) and the user is
+already notified via toast.
+
 ## Usage Event Tracking
 
 Product analytics events are recorded via two modules — `src/lib/track-event-server.ts`

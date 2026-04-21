@@ -15,7 +15,11 @@ import {
 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { getClient } from "@/lib/supabase/lazy-client";
-import { captureSupabaseError, isSchemaNotFoundError } from "@/lib/sentry";
+import {
+  captureSupabaseError,
+  isInsufficientPrivilegeError,
+  isSchemaNotFoundError,
+} from "@/lib/sentry";
 import { trackEventClient } from "@/lib/track-event";
 import { retryOnNetworkError } from "@/lib/retry";
 import { usePersistedExpanded } from "@/lib/use-persisted-expanded";
@@ -242,7 +246,10 @@ export function PageTree({ userId }: PageTreeProps) {
           .single();
 
         if (error) {
-          if (!isSchemaNotFoundError(error)) {
+          if (
+            !isSchemaNotFoundError(error) &&
+            !isInsufficientPrivilegeError(error)
+          ) {
             captureSupabaseError(error, "page-tree:add-favorite");
           }
           toast.error("Failed to add favorite", { duration: 8000 });
@@ -296,7 +303,12 @@ export function PageTree({ userId }: PageTreeProps) {
         .single();
 
       if (error) {
-        captureSupabaseError(error, "page-tree:create-page");
+        if (
+          !isSchemaNotFoundError(error) &&
+          !isInsufficientPrivilegeError(error)
+        ) {
+          captureSupabaseError(error, "page-tree:create-page");
+        }
         toast.error("Failed to create page", { duration: 8000 });
         return;
       }
