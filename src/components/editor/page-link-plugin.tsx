@@ -23,7 +23,7 @@ import {
   $createPageLinkNode,
   PageLinkNode,
 } from "@/components/editor/page-link-node";
-import { FileText } from "lucide-react";
+import { FileText, Search } from "lucide-react";
 import { getClient } from "@/lib/supabase/lazy-client";
 import type { JSX } from "react";
 
@@ -50,8 +50,11 @@ export function PageLinkPlugin(): JSX.Element | null {
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const matchStartRef = useRef<number | null>(null);
   const matchNodeKeyRef = useRef<string | null>(null);
+  // Tracks whether the menu was opened via slash command (true) or [[ trigger (false)
+  const [isSlashCommandMode, setIsSlashCommandMode] = useState(false);
 
   // Resolve workspace slug to ID
   useEffect(() => {
@@ -113,14 +116,19 @@ export function PageLinkPlugin(): JSX.Element | null {
         setQuery("");
         matchStartRef.current = null;
         matchNodeKeyRef.current = null;
+        setIsSlashCommandMode(true);
 
-        // Position the menu at the current selection
+        // Position the menu at the current selection, then focus the search input
         requestAnimationFrame(() => {
           const domSelection = window.getSelection();
           if (domSelection && domSelection.rangeCount > 0) {
             const range = domSelection.getRangeAt(0);
             setAnchorRect(range.getBoundingClientRect());
           }
+          // Focus the search input after the portal renders
+          requestAnimationFrame(() => {
+            searchInputRef.current?.focus();
+          });
         });
         return true;
       },
@@ -143,7 +151,7 @@ export function PageLinkPlugin(): JSX.Element | null {
         .select("id, title, icon")
         .eq("workspace_id", workspaceId!)
         .order("updated_at", { ascending: false })
-        .limit(8);
+        .limit(10);
 
       if (query.trim()) {
         queryBuilder = queryBuilder.ilike("title", `%${query.trim()}%`);
@@ -169,6 +177,7 @@ export function PageLinkPlugin(): JSX.Element | null {
     setResults([]);
     matchStartRef.current = null;
     matchNodeKeyRef.current = null;
+    setIsSlashCommandMode(false);
   }, []);
 
   // Insert the selected page link and clean up the [[ trigger text
@@ -245,6 +254,7 @@ export function PageLinkPlugin(): JSX.Element | null {
           if (!textAfterTrigger.includes("]]")) {
             matchStartRef.current = triggerIndex;
             matchNodeKeyRef.current = anchorNode.getKey();
+            setIsSlashCommandMode(false);
             setQuery(textAfterTrigger);
             setIsOpen(true);
 
@@ -373,51 +383,104 @@ export function PageLinkPlugin(): JSX.Element | null {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [isOpen, closeMenu]);
 
+  // Handle keyboard events on the search input (slash command mode)
+  const handleSearchInputKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      switch (e.key) {
+        case "ArrowDown":
+          e.preventDefault();
+          setSelectedIndex((prev) =>
+            prev < results.length - 1 ? prev + 1 : 0,
+          );
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          setSelectedIndex((prev) =>
+            prev > 0 ? prev - 1 : results.length - 1,
+          );
+          break;
+        case "Enter":
+        case "Tab":
+          if (results[selectedIndex]) {
+            e.preventDefault();
+            insertFromSlashCommand(results[selectedIndex]);
+          }
+          break;
+        case "Escape":
+          e.preventDefault();
+          closeMenu();
+          editor.focus();
+          break;
+      }
+    },
+    [results, selectedIndex, insertFromSlashCommand, closeMenu, editor],
+  );
+
   if (!isOpen || !anchorRect) return null;
 
   return createPortal(
     <div
       ref={menuRef}
-      className="fixed z-50 max-h-[300px] w-64 overflow-y-auto rounded-sm border border-white/[0.06] bg-popover p-1 shadow-md"
+      className="fixed z-50 w-64 overflow-hidden rounded-sm border border-white/[0.06] bg-popover shadow-md"
       style={{
         top: anchorRect.bottom + 4,
         left: anchorRect.left,
       }}
     >
-      {results.length === 0 && (
-        <div className="px-2 py-3 text-center text-xs text-muted-foreground">
-          {query.trim() ? "No pages found" : "No pages in workspace"}
-        </div>
-      )}
-      {results.map((page, index) => (
-        <button
-          key={page.id}
-          className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm outline-none ${
-            selectedIndex === index
-              ? "bg-white/[0.08] text-foreground"
-              : "text-muted-foreground hover:bg-white/[0.04]"
-          }`}
-          onClick={() => {
-            if (matchStartRef.current !== null) {
-              insertPageLink(page);
-            } else {
-              insertFromSlashCommand(page);
+      <div className="flex items-center gap-2 border-b border-white/[0.06] px-2 py-1.5">
+        <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        <input
+          ref={searchInputRef}
+          type="text"
+          value={query}
+          onChange={(e) => {
+            if (isSlashCommandMode) {
+              setQuery(e.target.value);
             }
           }}
-          onMouseEnter={() => setSelectedIndex(index)}
-          role="option"
-          aria-selected={selectedIndex === index}
-        >
-          {page.icon ? (
-            <span className="shrink-0 text-sm">{page.icon}</span>
-          ) : (
-            <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-          )}
-          <span className="truncate text-sm font-medium text-foreground">
-            {page.title || "Untitled"}
-          </span>
-        </button>
-      ))}
+          onKeyDown={handleSearchInputKeyDown}
+          placeholder="Search pages…"
+          readOnly={!isSlashCommandMode}
+          className="h-6 w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+          aria-label="Search pages"
+        />
+      </div>
+      <div className="max-h-[260px] overflow-y-auto p-1">
+        {results.length === 0 && (
+          <div className="px-2 py-3 text-center text-xs text-muted-foreground">
+            {query.trim() ? "No pages found" : "No pages in workspace"}
+          </div>
+        )}
+        {results.map((page, index) => (
+          <button
+            key={page.id}
+            className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm outline-none ${
+              selectedIndex === index
+                ? "bg-white/[0.08] text-foreground"
+                : "text-muted-foreground hover:bg-white/[0.04]"
+            }`}
+            onClick={() => {
+              if (matchStartRef.current !== null) {
+                insertPageLink(page);
+              } else {
+                insertFromSlashCommand(page);
+              }
+            }}
+            onMouseEnter={() => setSelectedIndex(index)}
+            role="option"
+            aria-selected={selectedIndex === index}
+          >
+            {page.icon ? (
+              <span className="shrink-0 text-sm">{page.icon}</span>
+            ) : (
+              <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+            )}
+            <span className="truncate text-sm font-medium text-foreground">
+              {page.title || "Untitled"}
+            </span>
+          </button>
+        ))}
+      </div>
     </div>,
     document.body,
   );
