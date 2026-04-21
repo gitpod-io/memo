@@ -190,11 +190,16 @@ test.describe("Page CRUD", () => {
 
     await deleteBtn.click();
 
-    // Confirmation dialog should appear
-    const confirmBtn = page.getByRole("button", { name: /delete|confirm/i }).last();
+    // Soft-delete confirmation dialog should appear with "Move to trash" button
+    const confirmBtn = page.getByRole("button", { name: /move to trash/i });
     await expect(confirmBtn).toBeVisible({ timeout: 3_000 });
     await confirmBtn.click();
 
+    // Wait for the soft-delete to complete
     await page.waitForTimeout(1_000);
+
+    // Verify the page was moved to trash — the Trash section should appear in the sidebar
+    const trashSection = sidebar.getByRole("button", { name: /trash/i });
+    await expect(trashSection).toBeVisible({ timeout: 5_000 });
   });
 });
