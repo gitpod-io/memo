@@ -50,7 +50,7 @@ export default async function WorkspacePage({
   const [{ data: pages }, { data: recentVisitRows }] = await Promise.all([
     supabase
       .from("pages")
-      .select("id, title, parent_id, position, icon, updated_at")
+      .select("id, title, parent_id, position, icon, created_at, updated_at")
       .eq("workspace_id", workspace.id)
       .is("parent_id", null)
       .is("deleted_at", null)
