@@ -3,7 +3,11 @@
 import { useEffect } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $isListItemNode } from "@lexical/list";
-import { $getNearestBlockElementAncestorOrThrow } from "@lexical/utils";
+import {
+  $findMatchingParent,
+  $getNearestBlockElementAncestorOrThrow,
+} from "@lexical/utils";
+import { $isTableCellNode } from "@lexical/table";
 import {
   $getSelection,
   $isRangeSelection,
@@ -22,6 +26,12 @@ const MAX_LIST_INDENT = 7;
  * canIndent(), so Tab in the middle/end of a list item inserts a tab
  * character instead of nesting. This plugin intercepts Tab at a higher
  * priority and dispatches INDENT/OUTDENT commands when inside a list item.
+ *
+ * When the selection is inside a table cell, this plugin yields to the
+ * TablePlugin's Tab handler (registered at COMMAND_PRIORITY_CRITICAL).
+ * If the table handler did not handle the event (e.g. non-collapsed
+ * selection), we still preventDefault to stop the browser from moving
+ * focus out of the editor, which can corrupt the table DOM.
  */
 export function ListTabIndentationPlugin(): null {
   const [editor] = useLexicalComposerContext();
@@ -36,6 +46,18 @@ export function ListTabIndentationPlugin(): null {
         }
 
         const anchor = selection.anchor.getNode();
+
+        // If the selection is inside a table cell, prevent the browser
+        // default (which moves focus and can corrupt the table DOM).
+        // The TablePlugin's CRITICAL-priority handler runs first and
+        // handles cell navigation for collapsed selections. This guard
+        // catches the remaining cases (e.g. non-collapsed selection).
+        const tableCell = $findMatchingParent(anchor, $isTableCellNode);
+        if (tableCell !== null) {
+          event.preventDefault();
+          return true;
+        }
+
         const block = $getNearestBlockElementAncestorOrThrow(anchor);
 
         if (!$isListItemNode(block)) {

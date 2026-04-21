@@ -144,15 +144,80 @@ test.describe("Editor table blocks", () => {
     await expect(reloadedTable.locator("tr")).toHaveCount(3);
   });
 
+  test("Tab navigates to the next cell without deleting the table", async ({
+    authenticatedPage: page,
+  }) => {
+    const table = await insertTable(page);
+
+    // Place cursor inside the first header cell
+    await focusFirstCell(page);
+    await page.keyboard.type("Header 1");
+    await expect(table.locator("th").first()).toContainText("Header 1");
+
+    // Press Tab to move to the next cell
+    await page.keyboard.press("Tab");
+    await page.waitForTimeout(500);
+
+    // The table must still exist (regression for #401)
+    await expect(table).toBeVisible();
+
+    // Type in the second cell to verify the cursor moved
+    await page.keyboard.type("Header 2");
+    const secondHeaderCell = table.locator("th").nth(1);
+    await expect(secondHeaderCell).toContainText("Header 2");
+  });
+
+  test("Shift+Tab navigates to the previous cell", async ({
+    authenticatedPage: page,
+  }) => {
+    const table = await insertTable(page);
+
+    // Place cursor inside the first header cell
+    await focusFirstCell(page);
+    await page.keyboard.type("Cell A");
+    await page.keyboard.press("Tab");
+    await page.waitForTimeout(300);
+    await page.keyboard.type("Cell B");
+
+    // Shift+Tab back to the first cell
+    await page.keyboard.press("Shift+Tab");
+    await page.waitForTimeout(300);
+
+    // The table must still exist
+    await expect(table).toBeVisible();
+
+    // Type additional text — it should appear in the first cell
+    await page.keyboard.type(" updated");
+    await expect(table.locator("th").first()).toContainText("Cell A updated");
+  });
+
+  test("Tab from last cell does not delete the table", async ({
+    authenticatedPage: page,
+  }) => {
+    const table = await insertTable(page);
+
+    // Navigate to the last cell (3×3 table = 9 cells, Tab 8 times)
+    await focusFirstCell(page);
+    for (let i = 0; i < 8; i++) {
+      await page.keyboard.press("Tab");
+      await page.waitForTimeout(100);
+    }
+
+    // Type in the last cell
+    await page.keyboard.type("Last");
+    const lastCell = table.locator("td").last();
+    await expect(lastCell).toContainText("Last");
+
+    // Tab one more time to navigate out of the table
+    await page.keyboard.press("Tab");
+    await page.waitForTimeout(500);
+
+    // The table must still exist
+    await expect(table).toBeVisible();
+  });
+
   // --- Skipped tests: blocked by pre-existing bugs ---
   // These are tracked as separate bug issues.
-
-  // Bug: Tab inside a table cell removes the entire table from the DOM
-  // instead of navigating to the next cell. The TablePlugin has
-  // hasTabHandler={true} but the Tab handler doesn't work correctly.
-  test.skip("user can navigate between cells with Tab", async () => {
-    // Blocked by: Tab inside table cell deletes the table
-  });
 
   // Bug: Table cell content is lost after page reload. The table structure
   // (rows/columns) is preserved but all cell text content is empty after

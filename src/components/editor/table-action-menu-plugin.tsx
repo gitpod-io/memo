@@ -171,6 +171,13 @@ function TableActionMenu({
   );
 }
 
+/**
+ * Renders a trigger button overlaid on the active table cell. The button
+ * is portalled to document.body and positioned with fixed layout using
+ * the cell's bounding rect. This avoids inserting DOM nodes into
+ * Lexical-managed elements, which causes React/Lexical reconciliation
+ * conflicts (the root cause of the "Tab deletes table" bug — see #401).
+ */
 export function TableActionMenuPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [tableCellNode, setTableCellNode] = useState<TableCellNode | null>(
@@ -180,30 +187,61 @@ export function TableActionMenuPlugin(): JSX.Element | null {
     x: number;
     y: number;
   } | null>(null);
+  const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
 
   const handleClose = useCallback(() => {
     setTableCellNode(null);
     setMenuPosition(null);
   }, []);
 
+  // Track the active cell and compute the trigger button position from
+  // the cell's bounding rect rather than portalling into the cell DOM.
   useEffect(() => {
     return editor.registerUpdateListener(({ editorState }) => {
       editorState.read(() => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           setTableCellNode(null);
+          setTriggerRect(null);
           return;
         }
         const anchor = selection.anchor.getNode();
         const cellNode = $getTableCellNodeFromLexicalNode(anchor);
         if (cellNode) {
           setTableCellNode(cellNode);
+          // Defer DOM measurement to after React commit
+          requestAnimationFrame(() => {
+            const cellDom = editor.getElementByKey(cellNode.getKey());
+            if (cellDom) {
+              setTriggerRect(cellDom.getBoundingClientRect());
+            }
+          });
         } else {
           setTableCellNode(null);
+          setTriggerRect(null);
         }
       });
     });
   }, [editor]);
+
+  // Recompute trigger position on scroll/resize so it stays aligned
+  useEffect(() => {
+    if (!tableCellNode) return;
+
+    const updatePosition = () => {
+      const cellDom = editor.getElementByKey(tableCellNode.getKey());
+      if (cellDom) {
+        setTriggerRect(cellDom.getBoundingClientRect());
+      }
+    };
+
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
+    return () => {
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [editor, tableCellNode]);
 
   const handleMenuOpen = useCallback(
     (event: React.MouseEvent) => {
@@ -214,21 +252,18 @@ export function TableActionMenuPlugin(): JSX.Element | null {
     []
   );
 
-  if (!tableCellNode) {
-    return null;
-  }
-
-  // Render a small menu trigger button in the top-right of the active cell
-  const cellDom = editor.getElementByKey(tableCellNode.getKey());
-  if (!cellDom) {
+  if (!tableCellNode || !triggerRect) {
     return null;
   }
 
   return (
     <>
       {createPortal(
-        <TableCellMenuTrigger onMenuOpen={handleMenuOpen} />,
-        cellDom
+        <TableCellMenuTrigger
+          onMenuOpen={handleMenuOpen}
+          cellRect={triggerRect}
+        />,
+        document.body
       )}
       {menuPosition && (
         <TableActionMenu
@@ -244,15 +279,21 @@ export function TableActionMenuPlugin(): JSX.Element | null {
 
 function TableCellMenuTrigger({
   onMenuOpen,
+  cellRect,
 }: {
   onMenuOpen: (event: React.MouseEvent) => void;
+  cellRect: DOMRect;
 }) {
   return (
     <button
-      className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center text-muted-foreground opacity-0 hover:opacity-100 focus:opacity-100 [td:hover>&]:opacity-60 [th:hover>&]:opacity-60"
+      className="fixed z-40 flex h-5 w-5 items-center justify-center text-muted-foreground opacity-0 hover:opacity-100 focus:opacity-100"
+      style={{
+        top: cellRect.top + 2,
+        left: cellRect.right - 22,
+      }}
       onClick={onMenuOpen}
       aria-label="Table cell actions"
-      contentEditable={false}
+      onMouseDown={(e) => e.preventDefault()}
     >
       <MoreHorizontal className="h-3.5 w-3.5" />
     </button>
