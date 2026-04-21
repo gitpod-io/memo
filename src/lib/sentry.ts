@@ -46,6 +46,56 @@ export function isNextjsInternalNoise(event: ErrorEvent): boolean {
 }
 
 /**
+ * Returns true when the Sentry event is a `NotFoundError` from React's DOM
+ * reconciliation conflicting with Lexical's direct DOM manipulation.
+ *
+ * Lexical manages contentEditable DOM nodes directly for performance. When
+ * React's commit phase runs concurrently, it may try to `removeChild` a node
+ * that Lexical already removed or reparented, producing a `NotFoundError`.
+ * The stack trace contains only React internals — no first-party frames.
+ *
+ * These errors are harmless (the editor continues working) and not actionable,
+ * so they should be dropped from Sentry.
+ *
+ * See: https://github.com/facebook/lexical/issues/4254
+ */
+export function isReactLexicalDomConflict(event: ErrorEvent): boolean {
+  const values = event.exception?.values;
+  if (!values || values.length === 0) return false;
+
+  return values.some(
+    (ex) =>
+      ex.type === "NotFoundError" &&
+      typeof ex.value === "string" &&
+      ex.value.includes("removeChild") &&
+      hasNoFirstPartyFrames(ex.stacktrace?.frames),
+  );
+}
+
+/**
+ * Returns true when every frame in the stack trace is from a third-party
+ * bundle (React internals, Webpack runtime, etc.) — i.e. no application code.
+ * An empty or missing frame list also returns true (minified stacks often
+ * lack source info).
+ */
+function hasNoFirstPartyFrames(
+  frames: Array<{ filename?: string; abs_path?: string }> | undefined,
+): boolean {
+  if (!frames || frames.length === 0) return true;
+
+  return frames.every((frame) => {
+    const filename = frame.filename ?? frame.abs_path ?? "";
+    // First-party frames reference source files under src/ or the app root.
+    // Third-party frames are webpack chunks, node_modules, or anonymous.
+    return (
+      !filename.includes("/src/") &&
+      !filename.includes("src/") &&
+      !filename.startsWith("app://")
+    );
+  });
+}
+
+/**
  * True when PostgREST cannot find a table in its schema cache (PGRST205).
  * This happens when a migration hasn't been applied or the schema cache is
  * stale. It's a deployment issue, not an application bug, so it should be
