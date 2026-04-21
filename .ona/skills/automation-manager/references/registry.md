@@ -17,6 +17,7 @@ Mapping between YAML files in `.ona/automations/` and their registered Ona autom
 | pr-shepherd.yaml | PR Shepherd | 019d8dcc-adc3-7d23-a2b9-39aa4fbd6463 |
 | tweet-drafter.yaml | Tweet Drafter | 019d8da2-46d3-7493-8bd5-7191a31f47ec |
 | ui-verifier.yaml | UI Verifier | 019d8d99-7474-725b-aa77-0310122b2c64 |
+| feedback-digest.yaml | Feedback Digest | 019db0ae-1ef0-722c-b83f-0fc9186c43c1 |
 | weekly-recap.yaml | Weekly Recap | 019d8d98-3e15-762d-a6e8-4ca0ea77acb5 |
 
 ## Keeping this file in sync
