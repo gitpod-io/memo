@@ -14,6 +14,7 @@ import {
   isInsufficientPrivilegeError,
   captureSupabaseError,
   isNextjsInternalNoise,
+  isReactLexicalDomConflict,
 } from "./sentry";
 
 function makePostgrestError(
@@ -283,5 +284,154 @@ describe("isNextjsInternalNoise", () => {
   it("returns false when exception value is undefined", () => {
     const event = makeSentryEvent([{ type: "Error" }]);
     expect(isNextjsInternalNoise(event)).toBe(false);
+  });
+});
+
+/**
+ * Helper that builds a Sentry ErrorEvent with stacktrace support.
+ * Extends the simpler `makeSentryEvent` for tests that need frame data.
+ */
+function makeSentryEventWithStack(
+  exceptionValues: Array<{
+    value?: string;
+    type?: string;
+    stacktrace?: {
+      frames?: Array<{ filename?: string; abs_path?: string }>;
+    };
+  }>,
+): ErrorEvent {
+  return {
+    type: undefined,
+    exception: { values: exceptionValues },
+  } as ErrorEvent;
+}
+
+describe("isReactLexicalDomConflict", () => {
+  it("detects NotFoundError with removeChild and no first-party frames", () => {
+    const event = makeSentryEventWithStack([
+      {
+        type: "NotFoundError",
+        value:
+          "Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.",
+        stacktrace: {
+          frames: [
+            { filename: "https://example.com/_next/static/chunks/1431zjw_sha2v.js" },
+            { filename: "https://example.com/_next/static/chunks/1431zjw_sha2v.js" },
+          ],
+        },
+      },
+    ]);
+    expect(isReactLexicalDomConflict(event)).toBe(true);
+  });
+
+  it("detects the error with empty frames (fully minified stack)", () => {
+    const event = makeSentryEventWithStack([
+      {
+        type: "NotFoundError",
+        value:
+          "Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.",
+        stacktrace: { frames: [] },
+      },
+    ]);
+    expect(isReactLexicalDomConflict(event)).toBe(true);
+  });
+
+  it("detects the error with no stacktrace at all", () => {
+    const event = makeSentryEventWithStack([
+      {
+        type: "NotFoundError",
+        value:
+          "Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.",
+      },
+    ]);
+    expect(isReactLexicalDomConflict(event)).toBe(true);
+  });
+
+  it("returns false when first-party frames are present (src/)", () => {
+    const event = makeSentryEventWithStack([
+      {
+        type: "NotFoundError",
+        value:
+          "Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.",
+        stacktrace: {
+          frames: [
+            { filename: "https://example.com/_next/static/chunks/1431zjw_sha2v.js" },
+            { filename: "app:///src/components/editor/editor.tsx" },
+          ],
+        },
+      },
+    ]);
+    expect(isReactLexicalDomConflict(event)).toBe(false);
+  });
+
+  it("returns false when first-party frames use app:// scheme", () => {
+    const event = makeSentryEventWithStack([
+      {
+        type: "NotFoundError",
+        value:
+          "Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.",
+        stacktrace: {
+          frames: [
+            { abs_path: "app:///_next/static/chunks/main.js" },
+          ],
+        },
+      },
+    ]);
+    expect(isReactLexicalDomConflict(event)).toBe(false);
+  });
+
+  it("returns false for NotFoundError without removeChild", () => {
+    const event = makeSentryEventWithStack([
+      {
+        type: "NotFoundError",
+        value: "The object can not be found here.",
+      },
+    ]);
+    expect(isReactLexicalDomConflict(event)).toBe(false);
+  });
+
+  it("returns false for removeChild error with a different error type", () => {
+    const event = makeSentryEventWithStack([
+      {
+        type: "DOMException",
+        value:
+          "Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.",
+      },
+    ]);
+    expect(isReactLexicalDomConflict(event)).toBe(false);
+  });
+
+  it("returns false for unrelated errors", () => {
+    const event = makeSentryEvent([
+      { type: "TypeError", value: "Cannot read properties of undefined" },
+    ]);
+    expect(isReactLexicalDomConflict(event)).toBe(false);
+  });
+
+  it("returns false when exception values are empty", () => {
+    const event = makeSentryEvent([]);
+    expect(isReactLexicalDomConflict(event)).toBe(false);
+  });
+
+  it("returns false when exception is missing", () => {
+    const event = { type: undefined } as ErrorEvent;
+    expect(isReactLexicalDomConflict(event)).toBe(false);
+  });
+
+  it("detects the error in chained exceptions", () => {
+    const event = makeSentryEventWithStack([
+      { type: "Error", value: "Some wrapper error" },
+      {
+        type: "NotFoundError",
+        value:
+          "Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.",
+        stacktrace: {
+          frames: [
+            { filename: "https://example.com/_next/static/chunks/framework.js" },
+          ],
+        },
+      },
+    ]);
+    expect(isReactLexicalDomConflict(event)).toBe(true);
   });
 });
