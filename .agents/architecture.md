@@ -465,6 +465,7 @@ src/
 │   ├── utils.ts            # cn() utility (clsx + tailwind-merge)
 │   ├── types.ts            # Database entity types
 │   ├── workspace.ts        # Workspace utilities: slug generation, validation, limits
+│   ├── database.ts         # Database CRUD: create/delete databases, property/row/view CRUD, data loading
 │   └── supabase/
 │       ├── client.ts       # Browser client (createBrowserClient)
 │       ├── server.ts       # Server component client (createServerClient + cookies)

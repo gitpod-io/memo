@@ -1234,6 +1234,41 @@ trackEventClient(supabase, "page.created", userId, {
 - When the Supabase client isn't already available (e.g. `handleExport`), use
   `getClient().then(supabase => trackEventClient(...)).catch(() => {})`.
 
+## Database CRUD Layer
+
+Database operations live in `src/lib/database.ts`. All functions use the browser
+Supabase client and return `{ data, error }` tuples (matching the Supabase SDK
+convention). Errors are reported via `captureSupabaseError` inside the function —
+callers only need to check `error` and show a toast.
+
+```typescript
+import { createDatabase, addRow, loadDatabase } from "@/lib/database";
+
+// Create a database (page + default property + default view)
+const { data, error } = await createDatabase(workspaceId, userId, "Tasks");
+if (error) {
+  toast.error("Failed to create database", { duration: 8000 });
+  return;
+}
+
+// Load all data for a database view
+const { data: db, error: loadError } = await loadDatabase(databaseId);
+if (db) {
+  // db.properties, db.views, db.rows are ready
+}
+```
+
+Key patterns:
+- `createDatabase` is pseudo-atomic: creates page → property → view, cleans up
+  the page on partial failure.
+- `deleteView` prevents deleting the last view (returns an error).
+- `addRow` looks up `workspace_id` from the database page automatically.
+- `updateRowValue` uses upsert on the `(row_id, property_id)` unique constraint.
+- `loadDatabase` fetches properties, views, and rows in parallel via `Promise.all`,
+  then loads row values in a single batch query and groups them client-side.
+- Position auto-calculation: `addProperty`, `addView`, and `addRow` query the max
+  position and increment. Reorder functions accept an ordered ID array.
+
 ## This file evolves
 
 When you discover a new pattern that should be replicated, or an anti-pattern that
