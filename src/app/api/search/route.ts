@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/lib/supabase/server";
 import { captureSupabaseError, isInsufficientPrivilegeError } from "@/lib/sentry";
-import { trackEvent } from "@/lib/track-event";
+import { trackEvent } from "@/lib/track-event-server";
 
 export async function GET(request: NextRequest) {
   if (

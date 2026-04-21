@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { captureSupabaseError } from "@/lib/sentry";
-import { trackEvent } from "@/lib/track-event";
+import { trackEvent } from "@/lib/track-event-server";
 import type { SerializedEditorState } from "lexical";
 import {
   PageBreadcrumb,

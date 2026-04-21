@@ -1166,13 +1166,14 @@ ensures the client receives 403 instead of 500.
 
 ## Usage Event Tracking
 
-Product analytics events are recorded server-side via `src/lib/track-event.ts`.
-Two functions cover server and client contexts:
+Product analytics events are recorded via two modules — `src/lib/track-event-server.ts`
+(server) and `src/lib/track-event.ts` (client). They are separate files to avoid
+pulling `next/headers` into client bundles.
 
 ### Server components and API routes
 
 ```typescript
-import { trackEvent } from "@/lib/track-event";
+import { trackEvent } from "@/lib/track-event-server";
 
 // Fire-and-forget — use `void` to silence the floating promise lint
 void trackEvent("page.viewed", user.id, {
