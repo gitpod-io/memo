@@ -1,7 +1,10 @@
 -- Add is_database to get_page_ancestors so breadcrumbs can show the grid icon
 -- for database ancestors.
+-- Must drop first because the return type changes (new is_database column).
 
-create or replace function get_page_ancestors(page_id uuid)
+drop function if exists get_page_ancestors(uuid);
+
+create function get_page_ancestors(page_id uuid)
 returns table (
   id uuid,
   title text,
