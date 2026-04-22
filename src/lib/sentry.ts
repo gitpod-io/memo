@@ -147,6 +147,51 @@ const NODE_FETCH_CAUSE_PATTERNS = [
 ];
 
 /**
+ * True when the error originates from Supabase auth lock contention. The
+ * Supabase client uses the Web Lock API to serialize token refresh. When
+ * multiple concurrent requests race for the lock, the loser gets an
+ * `AbortError: Lock broken by another request with the 'steal' option.`
+ * This is expected behavior during concurrent page loads — not a bug.
+ *
+ * Matches two shapes:
+ * 1. PostgrestError-like objects where `details` or `message` contains the
+ *    lock-stolen AbortError (from `captureSupabaseError` path — MEMO-16/17/19)
+ * 2. Plain Error with the lock-released message thrown as an unhandled
+ *    rejection by the Supabase auth internals (MEMO-18)
+ */
+export function isSupabaseAuthLockError(error: Error): boolean {
+  const msg = error.message;
+  const details = isPostgrestError(error) ? error.details : "";
+
+  return (
+    msg.includes("Lock broken by another request") ||
+    msg.includes("was released because another request stole it") ||
+    details.includes("Lock broken by another request") ||
+    details.includes("was released because another request stole it")
+  );
+}
+
+/**
+ * Returns true when the Sentry event is a Supabase auth lock contention
+ * error. These are unhandled promise rejections from the Supabase client's
+ * internal `_acquireLock` when concurrent requests steal each other's
+ * Web Lock API locks. They are harmless and not actionable.
+ */
+export function isSupabaseAuthLockContention(event: ErrorEvent): boolean {
+  const values = event.exception?.values;
+  if (!values || values.length === 0) return false;
+
+  return values.some(
+    (ex) =>
+      typeof ex.value === "string" &&
+      (ex.value.includes("Lock broken by another request") ||
+        ex.value.includes(
+          "was released because another request stole it",
+        )),
+  );
+}
+
+/**
  * True when the error is a transient network failure (e.g. offline, DNS
  * timeout, connection reset). These are not application bugs and should be
  * reported at warning level so they don't trigger error-level alerts.
@@ -235,7 +280,8 @@ export function captureSupabaseError(
   if (
     isTransientNetworkError(error) ||
     isSchemaNotFoundError(error) ||
-    isInsufficientPrivilegeError(error)
+    isInsufficientPrivilegeError(error) ||
+    isSupabaseAuthLockError(error)
   ) {
     lazyCaptureException(error, { extra, level: "warning" });
     return;

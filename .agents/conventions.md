@@ -1238,6 +1238,44 @@ This applies to any client-side mutation where the RLS rejection is an expected
 authorization boundary (workspace limits, non-member access) and the user is
 already notified via toast.
 
+### Supabase auth lock contention errors
+
+The Supabase client uses the Web Lock API to serialize auth token refresh.
+When multiple concurrent requests race for the lock (e.g. parallel
+`favorites:check` calls on page load), the loser gets an `AbortError: Lock
+broken by another request with the 'steal' option.` This is expected behavior,
+not a bug.
+
+Two error shapes exist:
+1. **PostgrestError-like** — `details` contains the AbortError message. Passes
+   through `captureSupabaseError` which downgrades to warning level via
+   `isSupabaseAuthLockError`.
+2. **Unhandled rejection** — Supabase auth internals throw `Lock "lock:sb-..."
+   was released because another request stole it`. Dropped by `beforeSend` in
+   `instrumentation-client.ts` via `isSupabaseAuthLockContention`.
+
+For client-side code that checks errors before calling `captureSupabaseError`,
+also skip `isSupabaseAuthLockError`:
+
+```typescript
+import {
+  captureSupabaseError,
+  isInsufficientPrivilegeError,
+  isSchemaNotFoundError,
+  isSupabaseAuthLockError,
+} from "@/lib/sentry";
+
+if (error) {
+  if (
+    !isSchemaNotFoundError(error) &&
+    !isInsufficientPrivilegeError(error) &&
+    !isSupabaseAuthLockError(error)
+  ) {
+    captureSupabaseError(error, "feature:operation");
+  }
+}
+```
+
 ## Usage Event Tracking
 
 Product analytics events are recorded via two modules — `src/lib/track-event-server.ts`

@@ -8,9 +8,11 @@ import("@sentry/nextjs").then(async (Sentry) => {
   // Dynamic import keeps sentry.ts out of the shared framework chunk.
   // The filter functions only inspect the event object — they have no
   // Sentry runtime dependency.
-  const { isNextjsInternalNoise, isReactLexicalDomConflict } = await import(
-    "@/lib/sentry"
-  );
+  const {
+    isNextjsInternalNoise,
+    isReactLexicalDomConflict,
+    isSupabaseAuthLockContention,
+  } = await import("@/lib/sentry");
 
   Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -31,6 +33,7 @@ import("@sentry/nextjs").then(async (Sentry) => {
     beforeSend(event) {
       if (isNextjsInternalNoise(event)) return null;
       if (isReactLexicalDomConflict(event)) return null;
+      if (isSupabaseAuthLockContention(event)) return null;
       return event;
     },
   });
