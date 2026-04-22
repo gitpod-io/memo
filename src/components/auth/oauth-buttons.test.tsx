@@ -52,19 +52,33 @@ describe("OAuthButtons — OAuth disabled (default)", () => {
     expect(mockSignInWithOAuth).not.toHaveBeenCalled();
   });
 
-  it("renders 'Coming soon' tooltip text in the DOM", async () => {
+  it("shows 'Coming soon' tooltip on hover over disabled GitHub button", async () => {
     const { OAuthButtons } = await import("./oauth-buttons");
+    const user = userEvent.setup();
     render(<OAuthButtons />);
 
-    // The tooltip content is rendered but hidden until hover.
-    // Verify the component includes the tooltip text.
-    const tooltips = document.querySelectorAll("[data-slot='tooltip-content']");
-    // Tooltips are portaled, so they may not be in the DOM until triggered.
-    // Instead, verify the buttons are disabled (tooltip is the UX layer).
-    expect(screen.getByRole("button", { name: "Continue with GitHub" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Continue with Google" })).toBeDisabled();
-    // Tooltip presence is verified — the component wraps buttons in Tooltip.
-    expect(tooltips.length).toBeGreaterThanOrEqual(0);
+    const githubBtn = screen.getByRole("button", { name: "Continue with GitHub" });
+    // Hover the wrapping span (parent of the disabled button)
+    const trigger = githubBtn.closest("[data-slot='tooltip-trigger']") ?? githubBtn.parentElement!;
+    await user.hover(trigger);
+
+    await waitFor(() => {
+      expect(screen.getByText("Coming soon")).toBeInTheDocument();
+    });
+  });
+
+  it("shows 'Coming soon' tooltip on hover over disabled Google button", async () => {
+    const { OAuthButtons } = await import("./oauth-buttons");
+    const user = userEvent.setup();
+    render(<OAuthButtons />);
+
+    const googleBtn = screen.getByRole("button", { name: "Continue with Google" });
+    const trigger = googleBtn.closest("[data-slot='tooltip-trigger']") ?? googleBtn.parentElement!;
+    await user.hover(trigger);
+
+    await waitFor(() => {
+      expect(screen.getByText("Coming soon")).toBeInTheDocument();
+    });
   });
 });
 
