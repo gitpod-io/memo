@@ -106,7 +106,7 @@ const registry: Partial<Record<PropertyType, PropertyTypeConfig>> = {
 
 /**
  * Look up the renderer and editor for a property type.
- * Returns undefined for types not yet implemented (files, formula).
+ * Returns undefined for types not yet implemented.
  * Computed types (created_time, updated_time, created_by) have Editor: null.
  */
 export function getPropertyTypeConfig(
@@ -131,10 +131,12 @@ export const STANDARD_PROPERTY_TYPES: readonly PropertyType[] = [
   "email",
   "phone",
   "person",
+  "files",
 ] as const;
 
 /** Auto-derived read-only property types shown under "Advanced" in type pickers. */
 export const ADVANCED_PROPERTY_TYPES: readonly PropertyType[] = [
+  "relation",
   "formula",
   "created_time",
   "updated_time",
