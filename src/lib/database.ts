@@ -377,7 +377,6 @@ export async function updateRowValue(
     .single();
 
   if (error) {
-    captureSupabaseError(error, "database.updateRowValue");
     return { data: null, error };
   }
   return { data: data as RowValue, error: null };

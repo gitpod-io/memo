@@ -474,17 +474,14 @@ describe("updateRowValue", () => {
     expect(tableMocks["row_values"].calls["upsert"]).toBeDefined();
   });
 
-  it("captures error on failure", async () => {
+  it("returns error without reporting to Sentry (callers decide)", async () => {
     const dbError = new Error("upsert failed");
     mockTable("row_values", { data: null, error: dbError });
 
     const result = await updateRowValue("row-1", "prop-1", { text: "X" });
 
     expect(result.error).toBe(dbError);
-    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
-      dbError,
-      "database.updateRowValue",
-    );
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
   });
 });
 
