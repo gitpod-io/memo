@@ -461,7 +461,7 @@ function CalendarDayCell({ cell, workspaceSlug, onClick }: CalendarDayCellProps)
             {showAll && (
               <div
                 ref={popoverRef}
-                className="absolute left-0 top-full z-50 w-56 border border-border bg-background p-2 shadow-md"
+                className="absolute left-0 top-full z-50 w-56 rounded-sm border border-border bg-background p-2 shadow-md"
               >
                 <div className="mb-1 text-xs font-medium text-muted-foreground">
                   {cell.date}
