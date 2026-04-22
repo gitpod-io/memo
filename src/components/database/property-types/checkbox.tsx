@@ -37,7 +37,7 @@ function CheckboxCell({
 }
 
 export function CheckboxRenderer({ value }: RendererProps) {
-  const checked = value.checked === true;
+  const checked = value.checked === true || value.value === true;
   // Renderer is non-interactive — display only
   return (
     <div className="flex h-full w-full items-center justify-center">
@@ -56,7 +56,7 @@ export function CheckboxRenderer({ value }: RendererProps) {
 }
 
 export function CheckboxEditor({ value, onChange, onBlur }: EditorProps) {
-  const checked = value.checked === true;
+  const checked = value.checked === true || value.value === true;
   return (
     <CheckboxCell
       checked={checked}

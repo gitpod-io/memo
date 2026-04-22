@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import type { RendererProps, EditorProps } from "./index";
 
 export function UrlRenderer({ value }: RendererProps) {
-  const url = typeof value.url === "string" ? value.url : "";
+  const url = typeof value.url === "string"
+    ? value.url
+    : typeof value.value === "string" ? value.value : "";
   if (!url) return null;
 
   // Display a truncated version of the URL
@@ -34,7 +36,9 @@ export function UrlRenderer({ value }: RendererProps) {
 
 export function UrlEditor({ value, onChange, onBlur }: EditorProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const url = typeof value.url === "string" ? value.url : "";
+  const url = typeof value.url === "string"
+    ? value.url
+    : typeof value.value === "string" ? value.value : "";
 
   useEffect(() => {
     inputRef.current?.focus();

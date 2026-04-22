@@ -3,11 +3,14 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
+import { computePosition, flip, shift, offset } from "@floating-ui/react";
 import {
   ArrowDown,
   ArrowUp,
@@ -54,6 +57,32 @@ const ROW_HEIGHT_CLASS: Record<NonNullable<DatabaseViewConfig["row_height"]>, st
   default: "h-10",
   tall: "h-14",
 };
+
+/**
+ * Maps a property type to the key its registry editor/renderer expects inside
+ * the value object. For example, "text" → "text", "number" → "number", etc.
+ * Returns "value" for types without a specific key (fallback).
+ */
+function valueKeyForType(propertyType: PropertyType): string {
+  switch (propertyType) {
+    case "text":
+      return "text";
+    case "number":
+      return "number";
+    case "url":
+      return "url";
+    case "email":
+      return "email";
+    case "phone":
+      return "phone";
+    case "checkbox":
+      return "checked";
+    case "date":
+      return "date";
+    default:
+      return "value";
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Props
@@ -800,7 +829,14 @@ function TableCell({
           defaultValue={displayValue}
           className="h-full w-full bg-transparent px-2 text-sm text-foreground outline-none ring-2 ring-inset ring-accent"
           onKeyDown={(e) => onKeyDown(e, rowIndex, colIndex)}
-          onBlur={(e) => onBlur(rowId, propertyId, { value: e.target.value })}
+          onBlur={(e) => {
+            const key = valueKeyForType(propertyType);
+            const raw = e.target.value;
+            const parsed = propertyType === "number"
+              ? (raw === "" ? null : Number(raw))
+              : raw;
+            onBlur(rowId, propertyId, { [key]: parsed });
+          }}
         />
       </div>
     );
@@ -808,7 +844,8 @@ function TableCell({
 
   // Checkbox type: toggle on click
   if (propertyType === "checkbox") {
-    const checked = value?.value?.value === true;
+    const raw = value?.value;
+    const checked = raw?.checked === true || raw?.value === true;
     return (
       <div
         className={cn(
@@ -819,7 +856,7 @@ function TableCell({
       >
         <button
           type="button"
-          onClick={() => onBlur(rowId, propertyId, { value: !checked })}
+          onClick={() => onBlur(rowId, propertyId, { checked: !checked })}
           className={cn(
             "flex h-4 w-4 items-center justify-center border",
             checked
@@ -895,8 +932,21 @@ function TableCell({
 }
 
 // ---------------------------------------------------------------------------
+// Property types whose editors render floating panels (calendars, dropdowns)
+// that must escape the table's overflow-x-auto clipping context via a portal.
+// ---------------------------------------------------------------------------
+
+const PORTALED_EDITOR_TYPES: ReadonlySet<PropertyType> = new Set([
+  "date",
+  "select",
+  "multi_select",
+]);
+
+// ---------------------------------------------------------------------------
 // RegistryEditorCell — wraps a registry Editor, tracks value changes via ref,
 // and commits the latest value on blur so onChange→onBlur sequences work.
+// For date/select/multi_select, renders the editor in a portal positioned
+// relative to the cell so it is not clipped by the table overflow.
 // ---------------------------------------------------------------------------
 
 interface RegistryEditorCellProps {
@@ -921,6 +971,9 @@ function RegistryEditorCell({
   const config = getPropertyTypeConfig(propertyType);
   const Editor = config!.Editor!;
   const latestValue = useRef<Record<string, unknown>>(value?.value ?? {});
+  const cellRef = useRef<HTMLDivElement>(null);
+  const floatingRef = useRef<HTMLDivElement>(null);
+  const needsPortal = PORTALED_EDITOR_TYPES.has(propertyType);
 
   const handleChange = useCallback(
     (newValue: Record<string, unknown>) => {
@@ -933,6 +986,52 @@ function RegistryEditorCell({
   const handleBlur = useCallback(() => {
     onBlur(rowId, propertyId, latestValue.current);
   }, [rowId, propertyId, onBlur]);
+
+  // Position the portaled editor below the cell anchor
+  useLayoutEffect(() => {
+    if (!needsPortal) return;
+    const anchor = cellRef.current;
+    const floating = floatingRef.current;
+    if (!anchor || !floating) return;
+
+    void computePosition(anchor, floating, {
+      placement: "bottom-start",
+      middleware: [offset(2), flip({ padding: 8 }), shift({ padding: 8 })],
+    }).then(({ x, y }) => {
+      floating.style.left = `${x}px`;
+      floating.style.top = `${y}px`;
+    });
+  });
+
+  if (needsPortal) {
+    return (
+      <>
+        <div
+          ref={cellRef}
+          className={cn(
+            "border-b border-white/[0.06]",
+            rowHeightClass,
+          )}
+          role="gridcell"
+        />
+        {createPortal(
+          <div
+            ref={floatingRef}
+            className="absolute z-50"
+            style={{ left: 0, top: 0 }}
+          >
+            <Editor
+              value={value?.value ?? {}}
+              property={property}
+              onChange={handleChange}
+              onBlur={handleBlur}
+            />
+          </div>,
+          document.body,
+        )}
+      </>
+    );
+  }
 
   return (
     <div
@@ -1089,22 +1188,29 @@ function extractDisplayValue(value: RowValue | undefined, propertyType: Property
   const raw = value.value;
   if (!raw) return "";
 
-  // Most values are stored as { value: <actual> }
-  const inner = raw.value;
+  // Read from the type-specific key first, then fall back to the legacy
+  // generic "value" key for data saved before the format was corrected.
+  const key = valueKeyForType(propertyType);
+  const typed = raw[key];
+  const legacy = raw.value;
 
   switch (propertyType) {
-    case "checkbox":
-      return inner === true ? "true" : inner === false ? "false" : "";
+    case "checkbox": {
+      const checked = typed ?? legacy;
+      return checked === true ? "true" : checked === false ? "false" : "";
+    }
     case "multi_select":
       // Multi-select is handled specially in CellRenderer
       return (raw.items as { value: string }[] | undefined)
         ?.map((i) => i.value)
         .join(", ") ?? "";
-    default:
+    default: {
+      const inner = typed ?? legacy;
       if (typeof inner === "string") return inner;
       if (typeof inner === "number") return String(inner);
       if (inner === null || inner === undefined) return "";
       return String(inner);
+    }
   }
 }
 
