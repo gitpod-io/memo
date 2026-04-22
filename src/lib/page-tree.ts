@@ -8,17 +8,26 @@ export interface TreeNode {
   children: TreeNode[];
 }
 
-/** Build a nested tree from a flat list of pages. Orphans become roots. */
+/** Build a nested tree from a flat list of pages. Orphans become roots.
+ *  Database row pages (children of `is_database` pages) are excluded from the
+ *  tree so they don't clutter the sidebar — they're accessed via the database view. */
 export function buildTree(pages: Page[]): TreeNode[] {
+  // Collect IDs of database pages so we can filter out their children (rows).
+  const databaseIds = new Set(
+    pages.filter((p) => p.is_database).map((p) => p.id),
+  );
+
   const map = new Map<string, TreeNode>();
   const roots: TreeNode[] = [];
 
   for (const page of pages) {
+    // Skip database rows — pages whose parent is a database
+    if (page.parent_id && databaseIds.has(page.parent_id)) continue;
     map.set(page.id, { page, children: [] });
   }
 
-  for (const page of pages) {
-    const node = map.get(page.id)!;
+  for (const [, node] of map) {
+    const { page } = node;
     if (page.parent_id && map.has(page.parent_id)) {
       map.get(page.parent_id)!.children.push(node);
     } else {

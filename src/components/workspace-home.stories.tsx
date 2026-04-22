@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { FileText, Plus, Search } from "lucide-react";
+import { FileText, Plus, Search, Table2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -27,6 +27,7 @@ const mockPages = [
     id: "p1",
     title: "Getting Started",
     icon: "🚀",
+    is_database: false,
     created_at: new Date(Date.now() - 10 * 86_400_000).toISOString(),
     updated_at: new Date(Date.now() - 2 * 3_600_000).toISOString(),
   },
@@ -34,6 +35,7 @@ const mockPages = [
     id: "p2",
     title: "API Reference",
     icon: null,
+    is_database: false,
     created_at: new Date(Date.now() - 7 * 86_400_000).toISOString(),
     updated_at: new Date(Date.now() - 86_400_000).toISOString(),
   },
@@ -41,6 +43,7 @@ const mockPages = [
     id: "p3",
     title: "Design System",
     icon: "🎨",
+    is_database: false,
     created_at: new Date(Date.now() - 5 * 86_400_000).toISOString(),
     updated_at: new Date(Date.now() - 3 * 86_400_000).toISOString(),
   },
@@ -48,6 +51,7 @@ const mockPages = [
     id: "p4",
     title: "",
     icon: null,
+    is_database: false,
     created_at: new Date(Date.now() - 2 * 86_400_000).toISOString(),
     updated_at: new Date(Date.now() - 5 * 86_400_000).toISOString(),
   },
@@ -55,6 +59,7 @@ const mockPages = [
     id: "p5",
     title: "Architecture Overview",
     icon: "🏗️",
+    is_database: false,
     created_at: new Date(Date.now() - 14 * 86_400_000).toISOString(),
     updated_at: new Date(Date.now() - 6 * 3_600_000).toISOString(),
   },
@@ -62,28 +67,47 @@ const mockPages = [
     id: "p6",
     title: "Meeting Notes",
     icon: "📝",
+    is_database: false,
     created_at: new Date(Date.now() - 1 * 86_400_000).toISOString(),
     updated_at: new Date(Date.now() - 30 * 60_000).toISOString(),
+  },
+  {
+    id: "p7",
+    title: "Bug Tracker",
+    icon: null,
+    is_database: true,
+    created_at: new Date(Date.now() - 3 * 86_400_000).toISOString(),
+    updated_at: new Date(Date.now() - 1 * 3_600_000).toISOString(),
   },
 ];
 
 const mockRecentVisits = [
   {
+    page_id: "p7",
+    title: "Bug Tracker",
+    icon: null,
+    is_database: true,
+    visited_at: new Date(Date.now() - 5 * 60_000).toISOString(),
+  },
+  {
     page_id: "p3",
     title: "Design System",
     icon: "🎨",
+    is_database: false,
     visited_at: new Date(Date.now() - 10 * 60_000).toISOString(),
   },
   {
     page_id: "p1",
     title: "Getting Started",
     icon: "🚀",
+    is_database: false,
     visited_at: new Date(Date.now() - 45 * 60_000).toISOString(),
   },
   {
     page_id: "p2",
     title: "API Reference",
     icon: null,
+    is_database: false,
     visited_at: new Date(Date.now() - 3 * 3_600_000).toISOString(),
   },
 ];
@@ -92,16 +116,20 @@ function PageItem({
   icon,
   title,
   timeStr,
+  isDatabase = false,
 }: {
   icon: string | null;
   title: string;
   timeStr: string;
+  isDatabase?: boolean;
 }) {
   return (
     <button className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-white/[0.04]">
       <span className="flex h-4 w-4 shrink-0 items-center justify-center">
         {icon ? (
           <span className="text-sm">{icon}</span>
+        ) : isDatabase ? (
+          <Table2 className="h-4 w-4 text-muted-foreground" />
         ) : (
           <FileText className="h-4 w-4 text-muted-foreground" />
         )}
@@ -184,6 +212,7 @@ export const WithPages: Story = {
               icon={page.icon}
               title={page.title}
               timeStr={page.updated_at}
+              isDatabase={page.is_database}
             />
           ))}
         </div>
@@ -213,6 +242,7 @@ export const WithRecentVisits: Story = {
               icon={visit.icon}
               title={visit.title}
               timeStr={visit.visited_at}
+              isDatabase={visit.is_database}
             />
           ))}
         </div>
@@ -229,6 +259,7 @@ export const WithRecentVisits: Story = {
               icon={page.icon}
               title={page.title}
               timeStr={page.updated_at}
+              isDatabase={page.is_database}
             />
           ))}
         </div>

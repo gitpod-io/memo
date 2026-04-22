@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Plus, Search } from "lucide-react";
+import { FileText, Plus, Search, Table2 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { getClient } from "@/lib/supabase/lazy-client";
 import {
@@ -44,6 +44,7 @@ interface WorkspaceHomeProps {
     id: string;
     title: string;
     icon: string | null;
+    is_database: boolean;
     created_at: string;
     updated_at: string;
   }[];
@@ -184,6 +185,8 @@ export function WorkspaceHome({
                 <span className="flex h-4 w-4 shrink-0 items-center justify-center">
                   {visit.icon ? (
                     <span className="text-sm">{visit.icon}</span>
+                  ) : visit.is_database ? (
+                    <Table2 className="h-4 w-4 text-muted-foreground" />
                   ) : (
                     <FileText className="h-4 w-4 text-muted-foreground" />
                   )}
@@ -263,6 +266,8 @@ export function WorkspaceHome({
                 <span className="flex h-4 w-4 shrink-0 items-center justify-center">
                   {page.icon ? (
                     <span className="text-sm">{page.icon}</span>
+                  ) : page.is_database ? (
+                    <Table2 className="h-4 w-4 text-muted-foreground" />
                   ) : (
                     <FileText className="h-4 w-4 text-muted-foreground" />
                   )}
