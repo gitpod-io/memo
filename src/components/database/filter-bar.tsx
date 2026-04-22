@@ -134,13 +134,10 @@ export function FilterBar({
     setValueInput("");
   }, [addState, valueInput, filters, onFiltersChange, properties]);
 
-  // Don't render the bar if there are no filters and the add flow is closed
-  if (filters.length === 0 && addState.step === "closed") {
-    return null;
-  }
-
   return (
-    <div className="flex flex-wrap items-center gap-1.5 bg-muted p-2">
+    <div className="flex flex-wrap items-center gap-1.5"
+      {...(filters.length > 0 ? { "data-has-filters": "true" } : {})}
+    >
       {/* Active filter badges */}
       {filters.map((filter, index) => {
         const prop = properties.find((p) => p.id === filter.property_id);

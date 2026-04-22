@@ -9,6 +9,14 @@ import { PageTitle } from "@/components/page-title";
 import { PageIcon } from "@/components/page-icon";
 import { PageCover } from "@/components/page-cover";
 import { ViewTabs, VIEW_TYPE_LABELS } from "@/components/database/view-tabs";
+import { SortMenu } from "@/components/database/sort-menu";
+import { FilterBar } from "@/components/database/filter-bar";
+import {
+  sortRows,
+  filterRows,
+  type SortRule,
+  type FilterRule,
+} from "@/lib/database-filters";
 import {
   addProperty,
   addRow,
@@ -340,6 +348,87 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
   );
 
   // -----------------------------------------------------------------------
+  // Sort & filter — derived from active view config, persisted on change
+  // -----------------------------------------------------------------------
+
+  const activeSorts: SortRule[] = useMemo(
+    () => (activeView?.config.sorts as SortRule[] | undefined) ?? [],
+    [activeView],
+  );
+
+  const activeFilters: FilterRule[] = useMemo(
+    () => (activeView?.config.filters as FilterRule[] | undefined) ?? [],
+    [activeView],
+  );
+
+  // Apply sort and filter to produce the displayed rows
+  const displayedRows = useMemo(() => {
+    let result = rows;
+    if (activeFilters.length > 0) {
+      result = filterRows(result, activeFilters, properties);
+    }
+    if (activeSorts.length > 0) {
+      result = sortRows(result, activeSorts, properties);
+    }
+    return result;
+  }, [rows, activeSorts, activeFilters, properties]);
+
+  const handleSortsChange = useCallback(
+    async (newSorts: SortRule[]) => {
+      if (!activeView) return;
+      const newConfig = { ...activeView.config, sorts: newSorts };
+      // Optimistic update
+      setViews((prev) =>
+        prev.map((v) =>
+          v.id === activeView.id ? { ...v, config: newConfig } : v,
+        ),
+      );
+      const { error } = await updateView(activeView.id, { config: newConfig });
+      if (error) {
+        toast.error("Failed to update sort", { duration: 8000 });
+      }
+    },
+    [activeView],
+  );
+
+  const handleFiltersChange = useCallback(
+    async (newFilters: FilterRule[]) => {
+      if (!activeView) return;
+      const newConfig = { ...activeView.config, filters: newFilters };
+      // Optimistic update
+      setViews((prev) =>
+        prev.map((v) =>
+          v.id === activeView.id ? { ...v, config: newConfig } : v,
+        ),
+      );
+      const { error } = await updateView(activeView.id, { config: newConfig });
+      if (error) {
+        toast.error("Failed to update filter", { duration: 8000 });
+      }
+    },
+    [activeView],
+  );
+
+  // Column header sort toggle: cycles unsorted → asc → desc → unsorted
+  const handleSortToggle = useCallback(
+    (propertyId: string) => {
+      const existing = activeSorts.find((s) => s.property_id === propertyId);
+      let newSorts: SortRule[];
+      if (!existing) {
+        newSorts = [...activeSorts, { property_id: propertyId, direction: "asc" }];
+      } else if (existing.direction === "asc") {
+        newSorts = activeSorts.map((s) =>
+          s.property_id === propertyId ? { ...s, direction: "desc" as const } : s,
+        );
+      } else {
+        newSorts = activeSorts.filter((s) => s.property_id !== propertyId);
+      }
+      void handleSortsChange(newSorts);
+    },
+    [activeSorts, handleSortsChange],
+  );
+
+  // -----------------------------------------------------------------------
   // Row / column / cell CRUD
   // -----------------------------------------------------------------------
 
@@ -566,10 +655,26 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
               />
             )}
 
+            {/* Sort & filter toolbar */}
+            {activeView && (
+              <div className="flex items-center gap-1 px-1 py-1">
+                <SortMenu
+                  properties={properties}
+                  sorts={activeSorts}
+                  onSortsChange={handleSortsChange}
+                />
+                <FilterBar
+                  properties={properties}
+                  filters={activeFilters}
+                  onFiltersChange={handleFiltersChange}
+                />
+              </div>
+            )}
+
             <div className="mt-0">
               {activeView?.type === "table" ? (
                 <TableView
-                  rows={rows}
+                  rows={displayedRows}
                   properties={properties}
                   viewConfig={activeView.config}
                   workspaceSlug={workspaceSlug}
@@ -578,10 +683,12 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   onAddColumn={handleAddColumn}
                   onColumnHeaderClick={handleColumnHeaderClick}
                   onDeleteRow={handleDeleteRow}
+                  sorts={activeSorts}
+                  onSortToggle={handleSortToggle}
                 />
               ) : activeView?.type === "board" ? (
                 <BoardView
-                  rows={rows}
+                  rows={displayedRows}
                   properties={properties}
                   viewConfig={activeView.config}
                   workspaceSlug={workspaceSlug}
@@ -590,21 +697,21 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                 />
               ) : activeView?.type === "list" ? (
                 <ListView
-                  rows={rows}
+                  rows={displayedRows}
                   properties={properties}
                   viewConfig={activeView.config}
                   workspaceSlug={workspaceSlug}
                 />
               ) : activeView?.type === "calendar" ? (
                 <CalendarView
-                  rows={rows}
+                  rows={displayedRows}
                   properties={properties}
                   viewConfig={activeView.config}
                   workspaceSlug={workspaceSlug}
                 />
               ) : activeView?.type === "gallery" ? (
                 <GalleryView
-                  rows={rows}
+                  rows={displayedRows}
                   properties={properties}
                   viewConfig={activeView.config}
                   workspaceSlug={workspaceSlug}
