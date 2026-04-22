@@ -212,23 +212,25 @@ export function CalendarView({
     [viewYear, viewMonth, rowsByDate],
   );
 
-  // Navigation handlers — no useCallback; React Compiler handles memoization
+  // Navigation handlers
   function goToPrevMonth() {
-    if (viewMonth === 0) {
-      setViewMonth(11);
-      setViewYear((y) => y - 1);
-    } else {
-      setViewMonth((m) => m - 1);
-    }
+    setViewMonth((m) => {
+      if (m === 0) {
+        setViewYear((y) => y - 1);
+        return 11;
+      }
+      return m - 1;
+    });
   }
 
   function goToNextMonth() {
-    if (viewMonth === 11) {
-      setViewMonth(0);
-      setViewYear((y) => y + 1);
-    } else {
-      setViewMonth((m) => m + 1);
-    }
+    setViewMonth((m) => {
+      if (m === 11) {
+        setViewYear((y) => y + 1);
+        return 0;
+      }
+      return m + 1;
+    });
   }
 
   function goToToday() {
@@ -237,10 +239,10 @@ export function CalendarView({
     setViewMonth(d.getMonth());
   }
 
-  // Keyboard navigation
+  // Keyboard navigation — uses state updater functions so the effect
+  // doesn't depend on the navigation handlers or current state values.
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      // Only handle if the calendar container or its children are focused
       if (
         !containerRef.current ||
         !containerRef.current.contains(document.activeElement)
@@ -250,16 +252,28 @@ export function CalendarView({
 
       if (e.key === "ArrowLeft") {
         e.preventDefault();
-        goToPrevMonth();
+        setViewMonth((m) => {
+          if (m === 0) {
+            setViewYear((y) => y - 1);
+            return 11;
+          }
+          return m - 1;
+        });
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        goToNextMonth();
+        setViewMonth((m) => {
+          if (m === 11) {
+            setViewYear((y) => y + 1);
+            return 0;
+          }
+          return m + 1;
+        });
       }
     }
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [goToPrevMonth, goToNextMonth]);
+  }, []);
 
   // Cell click handler — create a new row with the date pre-filled
   function handleCellClick(date: string, e: React.MouseEvent) {
