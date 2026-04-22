@@ -53,6 +53,8 @@ import {
 import { CollapsiblePlugin } from "@/components/editor/collapsible-plugin";
 import { PageLinkNode } from "@/components/editor/page-link-node";
 import { PageLinkPlugin } from "@/components/editor/page-link-plugin";
+import { DatabaseNode } from "@/components/editor/database-node";
+import { DatabasePlugin } from "@/components/editor/database-plugin";
 import { TableActionMenuPlugin } from "@/components/editor/table-action-menu-plugin";
 import { WordCountPlugin } from "@/components/editor/word-count-plugin";
 import { EditorAutoLinkPlugin } from "@/components/editor/auto-link-plugin";
@@ -323,6 +325,7 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
       CollapsibleTitleNode,
       CollapsibleContentNode,
       PageLinkNode,
+      DatabaseNode,
       TableNode,
       TableRowNode,
       TableCellNode,
@@ -377,6 +380,7 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
             <CalloutPlugin />
             <CollapsiblePlugin />
             <PageLinkPlugin />
+            <DatabasePlugin />
             <TablePlugin
               hasCellMerge={false}
               hasCellBackgroundColor={false}
