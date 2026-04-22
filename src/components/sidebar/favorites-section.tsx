@@ -9,6 +9,7 @@ import {
   captureSupabaseError,
   isInsufficientPrivilegeError,
   isSchemaNotFoundError,
+  isSupabaseAuthLockError,
 } from "@/lib/sentry";
 import { retryOnNetworkError } from "@/lib/retry";
 import type { FavoriteWithPage } from "@/lib/types";
@@ -228,7 +229,8 @@ export function useFavorite({
       if (error) {
         if (
           !isSchemaNotFoundError(error) &&
-          !isInsufficientPrivilegeError(error)
+          !isInsufficientPrivilegeError(error) &&
+          !isSupabaseAuthLockError(error)
         ) {
           captureSupabaseError(error, "favorites:check");
         }

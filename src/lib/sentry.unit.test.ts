@@ -12,6 +12,8 @@ import {
   isTransientNetworkError,
   isSchemaNotFoundError,
   isInsufficientPrivilegeError,
+  isSupabaseAuthLockError,
+  isSupabaseAuthLockContention,
   captureSupabaseError,
   isNextjsInternalNoise,
   isReactLexicalDomConflict,
@@ -268,6 +270,50 @@ describe("isInsufficientPrivilegeError", () => {
   });
 });
 
+describe("isSupabaseAuthLockError", () => {
+  it("detects AbortError in PostgrestError details (MEMO-16/17/19)", () => {
+    const error = makePostgrestError({
+      message: "AbortError: Lock broken by another request with the 'steal' option.",
+      code: "",
+      details: "AbortError: Lock broken by another request with the 'steal' option.",
+      hint: "Request was aborted (timeout or manual cancellation)",
+    });
+    expect(isSupabaseAuthLockError(error)).toBe(true);
+  });
+
+  it("detects lock-released message from Supabase auth internals (MEMO-18)", () => {
+    const error = new Error(
+      'Lock "lock:sb-yoipusltrtbvneuywzkj-auth-token" was released because another request stole it',
+    );
+    expect(isSupabaseAuthLockError(error)).toBe(true);
+  });
+
+  it("detects lock-broken message in plain Error", () => {
+    const error = new Error(
+      "AbortError: Lock broken by another request with the 'steal' option.",
+    );
+    expect(isSupabaseAuthLockError(error)).toBe(true);
+  });
+
+  it("returns false for transient network errors", () => {
+    const error = new Error("Failed to fetch");
+    expect(isSupabaseAuthLockError(error)).toBe(false);
+  });
+
+  it("returns false for generic application errors", () => {
+    const error = new Error("Something went wrong");
+    expect(isSupabaseAuthLockError(error)).toBe(false);
+  });
+
+  it("returns false for RLS violations", () => {
+    const error = makePostgrestError({
+      message: "new row violates row-level security policy",
+      code: "42501",
+    });
+    expect(isSupabaseAuthLockError(error)).toBe(false);
+  });
+});
+
 describe("captureSupabaseError", () => {
   beforeEach(() => {
     captureExceptionMock.mockClear();
@@ -345,6 +391,22 @@ describe("captureSupabaseError", () => {
     const [, opts] = captureExceptionMock.mock.calls[0];
     expect(opts.level).toBe("warning");
     expect(opts.extra.operation).toBe("usage-events:track");
+  });
+
+  it("captures Supabase auth lock errors at warning level (MEMO-16/17/19)", async () => {
+    const error = makePostgrestError({
+      message: "AbortError: Lock broken by another request with the 'steal' option.",
+      code: "",
+      details: "AbortError: Lock broken by another request with the 'steal' option.",
+      hint: "Request was aborted (timeout or manual cancellation)",
+    });
+    captureSupabaseError(error, "favorites:check");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [, opts] = captureExceptionMock.mock.calls[0];
+    expect(opts.level).toBe("warning");
+    expect(opts.extra.operation).toBe("favorites:check");
   });
 
   it("captures non-network, non-RLS errors at default (error) level", async () => {
@@ -623,5 +685,58 @@ describe("isReactLexicalDomConflict", () => {
       },
     ]);
     expect(isReactLexicalDomConflict(event)).toBe(true);
+  });
+});
+
+describe("isSupabaseAuthLockContention", () => {
+  it("detects lock-released unhandled rejection (MEMO-18)", () => {
+    const event = makeSentryEvent([
+      {
+        type: "Error",
+        value:
+          'Lock "lock:sb-yoipusltrtbvneuywzkj-auth-token" was released because another request stole it',
+      },
+    ]);
+    expect(isSupabaseAuthLockContention(event)).toBe(true);
+  });
+
+  it("detects lock-broken AbortError in event value", () => {
+    const event = makeSentryEvent([
+      {
+        type: "Error",
+        value:
+          "AbortError: Lock broken by another request with the 'steal' option.",
+      },
+    ]);
+    expect(isSupabaseAuthLockContention(event)).toBe(true);
+  });
+
+  it("detects the error in chained exceptions", () => {
+    const event = makeSentryEvent([
+      { type: "Error", value: "Some wrapper error" },
+      {
+        type: "Error",
+        value:
+          'Lock "lock:sb-abc123-auth-token" was released because another request stole it',
+      },
+    ]);
+    expect(isSupabaseAuthLockContention(event)).toBe(true);
+  });
+
+  it("returns false for unrelated errors", () => {
+    const event = makeSentryEvent([
+      { type: "TypeError", value: "Cannot read properties of undefined" },
+    ]);
+    expect(isSupabaseAuthLockContention(event)).toBe(false);
+  });
+
+  it("returns false when exception values are empty", () => {
+    const event = makeSentryEvent([]);
+    expect(isSupabaseAuthLockContention(event)).toBe(false);
+  });
+
+  it("returns false when exception is missing", () => {
+    const event = { type: undefined } as ErrorEvent;
+    expect(isSupabaseAuthLockContention(event)).toBe(false);
   });
 });
