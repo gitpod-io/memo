@@ -13,6 +13,7 @@ import {
   ArrowUp,
   FileText,
   Plus,
+  Trash2,
 } from "lucide-react";
 import { PROPERTY_TYPE_ICON } from "@/lib/property-icons";
 import type { SortRule } from "@/lib/database-filters";
@@ -68,6 +69,8 @@ export interface TableViewProps {
   sorts?: SortRule[];
   /** Called when a column header sort indicator is clicked. Cycles: unsorted → asc → desc → unsorted. */
   onSortToggle?: (propertyId: string) => void;
+  /** Called when a row should be deleted. */
+  onDeleteRow?: (rowId: string) => void;
   /** Loading state — shows skeleton. */
   loading?: boolean;
 }
@@ -95,6 +98,7 @@ export function TableView({
   onAddColumn,
   onColumnWidthsChange,
   onColumnHeaderClick,
+  onDeleteRow,
   sorts = [],
   onSortToggle,
   loading = false,
@@ -407,6 +411,7 @@ export function TableView({
             onStartEditing={startEditing}
             onCellKeyDown={handleCellKeyDown}
             onCellBlur={handleCellBlur}
+            onDeleteRow={onDeleteRow}
           />
         ))}
       </div>
@@ -440,6 +445,7 @@ interface TableRowProps {
   onStartEditing: (rowId: string, propertyId: string) => void;
   onCellKeyDown: (e: React.KeyboardEvent, rowIndex: number, colIndex: number) => void;
   onCellBlur: (rowId: string, propertyId: string, newValue: Record<string, unknown>) => void;
+  onDeleteRow?: (rowId: string) => void;
 }
 
 function TableRow({
@@ -453,24 +459,35 @@ function TableRow({
   onStartEditing,
   onCellKeyDown,
   onCellBlur,
+  onDeleteRow,
 }: TableRowProps) {
   return (
     <>
       {/* Title cell */}
       <div
         className={cn(
-          "flex items-center border-b border-white/[0.06] p-2 hover:bg-white/[0.02]",
+          "group/row flex items-center border-b border-white/[0.06] p-2 hover:bg-white/[0.02]",
           rowHeightClass,
         )}
         role="gridcell"
       >
         <Link
           href={`/${workspaceSlug}/${row.page.id}`}
-          className="truncate text-sm text-foreground hover:underline"
+          className="min-w-0 flex-1 truncate text-sm text-foreground hover:underline"
         >
           {row.page.icon && <span className="mr-1.5">{row.page.icon}</span>}
           {row.page.title || "Untitled"}
         </Link>
+        {onDeleteRow && (
+          <button
+            type="button"
+            onClick={() => onDeleteRow(row.page.id)}
+            className="ml-1 shrink-0 text-muted-foreground opacity-0 hover:text-destructive group-hover/row:opacity-100"
+            aria-label="Delete row"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
 
       {/* Property cells */}

@@ -10,13 +10,22 @@ import { PageIcon } from "@/components/page-icon";
 import { PageCover } from "@/components/page-cover";
 import { ViewTabs, VIEW_TYPE_LABELS } from "@/components/database/view-tabs";
 import {
+  addProperty,
+  addRow,
   addView,
   deleteView,
   loadDatabase,
   loadWorkspaceMembers,
   reorderViews,
+  updateProperty,
+  updateRowValue,
   updateView,
 } from "@/lib/database";
+import { createClient } from "@/lib/supabase/client";
+import {
+  captureSupabaseError,
+  isInsufficientPrivilegeError,
+} from "@/lib/sentry";
 import type {
   DatabaseProperty,
   DatabaseRow,
@@ -145,6 +154,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     initialContent,
     workspaceId,
     workspaceSlug,
+    userId,
   } = props;
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -329,6 +339,114 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     [pageId],
   );
 
+  // -----------------------------------------------------------------------
+  // Row / column / cell CRUD
+  // -----------------------------------------------------------------------
+
+  const handleAddRow = useCallback(async () => {
+    const { data: rowPage, error } = await addRow(pageId, userId);
+    if (error || !rowPage) {
+      toast.error("Failed to add row", { duration: 8000 });
+      return;
+    }
+    // Append the new row optimistically
+    setRows((prev) => [
+      ...prev,
+      { page: rowPage as DatabaseRow["page"], values: {} },
+    ]);
+  }, [pageId, userId]);
+
+  const handleCellUpdate = useCallback(
+    async (rowId: string, propertyId: string, value: Record<string, unknown>) => {
+      // Optimistic update
+      setRows((prev) =>
+        prev.map((r) => {
+          if (r.page.id !== rowId) return r;
+          return {
+            ...r,
+            values: {
+              ...r.values,
+              [propertyId]: {
+                ...(r.values[propertyId] ?? {
+                  id: "",
+                  row_id: rowId,
+                  property_id: propertyId,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                }),
+                value,
+                updated_at: new Date().toISOString(),
+              },
+            },
+          };
+        }),
+      );
+
+      const { error } = await updateRowValue(rowId, propertyId, value);
+      if (error) {
+        toast.error("Failed to update cell", { duration: 8000 });
+      }
+    },
+    [],
+  );
+
+  const handleAddColumn = useCallback(async () => {
+    const name = `Property ${properties.length + 1}`;
+    const { data: newProp, error } = await addProperty(pageId, name, "text");
+    if (error || !newProp) {
+      toast.error("Failed to add column", { duration: 8000 });
+      return;
+    }
+    setProperties((prev) => [...prev, newProp]);
+  }, [pageId, properties.length]);
+
+  const handleColumnHeaderClick = useCallback(
+    async (propertyId: string) => {
+      const prop = properties.find((p) => p.id === propertyId);
+      if (!prop) return;
+
+      const newName = window.prompt("Rename property", prop.name);
+      if (newName === null || newName.trim() === "" || newName === prop.name) return;
+
+      // Optimistic update
+      setProperties((prev) =>
+        prev.map((p) => (p.id === propertyId ? { ...p, name: newName.trim() } : p)),
+      );
+
+      const { error } = await updateProperty(propertyId, { name: newName.trim() });
+      if (error) {
+        toast.error("Failed to rename property", { duration: 8000 });
+        // Revert
+        setProperties((prev) =>
+          prev.map((p) => (p.id === propertyId ? { ...p, name: prop.name } : p)),
+        );
+      }
+    },
+    [properties],
+  );
+
+  const handleDeleteRow = useCallback(
+    async (rowId: string) => {
+      // Optimistic removal
+      setRows((prev) => prev.filter((r) => r.page.id !== rowId));
+
+      const supabase = createClient();
+      const { error } = await supabase.rpc("soft_delete_page", {
+        page_id: rowId,
+      });
+      if (error) {
+        if (!isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "database-view:delete-row");
+        }
+        toast.error("Failed to delete row", { duration: 8000 });
+        // Reload to restore
+        const { data } = await loadDatabase(pageId);
+        if (data) setRows(data.rows);
+      }
+    },
+    [pageId],
+  );
+
   // Check if there's Lexical content to render above the database
   const hasContent =
     initialContent !== null &&
@@ -394,6 +512,11 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   properties={properties}
                   viewConfig={activeView.config}
                   workspaceSlug={workspaceSlug}
+                  onAddRow={handleAddRow}
+                  onCellUpdate={handleCellUpdate}
+                  onAddColumn={handleAddColumn}
+                  onColumnHeaderClick={handleColumnHeaderClick}
+                  onDeleteRow={handleDeleteRow}
                 />
               ) : activeView?.type === "board" ? (
                 <BoardView
