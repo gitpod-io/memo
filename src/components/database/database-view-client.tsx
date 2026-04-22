@@ -657,7 +657,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
 
             {/* Sort & filter toolbar */}
             {activeView && (
-              <div className="flex items-center gap-1 px-1 py-1">
+              <div className="flex items-center gap-1 bg-muted p-2">
                 <SortMenu
                   properties={properties}
                   sorts={activeSorts}
