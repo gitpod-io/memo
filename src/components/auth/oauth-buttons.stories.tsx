@@ -1,5 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // OAuthButtons uses Supabase auth at runtime. These stories render the
 // visual appearance without runtime dependencies.
@@ -63,6 +69,47 @@ function OAuthButtonsStory({ loading, error }: { loading?: "github" | "google"; 
   );
 }
 
+function OAuthButtonsDisabledStory() {
+  return (
+    <TooltipProvider>
+      <div className="flex flex-col gap-2">
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                disabled
+                aria-label="Continue with GitHub"
+              />
+            }
+          >
+            <GitHubIcon className="h-4 w-4" />
+            Continue with GitHub
+          </TooltipTrigger>
+          <TooltipContent>Coming soon</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                disabled
+                aria-label="Continue with Google"
+              />
+            }
+          >
+            <GoogleIcon className="h-4 w-4" />
+            Continue with Google
+          </TooltipTrigger>
+          <TooltipContent>Coming soon</TooltipContent>
+        </Tooltip>
+      </div>
+    </TooltipProvider>
+  );
+}
+
 const meta: Meta<typeof OAuthButtonsStory> = {
   title: "Auth/OAuthButtons",
   component: OAuthButtonsStory,
@@ -91,4 +138,8 @@ export const LoadingGoogle: Story = {
 
 export const WithError: Story = {
   args: { error: "Provider not enabled. Contact your administrator." },
+};
+
+export const DisabledComingSoon: StoryObj<typeof OAuthButtonsDisabledStory> = {
+  render: () => <OAuthButtonsDisabledStory />,
 };
