@@ -114,7 +114,7 @@ function FileThumbnail({ file }: { file: FileEntry }) {
       <img
         src={file.url}
         alt={file.name}
-        className="h-6 w-auto max-w-[48px] object-cover"
+        className="h-6 w-auto max-w-12 object-cover"
       />
     );
   }
@@ -270,7 +270,7 @@ export function FilesEditor({ value, onChange, onBlur }: EditorProps) {
   return (
     <div
       ref={containerRef}
-      className="w-64 border border-border bg-background shadow-md"
+      className="w-64 rounded-sm border border-border bg-background shadow-md"
     >
       {/* File list */}
       {files.length > 0 && (
