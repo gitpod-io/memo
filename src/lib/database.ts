@@ -325,9 +325,18 @@ export async function addRow(
     return { data: null, error: rowError };
   }
 
-  // Insert initial values if provided
-  if (initialValues && Object.keys(initialValues).length > 0) {
-    const rows = Object.entries(initialValues).map(
+  // Insert initial values if provided.
+  // Guard: reject non-plain objects (e.g. a MouseEvent leaked from an onClick handler).
+  const safeValues =
+    initialValues &&
+    typeof initialValues === "object" &&
+    !Array.isArray(initialValues) &&
+    Object.getPrototypeOf(initialValues) === Object.prototype
+      ? initialValues
+      : undefined;
+
+  if (safeValues && Object.keys(safeValues).length > 0) {
+    const rows = Object.entries(safeValues).map(
       ([propertyId, value]) => ({
         row_id: rowPage.id,
         property_id: propertyId,

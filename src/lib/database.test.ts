@@ -418,6 +418,37 @@ describe("addRow", () => {
       "database.addRow:lookup",
     );
   });
+
+  it("ignores non-plain-object initialValues (e.g. MouseEvent leaked from onClick)", async () => {
+    mockTable("pages", {
+      data: {
+        ...FAKE_PAGE,
+        id: "row-1",
+        is_database: false,
+        parent_id: "page-1",
+        workspace_id: "ws-1",
+      },
+      error: null,
+    });
+
+    // Simulate a MouseEvent being passed as initialValues — this happens when
+    // onClick={onAddRow} forwards the event as the first argument.
+    const fakeEvent = Object.create(MouseEvent.prototype, {
+      target: { value: {}, enumerable: true },
+      type: { value: "click", enumerable: true },
+    });
+
+    const result = await addRow(
+      "page-1",
+      "user-1",
+      fakeEvent as unknown as Record<string, Record<string, unknown>>,
+    );
+
+    expect(result.error).toBeNull();
+    expect(result.data).not.toBeNull();
+    // row_values insert should NOT have been called
+    expect(tableMocks["row_values"]).toBeUndefined();
+  });
 });
 
 // ---------------------------------------------------------------------------
