@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react";
 import Link from "next/link";
-import { ImageIcon, Plus } from "lucide-react";
+import { ImageIcon, LayoutGrid, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type {
   DatabaseProperty,
@@ -90,8 +90,12 @@ export function GalleryView({
 
   if (rows.length === 0 && !onAddRow) {
     return (
-      <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
-        No pages in this gallery
+      <div className="flex h-48 flex-col items-center justify-center gap-2">
+        <LayoutGrid className="h-12 w-12 text-muted-foreground" />
+        <p className="text-lg font-medium">No pages yet</p>
+        <p className="text-sm text-muted-foreground">
+          This gallery doesn&apos;t have any pages.
+        </p>
       </div>
     );
   }
@@ -111,6 +115,7 @@ export function GalleryView({
         <button
           type="button"
           onClick={handleAddRow}
+          aria-label="Add new page"
           className={cn(
             "flex items-center justify-center border border-dashed border-white/[0.12] bg-muted/50",
             "text-muted-foreground hover:border-white/[0.2] hover:text-foreground",
