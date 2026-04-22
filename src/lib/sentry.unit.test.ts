@@ -117,6 +117,45 @@ describe("isTransientNetworkError", () => {
     expect(isTransientNetworkError(error)).toBe(true);
   });
 
+  it("detects 'TypeError: fetch failed' message (Supabase-wrapped Node.js fetch)", () => {
+    const error = new Error("TypeError: fetch failed");
+    expect(isTransientNetworkError(error)).toBe(true);
+  });
+
+  it("detects 'TypeError: fetch failed' in PostgrestError message", () => {
+    const error = makePostgrestError({
+      message: "TypeError: fetch failed",
+      details:
+        "TypeError: fetch failed\n\nCaused by: Error: Client network socket disconnected before secure TLS connection was established (ECONNRESET)",
+    });
+    expect(isTransientNetworkError(error)).toBe(true);
+  });
+
+  it("detects ECONNRESET in PostgrestError details (Supabase cause chain)", () => {
+    const error = makePostgrestError({
+      message: "some wrapper message",
+      details:
+        "TypeError: fetch failed\n\nCaused by: Error: connect ECONNRESET 10.0.0.1:443",
+    });
+    expect(isTransientNetworkError(error)).toBe(true);
+  });
+
+  it("detects ENOTFOUND in PostgrestError details", () => {
+    const error = makePostgrestError({
+      message: "some wrapper message",
+      details: "getaddrinfo ENOTFOUND db.example.com",
+    });
+    expect(isTransientNetworkError(error)).toBe(true);
+  });
+
+  it("detects ETIMEDOUT in PostgrestError details", () => {
+    const error = makePostgrestError({
+      message: "some wrapper message",
+      details: "connect ETIMEDOUT 10.0.0.1:443",
+    });
+    expect(isTransientNetworkError(error)).toBe(true);
+  });
+
   it("returns false when cause is not an Error instance", () => {
     const error = new Error("some error", { cause: "string cause" });
     expect(isTransientNetworkError(error)).toBe(false);
