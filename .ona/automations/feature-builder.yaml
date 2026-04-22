@@ -143,21 +143,36 @@ action:
                 2. For each criterion, confirm your implementation satisfies it.
                    If a criterion cannot be verified locally (e.g., "works on mobile"), note it in the PR.
                 3. Run the full CI check: `pnpm lint && pnpm typecheck && pnpm test`
-                4. If the feature involves interactive UI (drag-and-drop, floating toolbars/menus,
-                   multi-step flows), write E2E tests in `e2e/` using Playwright. Use the auth
-                   fixture from `e2e/fixtures/auth.ts` for authenticated tests. See
-                   `.agents/conventions.md` → Testing → Playwright for patterns.
-                5. Run E2E tests: `pnpm test:e2e`
-                6. If you created or modified UI components, run visual regression tests:
-                   Build Storybook (`pnpm build-storybook`), serve it on port 6099
-                   (`python3 -m http.server 6099 -d storybook-static &`), then run
-                   `STORYBOOK_URL=http://localhost:6099 pnpm test:visual`.
-                   If new stories were added, first run with `--update-snapshots` to generate
-                   baselines, then run again without the flag to confirm they pass.
-                   Commit the updated baselines in `e2e/visual-regression.spec.ts-snapshots/`.
-                   Clean up: `kill $(lsof -ti:6099) 2>/dev/null; rm -rf storybook-static`
-                7. Fix any errors before proceeding.
-                8. If any acceptance criterion is NOT met, either fix it or explain in the PR body
+                4. **E2E tests are mandatory for interactive UI.** If your PR adds or modifies
+                   components with user interactions (onClick, onChange, onBlur, onKeyDown,
+                   dropdowns, dialogs, popovers, inline editing, drag-and-drop), you MUST write
+                   E2E tests in `e2e/` in this same PR. Do not defer E2E tests to follow-up issues.
+                   Use the auth fixture from `e2e/fixtures/auth.ts` for authenticated tests.
+                   See `.agents/conventions.md` → Testing for patterns and the testing pyramid.
+                5. **If your PR changes an existing interaction flow** (button behavior, dialog flow,
+                   dropdown behavior, keyboard shortcuts), search for ALL affected E2E tests:
+                   `grep -r '<component-name>\|<selector>\|<old-text>' e2e/`
+                   Update every affected test in this PR. Do not leave broken E2E tests for follow-up.
+                6. Run E2E tests: `pnpm test:e2e`
+                7. **Storybook visual verification.** If you created or modified UI components:
+                   a. Build and serve Storybook:
+                      `pnpm build-storybook && python3 -m http.server 6099 -d storybook-static &`
+                   b. Open each new/modified story in a browser viewport using Playwright or
+                      `exec_preview`. Visually verify the rendered output matches `.agents/design.md`.
+                      If the rendered output doesn't match, fix the component before proceeding.
+                   c. Run visual regression tests:
+                      `STORYBOOK_URL=http://localhost:6099 pnpm test:visual`
+                      If new stories were added, first run with `--update-snapshots` to generate
+                      baselines, then run again without the flag to confirm they pass.
+                   d. Commit the updated baselines in `e2e/visual-regression.spec.ts-snapshots/`.
+                   e. Clean up: `kill $(lsof -ti:6099) 2>/dev/null; rm -rf storybook-static`
+                8. **No source-grep tests for feature behavior.** Do not write Vitest tests that
+                   `readFileSync` source code and assert on string patterns. These verify
+                   implementation details, not behavior. Use component tests (Vitest + jsdom) or
+                   E2E tests (Playwright) instead. Source-grep tests are only allowed for
+                   structural convention enforcement. See `.agents/conventions.md` → Testing.
+                9. Fix any errors before proceeding.
+                10. If any acceptance criterion is NOT met, either fix it or explain in the PR body
                    why it was descoped (and create a follow-up issue if needed).
 
                 ## Update Knowledge Base

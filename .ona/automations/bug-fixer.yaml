@@ -107,6 +107,15 @@ action:
                      `e2e/fixtures/auth.ts` for authenticated tests. See `.agents/conventions.md`
                      → Testing → Playwright for patterns.
                      For logic/data bugs, add a Vitest unit or integration test.
+                   - **Search for ALL affected E2E tests.** When fixing a UI bug, your fix may
+                     change interaction flows, selectors, or text that existing E2E tests depend on.
+                     Before committing, search for every affected test:
+                     ```
+                     grep -r '<component-name>\|<selector>\|<changed-text>\|<old-label>' e2e/
+                     ```
+                     Update ALL affected tests in this PR. Do not leave broken E2E tests for
+                     follow-up issues. Incomplete fixes that only address the reported test file
+                     but miss other affected tests are not acceptable.
                    - For database changes: `npx supabase migration new <name>`
                    - If the fix changes component appearance, check for a co-located
                      `*.stories.tsx` file. If one exists, verify the story still renders

@@ -184,6 +184,27 @@ action:
                 Run: `node /tmp/smoke-test.mjs`
                 Delete: `rm -f /tmp/smoke-test.mjs`
 
+                ## Step 3c — Interaction smoke test for feature PRs
+
+                If the merged PR title starts with `feat:`, perform a lightweight interaction
+                check on the affected feature area. This catches bugs where E2E tests exist
+                but don't cover a specific interaction path.
+
+                1. Read the PR diff to identify which pages/components were added or modified.
+                2. Navigate to the affected page on the live site (authenticated if needed).
+                3. Perform basic interactions relevant to the feature:
+                   - Click buttons, open dropdowns, fill inputs
+                   - Verify dropdowns/popovers open and close correctly
+                   - Verify form submissions don't produce console errors
+                   - Verify no layout overflow or clipping issues (elements not cut off)
+                4. Take a screenshot of the page after interactions.
+                5. Check for console errors during the interaction flow.
+                6. If any interaction fails or produces errors, include it in the failure report.
+
+                This step is a safety net — it does not replace E2E tests. If this step catches
+                a bug that E2E tests missed, the bug issue should note that E2E coverage is
+                incomplete for the affected interaction.
+
                 ## Step 4 — Report results
 
                 Find the merged PR number from the trigger context.
