@@ -12,10 +12,10 @@ import {
   ArrowDown,
   ArrowUp,
   FileText,
-  Plus,
   Trash2,
 } from "lucide-react";
 import { PROPERTY_TYPE_ICON } from "@/lib/property-icons";
+import { PropertyTypePicker } from "@/components/database/property-type-picker";
 import type { SortRule } from "@/lib/database-filters";
 import { cn } from "@/lib/utils";
 import type {
@@ -59,8 +59,8 @@ export interface TableViewProps {
   onCellUpdate?: (rowId: string, propertyId: string, value: Record<string, unknown>) => void;
   /** Called when a new row should be added. */
   onAddRow?: () => void;
-  /** Called when a new column should be added. */
-  onAddColumn?: () => void;
+  /** Called when a new column should be added with the chosen property type. */
+  onAddColumn?: (type: PropertyType) => void;
   /** Called when column widths change (for persisting to view config). */
   onColumnWidthsChange?: (widths: Record<string, number>) => void;
   /** Called when a column header is clicked (for property config). */
@@ -522,14 +522,7 @@ export function TableView({
         {/* Add column header button */}
         <div className="sticky top-0 z-10 flex items-center justify-center border-b border-white/[0.06] bg-muted">
           {onAddColumn && (
-            <button
-              type="button"
-              onClick={onAddColumn}
-              className="flex h-full w-full items-center justify-center text-muted-foreground hover:text-foreground"
-              aria-label="Add column"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </button>
+            <PropertyTypePicker onSelect={onAddColumn} />
           )}
         </div>
 

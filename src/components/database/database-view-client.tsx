@@ -40,6 +40,7 @@ import type {
   DatabaseRow,
   DatabaseView,
   DatabaseViewType,
+  PropertyType,
 } from "@/lib/types";
 
 // Dynamically import view components to code-split database view types
@@ -541,15 +542,18 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     [],
   );
 
-  const handleAddColumn = useCallback(async () => {
-    const name = `Property ${properties.length + 1}`;
-    const { data: newProp, error } = await addProperty(pageId, name, "text");
-    if (error || !newProp) {
-      toast.error("Failed to add column", { duration: 8000 });
-      return;
-    }
-    setProperties((prev) => [...prev, newProp]);
-  }, [pageId, properties.length]);
+  const handleAddColumn = useCallback(
+    async (type: PropertyType) => {
+      const name = `Property ${properties.length + 1}`;
+      const { data: newProp, error } = await addProperty(pageId, name, type);
+      if (error || !newProp) {
+        toast.error("Failed to add column", { duration: 8000 });
+        return;
+      }
+      setProperties((prev) => [...prev, newProp]);
+    },
+    [pageId, properties.length],
+  );
 
   const handleColumnHeaderClick = useCallback(
     async (propertyId: string) => {
