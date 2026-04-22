@@ -24,6 +24,7 @@ import {
   deleteView,
   loadDatabase,
   loadWorkspaceMembers,
+  reorderProperties,
   reorderViews,
   updateProperty,
   updateRowValue,
@@ -575,6 +576,29 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     [properties],
   );
 
+  const handleColumnReorder = useCallback(
+    async (orderedPropertyIds: string[]) => {
+      // Optimistic update: reorder properties in state
+      const prevProperties = properties;
+      setProperties((prev) => {
+        const byId = new Map(prev.map((p) => [p.id, p]));
+        return orderedPropertyIds
+          .map((id, i) => {
+            const p = byId.get(id);
+            return p ? { ...p, position: i } : null;
+          })
+          .filter((p): p is NonNullable<typeof p> => p !== null);
+      });
+
+      const { error } = await reorderProperties(pageId, orderedPropertyIds);
+      if (error) {
+        toast.error("Failed to reorder columns", { duration: 8000 });
+        setProperties(prevProperties);
+      }
+    },
+    [pageId, properties],
+  );
+
   const handleDeleteRow = useCallback(
     async (rowId: string) => {
       // Optimistic removal
@@ -682,6 +706,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   onCellUpdate={handleCellUpdate}
                   onAddColumn={handleAddColumn}
                   onColumnHeaderClick={handleColumnHeaderClick}
+                  onColumnReorder={handleColumnReorder}
                   onDeleteRow={handleDeleteRow}
                   sorts={activeSorts}
                   onSortToggle={handleSortToggle}
