@@ -123,10 +123,16 @@ test.describe("Database CRUD", () => {
       timeout: 10_000,
     });
 
-    // Click the "Add column" button (+ icon in the last column header)
+    // Click the "Add column" button (+ icon in the last column header).
+    // This opens a PropertyTypePicker dropdown — select "Text".
     const addColumnBtn = page.locator('button[aria-label="Add column"]');
     await expect(addColumnBtn).toBeVisible({ timeout: 5_000 });
     await addColumnBtn.click();
+
+    // Select "Text" from the property type dropdown
+    const textMenuItem = page.getByRole("menuitem", { name: "Text" });
+    await expect(textMenuItem).toBeVisible({ timeout: 5_000 });
+    await textMenuItem.click();
 
     // Wait for the new column header to appear
     await page.waitForTimeout(1_500);
@@ -153,10 +159,15 @@ test.describe("Database CRUD", () => {
       timeout: 10_000,
     });
 
-    // Add a text property column so we have an editable cell
+    // Add a text property column so we have an editable cell.
+    // This opens a PropertyTypePicker dropdown — select "Text".
     const addColumnBtn = page.locator('button[aria-label="Add column"]');
     await expect(addColumnBtn).toBeVisible({ timeout: 5_000 });
     await addColumnBtn.click();
+
+    const textMenuItem = page.getByRole("menuitem", { name: "Text" });
+    await expect(textMenuItem).toBeVisible({ timeout: 5_000 });
+    await textMenuItem.click();
     await page.waitForTimeout(1_500);
 
     // Click on the property cell to start editing.
@@ -230,25 +241,33 @@ test.describe("Database CRUD", () => {
       timeout: 10_000,
     });
 
+    // Add a column via the PropertyTypePicker dropdown — select "Text".
     const addColumnBtn = page.locator('button[aria-label="Add column"]');
     await expect(addColumnBtn).toBeVisible({ timeout: 5_000 });
     await addColumnBtn.click();
+
+    const textMenuItem = page.getByRole("menuitem", { name: "Text" });
+    await expect(textMenuItem).toBeVisible({ timeout: 5_000 });
+    await textMenuItem.click();
     await page.waitForTimeout(1_500);
 
-    // Set up dialog handler before clicking the header.
-    // The rename uses window.prompt — handle it with a dialog listener.
-    page.on("dialog", async (dialog) => {
-      if (dialog.type() === "prompt") {
-        await dialog.accept("Renamed Column");
-      }
-    });
-
-    // Click the property column header button to trigger rename.
+    // Click the property column header button to open the rename dialog.
     const propertyHeader = page
       .locator('[role="columnheader"]', { hasText: /property/i })
       .first();
     const headerButton = propertyHeader.locator("button").first();
     await headerButton.click();
+
+    // The RenamePropertyDialog should appear with an input field.
+    const renameInput = page.locator('input#property-name');
+    await expect(renameInput).toBeVisible({ timeout: 5_000 });
+
+    // Clear the input and type the new name
+    await renameInput.fill("Renamed Column");
+
+    // Click the "Rename" button to confirm
+    const renameBtn = page.getByRole("button", { name: "Rename" });
+    await renameBtn.click();
 
     // Wait for the rename to take effect
     await page.waitForTimeout(2_000);
