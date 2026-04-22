@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { FileText, StarOff } from "lucide-react";
+import { FileText, StarOff, Table2 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { getClient } from "@/lib/supabase/lazy-client";
 import {
@@ -75,7 +75,7 @@ export function FavoritesSection({ userId }: FavoritesSectionProps) {
         const supabase = await getClient();
         return supabase
           .from("favorites")
-          .select("*, pages!inner(id, title, icon, deleted_at)")
+          .select("*, pages!inner(id, title, icon, is_database, deleted_at)")
           .eq("workspace_id", workspaceId)
           .eq("user_id", userId)
           .is("pages.deleted_at", null)
@@ -154,6 +154,8 @@ export function FavoritesSection({ userId }: FavoritesSectionProps) {
             <span className="flex h-4 w-4 shrink-0 items-center justify-center">
               {fav.pages.icon ? (
                 <span className="text-sm">{fav.pages.icon}</span>
+              ) : fav.pages.is_database ? (
+                <Table2 className="h-4 w-4" />
               ) : (
                 <FileText className="h-4 w-4" />
               )}

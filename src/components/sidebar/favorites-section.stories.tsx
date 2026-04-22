@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { FileText, StarOff } from "lucide-react";
+import { FileText, StarOff, Table2 } from "lucide-react";
 
 // FavoritesSection depends on next/navigation and Supabase.
 // These stories render the visual appearance with static data.
@@ -13,19 +13,22 @@ export { meta as default };
 type Story = StoryObj;
 
 const mockFavorites = [
-  { id: "fav-1", pageId: "p1", icon: "📝", title: "Meeting Notes" },
-  { id: "fav-2", pageId: "p2", icon: null, title: "Project Roadmap" },
-  { id: "fav-3", pageId: "p3", icon: "🚀", title: "Launch Plan" },
+  { id: "fav-1", pageId: "p1", icon: "📝", title: "Meeting Notes", isDatabase: false },
+  { id: "fav-2", pageId: "p2", icon: null, title: "Project Roadmap", isDatabase: false },
+  { id: "fav-3", pageId: "p3", icon: "🚀", title: "Launch Plan", isDatabase: false },
+  { id: "fav-4", pageId: "p4", icon: null, title: "Bug Tracker", isDatabase: true },
 ];
 
 function FavoriteItem({
   icon,
   title,
   isSelected,
+  isDatabase = false,
 }: {
   icon: string | null;
   title: string;
   isSelected?: boolean;
+  isDatabase?: boolean;
 }) {
   return (
     <div
@@ -38,6 +41,8 @@ function FavoriteItem({
       <span className="flex h-4 w-4 shrink-0 items-center justify-center">
         {icon ? (
           <span className="text-sm">{icon}</span>
+        ) : isDatabase ? (
+          <Table2 className="h-4 w-4" />
         ) : (
           <FileText className="h-4 w-4" />
         )}
@@ -65,6 +70,7 @@ export const WithFavorites: Story = {
             key={fav.id}
             icon={fav.icon}
             title={fav.title}
+            isDatabase={fav.isDatabase}
           />
         ))}
       </div>
@@ -82,6 +88,7 @@ export const WithSelectedFavorite: Story = {
         <FavoriteItem icon="📝" title="Meeting Notes" isSelected />
         <FavoriteItem icon={null} title="Project Roadmap" />
         <FavoriteItem icon="🚀" title="Launch Plan" />
+        <FavoriteItem icon={null} title="Bug Tracker" isDatabase />
       </div>
     </div>
   ),

@@ -96,6 +96,37 @@ describe("buildTree", () => {
   it("returns empty array for empty input", () => {
     expect(buildTree([])).toEqual([]);
   });
+
+  it("excludes database row pages (children of is_database pages) from the tree", () => {
+    const pages = [
+      makePage({ id: "root", position: 0 }),
+      makePage({ id: "db", position: 1, is_database: true }),
+      makePage({ id: "row-1", parent_id: "db", position: 0 }),
+      makePage({ id: "row-2", parent_id: "db", position: 1 }),
+    ];
+
+    const tree = buildTree(pages);
+
+    expect(tree).toHaveLength(2);
+    expect(tree.map((n) => n.page.id)).toEqual(["root", "db"]);
+    expect(tree[1].children).toHaveLength(0);
+  });
+
+  it("keeps non-database children in the tree", () => {
+    const pages = [
+      makePage({ id: "parent", position: 0 }),
+      makePage({ id: "child", parent_id: "parent", position: 0 }),
+      makePage({ id: "db", position: 1, is_database: true }),
+      makePage({ id: "row", parent_id: "db", position: 0 }),
+    ];
+
+    const tree = buildTree(pages);
+
+    expect(tree).toHaveLength(2);
+    expect(tree[0].children).toHaveLength(1);
+    expect(tree[0].children[0].page.id).toBe("child");
+    expect(tree[1].children).toHaveLength(0);
+  });
 });
 
 describe("getDescendantIds", () => {

@@ -83,6 +83,7 @@ export interface RecentPageVisit {
   visited_at: string;
   title: string;
   icon: string | null;
+  is_database: boolean;
 }
 
 export interface Favorite {
@@ -95,7 +96,7 @@ export interface Favorite {
 
 // Joined type for displaying favorites with page info
 export interface FavoriteWithPage extends Favorite {
-  pages: Pick<Page, "id" | "title" | "icon">;
+  pages: Pick<Page, "id" | "title" | "icon" | "is_database">;
 }
 
 export interface PageVersion {

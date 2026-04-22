@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { FileText, Search, X } from "lucide-react";
+import { FileText, Search, Table2, X } from "lucide-react";
 import { lazyCaptureException } from "@/lib/capture";
 import { Input } from "@/components/ui/input";
 import { getClient } from "@/lib/supabase/lazy-client";
@@ -16,6 +16,7 @@ interface SearchResult {
   parent_id: string | null;
   title: string;
   icon: string | null;
+  is_database: boolean;
   snippet: string;
   rank: number;
 }
@@ -395,6 +396,8 @@ export function PageSearch() {
               <span className="flex items-center gap-2 text-sm font-medium text-foreground">
                 {result.icon ? (
                   <span className="shrink-0 text-sm">{result.icon}</span>
+                ) : result.is_database ? (
+                  <Table2 className="h-4 w-4 shrink-0 text-muted-foreground" />
                 ) : (
                   <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                 )}

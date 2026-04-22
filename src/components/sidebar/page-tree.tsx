@@ -11,6 +11,7 @@ import {
   Plus,
   Star,
   StarOff,
+  Table2,
   Trash2,
 } from "lucide-react";
 import { toast } from "@/lib/toast";
@@ -41,6 +42,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { createDatabase } from "@/lib/database";
 import type { Page } from "@/lib/types";
 import {
   buildTree,
@@ -329,6 +331,27 @@ export function PageTree({ userId }: PageTreeProps) {
     },
     [workspaceId, workspaceSlug, pages, userId, router, setExpanded],
   );
+
+  const handleCreateDatabase = useCallback(async () => {
+    if (!workspaceId || !workspaceSlug) return;
+
+    const { data, error } = await createDatabase(workspaceId, userId);
+
+    if (error || !data) {
+      toast.error("Failed to create database", { duration: 8000 });
+      return;
+    }
+
+    const supabase = await getClient();
+    trackEventClient(supabase, "database.created", userId, {
+      workspaceId,
+      metadata: { page_id: data.page.id, source: "sidebar" },
+    });
+
+    setPages((prev) => [...prev, data.page]);
+    router.push(`/${workspaceSlug}/${data.page.id}`);
+    router.refresh();
+  }, [workspaceId, workspaceSlug, userId, router]);
 
   const handleDuplicate = useCallback(
     async (page: Page) => {
@@ -692,6 +715,15 @@ export function PageTree({ userId }: PageTreeProps) {
         <Plus className="h-4 w-4" />
         New Page
       </Button>
+      <Button
+        variant="ghost"
+        className="w-full justify-start gap-2 px-2 text-muted-foreground"
+        size="sm"
+        onClick={handleCreateDatabase}
+      >
+        <Table2 className="h-4 w-4" />
+        New Database
+      </Button>
 
       <AlertDialog
         open={deleteTarget !== null}
@@ -845,6 +877,8 @@ function PageTreeItem({
         <span className="flex h-4 w-4 shrink-0 items-center justify-center">
           {page.icon ? (
             <span className="text-sm">{page.icon}</span>
+          ) : page.is_database ? (
+            <Table2 className="h-4 w-4" />
           ) : (
             <FileText className="h-4 w-4" />
           )}
