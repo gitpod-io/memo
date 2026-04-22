@@ -36,8 +36,8 @@ export const Default: Story = {
         Open menu
       </DropdownMenuTrigger>
       <DropdownMenuContent>
-        <DropdownMenuLabel>Actions</DropdownMenuLabel>
         <DropdownMenuGroup>
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
           <DropdownMenuItem>
             <Settings className="h-4 w-4" />
             Settings
