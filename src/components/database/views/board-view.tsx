@@ -347,6 +347,8 @@ function BoardColumn({
     <div
       ref={columnRef}
       className="w-72 shrink-0 bg-muted/50 p-2"
+      data-testid={`board-column-${column.id}`}
+      data-column-label={column.label}
       onDragOver={handleColumnDragOver}
       onDragLeave={onDragLeave}
       onDrop={handleColumnDrop}
