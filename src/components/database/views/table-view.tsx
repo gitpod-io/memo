@@ -722,6 +722,31 @@ function TableCell({
     propertyType === "created_by";
 
   if (isEditing && !isReadOnly) {
+    // Types with specialized editors use the registry Editor component.
+    // Simple text-input types (text, number, url, email, phone) use a plain <input>.
+    const config = getPropertyTypeConfig(propertyType);
+    const hasRegistryEditor =
+      config?.Editor &&
+      propertyType !== "text" &&
+      propertyType !== "number" &&
+      propertyType !== "url" &&
+      propertyType !== "email" &&
+      propertyType !== "phone";
+
+    if (hasRegistryEditor) {
+      return (
+        <RegistryEditorCell
+          rowId={rowId}
+          propertyId={propertyId}
+          property={property}
+          propertyType={propertyType}
+          value={value}
+          rowHeightClass={rowHeightClass}
+          onBlur={onBlur}
+        />
+      );
+    }
+
     return (
       <div
         className={cn(
@@ -825,6 +850,64 @@ function TableCell({
         value={value}
         propertyType={propertyType}
         displayValue={displayValue}
+      />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// RegistryEditorCell — wraps a registry Editor, tracks value changes via ref,
+// and commits the latest value on blur so onChange→onBlur sequences work.
+// ---------------------------------------------------------------------------
+
+interface RegistryEditorCellProps {
+  rowId: string;
+  propertyId: string;
+  property: DatabaseProperty;
+  propertyType: PropertyType;
+  value: RowValue | undefined;
+  rowHeightClass: string;
+  onBlur: (rowId: string, propertyId: string, newValue: Record<string, unknown>) => void;
+}
+
+function RegistryEditorCell({
+  rowId,
+  propertyId,
+  property,
+  propertyType,
+  value,
+  rowHeightClass,
+  onBlur,
+}: RegistryEditorCellProps) {
+  const config = getPropertyTypeConfig(propertyType);
+  const Editor = config!.Editor!;
+  const latestValue = useRef<Record<string, unknown>>(value?.value ?? {});
+
+  const handleChange = useCallback(
+    (newValue: Record<string, unknown>) => {
+      latestValue.current = newValue;
+      onBlur(rowId, propertyId, newValue);
+    },
+    [rowId, propertyId, onBlur],
+  );
+
+  const handleBlur = useCallback(() => {
+    onBlur(rowId, propertyId, latestValue.current);
+  }, [rowId, propertyId, onBlur]);
+
+  return (
+    <div
+      className={cn(
+        "relative border-b border-white/[0.06]",
+        rowHeightClass,
+      )}
+      role="gridcell"
+    >
+      <Editor
+        value={value?.value ?? {}}
+        property={property}
+        onChange={handleChange}
+        onBlur={handleBlur}
       />
     </div>
   );
