@@ -32,9 +32,9 @@ export function PropertyTypePicker({ onSelect }: PropertyTypePickerProps) {
         <Plus className="h-3.5 w-3.5" />
       </DropdownMenuTrigger>
       <DropdownMenuContent side="bottom" align="start" className="w-48">
-        <DropdownMenuLabel>Property type</DropdownMenuLabel>
-        <DropdownMenuSeparator />
         <DropdownMenuGroup>
+          <DropdownMenuLabel>Property type</DropdownMenuLabel>
+          <DropdownMenuSeparator />
           {STANDARD_PROPERTY_TYPES.map((type) => {
             const Icon = PROPERTY_TYPE_ICON[type];
             return (
@@ -46,8 +46,8 @@ export function PropertyTypePicker({ onSelect }: PropertyTypePickerProps) {
           })}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuLabel>Advanced</DropdownMenuLabel>
         <DropdownMenuGroup>
+          <DropdownMenuLabel>Advanced</DropdownMenuLabel>
           {ADVANCED_PROPERTY_TYPES.map((type) => {
             const Icon = PROPERTY_TYPE_ICON[type];
             return (
