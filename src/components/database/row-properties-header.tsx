@@ -8,8 +8,9 @@ import {
   captureSupabaseError,
   isInsufficientPrivilegeError,
 } from "@/lib/sentry";
-import type { DatabaseProperty, PropertyType, RowValue } from "@/lib/types";
+import type { DatabaseProperty, DatabaseRow, PropertyType, RowValue } from "@/lib/types";
 import { getPropertyTypeConfig } from "@/components/database/property-types";
+import { evaluateFormulaForRow } from "@/components/database/property-types/formula";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -87,6 +88,8 @@ interface PropertyValueCellProps {
   pageId: string;
   property: DatabaseProperty;
   rowValue: RowValue | undefined;
+  allProperties: DatabaseProperty[];
+  row: DatabaseRow;
   pageCreatedAt: string;
   pageUpdatedAt: string;
   pageCreatedBy: string;
@@ -96,6 +99,8 @@ function PropertyValueCell({
   pageId,
   property,
   rowValue,
+  allProperties,
+  row,
   pageCreatedAt,
   pageUpdatedAt,
   pageCreatedBy,
@@ -130,6 +135,16 @@ function PropertyValueCell({
       pageCreatedBy,
     );
     return <ComputedValueDisplay displayValue={displayValue} />;
+  }
+
+  // Formula properties are read-only — evaluate and display
+  if (property.type === "formula") {
+    const formulaValue = evaluateFormulaForRow(property, row, allProperties);
+    if (formulaValue._error) {
+      return <span className="text-sm text-destructive">Error</span>;
+    }
+    const display = typeof formulaValue._display === "string" ? formulaValue._display : "";
+    return <ComputedValueDisplay displayValue={display} />;
   }
 
   // No config for this property type — show raw value
@@ -203,23 +218,40 @@ export function RowPropertiesHeader({
   return (
     <div className="mb-4 border-b border-white/[0.06] pb-4">
       <div className="space-y-1.5">
-        {visibleProperties.map((property) => (
-          <div key={property.id} className="flex items-start gap-4">
-            <span className="w-32 shrink-0 text-right text-xs text-muted-foreground leading-6">
-              {property.name}
-            </span>
-            <div className="min-w-0 flex-1 leading-6">
-              <PropertyValueCell
-                pageId={pageId}
-                property={property}
-                rowValue={values[property.id]}
-                pageCreatedAt={pageCreatedAt}
-                pageUpdatedAt={pageUpdatedAt}
-                pageCreatedBy={pageCreatedBy}
-              />
+        {visibleProperties.map((property) => {
+          // Build a minimal DatabaseRow for formula evaluation
+          const row: DatabaseRow = {
+            page: {
+              id: pageId,
+              title: "",
+              icon: null,
+              cover_url: null,
+              created_at: pageCreatedAt,
+              updated_at: pageUpdatedAt,
+              created_by: pageCreatedBy,
+            },
+            values,
+          };
+          return (
+            <div key={property.id} className="flex items-start gap-4">
+              <span className="w-32 shrink-0 text-right text-xs text-muted-foreground leading-6">
+                {property.name}
+              </span>
+              <div className="min-w-0 flex-1 leading-6">
+                <PropertyValueCell
+                  pageId={pageId}
+                  property={property}
+                  rowValue={values[property.id]}
+                  allProperties={properties}
+                  row={row}
+                  pageCreatedAt={pageCreatedAt}
+                  pageUpdatedAt={pageUpdatedAt}
+                  pageCreatedBy={pageCreatedBy}
+                />
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {needsCollapse && (

@@ -19,6 +19,7 @@ import {
   CreatedByRenderer,
 } from "./computed";
 import { RelationRenderer, RelationEditor } from "./relation";
+import { FormulaRenderer } from "./formula";
 
 // ---------------------------------------------------------------------------
 // Shared prop interfaces
@@ -96,6 +97,7 @@ const registry: Partial<Record<PropertyType, PropertyTypeConfig>> = {
   phone: { Renderer: PhoneRenderer, Editor: PhoneEditor },
   person: { Renderer: PersonRenderer, Editor: PersonEditor },
   files: { Renderer: FilesRenderer, Editor: FilesEditor },
+  formula: { Renderer: FormulaRenderer, Editor: null },
   created_time: { Renderer: CreatedTimeRenderer, Editor: null },
   updated_time: { Renderer: UpdatedTimeRenderer, Editor: null },
   created_by: { Renderer: CreatedByRenderer, Editor: null },
@@ -133,6 +135,7 @@ export const STANDARD_PROPERTY_TYPES: readonly PropertyType[] = [
 
 /** Auto-derived read-only property types shown under "Advanced" in type pickers. */
 export const ADVANCED_PROPERTY_TYPES: readonly PropertyType[] = [
+  "formula",
   "created_time",
   "updated_time",
   "created_by",
