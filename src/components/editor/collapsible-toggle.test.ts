@@ -87,3 +87,51 @@ describe("collapsible chevron CSS rotation", () => {
     expect(css).toContain("rotate(90deg)");
   });
 });
+
+/**
+ * Regression tests for issue #540: Enter key does not create a new line
+ * after toggle blocks.
+ *
+ * Root cause: CollapsibleTitleNode did not implement insertNewAfter, so
+ * Lexical's insertParagraph received null and did nothing. Additionally,
+ * there was no KEY_ENTER_COMMAND handler to let users escape the content
+ * area by pressing Enter on an empty trailing paragraph.
+ */
+describe("collapsible Enter key handling (#540)", () => {
+  const nodeSource = readSource("./collapsible-node.tsx");
+  const pluginSource = readSource("./collapsible-plugin.tsx");
+
+  it("CollapsibleTitleNode implements insertNewAfter", () => {
+    // Without insertNewAfter, pressing Enter in the title does nothing
+    // because ElementNode.insertNewAfter returns null by default.
+    expect(nodeSource).toContain("insertNewAfter(");
+    // Must reference CollapsibleContentNode to move cursor into content
+    expect(nodeSource).toMatch(
+      /insertNewAfter[\s\S]*CollapsibleContentNode/
+    );
+  });
+
+  it("CollapsibleTitleNode opens the container when entering content", () => {
+    // If the toggle is closed, entering the content area must open it
+    // so the user can see where the cursor moved.
+    expect(nodeSource).toMatch(
+      /insertNewAfter[\s\S]*setOpen\(true\)/
+    );
+  });
+
+  it("plugin registers KEY_ENTER_COMMAND for escaping content", () => {
+    // A KEY_ENTER_COMMAND handler must exist to let users break out of
+    // the collapsible content by pressing Enter on an empty last paragraph.
+    expect(pluginSource).toContain("KEY_ENTER_COMMAND");
+    expect(pluginSource).toContain("$isCollapsibleContentNode");
+    expect(pluginSource).toContain("$isCollapsibleContainerNode");
+  });
+
+  it("escape handler only triggers on empty last paragraph", () => {
+    // The handler must check that the paragraph is empty and is the
+    // last child of the content node to avoid interfering with normal
+    // paragraph creation inside the content area.
+    expect(pluginSource).toContain("getTextContentSize() !== 0");
+    expect(pluginSource).toContain("getLastChild()");
+  });
+});

@@ -8,8 +8,11 @@ import {
   $getNodeByKey,
   $getSelection,
   $insertNodes,
+  $isParagraphNode,
   $isRangeSelection,
   COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_LOW,
+  KEY_ENTER_COMMAND,
   createCommand,
   type LexicalCommand,
 } from "lexical";
@@ -17,6 +20,8 @@ import {
   $createCollapsibleContainerNode,
   $createCollapsibleContentNode,
   $createCollapsibleTitleNode,
+  $isCollapsibleContainerNode,
+  $isCollapsibleContentNode,
   CollapsibleContainerNode,
   CollapsibleContentNode,
   CollapsibleTitleNode,
@@ -42,7 +47,7 @@ export function CollapsiblePlugin(): null {
       );
     }
 
-    return editor.registerCommand(
+    const unregisterInsert = editor.registerCommand(
       INSERT_COLLAPSIBLE_COMMAND,
       () => {
         editor.update(() => {
@@ -75,6 +80,65 @@ export function CollapsiblePlugin(): null {
       },
       COMMAND_PRIORITY_EDITOR
     );
+
+    // When Enter is pressed on an empty last paragraph inside collapsible
+    // content, escape the collapsible by moving the paragraph after the
+    // container. This mirrors the behavior of lists and block quotes.
+    const unregisterEnter = editor.registerCommand(
+      KEY_ENTER_COMMAND,
+      (event) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          return false;
+        }
+
+        const anchorNode = selection.anchor.getNode();
+        const parentBlock =
+          $isParagraphNode(anchorNode)
+            ? anchorNode
+            : anchorNode.getParent();
+
+        if (
+          !$isParagraphNode(parentBlock) ||
+          parentBlock.getTextContentSize() !== 0
+        ) {
+          return false;
+        }
+
+        const contentNode = parentBlock.getParent();
+        if (!$isCollapsibleContentNode(contentNode)) {
+          return false;
+        }
+
+        // Only escape when the empty paragraph is the last child
+        if (contentNode.getLastChild()?.getKey() !== parentBlock.getKey()) {
+          return false;
+        }
+
+        const container = contentNode.getParent();
+        if (!$isCollapsibleContainerNode(container)) {
+          return false;
+        }
+
+        if (event) {
+          event.preventDefault();
+        }
+
+        // Move the empty paragraph out of the collapsible
+        parentBlock.remove();
+        const newParagraph = $createParagraphNode();
+        container.insertAfter(newParagraph);
+        newParagraph.selectStart();
+
+        return true;
+      },
+      COMMAND_PRIORITY_LOW
+    );
+
+    return () => {
+      unregisterInsert();
+      unregisterEnter();
+    };
   }, [editor]);
 
   // Handle toggle open/close via the chevron button.
