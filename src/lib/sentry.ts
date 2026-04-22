@@ -178,6 +178,27 @@ export function isDuplicateKeyError(error: Error): boolean {
 }
 
 /**
+ * True when PostgreSQL raises `statement_timeout` (57014). This occurs when a
+ * query or RPC exceeds the configured statement timeout — typically during
+ * cascading deletes or heavy operations on cold connections. This is a
+ * transient infrastructure issue, not an application bug, so it should be
+ * reported at warning level.
+ *
+ * Matches two shapes:
+ * 1. PostgrestError objects with `code: "57014"` (from `{ data, error }` path)
+ * 2. Generic Error with a `code` property set to `"57014"` (thrown path)
+ */
+export function isStatementTimeoutError(error: Error): boolean {
+  if (isPostgrestError(error)) {
+    return error.code === "57014";
+  }
+  return (
+    "code" in error &&
+    (error as Record<string, unknown>).code === "57014"
+  );
+}
+
+/**
  * Node.js native fetch (undici) wraps the real network error in the `cause`
  * property. These substrings in the cause message indicate transient failures.
  */
@@ -333,7 +354,8 @@ export function captureSupabaseError(
     isInsufficientPrivilegeError(error) ||
     isForeignKeyViolationError(error) ||
     isDuplicateKeyError(error) ||
-    isSupabaseAuthLockError(error)
+    isSupabaseAuthLockError(error) ||
+    isStatementTimeoutError(error)
   ) {
     lazyCaptureException(error, { extra, level: "warning" });
     return;
