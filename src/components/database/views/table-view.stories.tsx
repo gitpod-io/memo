@@ -166,6 +166,7 @@ const meta: Meta<typeof TableView> = {
     onAddColumn: fn(),
     onColumnWidthsChange: fn(),
     onColumnHeaderClick: fn(),
+    onColumnReorder: fn(),
   },
 };
 
@@ -300,5 +301,25 @@ export const SingleRow: Story = {
     rows: [mockRows[0]],
     properties: mockProperties,
     viewConfig: defaultConfig,
+  },
+};
+
+export const ColumnReorder: Story = {
+  name: "Column Reorder (drag headers)",
+  args: {
+    rows: mockRows,
+    properties: mockProperties,
+    viewConfig: defaultConfig,
+    onColumnReorder: fn(),
+  },
+};
+
+export const ColumnReorderDisabled: Story = {
+  name: "Column Reorder Disabled",
+  args: {
+    rows: mockRows,
+    properties: mockProperties,
+    viewConfig: defaultConfig,
+    onColumnReorder: undefined,
   },
 };

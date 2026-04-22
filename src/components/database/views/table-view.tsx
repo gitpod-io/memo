@@ -65,6 +65,8 @@ export interface TableViewProps {
   onColumnWidthsChange?: (widths: Record<string, number>) => void;
   /** Called when a column header is clicked (for property config). */
   onColumnHeaderClick?: (propertyId: string) => void;
+  /** Called when columns are reordered via drag-and-drop. Receives the new ordered property IDs. */
+  onColumnReorder?: (orderedPropertyIds: string[]) => void;
   /** Active sort rules (for displaying sort indicators in column headers). */
   sorts?: SortRule[];
   /** Called when a column header sort indicator is clicked. Cycles: unsorted → asc → desc → unsorted. */
@@ -85,6 +87,20 @@ interface EditingCell {
 }
 
 // ---------------------------------------------------------------------------
+// Column drag state
+// ---------------------------------------------------------------------------
+
+interface ColumnDragState {
+  /** The property ID of the column being dragged. */
+  propertyId: string;
+}
+
+interface ColumnDropTarget {
+  /** Index in visibleProperties where the dragged column would be inserted. */
+  insertIndex: number;
+}
+
+// ---------------------------------------------------------------------------
 // TableView
 // ---------------------------------------------------------------------------
 
@@ -98,6 +114,7 @@ export function TableView({
   onAddColumn,
   onColumnWidthsChange,
   onColumnHeaderClick,
+  onColumnReorder,
   onDeleteRow,
   sorts = [],
   onSortToggle,
@@ -199,6 +216,75 @@ export function TableView({
     prevResizingColumn.current = resizingColumn;
   }, [resizingColumn, columnWidths, onColumnWidthsChange]);
 
+  // --- Column drag-and-drop reorder ---
+
+  const [columnDrag, setColumnDrag] = useState<ColumnDragState | null>(null);
+  const [columnDropTarget, setColumnDropTarget] = useState<ColumnDropTarget | null>(null);
+
+  const handleColumnDragStart = useCallback(
+    (e: React.DragEvent, propertyId: string) => {
+      if (!onColumnReorder) return;
+      setColumnDrag({ propertyId });
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", propertyId);
+      if (e.currentTarget instanceof HTMLElement) {
+        e.currentTarget.style.opacity = "0.5";
+      }
+    },
+    [onColumnReorder],
+  );
+
+  const handleColumnDragEnd = useCallback((e: React.DragEvent) => {
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = "1";
+    }
+    setColumnDrag(null);
+    setColumnDropTarget(null);
+  }, []);
+
+  const handleColumnDragOver = useCallback(
+    (e: React.DragEvent, colIndex: number) => {
+      if (!columnDrag) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+
+      // Determine insert position based on cursor position within the header cell
+      const rect = e.currentTarget.getBoundingClientRect();
+      const midX = rect.left + rect.width / 2;
+      const insertIndex = e.clientX < midX ? colIndex : colIndex + 1;
+
+      setColumnDropTarget({ insertIndex });
+    },
+    [columnDrag],
+  );
+
+  const handleColumnDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      if (!columnDrag || !columnDropTarget || !onColumnReorder) return;
+
+      const draggedId = columnDrag.propertyId;
+      const fromIndex = visibleProperties.findIndex((p) => p.id === draggedId);
+      let toIndex = columnDropTarget.insertIndex;
+
+      // Adjust target index when moving right (the source removal shifts indices)
+      if (fromIndex < toIndex) {
+        toIndex -= 1;
+      }
+
+      if (fromIndex !== -1 && toIndex !== fromIndex) {
+        const newOrder = visibleProperties.map((p) => p.id);
+        const [removed] = newOrder.splice(fromIndex, 1);
+        newOrder.splice(toIndex, 0, removed);
+        onColumnReorder(newOrder);
+      }
+
+      setColumnDrag(null);
+      setColumnDropTarget(null);
+    },
+    [columnDrag, columnDropTarget, onColumnReorder, visibleProperties],
+  );
+
   // --- Cell editing ---
 
   const startEditing = useCallback((rowId: string, propertyId: string) => {
@@ -274,17 +360,41 @@ export function TableView({
               Title
             </span>
           </div>
-          {visibleProperties.map((prop) => {
+          {visibleProperties.map((prop, colIndex) => {
             const Icon = PROPERTY_TYPE_ICON[prop.type];
+            const isDragging = columnDrag?.propertyId === prop.id;
+            const showDropBefore =
+              columnDrag &&
+              columnDropTarget?.insertIndex === colIndex &&
+              columnDrag.propertyId !== prop.id;
+            const showDropAfter =
+              columnDrag &&
+              columnDropTarget?.insertIndex === colIndex + 1 &&
+              columnDrag.propertyId !== prop.id;
             return (
               <div
                 key={prop.id}
-                className="relative border-b border-white/[0.06] bg-muted p-2"
+                className={cn(
+                  "relative border-b border-white/[0.06] bg-muted p-2",
+                  onColumnReorder && "cursor-grab",
+                  isDragging && "opacity-50",
+                )}
+                draggable={!!onColumnReorder}
+                onDragStart={(e) => handleColumnDragStart(e, prop.id)}
+                onDragEnd={handleColumnDragEnd}
+                onDragOver={(e) => handleColumnDragOver(e, colIndex)}
+                onDrop={handleColumnDrop}
               >
+                {showDropBefore && (
+                  <div className="absolute left-0 top-0 z-20 h-full w-0.5 bg-accent" />
+                )}
                 <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-widest text-muted-foreground">
                   <Icon className="h-3 w-3" />
                   {prop.name}
                 </span>
+                {showDropAfter && (
+                  <div className="absolute right-0 top-0 z-20 h-full w-0.5 bg-accent" />
+                )}
               </div>
             );
           })}
@@ -328,15 +438,37 @@ export function TableView({
           </span>
         </div>
 
-        {visibleProperties.map((prop) => {
+        {visibleProperties.map((prop, colIndex) => {
           const Icon = PROPERTY_TYPE_ICON[prop.type];
           const sortRule = sorts.find((s) => s.property_id === prop.id);
+          const isDragging = columnDrag?.propertyId === prop.id;
+          const showDropBefore =
+            columnDrag &&
+            columnDropTarget?.insertIndex === colIndex &&
+            columnDrag.propertyId !== prop.id;
+          const showDropAfter =
+            columnDrag &&
+            columnDropTarget?.insertIndex === colIndex + 1 &&
+            columnDrag.propertyId !== prop.id;
           return (
             <div
               key={prop.id}
-              className="group/header sticky top-0 z-10 border-b border-white/[0.06] bg-muted p-2"
+              className={cn(
+                "group/header relative sticky top-0 z-10 border-b border-white/[0.06] bg-muted p-2",
+                onColumnReorder && "cursor-grab",
+                isDragging && "opacity-50",
+              )}
               role="columnheader"
+              draggable={!!onColumnReorder}
+              onDragStart={(e) => handleColumnDragStart(e, prop.id)}
+              onDragEnd={handleColumnDragEnd}
+              onDragOver={(e) => handleColumnDragOver(e, colIndex)}
+              onDrop={handleColumnDrop}
             >
+              {/* Drop indicator — left edge */}
+              {showDropBefore && (
+                <div className="absolute left-0 top-0 z-20 h-full w-0.5 bg-accent" />
+              )}
               <div className="flex w-full items-center gap-1.5">
                 <button
                   type="button"
@@ -367,6 +499,10 @@ export function TableView({
                   </button>
                 )}
               </div>
+              {/* Drop indicator — right edge */}
+              {showDropAfter && (
+                <div className="absolute right-0 top-0 z-20 h-full w-0.5 bg-accent" />
+              )}
               {/* Resize handle */}
               <div
                 className={cn(
