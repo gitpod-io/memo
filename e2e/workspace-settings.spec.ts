@@ -82,15 +82,19 @@ async function deleteTestWorkspace(workspaceId: string): Promise<void> {
 }
 
 /**
- * Clean up any non-personal workspaces whose name starts with a given prefix.
+ * Delete all non-personal workspaces owned by the given user.
+ * Called in beforeAll to guarantee a clean slate regardless of what
+ * previous (possibly crashed) test runs left behind.
  */
-async function cleanupTestWorkspaces(prefix: string): Promise<void> {
+async function cleanupAllNonPersonalWorkspaces(
+  userId: string
+): Promise<void> {
   const admin = getAdminClient();
   await admin
     .from("workspaces")
     .delete()
     .eq("is_personal", false)
-    .like("name", `${prefix}%`);
+    .eq("created_by", userId);
 }
 
 /**
@@ -123,12 +127,14 @@ test.describe("Workspace settings", () => {
 
   test.beforeAll(async () => {
     userId = await resolveTestUserId();
-    await cleanupTestWorkspaces("E2E WS").catch(() => {});
+    // Remove all non-personal workspaces for the test user to guarantee
+    // we stay under the 3-workspace limit, even if a previous run crashed
+    // and afterAll never ran.
+    await cleanupAllNonPersonalWorkspaces(userId).catch(() => {});
   });
 
   test.afterAll(async () => {
-    await cleanupTestWorkspaces("E2E WS").catch(() => {});
-    await cleanupTestWorkspaces("Renamed E2E").catch(() => {});
+    await cleanupAllNonPersonalWorkspaces(userId).catch(() => {});
   });
 
   test("personal workspace shows personal workspace message and no workspace delete button", async ({
