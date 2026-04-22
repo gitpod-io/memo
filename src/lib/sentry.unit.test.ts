@@ -16,6 +16,7 @@ import {
   isForeignKeyViolationError,
   isDuplicateKeyError,
   isStatementTimeoutError,
+  isEmptyResultError,
   isSupabaseAuthLockError,
   isSupabaseAuthLockContention,
   captureSupabaseError,
@@ -423,6 +424,38 @@ describe("isStatementTimeoutError", () => {
   });
 });
 
+describe("isEmptyResultError", () => {
+  it("detects PGRST116 empty result from .single() (MEMO-1P)", () => {
+    const error = makePostgrestError({
+      message: "Cannot coerce the result to a single JSON object",
+      code: "PGRST116",
+      details: "The result contains 0 rows",
+    });
+    expect(isEmptyResultError(error)).toBe(true);
+  });
+
+  it("returns false for other PostgREST errors", () => {
+    const error = makePostgrestError({
+      message: "some error",
+      code: "PGRST205",
+    });
+    expect(isEmptyResultError(error)).toBe(false);
+  });
+
+  it("returns false for generic errors with code property", () => {
+    const error = Object.assign(
+      new Error("some error"),
+      { code: "PGRST116" },
+    );
+    expect(isEmptyResultError(error)).toBe(false);
+  });
+
+  it("returns false for plain errors", () => {
+    const error = new Error("Cannot coerce the result to a single JSON object");
+    expect(isEmptyResultError(error)).toBe(false);
+  });
+});
+
 describe("isTransientStorageError", () => {
   it("detects StorageApiError database timeout (MEMO-1N)", () => {
     const error = new Error("The connection to the database timed out");
@@ -657,6 +690,22 @@ describe("captureSupabaseError", () => {
     expect(opts.level).toBe("warning");
     expect(opts.extra.operation).toBe("delete_account");
     expect(opts.extra.code).toBe("57014");
+  });
+
+  it("captures PGRST116 empty result at warning level (MEMO-1P)", async () => {
+    const error = makePostgrestError({
+      message: "Cannot coerce the result to a single JSON object",
+      code: "PGRST116",
+      details: "The result contains 0 rows",
+    });
+    captureSupabaseError(error, "database.addRow:lookup");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [, opts] = captureExceptionMock.mock.calls[0];
+    expect(opts.level).toBe("warning");
+    expect(opts.extra.operation).toBe("database.addRow:lookup");
+    expect(opts.extra.code).toBe("PGRST116");
   });
 
   it("captures StorageApiError database timeout at warning level (MEMO-1N)", async () => {

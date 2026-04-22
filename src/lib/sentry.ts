@@ -199,6 +199,20 @@ export function isStatementTimeoutError(error: Error): boolean {
 }
 
 /**
+ * True when PostgREST returns PGRST116 — "Cannot coerce the result to a
+ * single JSON object". This happens when `.single()` finds 0 rows, typically
+ * because the target row was deleted between the user action and the lookup
+ * (race condition during concurrent deletion or E2E test teardown). The
+ * caller already handles the null result gracefully, so this is not an
+ * application bug — it should be reported at warning level.
+ *
+ * See: Sentry MEMO-1P
+ */
+export function isEmptyResultError(error: Error): boolean {
+  return isPostgrestError(error) && error.code === "PGRST116";
+}
+
+/**
  * True when the error is a Supabase Storage API timeout. These are server-side
  * connection pool timeouts returned as HTTP 544 responses, not client-side
  * fetch failures. The `StorageApiError` from `@supabase/storage-js` has
@@ -374,7 +388,8 @@ export function captureSupabaseError(
     isForeignKeyViolationError(error) ||
     isDuplicateKeyError(error) ||
     isSupabaseAuthLockError(error) ||
-    isStatementTimeoutError(error)
+    isStatementTimeoutError(error) ||
+    isEmptyResultError(error)
   ) {
     lazyCaptureException(error, { extra, level: "warning" });
     return;
