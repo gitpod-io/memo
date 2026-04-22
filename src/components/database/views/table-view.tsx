@@ -46,6 +46,32 @@ const ROW_HEIGHT_CLASS: Record<NonNullable<DatabaseViewConfig["row_height"]>, st
   tall: "h-14",
 };
 
+/**
+ * Maps a property type to the key its registry editor/renderer expects inside
+ * the value object. For example, "text" → "text", "number" → "number", etc.
+ * Returns "value" for types without a specific key (fallback).
+ */
+function valueKeyForType(propertyType: PropertyType): string {
+  switch (propertyType) {
+    case "text":
+      return "text";
+    case "number":
+      return "number";
+    case "url":
+      return "url";
+    case "email":
+      return "email";
+    case "phone":
+      return "phone";
+    case "checkbox":
+      return "checked";
+    case "date":
+      return "date";
+    default:
+      return "value";
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
@@ -761,7 +787,14 @@ function TableCell({
           defaultValue={displayValue}
           className="h-full w-full bg-transparent px-2 text-sm text-foreground outline-none ring-2 ring-inset ring-accent"
           onKeyDown={(e) => onKeyDown(e, rowIndex, colIndex)}
-          onBlur={(e) => onBlur(rowId, propertyId, { value: e.target.value })}
+          onBlur={(e) => {
+            const key = valueKeyForType(propertyType);
+            const raw = e.target.value;
+            const parsed = propertyType === "number"
+              ? (raw === "" ? null : Number(raw))
+              : raw;
+            onBlur(rowId, propertyId, { [key]: parsed });
+          }}
         />
       </div>
     );
@@ -769,7 +802,8 @@ function TableCell({
 
   // Checkbox type: toggle on click
   if (propertyType === "checkbox") {
-    const checked = value?.value?.value === true;
+    const raw = value?.value;
+    const checked = raw?.checked === true || raw?.value === true;
     return (
       <div
         className={cn(
@@ -780,7 +814,7 @@ function TableCell({
       >
         <button
           type="button"
-          onClick={() => onBlur(rowId, propertyId, { value: !checked })}
+          onClick={() => onBlur(rowId, propertyId, { checked: !checked })}
           className={cn(
             "flex h-4 w-4 items-center justify-center border",
             checked
@@ -1050,22 +1084,29 @@ function extractDisplayValue(value: RowValue | undefined, propertyType: Property
   const raw = value.value;
   if (!raw) return "";
 
-  // Most values are stored as { value: <actual> }
-  const inner = raw.value;
+  // Read from the type-specific key first, then fall back to the legacy
+  // generic "value" key for data saved before the format was corrected.
+  const key = valueKeyForType(propertyType);
+  const typed = raw[key];
+  const legacy = raw.value;
 
   switch (propertyType) {
-    case "checkbox":
-      return inner === true ? "true" : inner === false ? "false" : "";
+    case "checkbox": {
+      const checked = typed ?? legacy;
+      return checked === true ? "true" : checked === false ? "false" : "";
+    }
     case "multi_select":
       // Multi-select is handled specially in CellRenderer
       return (raw.items as { value: string }[] | undefined)
         ?.map((i) => i.value)
         .join(", ") ?? "";
-    default:
+    default: {
+      const inner = typed ?? legacy;
       if (typeof inner === "string") return inner;
       if (typeof inner === "number") return String(inner);
       if (inner === null || inner === undefined) return "";
       return String(inner);
+    }
   }
 }
 

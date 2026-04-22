@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import type { RendererProps, EditorProps } from "./index";
 
 export function EmailRenderer({ value }: RendererProps) {
-  const email = typeof value.email === "string" ? value.email : "";
+  const email = typeof value.email === "string"
+    ? value.email
+    : typeof value.value === "string" ? value.value : "";
   if (!email) return null;
 
   return (
@@ -21,7 +23,9 @@ export function EmailRenderer({ value }: RendererProps) {
 
 export function EmailEditor({ value, onChange, onBlur }: EditorProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const email = typeof value.email === "string" ? value.email : "";
+  const email = typeof value.email === "string"
+    ? value.email
+    : typeof value.value === "string" ? value.value : "";
 
   useEffect(() => {
     inputRef.current?.focus();

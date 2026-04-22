@@ -82,6 +82,24 @@ async function createDatabaseWithRow(
   return pageId;
 }
 
+/**
+ * Add a column via the PropertyTypePicker dropdown.
+ */
+async function addColumnViaTypePicker(
+  page: import("@playwright/test").Page,
+  typeName = "Text",
+) {
+  const addColumnBtn = page.locator('button[aria-label="Add column"]');
+  await expect(addColumnBtn).toBeVisible({ timeout: 5_000 });
+  await addColumnBtn.click();
+
+  const menuItem = page.getByRole("menuitem", { name: typeName });
+  await expect(menuItem).toBeVisible({ timeout: 5_000 });
+  await menuItem.click();
+
+  await page.waitForTimeout(1_500);
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -308,5 +326,48 @@ test.describe("Database Row Page", () => {
     // The database grid should be visible again
     const grid = page.locator('[role="grid"]');
     await expect(grid).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("text value edited in table view is visible on the row page", async ({
+    authenticatedPage: page,
+  }) => {
+    await createDatabaseWithRow(page);
+
+    // Add a text property column
+    await addColumnViaTypePicker(page, "Text");
+
+    // Click the first editable cell to start inline editing
+    const editableCells = page.locator('[role="gridcell"][tabindex="0"]');
+    await expect(editableCells.first()).toBeVisible({ timeout: 5_000 });
+    await editableCells.first().click();
+
+    const cellInput = page.locator(
+      '[role="gridcell"] input[type="text"], [role="gridcell"] input[type="number"]',
+    );
+    await expect(cellInput).toBeVisible({ timeout: 5_000 });
+
+    // Type a value and blur to save
+    await cellInput.fill("Hello from table");
+    await page.locator("h1, input[aria-label]").first().click();
+    await page.waitForTimeout(1_500);
+
+    // Verify the value is displayed in the table cell
+    await expect(
+      page.locator('[role="gridcell"]', { hasText: "Hello from table" }).first(),
+    ).toBeVisible({ timeout: 5_000 });
+
+    // Navigate to the row page
+    const rowLink = page.locator('[role="gridcell"] a').first();
+    await expect(rowLink).toBeVisible({ timeout: 5_000 });
+    await rowLink.click();
+
+    // Wait for the row page to load
+    const editor = page.locator('[contenteditable="true"]');
+    await expect(editor).toBeVisible({ timeout: 15_000 });
+
+    // The property value should be visible on the row page (not "Empty")
+    await expect(
+      page.locator("text=Hello from table").first(),
+    ).toBeVisible({ timeout: 10_000 });
   });
 });
