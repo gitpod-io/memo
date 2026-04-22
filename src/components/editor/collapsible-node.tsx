@@ -4,12 +4,14 @@ import type {
   DOMExportOutput,
   LexicalNode,
   NodeKey,
+  RangeSelection,
   SerializedElementNode,
   Spread,
 } from "lexical";
 import {
   $applyNodeReplacement,
   $createParagraphNode,
+  $isElementNode,
   ElementNode,
 } from "lexical";
 
@@ -152,6 +154,34 @@ export class CollapsibleTitleNode extends ElementNode {
 
   isInline(): boolean {
     return false;
+  }
+
+  insertNewAfter(_selection: RangeSelection): LexicalNode | null {
+    // Enter in the title: move cursor into the content area.
+    const container = this.getParent();
+    if (container instanceof CollapsibleContainerNode) {
+      const contentNode = this.getNextSibling();
+      if (contentNode instanceof CollapsibleContentNode) {
+        const firstChild = contentNode.getFirstChild();
+        if ($isElementNode(firstChild)) {
+          firstChild.selectStart();
+        } else {
+          // Content is empty — insert a paragraph and select it
+          const paragraph = $createParagraphNode();
+          contentNode.append(paragraph);
+          paragraph.selectStart();
+        }
+        // Ensure the toggle is open so the user can see the content
+        if (!container.getOpen()) {
+          container.setOpen(true);
+        }
+        return null;
+      }
+    }
+    // Fallback: create a paragraph after the title
+    const paragraph = $createParagraphNode();
+    this.insertAfter(paragraph);
+    return paragraph;
   }
 
   collapseAtStart(): boolean {
