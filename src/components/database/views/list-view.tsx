@@ -65,7 +65,7 @@ export function ListView({
         {onAddRow && (
           <button
             type="button"
-            onClick={onAddRow}
+            onClick={() => onAddRow()}
             className="flex w-full items-center gap-1.5 border-t border-white/[0.06] px-3 py-2 text-sm text-muted-foreground hover:bg-white/[0.04]"
           >
             <Plus className="h-3.5 w-3.5" />
@@ -90,7 +90,7 @@ export function ListView({
       {onAddRow && (
         <button
           type="button"
-          onClick={onAddRow}
+          onClick={() => onAddRow()}
           className="flex w-full items-center gap-1.5 border-t border-white/[0.06] px-3 py-2 text-sm text-muted-foreground hover:bg-white/[0.04]"
         >
           <Plus className="h-3.5 w-3.5" />

@@ -1423,6 +1423,33 @@ if (config) {
 }
 ```
 
+## Event Handler Argument Leaks
+
+Never pass a callback that accepts optional business arguments directly to `onClick`.
+The browser forwards the `MouseEvent` as the first argument, which gets misinterpreted
+as the optional parameter.
+
+```typescript
+// ❌ BAD — MouseEvent leaks as initialValues
+<button onClick={onAddRow}>+ New</button>
+
+// ✅ GOOD — arrow function discards the event
+<button onClick={() => onAddRow()}>+ New</button>
+```
+
+When a callback accepts optional structured data (e.g. `initialValues?: Record<…>`),
+the receiving function should also guard against non-plain objects as defense-in-depth:
+
+```typescript
+const safeValues =
+  initialValues &&
+  typeof initialValues === "object" &&
+  !Array.isArray(initialValues) &&
+  Object.getPrototypeOf(initialValues) === Object.prototype
+    ? initialValues
+    : undefined;
+```
+
 ## This file evolves
 
 When you discover a new pattern that should be replicated, or an anti-pattern that

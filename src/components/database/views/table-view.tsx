@@ -300,7 +300,7 @@ export function TableView({
         {onAddRow && (
           <button
             type="button"
-            onClick={onAddRow}
+            onClick={() => onAddRow()}
             className="w-full border-t border-white/[0.06] p-2 text-left text-sm text-muted-foreground hover:bg-white/[0.02]"
           >
             + New
@@ -420,7 +420,7 @@ export function TableView({
       {onAddRow && (
         <button
           type="button"
-          onClick={onAddRow}
+          onClick={() => onAddRow()}
           className="w-full border-t border-white/[0.06] p-2 text-left text-sm text-muted-foreground hover:bg-white/[0.02]"
         >
           + New
