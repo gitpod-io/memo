@@ -3,11 +3,14 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
+import { computePosition, flip, shift, offset } from "@floating-ui/react";
 import {
   ArrowDown,
   ArrowUp,
@@ -856,8 +859,21 @@ function TableCell({
 }
 
 // ---------------------------------------------------------------------------
+// Property types whose editors render floating panels (calendars, dropdowns)
+// that must escape the table's overflow-x-auto clipping context via a portal.
+// ---------------------------------------------------------------------------
+
+const PORTALED_EDITOR_TYPES: ReadonlySet<PropertyType> = new Set([
+  "date",
+  "select",
+  "multi_select",
+]);
+
+// ---------------------------------------------------------------------------
 // RegistryEditorCell — wraps a registry Editor, tracks value changes via ref,
 // and commits the latest value on blur so onChange→onBlur sequences work.
+// For date/select/multi_select, renders the editor in a portal positioned
+// relative to the cell so it is not clipped by the table overflow.
 // ---------------------------------------------------------------------------
 
 interface RegistryEditorCellProps {
@@ -882,6 +898,9 @@ function RegistryEditorCell({
   const config = getPropertyTypeConfig(propertyType);
   const Editor = config!.Editor!;
   const latestValue = useRef<Record<string, unknown>>(value?.value ?? {});
+  const cellRef = useRef<HTMLDivElement>(null);
+  const floatingRef = useRef<HTMLDivElement>(null);
+  const needsPortal = PORTALED_EDITOR_TYPES.has(propertyType);
 
   const handleChange = useCallback(
     (newValue: Record<string, unknown>) => {
@@ -894,6 +913,52 @@ function RegistryEditorCell({
   const handleBlur = useCallback(() => {
     onBlur(rowId, propertyId, latestValue.current);
   }, [rowId, propertyId, onBlur]);
+
+  // Position the portaled editor below the cell anchor
+  useLayoutEffect(() => {
+    if (!needsPortal) return;
+    const anchor = cellRef.current;
+    const floating = floatingRef.current;
+    if (!anchor || !floating) return;
+
+    void computePosition(anchor, floating, {
+      placement: "bottom-start",
+      middleware: [offset(2), flip({ padding: 8 }), shift({ padding: 8 })],
+    }).then(({ x, y }) => {
+      floating.style.left = `${x}px`;
+      floating.style.top = `${y}px`;
+    });
+  });
+
+  if (needsPortal) {
+    return (
+      <>
+        <div
+          ref={cellRef}
+          className={cn(
+            "border-b border-white/[0.06]",
+            rowHeightClass,
+          )}
+          role="gridcell"
+        />
+        {createPortal(
+          <div
+            ref={floatingRef}
+            className="absolute z-50"
+            style={{ left: 0, top: 0 }}
+          >
+            <Editor
+              value={value?.value ?? {}}
+              property={property}
+              onChange={handleChange}
+              onBlur={handleBlur}
+            />
+          </div>,
+          document.body,
+        )}
+      </>
+    );
+  }
 
   return (
     <div
