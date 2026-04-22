@@ -12,6 +12,7 @@ import { UrlRenderer, UrlEditor } from "./url";
 import { EmailRenderer, EmailEditor } from "./email";
 import { PhoneRenderer, PhoneEditor } from "./phone";
 import { PersonRenderer, PersonEditor } from "./person";
+import { FilesRenderer, FilesEditor } from "./files";
 import {
   CreatedTimeRenderer,
   UpdatedTimeRenderer,
@@ -93,6 +94,7 @@ const registry: Partial<Record<PropertyType, PropertyTypeConfig>> = {
   email: { Renderer: EmailRenderer, Editor: EmailEditor },
   phone: { Renderer: PhoneRenderer, Editor: PhoneEditor },
   person: { Renderer: PersonRenderer, Editor: PersonEditor },
+  files: { Renderer: FilesRenderer, Editor: FilesEditor },
   created_time: { Renderer: CreatedTimeRenderer, Editor: null },
   updated_time: { Renderer: UpdatedTimeRenderer, Editor: null },
   created_by: { Renderer: CreatedByRenderer, Editor: null },
