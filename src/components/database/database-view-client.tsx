@@ -708,6 +708,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   properties={properties}
                   viewConfig={activeView.config}
                   workspaceSlug={workspaceSlug}
+                  onAddRow={handleAddRow}
                 />
               ) : activeView?.type === "gallery" ? (
                 <GalleryView
