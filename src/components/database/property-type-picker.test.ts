@@ -24,6 +24,13 @@ function readTableView(): string {
   );
 }
 
+function readPropertyTypePicker(): string {
+  return readFileSync(
+    resolve(__dirname, "./property-type-picker.tsx"),
+    "utf-8",
+  );
+}
+
 describe("property type selector regression (#538)", () => {
   const viewClient = readViewClient();
 
@@ -51,5 +58,39 @@ describe("property type selector regression (#538)", () => {
   it("table view onAddColumn accepts a PropertyType parameter", () => {
     const tableView = readTableView();
     expect(tableView).toMatch(/onAddColumn\?\s*:\s*\(\s*type\s*:\s*PropertyType\s*\)/);
+  });
+});
+
+/**
+ * Regression test for issue #547 / Sentry MEMO-1E: DropdownMenuLabel must be
+ * inside DropdownMenuGroup.
+ *
+ * DropdownMenuLabel renders Base UI's Menu.GroupLabel, which requires a
+ * Menu.Group ancestor. When placed outside, Base UI throws error #31
+ * ("MenuGroupRootContext is missing").
+ */
+describe("DropdownMenuLabel inside DropdownMenuGroup (#547)", () => {
+  const source = readPropertyTypePicker();
+
+  it("every DropdownMenuLabel is preceded by a DropdownMenuGroup open tag (not a close tag)", () => {
+    // Find every <DropdownMenuLabel and check that the closest preceding
+    // DropdownMenuGroup tag is an opening tag, not a closing tag.
+    const labelPattern = /<DropdownMenuLabel/g;
+    let match: RegExpExecArray | null;
+    let count = 0;
+
+    while ((match = labelPattern.exec(source)) !== null) {
+      count++;
+      const before = source.slice(0, match.index);
+      const lastOpen = before.lastIndexOf("<DropdownMenuGroup");
+      const lastClose = before.lastIndexOf("</DropdownMenuGroup");
+
+      expect(lastOpen).toBeGreaterThan(
+        lastClose,
+      );
+    }
+
+    // Sanity: we found at least one label
+    expect(count).toBeGreaterThanOrEqual(1);
   });
 });
