@@ -73,6 +73,11 @@ async function addColumn(page: import("@playwright/test").Page) {
   const addColumnBtn = page.locator('button[aria-label="Add column"]');
   await expect(addColumnBtn).toBeVisible({ timeout: 5_000 });
   await addColumnBtn.click();
+
+  // Select "Text" from the PropertyTypePicker dropdown to dismiss the overlay
+  const textMenuItem = page.getByRole("menuitem", { name: "Text" });
+  await expect(textMenuItem).toBeVisible({ timeout: 5_000 });
+  await textMenuItem.click();
   await page.waitForTimeout(1_500);
 }
 

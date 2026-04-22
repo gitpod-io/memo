@@ -111,10 +111,15 @@ test.describe("Database Row Page", () => {
   }) => {
     await createDatabaseWithRow(page);
 
-    // Add a text property column so the row page has a property to display
+    // Add a text property column so the row page has a property to display.
+    // Select "Text" from the PropertyTypePicker dropdown to dismiss the overlay.
     const addColumnBtn = page.locator('button[aria-label="Add column"]');
     await expect(addColumnBtn).toBeVisible({ timeout: 5_000 });
     await addColumnBtn.click();
+
+    const textMenuItem = page.getByRole("menuitem", { name: "Text" });
+    await expect(textMenuItem).toBeVisible({ timeout: 5_000 });
+    await textMenuItem.click();
     await page.waitForTimeout(1_500);
 
     // Navigate to the row page
