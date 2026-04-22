@@ -157,6 +157,27 @@ export function isForeignKeyViolationError(error: Error): boolean {
 }
 
 /**
+ * True when PostgreSQL raises `unique_violation` (23505). This occurs when a
+ * concurrent insert races against the same unique constraint — e.g. rapid
+ * double-click on "add property" generates the same auto-incremented name
+ * before state updates. This is an expected race condition, not an application
+ * bug, so it should be reported at warning level.
+ *
+ * Matches two shapes:
+ * 1. PostgrestError objects with `code: "23505"` (from `{ data, error }` path)
+ * 2. Generic Error with a `code` property set to `"23505"` (thrown path)
+ */
+export function isDuplicateKeyError(error: Error): boolean {
+  if (isPostgrestError(error)) {
+    return error.code === "23505";
+  }
+  return (
+    "code" in error &&
+    (error as Record<string, unknown>).code === "23505"
+  );
+}
+
+/**
  * Node.js native fetch (undici) wraps the real network error in the `cause`
  * property. These substrings in the cause message indicate transient failures.
  */
@@ -311,6 +332,7 @@ export function captureSupabaseError(
     isSchemaNotFoundError(error) ||
     isInsufficientPrivilegeError(error) ||
     isForeignKeyViolationError(error) ||
+    isDuplicateKeyError(error) ||
     isSupabaseAuthLockError(error)
   ) {
     lazyCaptureException(error, { extra, level: "warning" });

@@ -1273,6 +1273,36 @@ if (error) {
 }
 ```
 
+### Duplicate key violations on concurrent mutations (PostgreSQL 23505)
+
+When a user rapidly triggers the same mutation (e.g. double-clicking "add
+property"), two identical inserts can race against a unique constraint before
+React state updates. PostgreSQL returns error code `23505`
+(`unique_violation`). This is an expected race condition, not an application
+bug.
+
+**Prevention:** Use a `useRef` boolean guard to prevent concurrent calls in
+event handlers that trigger inserts with auto-generated names:
+
+```typescript
+const isAdding = useRef(false);
+
+const handleAdd = useCallback(async () => {
+  if (isAdding.current) return;
+  isAdding.current = true;
+  try {
+    // ... insert logic
+  } finally {
+    isAdding.current = false;
+  }
+}, [deps]);
+```
+
+**Safety net:** `captureSupabaseError` automatically downgrades `23505` to
+warning level via `isDuplicateKeyError`. Client-side code that guards before
+calling `captureSupabaseError` can also skip `isDuplicateKeyError` to avoid
+reporting entirely.
+
 ### Supabase auth lock contention errors
 
 The Supabase client uses the Web Lock API to serialize auth token refresh.
