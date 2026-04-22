@@ -14,21 +14,39 @@ function getAdminClient() {
 
 async function resolveTestUserId(): Promise<string> {
   const admin = getAdminClient();
-  const { data } = await admin.auth.admin.listUsers({ perPage: 1000 });
-  const user = data.users.find(
-    (u) => u.email === process.env.TEST_USER_EMAIL
-  );
-  if (!user) throw new Error("Test user not found");
-  return user.id;
+  const { data, error } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("email", process.env.TEST_USER_EMAIL!)
+    .maybeSingle();
+
+  if (error || !data) {
+    throw new Error(
+      `Test user ${process.env.TEST_USER_EMAIL} not found in profiles: ${error?.message ?? "no match"}`
+    );
+  }
+  return data.id;
 }
 
-async function cleanupTestWorkspaces(): Promise<void> {
+async function cleanupTestWorkspaces(userId?: string): Promise<void> {
   const admin = getAdminClient();
+
+  // Delete workspaces matching the test prefix
   await admin
     .from("workspaces")
     .delete()
     .eq("is_personal", false)
     .like("name", `${WS_PREFIX}%`);
+
+  // Also delete all non-personal workspaces created by the test user
+  // to handle stale data from crashed test runs
+  if (userId) {
+    await admin
+      .from("workspaces")
+      .delete()
+      .eq("is_personal", false)
+      .eq("created_by", userId);
+  }
 }
 
 /**
@@ -57,11 +75,11 @@ test.describe("Workspace creation limit", () => {
 
   test.beforeAll(async () => {
     userId = await resolveTestUserId();
-    await cleanupTestWorkspaces();
+    await cleanupTestWorkspaces(userId);
   });
 
   test.afterAll(async () => {
-    await cleanupTestWorkspaces();
+    await cleanupTestWorkspaces(userId);
   });
 
   test("enforces workspace creation limit end-to-end", async ({
@@ -97,6 +115,11 @@ test.describe("Workspace creation limit", () => {
     await nameInput.fill(ws2Name);
     await dialog.getByRole("button", { name: /create workspace/i }).click();
 
+    // Wait for navigation after second workspace creation
+    await page.waitForURL(
+      (url) => !url.pathname.includes("/sign-in"),
+      { timeout: 15_000 }
+    );
     await page.waitForLoadState("networkidle");
 
     // Reload to ensure the WorkspaceSwitcher has fresh data
@@ -115,7 +138,9 @@ test.describe("Workspace creation limit", () => {
       name: /create workspace/i,
     });
     await expect(createItem).toBeVisible({ timeout: 3_000 });
-    await expect(createItem.getByText("Limit reached")).toBeVisible();
+    await expect(createItem.getByText("Limit reached")).toBeVisible({
+      timeout: 5_000,
+    });
 
     // ── Step 3: Verify the dialog shows the limit message ──
 
