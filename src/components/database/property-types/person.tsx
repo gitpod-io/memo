@@ -287,8 +287,8 @@ export function PersonEditor({
             <div key={i} className="flex items-center gap-2 px-2 py-1.5">
               <span className="size-5 shrink-0 animate-pulse rounded-full bg-muted" />
               <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="h-3 w-24 animate-pulse rounded bg-muted" />
-                <span className="h-2.5 w-32 animate-pulse rounded bg-muted" />
+                <span className="h-3 w-24 animate-pulse bg-muted" />
+                <span className="h-2.5 w-32 animate-pulse bg-muted" />
               </div>
             </div>
           ))}
