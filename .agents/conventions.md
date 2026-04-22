@@ -1244,6 +1244,34 @@ Additionally, `captureSupabaseError` automatically downgrades `PGRST205` errors 
 `warning` level as a safety net, but callers should still skip the call entirely for
 read operations on optional tables to avoid unnecessary noise.
 
+## Empty Result from `.single()` (PostgREST PGRST116)
+
+When a `.single()` call returns 0 rows, PostgREST returns PGRST116 ("Cannot coerce
+the result to a single JSON object"). This happens when the target row was deleted
+between the user action and the lookup — a race condition during concurrent deletion
+or E2E test teardown. The caller already handles the null result gracefully (returns
+`{ data: null, error }`), so this is not an application bug.
+
+`captureSupabaseError` automatically downgrades PGRST116 to `warning` level via
+`isEmptyResultError`. No per-call-site changes are needed — all ~12 `.single()` calls
+in `database.ts` benefit from the general classifier.
+
+If a caller needs to distinguish "not found" from other errors (e.g. to return 404),
+use `isEmptyResultError` before `captureSupabaseError`:
+
+```typescript
+import { captureSupabaseError, isEmptyResultError } from "@/lib/sentry";
+
+const { data, error } = await supabase.from("pages").select("*").eq("id", id).single();
+if (error) {
+  if (isEmptyResultError(error)) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  captureSupabaseError(error, "pages:lookup");
+  return NextResponse.json({ error: "Operation failed" }, { status: 500 });
+}
+```
+
 ## Authorization Errors in API Routes (PostgreSQL 42501)
 
 When an RPC uses `RAISE EXCEPTION` to reject callers who lack access (e.g.
