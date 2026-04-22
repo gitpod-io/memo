@@ -12,10 +12,19 @@ import {
   ArrowDown,
   ArrowUp,
   FileText,
+  MoreHorizontal,
+  Pencil,
   Trash2,
 } from "lucide-react";
 import { PROPERTY_TYPE_ICON } from "@/lib/property-icons";
 import { PropertyTypePicker } from "@/components/database/property-type-picker";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { SortRule } from "@/lib/database-filters";
 import { cn } from "@/lib/utils";
 import type {
@@ -67,6 +76,8 @@ export interface TableViewProps {
   onColumnHeaderClick?: (propertyId: string) => void;
   /** Called when columns are reordered via drag-and-drop. Receives the new ordered property IDs. */
   onColumnReorder?: (orderedPropertyIds: string[]) => void;
+  /** Called when a column should be deleted. Receives the property ID. */
+  onDeleteColumn?: (propertyId: string) => void;
   /** Active sort rules (for displaying sort indicators in column headers). */
   sorts?: SortRule[];
   /** Called when a column header sort indicator is clicked. Cycles: unsorted → asc → desc → unsorted. */
@@ -115,6 +126,7 @@ export function TableView({
   onColumnWidthsChange,
   onColumnHeaderClick,
   onColumnReorder,
+  onDeleteColumn,
   onDeleteRow,
   sorts = [],
   onSortToggle,
@@ -470,14 +482,10 @@ export function TableView({
                 <div className="absolute left-0 top-0 z-20 h-full w-0.5 bg-accent" />
               )}
               <div className="flex w-full items-center gap-1.5">
-                <button
-                  type="button"
-                  className="flex min-w-0 flex-1 items-center gap-1.5 text-left text-xs font-medium uppercase tracking-widest text-muted-foreground hover:text-foreground"
-                  onClick={() => onColumnHeaderClick?.(prop.id)}
-                >
+                <span className="flex min-w-0 flex-1 items-center gap-1.5 text-xs font-medium uppercase tracking-widest text-muted-foreground">
                   <Icon className="h-3 w-3 shrink-0" />
                   <span className="truncate">{prop.name}</span>
-                </button>
+                </span>
                 {/* Sort indicator — click to cycle */}
                 {onSortToggle && (
                   <button
@@ -497,6 +505,37 @@ export function TableView({
                       <ArrowUp className="h-3 w-3" />
                     )}
                   </button>
+                )}
+                {/* Column header menu — rename / delete */}
+                {(onColumnHeaderClick || onDeleteColumn) && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      className="shrink-0 text-transparent outline-none group-hover/header:text-muted-foreground/50"
+                      aria-label={`${prop.name} column menu`}
+                    >
+                      <MoreHorizontal className="h-3 w-3" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      {onColumnHeaderClick && (
+                        <DropdownMenuItem onClick={() => onColumnHeaderClick(prop.id)}>
+                          <Pencil className="h-4 w-4" />
+                          Rename property
+                        </DropdownMenuItem>
+                      )}
+                      {onDeleteColumn && prop.position !== 0 && (
+                        <>
+                          {onColumnHeaderClick && <DropdownMenuSeparator />}
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => onDeleteColumn(prop.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Delete property
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
               </div>
               {/* Drop indicator — right edge */}

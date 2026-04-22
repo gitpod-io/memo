@@ -167,6 +167,7 @@ const meta: Meta<typeof TableView> = {
     onColumnWidthsChange: fn(),
     onColumnHeaderClick: fn(),
     onColumnReorder: fn(),
+    onDeleteColumn: fn(),
   },
 };
 
@@ -321,5 +322,27 @@ export const ColumnReorderDisabled: Story = {
     properties: mockProperties,
     viewConfig: defaultConfig,
     onColumnReorder: undefined,
+  },
+};
+
+export const WithColumnMenu: Story = {
+  name: "Column Header Menu (rename + delete)",
+  args: {
+    rows: mockRows,
+    properties: mockProperties,
+    viewConfig: defaultConfig,
+    onColumnHeaderClick: fn(),
+    onDeleteColumn: fn(),
+  },
+};
+
+export const ColumnMenuNoDelete: Story = {
+  name: "Column Header Menu (rename only)",
+  args: {
+    rows: mockRows,
+    properties: mockProperties,
+    viewConfig: defaultConfig,
+    onColumnHeaderClick: fn(),
+    onDeleteColumn: undefined,
   },
 };
