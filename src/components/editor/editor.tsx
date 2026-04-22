@@ -32,6 +32,7 @@ import type {
   SerializedEditorState,
 } from "lexical";
 import { lazyCaptureException } from "@/lib/capture";
+import { captureSupabaseError, isInsufficientPrivilegeError } from "@/lib/sentry";
 import { editorTheme } from "@/components/editor/theme";
 import { SlashCommandPlugin } from "@/components/editor/slash-command-plugin";
 import { FloatingToolbarPlugin } from "@/components/editor/floating-toolbar-plugin";
@@ -252,7 +253,7 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
           // Sync page_links in the background after successful save
           const linkedPageIds = extractPageLinkIds(pendingJson);
           syncPageLinks(pageId, workspaceId, linkedPageIds).catch((err) =>
-            lazyCaptureException(err),
+            captureSupabaseError(err, "editor:sync-page-links"),
           );
 
           // Save a version snapshot at intervals (every 5 minutes).
@@ -273,7 +274,9 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
             });
           }
         } else {
-          lazyCaptureException(error);
+          if (!isInsufficientPrivilegeError(error)) {
+            captureSupabaseError(error, "editor:save");
+          }
           setSaveStatus("error");
         }
       };

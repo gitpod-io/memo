@@ -207,6 +207,25 @@ cause wrapped in `error.cause` — look for `ECONNRESET`, `ENOTFOUND`, `ETIMEDOU
 `UND_ERR_SOCKET` in the cause message. Always check the `cause` chain for
 server-side fetch errors, not just the top-level message.
 
+### Always use `captureSupabaseError` for Supabase errors
+
+Never call `lazyCaptureException` or `Sentry.captureException` directly for errors
+originating from Supabase queries or mutations. Always use `captureSupabaseError`
+which classifies transient network errors, schema-not-found errors, and RLS
+violations at warning level. Direct capture bypasses this classification and floods
+Sentry with error-level noise for non-application-bugs.
+
+```typescript
+// ✅ Correct — uses captureSupabaseError
+captureSupabaseError(error, "editor:save");
+
+// ❌ Wrong — bypasses error classification
+lazyCaptureException(error);
+```
+
+Reserve `lazyCaptureException` for non-Supabase errors (e.g. Lexical editor
+framework errors, unexpected runtime exceptions).
+
 ### Retrying transient network errors
 
 Client-side Supabase queries that run on page load (e.g. workspace lookup, page
