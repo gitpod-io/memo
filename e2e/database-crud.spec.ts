@@ -76,6 +76,28 @@ async function createDatabaseFromSidebar(
   return pageId;
 }
 
+/**
+ * Add a column via the PropertyTypePicker dropdown.
+ * Clicks the "Add column" trigger, waits for the dropdown, and selects the
+ * given property type (defaults to "Text").
+ */
+async function addColumnViaTypePicker(
+  page: import("@playwright/test").Page,
+  typeName = "Text",
+) {
+  const addColumnBtn = page.locator('button[aria-label="Add column"]');
+  await expect(addColumnBtn).toBeVisible({ timeout: 5_000 });
+  await addColumnBtn.click();
+
+  // Wait for the dropdown menu to appear and select the property type
+  const menuItem = page.getByRole("menuitem", { name: typeName });
+  await expect(menuItem).toBeVisible({ timeout: 5_000 });
+  await menuItem.click();
+
+  // Wait for the new column to render
+  await page.waitForTimeout(1_500);
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -123,19 +145,8 @@ test.describe("Database CRUD", () => {
       timeout: 10_000,
     });
 
-    // Click the "Add column" button (+ icon in the last column header).
-    // This opens a PropertyTypePicker dropdown — select "Text".
-    const addColumnBtn = page.locator('button[aria-label="Add column"]');
-    await expect(addColumnBtn).toBeVisible({ timeout: 5_000 });
-    await addColumnBtn.click();
-
-    // Select "Text" from the property type dropdown
-    const textMenuItem = page.getByRole("menuitem", { name: "Text" });
-    await expect(textMenuItem).toBeVisible({ timeout: 5_000 });
-    await textMenuItem.click();
-
-    // Wait for the new column header to appear
-    await page.waitForTimeout(1_500);
+    // Click the "Add column" button and select "Text" from the dropdown
+    await addColumnViaTypePicker(page, "Text");
 
     // The new column should contain "Property" in its name
     const newHeader = page.locator('[role="columnheader"]', {
@@ -159,16 +170,8 @@ test.describe("Database CRUD", () => {
       timeout: 10_000,
     });
 
-    // Add a text property column so we have an editable cell.
-    // This opens a PropertyTypePicker dropdown — select "Text".
-    const addColumnBtn = page.locator('button[aria-label="Add column"]');
-    await expect(addColumnBtn).toBeVisible({ timeout: 5_000 });
-    await addColumnBtn.click();
-
-    const textMenuItem = page.getByRole("menuitem", { name: "Text" });
-    await expect(textMenuItem).toBeVisible({ timeout: 5_000 });
-    await textMenuItem.click();
-    await page.waitForTimeout(1_500);
+    // Add a text property column so we have an editable cell
+    await addColumnViaTypePicker(page, "Text");
 
     // Click on the property cell to start editing.
     // Editable cells have tabindex="0" and cursor-text styling.
@@ -241,15 +244,7 @@ test.describe("Database CRUD", () => {
       timeout: 10_000,
     });
 
-    // Add a column via the PropertyTypePicker dropdown — select "Text".
-    const addColumnBtn = page.locator('button[aria-label="Add column"]');
-    await expect(addColumnBtn).toBeVisible({ timeout: 5_000 });
-    await addColumnBtn.click();
-
-    const textMenuItem = page.getByRole("menuitem", { name: "Text" });
-    await expect(textMenuItem).toBeVisible({ timeout: 5_000 });
-    await textMenuItem.click();
-    await page.waitForTimeout(1_500);
+    await addColumnViaTypePicker(page, "Text");
 
     // Click the property column header button to open the rename dialog.
     const propertyHeader = page
