@@ -4,6 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Check, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  captureSupabaseError,
+  isInsufficientPrivilegeError,
+} from "@/lib/sentry";
 import { Input } from "@/components/ui/input";
 import { getClient } from "@/lib/supabase/lazy-client";
 import type { RendererProps, EditorProps } from "./index";
@@ -112,6 +116,9 @@ function useLinkedPages(pageIds: string[]): {
       if (cancelled) return;
 
       if (error || !data) {
+        if (error && !isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "relation-renderer:resolve-pages");
+        }
         setPages(
           ids.map((id) => ({ id, title: "", icon: null, deleted: true })),
         );
@@ -246,6 +253,9 @@ export function RelationEditor({
       if (cancelled) return;
 
       if (error || !data) {
+        if (error && !isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "relation-editor:load-target-rows");
+        }
         setTargetRows([]);
       } else {
         setTargetRows(
