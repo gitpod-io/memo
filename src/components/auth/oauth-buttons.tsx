@@ -4,8 +4,16 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { captureSupabaseError } from "@/lib/sentry";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type OAuthProvider = "github" | "google";
+
+const oauthEnabled = process.env.NEXT_PUBLIC_OAUTH_ENABLED === "true";
 
 function GitHubIcon({ className }: { className?: string }) {
   return (
@@ -58,6 +66,47 @@ export function OAuthButtons() {
       setLoadingProvider(null);
     }
     // On success the browser redirects to the provider's consent page.
+  }
+
+  if (!oauthEnabled) {
+    return (
+      <TooltipProvider>
+        <div className="flex flex-col gap-2">
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  disabled
+                  aria-label="Continue with GitHub"
+                />
+              }
+            >
+              <GitHubIcon className="h-4 w-4" />
+              Continue with GitHub
+            </TooltipTrigger>
+            <TooltipContent>Coming soon</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  disabled
+                  aria-label="Continue with Google"
+                />
+              }
+            >
+              <GoogleIcon className="h-4 w-4" />
+              Continue with Google
+            </TooltipTrigger>
+            <TooltipContent>Coming soon</TooltipContent>
+          </Tooltip>
+        </div>
+      </TooltipProvider>
+    );
   }
 
   return (
