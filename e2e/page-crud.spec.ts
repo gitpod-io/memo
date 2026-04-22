@@ -89,9 +89,11 @@ test.describe("Page CRUD", () => {
     const titleBtn = treeItem.locator("button.flex-1").first();
     await titleBtn.click();
 
-    // Editor should be visible on the page
+    // The page could be a regular page (contenteditable editor) or a
+    // database page (grid view). Accept either as a successful navigation.
     const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 10_000 });
+    const grid = page.locator('[role="grid"], :text("No rows yet")');
+    await expect(editor.or(grid).first()).toBeVisible({ timeout: 10_000 });
   });
 
   test("user can rename a page via inline title", async ({
