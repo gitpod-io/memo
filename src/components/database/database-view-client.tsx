@@ -514,6 +514,9 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
 
       const { error } = await updateRowValue(rowId, propertyId, newValue);
       if (error) {
+        if (!isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "database-view:move-card");
+        }
         toast.error("Failed to move card", { duration: 8000 });
       }
     },
@@ -548,6 +551,9 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
 
       const { error } = await updateRowValue(rowId, propertyId, value);
       if (error) {
+        if (!isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "database-view:update-cell");
+        }
         toast.error("Failed to update cell", { duration: 8000 });
       }
     },
