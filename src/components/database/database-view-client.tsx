@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
@@ -182,6 +182,9 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     id: string;
     name: string;
   } | null>(null);
+
+  // Guard against concurrent addProperty calls (e.g. rapid double-click)
+  const isAddingColumn = useRef(false);
 
   // Active view: from URL ?view= param, or first view by position
   const viewIdFromUrl = searchParams.get("view");
@@ -552,13 +555,19 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
 
   const handleAddColumn = useCallback(
     async (type: PropertyType) => {
-      const name = `Property ${properties.length + 1}`;
-      const { data: newProp, error } = await addProperty(pageId, name, type);
-      if (error || !newProp) {
-        toast.error("Failed to add column", { duration: 8000 });
-        return;
+      if (isAddingColumn.current) return;
+      isAddingColumn.current = true;
+      try {
+        const name = `Property ${properties.length + 1}`;
+        const { data: newProp, error } = await addProperty(pageId, name, type);
+        if (error || !newProp) {
+          toast.error("Failed to add column", { duration: 8000 });
+          return;
+        }
+        setProperties((prev) => [...prev, newProp]);
+      } finally {
+        isAddingColumn.current = false;
       }
-      setProperties((prev) => [...prev, newProp]);
     },
     [pageId, properties.length],
   );

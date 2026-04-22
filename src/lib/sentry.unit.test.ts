@@ -13,6 +13,7 @@ import {
   isSchemaNotFoundError,
   isInsufficientPrivilegeError,
   isForeignKeyViolationError,
+  isDuplicateKeyError,
   isSupabaseAuthLockError,
   isSupabaseAuthLockContention,
   captureSupabaseError,
@@ -334,6 +335,53 @@ describe("isForeignKeyViolationError", () => {
   });
 });
 
+describe("isDuplicateKeyError", () => {
+  it("detects PostgreSQL 23505 (unique_violation) from PostgrestError", () => {
+    const error = makePostgrestError({
+      message: 'duplicate key value violates unique constraint "database_properties_db_name"',
+      code: "23505",
+    });
+    expect(isDuplicateKeyError(error)).toBe(true);
+  });
+
+  it("detects 23505 from generic Error with code property (thrown path)", () => {
+    const error = Object.assign(
+      new Error('duplicate key value violates unique constraint "database_properties_db_name"'),
+      { code: "23505" },
+    );
+    expect(isDuplicateKeyError(error)).toBe(true);
+  });
+
+  it("returns false for other PostgrestError codes", () => {
+    const error = makePostgrestError({
+      message: "foreign key violation",
+      code: "23503",
+    });
+    expect(isDuplicateKeyError(error)).toBe(false);
+  });
+
+  it("returns false for RLS violations (42501)", () => {
+    const error = makePostgrestError({
+      message: "new row violates row-level security policy",
+      code: "42501",
+    });
+    expect(isDuplicateKeyError(error)).toBe(false);
+  });
+
+  it("returns false for generic errors without code", () => {
+    const error = new Error("Something went wrong");
+    expect(isDuplicateKeyError(error)).toBe(false);
+  });
+
+  it("returns false for generic Error with non-23505 code property", () => {
+    const error = Object.assign(
+      new Error("foreign key violation"),
+      { code: "23503" },
+    );
+    expect(isDuplicateKeyError(error)).toBe(false);
+  });
+});
+
 describe("isSupabaseAuthLockError", () => {
   it("detects AbortError in PostgrestError details (MEMO-16/17/19)", () => {
     const error = makePostgrestError({
@@ -503,18 +551,18 @@ describe("captureSupabaseError", () => {
     expect(opts.extra.operation).toBe("create-workspace-dialog:create");
   });
 
-  it("captures non-network, non-RLS errors at default (error) level", async () => {
+  it("captures duplicate key violations (23505) at warning level (MEMO-1G)", async () => {
     const error = makePostgrestError({
       message: "duplicate key value violates unique constraint",
       code: "23505",
     });
-    captureSupabaseError(error, "pages.insert");
+    captureSupabaseError(error, "database.addProperty");
     await flush();
 
     expect(captureExceptionMock).toHaveBeenCalledOnce();
     const [, opts] = captureExceptionMock.mock.calls[0];
-    expect(opts.level).toBeUndefined();
-    expect(opts.extra.operation).toBe("pages.insert");
+    expect(opts.level).toBe("warning");
+    expect(opts.extra.operation).toBe("database.addProperty");
     expect(opts.extra.code).toBe("23505");
   });
 
