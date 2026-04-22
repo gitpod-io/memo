@@ -54,7 +54,15 @@ export function DeleteAccountSection({ userEmail }: DeleteAccountSectionProps) {
 
     try {
       const res = await fetch("/api/account", { method: "DELETE" });
-      const body = await res.json();
+
+      // The API may return non-JSON responses (e.g. 405 with empty body),
+      // so parse defensively to avoid SyntaxError on empty/malformed bodies.
+      let body: { ok?: boolean; error?: string };
+      try {
+        body = await res.json();
+      } catch (_e) {
+        body = { error: "Account deletion failed." };
+      }
 
       if (!res.ok) {
         setError(body.error ?? "Account deletion failed.");

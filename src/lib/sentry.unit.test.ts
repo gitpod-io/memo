@@ -14,6 +14,7 @@ import {
   isInsufficientPrivilegeError,
   isForeignKeyViolationError,
   isDuplicateKeyError,
+  isStatementTimeoutError,
   isSupabaseAuthLockError,
   isSupabaseAuthLockContention,
   captureSupabaseError,
@@ -382,6 +383,45 @@ describe("isDuplicateKeyError", () => {
   });
 });
 
+describe("isStatementTimeoutError", () => {
+  it("detects PostgreSQL 57014 (statement_timeout) from PostgrestError", () => {
+    const error = makePostgrestError({
+      message: "canceling statement due to statement timeout",
+      code: "57014",
+    });
+    expect(isStatementTimeoutError(error)).toBe(true);
+  });
+
+  it("detects 57014 from generic Error with code property (thrown path)", () => {
+    const error = Object.assign(
+      new Error("canceling statement due to statement timeout"),
+      { code: "57014" },
+    );
+    expect(isStatementTimeoutError(error)).toBe(true);
+  });
+
+  it("returns false for other PostgrestError codes", () => {
+    const error = makePostgrestError({
+      message: "some error",
+      code: "42501",
+    });
+    expect(isStatementTimeoutError(error)).toBe(false);
+  });
+
+  it("returns false for generic errors without code", () => {
+    const error = new Error("canceling statement due to statement timeout");
+    expect(isStatementTimeoutError(error)).toBe(false);
+  });
+
+  it("returns false for generic Error with non-57014 code property", () => {
+    const error = Object.assign(
+      new Error("some error"),
+      { code: "23505" },
+    );
+    expect(isStatementTimeoutError(error)).toBe(false);
+  });
+});
+
 describe("isSupabaseAuthLockError", () => {
   it("detects AbortError in PostgrestError details (MEMO-16/17/19)", () => {
     const error = makePostgrestError({
@@ -564,6 +604,21 @@ describe("captureSupabaseError", () => {
     expect(opts.level).toBe("warning");
     expect(opts.extra.operation).toBe("database.addProperty");
     expect(opts.extra.code).toBe("23505");
+  });
+
+  it("captures statement timeout (57014) at warning level (MEMO-1J)", async () => {
+    const error = makePostgrestError({
+      message: "canceling statement due to statement timeout",
+      code: "57014",
+    });
+    captureSupabaseError(error, "delete_account");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [, opts] = captureExceptionMock.mock.calls[0];
+    expect(opts.level).toBe("warning");
+    expect(opts.extra.operation).toBe("delete_account");
+    expect(opts.extra.code).toBe("57014");
   });
 
   it("includes PostgrestError fields in extra", async () => {

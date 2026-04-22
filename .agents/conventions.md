@@ -1424,6 +1424,43 @@ if (error) {
 }
 ```
 
+### Statement timeouts (PostgreSQL 57014)
+
+When a query or RPC exceeds the configured statement timeout, PostgreSQL returns
+error code `57014`. This typically happens during cascading deletes or heavy
+operations on cold connections. It is a transient infrastructure issue, not an
+application bug.
+
+`captureSupabaseError` automatically downgrades `57014` to warning level via
+`isStatementTimeoutError`. No caller-side skip is needed — the warning-level
+classification is sufficient since statement timeouts are rare and worth tracking.
+
+### Safe response parsing in client-side fetch handlers
+
+When calling internal API routes via `fetch()`, always parse the response body
+defensively. The server may return non-JSON responses (e.g. 405 Method Not
+Allowed with empty body, 502 Bad Gateway with HTML). Calling `res.json()`
+directly throws `SyntaxError` on non-JSON bodies.
+
+```typescript
+const res = await fetch("/api/endpoint", { method: "DELETE" });
+
+let body: { ok?: boolean; error?: string };
+try {
+  body = await res.json();
+} catch (_e) {
+  body = { error: "Operation failed." };
+}
+
+if (!res.ok) {
+  setError(body.error ?? "Operation failed.");
+  return;
+}
+```
+
+This prevents `SyntaxError: Unexpected end of JSON input` from reaching the
+outer catch block and being reported to Sentry as an application error.
+
 ## Usage Event Tracking
 
 Product analytics events are recorded via two modules — `src/lib/track-event-server.ts`
