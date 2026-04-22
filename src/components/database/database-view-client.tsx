@@ -49,6 +49,14 @@ const ListView = dynamic(
   { ssr: false },
 );
 
+const CalendarView = dynamic(
+  () =>
+    import("@/components/database/views/calendar-view").then(
+      (mod) => mod.CalendarView,
+    ),
+  { ssr: false },
+);
+
 // Dynamically import the editor only when the database page has content above the grid
 const Editor = dynamic(
   () => import("@/components/editor/editor").then((mod) => mod.Editor),
@@ -388,6 +396,13 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                 />
               ) : activeView?.type === "list" ? (
                 <ListView
+                  rows={rows}
+                  properties={properties}
+                  viewConfig={activeView.config}
+                  workspaceSlug={workspaceSlug}
+                />
+              ) : activeView?.type === "calendar" ? (
+                <CalendarView
                   rows={rows}
                   properties={properties}
                   viewConfig={activeView.config}
