@@ -54,6 +54,7 @@ function getCoverUrl(
       // Files property stores an array of file objects with url field
       const files = rv.value.files;
       if (Array.isArray(files) && files.length > 0) {
+        // rv.value is Record<string, unknown> — cast to access url, guarded by typeof check below
         const first = files[0] as { url?: string };
         if (typeof first.url === "string") return first.url;
       }
@@ -113,7 +114,6 @@ export function GalleryView({
           className={cn(
             "flex items-center justify-center border border-dashed border-white/[0.12] bg-muted/50",
             "text-muted-foreground hover:border-white/[0.2] hover:text-foreground",
-            "transition-colors",
             cardSizeClass,
           )}
         >
@@ -163,7 +163,7 @@ function GalleryCard({
       {/* Cover area */}
       <div className="relative flex-1">
         {coverUrl ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
+          /* eslint-disable-next-line @next/next/no-img-element -- Cover URLs from arbitrary user domains */
           <img
             src={coverUrl}
             alt=""
