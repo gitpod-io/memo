@@ -544,6 +544,14 @@ Rules:
 - Always use `npx supabase migration new` — never create migration files manually.
 - One migration per logical change (table + its RLS policies together).
 - Auto-applied on merge to main via the deploy-migrations CI workflow.
+- Every FK referencing `profiles(id)` or `auth.users(id)` must include an `ON DELETE`
+  clause (`CASCADE` or `SET NULL`). Omitting it causes the `delete_account` RPC to fail
+  with a FK violation when a user deletes their account.
+- When adding a new table with a `user_id` or `created_by` FK to `profiles` or
+  `auth.users`, also update the `delete_account` RPC
+  (`supabase/migrations/20260420150359_delete_account_rpc.sql`) to explicitly handle
+  the new table before the profile/auth deletion step. Relying solely on FK cascades
+  is fragile — being explicit prevents future breakage.
 
 ## Testing
 

@@ -104,7 +104,7 @@ export interface PageVersion {
   page_id: string;
   content: Record<string, unknown> | null;
   created_at: string;
-  created_by: string;
+  created_by: string | null;
 }
 
 export interface PageLink {

@@ -19,7 +19,7 @@ interface VersionSummary {
   id: string;
   page_id: string;
   created_at: string;
-  created_by: string;
+  created_by: string | null;
 }
 
 interface VersionHistoryPanelProps {
