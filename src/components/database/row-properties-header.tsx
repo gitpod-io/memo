@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { updateRowValue } from "@/lib/database";
+import { updateProperty, updateRowValue } from "@/lib/database";
 import {
   captureSupabaseError,
   isInsufficientPrivilegeError,
@@ -109,22 +109,44 @@ function PropertyValueCell({
   const [currentValue, setCurrentValue] = useState<Record<string, unknown>>(
     () => rowValue?.value ?? {},
   );
+  const [pendingNewOptions, setPendingNewOptions] = useState<
+    Array<{ id: string; name: string; color: string }> | null
+  >(null);
 
   const isComputed = COMPUTED_TYPES.has(property.type);
   const config = getPropertyTypeConfig(property.type);
 
   const handleChange = useCallback((newValue: Record<string, unknown>) => {
-    setCurrentValue(newValue);
+    // Extract _newOptions so we can persist them on blur
+    if (newValue._newOptions) {
+      setPendingNewOptions(
+        newValue._newOptions as Array<{ id: string; name: string; color: string }>,
+      );
+    }
+    const { _newOptions: _, ...clean } = newValue;
+    setCurrentValue(clean);
   }, []);
 
   const handleBlur = useCallback(async () => {
     setEditing(false);
-    // Persist the value
+
+    // Persist new options to property config first
+    if (pendingNewOptions) {
+      const { error: configError } = await updateProperty(property.id, {
+        config: { options: pendingNewOptions },
+      });
+      if (configError && !isInsufficientPrivilegeError(configError)) {
+        captureSupabaseError(configError, "row-properties-header:save-options");
+      }
+      setPendingNewOptions(null);
+    }
+
+    // Persist the row value (already stripped of _newOptions)
     const { error } = await updateRowValue(pageId, property.id, currentValue);
     if (error && !isInsufficientPrivilegeError(error)) {
       captureSupabaseError(error, "row-properties-header:save");
     }
-  }, [pageId, property.id, currentValue]);
+  }, [pageId, property.id, currentValue, pendingNewOptions]);
 
   // Computed properties are always read-only
   if (isComputed) {

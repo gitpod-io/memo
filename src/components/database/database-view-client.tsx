@@ -525,7 +525,26 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
 
   const handleCellUpdate = useCallback(
     async (rowId: string, propertyId: string, value: Record<string, unknown>) => {
-      // Optimistic update
+      // Extract _newOptions before persisting — select/multi-select editors
+      // pass newly created options here so we can save them to the property config.
+      const newOptions = value._newOptions as
+        | Array<{ id: string; name: string; color: string }>
+        | undefined;
+      const { _newOptions: _, ...cleanValue } = value;
+
+      // Optimistic updates — batch property config and row value together
+      // so React renders both in the same cycle (the renderer needs the
+      // updated options to display the newly created option badge).
+      if (newOptions) {
+        setProperties((prev) =>
+          prev.map((p) =>
+            p.id === propertyId
+              ? { ...p, config: { ...p.config, options: newOptions } }
+              : p,
+          ),
+        );
+      }
+
       setRows((prev) =>
         prev.map((r) => {
           if (r.page.id !== rowId) return r;
@@ -541,7 +560,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   created_at: new Date().toISOString(),
                   updated_at: new Date().toISOString(),
                 }),
-                value,
+                value: cleanValue,
                 updated_at: new Date().toISOString(),
               },
             },
@@ -549,7 +568,20 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
         }),
       );
 
-      const { error } = await updateRowValue(rowId, propertyId, value);
+      // Persist to DB: update property config first, then row value
+      if (newOptions) {
+        const { error: configError } = await updateProperty(propertyId, {
+          config: { options: newOptions },
+        });
+        if (configError) {
+          if (!isInsufficientPrivilegeError(configError)) {
+            captureSupabaseError(configError, "database-view:update-property-options");
+          }
+          toast.error("Failed to save new option", { duration: 8000 });
+        }
+      }
+
+      const { error } = await updateRowValue(rowId, propertyId, cleanValue);
       if (error) {
         if (!isInsufficientPrivilegeError(error)) {
           captureSupabaseError(error, "database-view:update-cell");
