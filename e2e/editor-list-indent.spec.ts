@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures/auth";
-import { navigateToEditorPage } from "./fixtures/editor-helpers";
+import { navigateToEditorPage, selectSlashOption } from "./fixtures/editor-helpers";
 
 test.describe("Editor list indentation", () => {
   test.beforeEach(async ({ authenticatedPage: page }) => {
@@ -18,11 +18,7 @@ test.describe("Editor list indentation", () => {
     await page.keyboard.press("Enter");
     await page.keyboard.type("/");
 
-    const bulletOption = page
-      .locator('[role="option"]')
-      .filter({ hasText: "Bullet List" });
-    await expect(bulletOption).toBeVisible({ timeout: 3_000 });
-    await bulletOption.click();
+    await selectSlashOption(page, "Bullet List");
 
     await page.keyboard.type("First item");
     await page.keyboard.press("Enter");
@@ -53,11 +49,7 @@ test.describe("Editor list indentation", () => {
     await page.keyboard.press("Enter");
     await page.keyboard.type("/");
 
-    const bulletOption = page
-      .locator('[role="option"]')
-      .filter({ hasText: "Bullet List" });
-    await expect(bulletOption).toBeVisible({ timeout: 3_000 });
-    await bulletOption.click();
+    await selectSlashOption(page, "Bullet List");
 
     await page.keyboard.type("First item");
     await page.keyboard.press("Enter");
@@ -87,11 +79,7 @@ test.describe("Editor list indentation", () => {
     await page.keyboard.press("Enter");
     await page.keyboard.type("/");
 
-    const numberedOption = page
-      .locator('[role="option"]')
-      .filter({ hasText: "Numbered List" });
-    await expect(numberedOption).toBeVisible({ timeout: 3_000 });
-    await numberedOption.click();
+    await selectSlashOption(page, "Numbered List");
 
     await page.keyboard.type("First item");
     await page.keyboard.press("Enter");

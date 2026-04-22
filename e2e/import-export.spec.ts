@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures/auth";
-import { navigateToEditorPage } from "./fixtures/editor-helpers";
+import { navigateToEditorPage, selectSlashOption } from "./fixtures/editor-helpers";
 
 test.describe("Markdown import and export", () => {
   test("user can export a page as markdown via the page menu", async ({
@@ -17,11 +17,7 @@ test.describe("Markdown import and export", () => {
 
     // Insert a heading via slash command
     await page.keyboard.type("/");
-    const heading1Option = page
-      .locator('[role="option"]')
-      .filter({ hasText: "Heading 1" });
-    await expect(heading1Option).toBeVisible({ timeout: 3_000 });
-    await heading1Option.click();
+    await selectSlashOption(page, "Heading 1");
     await page.keyboard.type("Export Test Heading");
     await page.keyboard.press("Enter");
 
@@ -31,11 +27,7 @@ test.describe("Markdown import and export", () => {
 
     // Insert a bullet list via slash command
     await page.keyboard.type("/");
-    const bulletOption = page
-      .locator('[role="option"]')
-      .filter({ hasText: "Bullet List" });
-    await expect(bulletOption).toBeVisible({ timeout: 3_000 });
-    await bulletOption.click();
+    await selectSlashOption(page, "Bullet List");
     await page.keyboard.type("First item");
     await page.keyboard.press("Enter");
     await page.keyboard.type("Second item");

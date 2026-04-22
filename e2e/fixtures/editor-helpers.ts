@@ -64,3 +64,30 @@ export async function navigateToEditorPage(page: Page): Promise<void> {
 export function modifierKey(): "Meta" | "Control" {
   return process.platform === "darwin" ? "Meta" : "Control";
 }
+
+/**
+ * Select a slash command option by its exact title text.
+ *
+ * The slash menu contains both direct commands ("Heading 1") and "Turn into"
+ * variants ("Turn into Heading 1"). Using `hasText` matches both because it
+ * checks substring containment. This helper uses `getByRole('option', { name })`
+ * with a regex anchored to the start of the accessible name to select only the
+ * direct command, not the "Turn into" variant.
+ */
+export async function selectSlashOption(
+  page: Page,
+  label: string,
+  { timeout = 3_000 }: { timeout?: number } = {},
+): Promise<void> {
+  // The accessible name starts with the option title (e.g. "Heading 1 Large section heading").
+  // Anchor the regex to the start so "Turn into Heading 1 ..." doesn't match.
+  const option = page.getByRole("option", {
+    name: new RegExp(`^${escapeRegExp(label)}\\b`),
+  });
+  await expect(option).toBeVisible({ timeout });
+  await option.click();
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}

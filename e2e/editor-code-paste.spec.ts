@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures/auth";
-import { navigateToEditorPage } from "./fixtures/editor-helpers";
+import { navigateToEditorPage, selectSlashOption } from "./fixtures/editor-helpers";
 
 test.describe("Code block paste", () => {
   test.beforeEach(async ({ authenticatedPage: page }) => {
@@ -18,11 +18,7 @@ test.describe("Code block paste", () => {
     await page.keyboard.press("Enter");
     await page.keyboard.type("/code");
 
-    const codeOption = page.locator('[role="option"]', {
-      hasText: /code block/i,
-    });
-    await expect(codeOption).toBeVisible({ timeout: 3_000 });
-    await codeOption.click();
+    await selectSlashOption(page, "Code Block");
 
     // Wait for the code block to appear
     const codeBlock = editor.locator("code");
@@ -70,11 +66,7 @@ test.describe("Code block paste", () => {
     await page.keyboard.press("Enter");
     await page.keyboard.type("/code");
 
-    const codeOption = page.locator('[role="option"]', {
-      hasText: /code block/i,
-    });
-    await expect(codeOption).toBeVisible({ timeout: 3_000 });
-    await codeOption.click();
+    await selectSlashOption(page, "Code Block");
 
     const codeBlock = editor.locator("code");
     await expect(codeBlock).toBeVisible({ timeout: 3_000 });
