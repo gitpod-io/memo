@@ -214,6 +214,10 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
       // to the debounced doSave to avoid JSON.stringify on every keystroke.
       pendingEditorStateRef.current = editorState;
 
+      // Show "Saving..." immediately so the user gets instant feedback.
+      // This is a cheap React state update — no serialization involved.
+      setSaveStatus("saving");
+
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
       }

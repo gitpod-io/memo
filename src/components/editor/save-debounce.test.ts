@@ -19,9 +19,9 @@ describe("editor save debounce", () => {
     expect(editorSource).toMatch(/const SAVE_DEBOUNCE_MS\s*=\s*\d+/);
   });
 
-  it("does not call setSaveStatus in the synchronous handleChange body", () => {
-    // Extract the handleChange callback body (between the useCallback and doSave)
-    // The synchronous part is from "editorState: EditorState" to "const doSave"
+  it("sets saving status synchronously for immediate user feedback", () => {
+    // The synchronous handleChange body should set "saving" status immediately
+    // (cheap state update) but must NOT do serialization — that stays in doSave.
     const handleChangeStart = editorSource.indexOf(
       "(editorState: EditorState) =>",
     );
@@ -30,7 +30,7 @@ describe("editor save debounce", () => {
     expect(doSaveStart).toBeGreaterThan(handleChangeStart);
 
     const synchronousBody = editorSource.slice(handleChangeStart, doSaveStart);
-    expect(synchronousBody).not.toContain("setSaveStatus");
+    expect(synchronousBody).toContain('setSaveStatus("saving")');
   });
 
   it("does not call toJSON() or JSON.stringify in the synchronous handleChange body", () => {
