@@ -73,34 +73,32 @@ export function OAuthButtons() {
       <TooltipProvider>
         <div className="flex flex-col gap-2">
           <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="outline"
-                  className="w-full gap-2"
-                  disabled
-                  aria-label="Continue with GitHub"
-                />
-              }
-            >
-              <GitHubIcon className="h-4 w-4" />
-              Continue with GitHub
+            <TooltipTrigger render={<span className="w-full" />}>
+              <Button
+                variant="outline"
+                className="w-full gap-2 pointer-events-none"
+                disabled
+                aria-label="Continue with GitHub"
+                tabIndex={-1}
+              >
+                <GitHubIcon className="h-4 w-4" />
+                Continue with GitHub
+              </Button>
             </TooltipTrigger>
             <TooltipContent>Coming soon</TooltipContent>
           </Tooltip>
           <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="outline"
-                  className="w-full gap-2"
-                  disabled
-                  aria-label="Continue with Google"
-                />
-              }
-            >
-              <GoogleIcon className="h-4 w-4" />
-              Continue with Google
+            <TooltipTrigger render={<span className="w-full" />}>
+              <Button
+                variant="outline"
+                className="w-full gap-2 pointer-events-none"
+                disabled
+                aria-label="Continue with Google"
+                tabIndex={-1}
+              >
+                <GoogleIcon className="h-4 w-4" />
+                Continue with Google
+              </Button>
             </TooltipTrigger>
             <TooltipContent>Coming soon</TooltipContent>
           </Tooltip>
