@@ -1,8 +1,9 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
+import { FileText } from "lucide-react";
 import type { DatabaseProperty } from "@/lib/types";
-import { RelationRenderer, RelationEditor } from "./relation";
+import { RelationEditor } from "./relation";
 
 // ---------------------------------------------------------------------------
 // Mock property
@@ -27,12 +28,55 @@ const mockPropertyNoTarget: DatabaseProperty = {
 };
 
 // ---------------------------------------------------------------------------
-// Renderer stories
+// Static RelationPill replica for Storybook (avoids useRouter/useParams)
 // ---------------------------------------------------------------------------
 
-const rendererMeta: Meta<typeof RelationRenderer> = {
+function StaticRelationPill({
+  title,
+  icon,
+  deleted,
+}: {
+  title: string;
+  icon: string | null;
+  deleted?: boolean;
+}) {
+  if (deleted) {
+    return (
+      <span className="inline-flex items-center gap-1 bg-muted px-1.5 py-0.5 text-sm text-muted-foreground line-through align-baseline">
+        <FileText className="h-3.5 w-3.5 shrink-0" />
+        Deleted page
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex max-w-[160px] items-center gap-1 bg-muted px-1.5 py-0.5 text-sm text-foreground hover:bg-white/[0.08] align-baseline cursor-pointer">
+      {icon ? (
+        <span className="shrink-0 text-sm">{icon}</span>
+      ) : (
+        <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+      )}
+      <span className="truncate underline decoration-muted-foreground/50 underline-offset-2">
+        {title}
+      </span>
+    </span>
+  );
+}
+
+function StaticLoadingPill() {
+  return (
+    <span className="inline-flex items-center gap-1 bg-muted px-1.5 py-0.5 text-sm text-muted-foreground align-baseline">
+      <span className="inline-block h-3.5 w-16 animate-pulse bg-white/[0.08]" />
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Renderer stories (static replicas — no Next.js router needed)
+// ---------------------------------------------------------------------------
+
+const rendererMeta: Meta = {
   title: "Database/PropertyTypes/Relation/Renderer",
-  component: RelationRenderer,
   decorators: [
     (Story) => (
       <div className="w-64 bg-background p-2">
@@ -44,42 +88,69 @@ const rendererMeta: Meta<typeof RelationRenderer> = {
     docs: {
       description: {
         component:
-          "Renders linked page pills for relation property values. " +
-          "In Storybook, pills show loading skeletons since Supabase is unavailable.",
+          "Static visual replicas of RelationRenderer pills. " +
+          "The actual component uses useRouter/useParams and Supabase, " +
+          "so these stories render the same visual states with static data.",
       },
     },
   },
 };
 
 export { rendererMeta as default };
-type RendererStory = StoryObj<typeof RelationRenderer>;
+type Story = StoryObj;
 
-export const SingleRelation: RendererStory = {
-  args: {
-    value: { page_ids: ["page-1"] },
-    property: mockProperty,
-  },
+export const SingleRelation: Story = {
+  render: () => (
+    <div className="flex flex-wrap gap-1">
+      <StaticRelationPill title="Project Overview" icon="📋" />
+    </div>
+  ),
 };
 
-export const MultipleRelations: RendererStory = {
-  args: {
-    value: { page_ids: ["page-1", "page-2", "page-3"] },
-    property: mockProperty,
-  },
+export const MultipleRelations: Story = {
+  render: () => (
+    <div className="flex flex-wrap gap-1">
+      <StaticRelationPill title="Project Overview" icon="📋" />
+      <StaticRelationPill title="Getting Started" icon={null} />
+      <StaticRelationPill title="API Reference" icon="📖" />
+    </div>
+  ),
 };
 
-export const Empty: RendererStory = {
-  args: {
-    value: {},
-    property: mockProperty,
-  },
+export const Empty: Story = {
+  render: () => <div />,
 };
 
-export const EmptyArray: RendererStory = {
-  args: {
-    value: { page_ids: [] },
-    property: mockProperty,
-  },
+export const EmptyArray: Story = {
+  render: () => <div />,
+};
+
+export const DeletedPage: Story = {
+  render: () => (
+    <div className="flex flex-wrap gap-1">
+      <StaticRelationPill title="" icon={null} deleted />
+    </div>
+  ),
+};
+
+export const Loading: Story = {
+  render: () => (
+    <div className="flex flex-wrap gap-1">
+      <StaticLoadingPill />
+      <StaticLoadingPill />
+    </div>
+  ),
+};
+
+export const LongTitle: Story = {
+  render: () => (
+    <div className="flex flex-wrap gap-1">
+      <StaticRelationPill
+        title="This Is A Very Long Page Title That Should Truncate"
+        icon="📝"
+      />
+    </div>
+  ),
 };
 
 // ---------------------------------------------------------------------------
@@ -102,7 +173,7 @@ function EditorDemo() {
   );
 }
 
-export const Editor: RendererStory = {
+export const Editor: Story = {
   render: () => <EditorDemo />,
 };
 
@@ -120,7 +191,7 @@ function EditorEmptyDemo() {
   );
 }
 
-export const EditorEmpty: RendererStory = {
+export const EditorEmpty: Story = {
   render: () => <EditorEmptyDemo />,
 };
 
@@ -138,6 +209,6 @@ function EditorNoTargetDemo() {
   );
 }
 
-export const EditorNoTarget: RendererStory = {
+export const EditorNoTarget: Story = {
   render: () => <EditorNoTargetDemo />,
 };

@@ -55,8 +55,8 @@ function RelationPill({
 }) {
   if (page.deleted) {
     return (
-      <span className="inline-flex items-center gap-1 bg-muted px-2 py-0.5 text-xs text-muted-foreground line-through">
-        <FileText className="h-3 w-3 shrink-0" />
+      <span className="inline-flex items-center gap-1 bg-muted px-1.5 py-0.5 text-sm text-muted-foreground line-through align-baseline">
+        <FileText className="h-3.5 w-3.5 shrink-0" />
         Deleted page
       </span>
     );
@@ -66,13 +66,14 @@ function RelationPill({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex max-w-[160px] items-center gap-1 bg-muted px-2 py-0.5 text-xs text-foreground hover:bg-white/[0.08] cursor-pointer"
+      className="inline-flex max-w-[160px] items-center gap-1 bg-muted px-1.5 py-0.5 text-sm text-foreground hover:bg-white/[0.08] align-baseline cursor-pointer"
       title={page.title}
+      aria-label={`Navigate to ${page.title || "Untitled"}`}
     >
       {page.icon ? (
-        <span className="shrink-0 text-xs">{page.icon}</span>
+        <span className="shrink-0 text-sm">{page.icon}</span>
       ) : (
-        <FileText className="h-3 w-3 shrink-0 text-muted-foreground" />
+        <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
       )}
       <span className="truncate underline decoration-muted-foreground/50 underline-offset-2">
         {page.title || "Untitled"}
@@ -171,9 +172,9 @@ export function RelationRenderer({ value }: RendererProps) {
         {pageIds.map((id) => (
           <span
             key={id}
-            className="inline-flex items-center gap-1 bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+            className="inline-flex items-center gap-1 bg-muted px-1.5 py-0.5 text-sm text-muted-foreground align-baseline"
           >
-            <span className="inline-block h-3 w-12 animate-pulse bg-white/[0.08]" />
+            <span className="inline-block h-3.5 w-16 animate-pulse bg-white/[0.08]" />
           </span>
         ))}
       </div>
@@ -320,7 +321,7 @@ export function RelationEditor({
 
   if (!targetDatabaseId) {
     return (
-      <div className="w-56 border border-border bg-background p-3 shadow-md">
+      <div className="w-56 rounded-sm border border-border bg-background p-3 shadow-md">
         <p className="text-xs text-muted-foreground">
           No target database configured for this relation property.
         </p>
@@ -331,7 +332,7 @@ export function RelationEditor({
   return (
     <div
       ref={containerRef}
-      className="w-56 border border-border bg-background shadow-md"
+      className="w-56 rounded-sm border border-border bg-background shadow-md"
     >
       <div className="p-1.5">
         <Input
@@ -369,6 +370,7 @@ export function RelationEditor({
                 key={row.id}
                 type="button"
                 onClick={() => handleToggle(row.id)}
+                aria-label={`${isSelected ? "Remove" : "Add"} ${row.title}`}
                 className={cn(
                   "flex w-full items-center gap-2 px-2 py-1 text-sm",
                   "hover:bg-white/[0.04]",
