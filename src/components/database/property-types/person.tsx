@@ -78,7 +78,8 @@ function PersonAvatar({ person, size = 20, className }: PersonAvatarProps) {
   return (
     <span
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground",
+        // text-xs (12px) overflows a 20px avatar; 0.625rem (10px) fits two initials
+        "flex shrink-0 items-center justify-center rounded-full bg-muted text-[0.625rem] font-medium leading-none text-muted-foreground",
         className,
       )}
       style={{ width: size, height: size }}
@@ -261,7 +262,7 @@ export function PersonEditor({
   return (
     <div
       ref={containerRef}
-      className="w-56 border border-border bg-background shadow-md"
+      className="w-56 rounded-sm border border-border bg-background shadow-md"
     >
       <div className="p-1.5">
         <div className="relative">
@@ -281,11 +282,16 @@ export function PersonEditor({
         </div>
       </div>
       <div className="max-h-48 overflow-y-auto px-1 pb-1">
-        {loading && (
-          <p className="px-2 py-1.5 text-xs text-muted-foreground">
-            Loading…
-          </p>
-        )}
+        {loading &&
+          Array.from({ length: 3 }, (_, i) => (
+            <div key={i} className="flex items-center gap-2 px-2 py-1.5">
+              <span className="size-5 shrink-0 animate-pulse rounded-full bg-muted" />
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <span className="h-3 w-24 animate-pulse rounded bg-muted" />
+                <span className="h-2.5 w-32 animate-pulse rounded bg-muted" />
+              </div>
+            </div>
+          ))}
         {!loading && filtered.length === 0 && (
           <p className="px-2 py-1.5 text-xs text-muted-foreground">
             No members found

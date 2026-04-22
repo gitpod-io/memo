@@ -1297,6 +1297,36 @@ Key patterns:
   then loads row values in a single batch query and groups them client-side.
 - Position auto-calculation: `addProperty`, `addView`, and `addRow` query the max
   position and increment. Reorder functions accept an ordered ID array.
+- `loadWorkspaceMembers` fetches member profiles for a workspace. The parent
+  component (`database-view-client.tsx`) injects the result into `property.config._members`
+  for `person` and `created_by` properties so renderers can resolve user IDs.
+
+### Computed property types
+
+`created_time`, `updated_time`, and `created_by` are read-only property types that
+derive values from page metadata (`row.page.created_at`, `.updated_at`, `.created_by`)
+instead of `row_values`. The pattern:
+
+1. Registry entry has `Editor: null` — signals read-only to view components.
+2. `isComputedType(type)` checks if a type is computed.
+3. `buildComputedValue(type, page)` creates a synthetic value object from page metadata.
+4. View components (e.g., `TableView`) call `buildComputedValue` and pass the result
+   to the registry `Renderer` instead of reading from `row.values[prop.id]`.
+5. For `created_by`, the renderer reads `property.config._members` (same as `PersonRenderer`)
+   to resolve user IDs to display names and avatars.
+
+```typescript
+import { isComputedType, buildComputedValue, getPropertyTypeConfig } from "@/components/database/property-types";
+
+// In a view component's row rendering:
+const value = isComputedType(prop.type)
+  ? buildComputedValue(prop.type, row.page)
+  : row.values[prop.id]?.value ?? {};
+const config = getPropertyTypeConfig(prop.type);
+if (config) {
+  <config.Renderer value={value} property={prop} />
+}
+```
 
 ## This file evolves
 

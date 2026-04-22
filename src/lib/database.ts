@@ -508,6 +508,55 @@ export async function reorderViews(
 }
 
 // ---------------------------------------------------------------------------
+// Workspace Members (for person and created_by property rendering)
+// ---------------------------------------------------------------------------
+
+export interface WorkspaceMember {
+  id: string;
+  display_name: string;
+  email: string;
+  avatar_url: string | null;
+}
+
+/**
+ * Load workspace members with profile data. Used to populate _members config
+ * on person and created_by properties so renderers can resolve user IDs.
+ */
+export async function loadWorkspaceMembers(
+  workspaceId: string,
+): Promise<{ data: WorkspaceMember[] | null; error: Error | null }> {
+  const supabase = getClient();
+  const { data, error } = await supabase
+    .from("members")
+    .select(
+      "user_id, profiles!members_user_id_fkey(id, display_name, email, avatar_url)",
+    )
+    .eq("workspace_id", workspaceId);
+
+  if (error) {
+    captureSupabaseError(error, "database.loadWorkspaceMembers");
+    return { data: null, error };
+  }
+
+  const members: WorkspaceMember[] = (data ?? []).map((m) => {
+    const profile = m.profiles as unknown as {
+      id: string;
+      display_name: string;
+      email: string;
+      avatar_url: string | null;
+    };
+    return {
+      id: m.user_id,
+      display_name: profile.display_name,
+      email: profile.email,
+      avatar_url: profile.avatar_url,
+    };
+  });
+
+  return { data: members, error: null };
+}
+
+// ---------------------------------------------------------------------------
 // Data Loading
 // ---------------------------------------------------------------------------
 
