@@ -169,7 +169,7 @@ function extractFormulaValue(
     case "number":
       return typeof value.number === "number" ? value.number : null;
     case "checkbox":
-      return value.value === true;
+      return value.checked === true;
     case "date":
       return typeof value.date === "string" ? value.date : null;
     case "url":

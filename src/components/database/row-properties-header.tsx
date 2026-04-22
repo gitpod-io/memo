@@ -89,7 +89,6 @@ interface PropertyValueCellProps {
   property: DatabaseProperty;
   rowValue: RowValue | undefined;
   allProperties: DatabaseProperty[];
-  allValues: Record<string, RowValue>;
   row: DatabaseRow;
   pageCreatedAt: string;
   pageUpdatedAt: string;
@@ -244,7 +243,6 @@ export function RowPropertiesHeader({
                   property={property}
                   rowValue={values[property.id]}
                   allProperties={properties}
-                  allValues={values}
                   row={row}
                   pageCreatedAt={pageCreatedAt}
                   pageUpdatedAt={pageUpdatedAt}
