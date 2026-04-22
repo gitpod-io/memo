@@ -182,8 +182,11 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
     initialContent ? JSON.stringify(initialContent) : ""
   );
   const lastVersionSavedAtRef = useRef<number>(0);
-  // Track the latest pending state so we always save the most recent content
-  // and only show "Saved" when the persisted state matches the latest state.
+  // Track the latest pending editor state so we always save the most recent
+  // content. We store the EditorState object (immutable snapshot) and defer
+  // serialization to the debounced save — avoids JSON.stringify on every
+  // keystroke which was causing typing lag (#539).
+  const pendingEditorStateRef = useRef<EditorState | null>(null);
   const pendingJsonRef = useRef<SerializedEditorState | null>(null);
   const pendingSerializedRef = useRef<string | null>(null);
   const isSavingRef = useRef(false);
@@ -201,18 +204,15 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
   // is scheduled automatically once the current one completes. This prevents
   // an earlier save (e.g. empty table) from overwriting a later one (table
   // with cell text) — the root cause of #402.
+  //
+  // Serialization (toJSON + JSON.stringify) and the "saving" status update
+  // are deferred to the debounced save function so they don't run on every
+  // keystroke — the root cause of #539.
   const handleChange = useCallback(
     (editorState: EditorState) => {
-      const json = editorState.toJSON();
-      const serialized = JSON.stringify(json);
-
-      if (serialized === lastSavedRef.current) return;
-
-      // Always store the latest state so the save sends the newest content
-      pendingJsonRef.current = json;
-      pendingSerializedRef.current = serialized;
-
-      setSaveStatus("saving");
+      // Store the immutable EditorState snapshot — serialization is deferred
+      // to the debounced doSave to avoid JSON.stringify on every keystroke.
+      pendingEditorStateRef.current = editorState;
 
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
@@ -223,14 +223,31 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
       if (isSavingRef.current) return;
 
       const doSave = async () => {
-        const pendingJson = pendingJsonRef.current;
-        const pendingSerialized = pendingSerializedRef.current;
-        if (!pendingJson || !pendingSerialized) return;
+        // Serialize the latest pending editor state now (deferred from onChange)
+        const editorSnapshot = pendingEditorStateRef.current;
+        if (!editorSnapshot) return;
+
+        const json = editorSnapshot.toJSON();
+        const serialized = JSON.stringify(json);
+
+        // Skip save if content hasn't changed from last persisted state
+        if (serialized === lastSavedRef.current) {
+          pendingEditorStateRef.current = null;
+          return;
+        }
+
+        pendingJsonRef.current = json;
+        pendingSerializedRef.current = serialized;
 
         // Snapshot and clear so concurrent changes accumulate in a new pending slot
+        const pendingJson = pendingJsonRef.current;
+        const pendingSerialized = pendingSerializedRef.current;
         pendingJsonRef.current = null;
         pendingSerializedRef.current = null;
+        pendingEditorStateRef.current = null;
         isSavingRef.current = true;
+
+        setSaveStatus("saving");
 
         const supabase = await getClient();
         const { error } = await supabase
@@ -245,7 +262,7 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
 
           // If new changes arrived while this save was in-flight, re-save
           // instead of showing "Saved".
-          if (pendingSerializedRef.current !== null) {
+          if (pendingEditorStateRef.current !== null) {
             if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
             saveTimerRef.current = setTimeout(doSave, SAVE_DEBOUNCE_MS);
           } else {
