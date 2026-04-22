@@ -136,6 +136,27 @@ export function isInsufficientPrivilegeError(error: Error): boolean {
 }
 
 /**
+ * True when PostgreSQL raises `foreign_key_violation` (23503). This occurs
+ * when an insert references a row that no longer exists — e.g. creating a
+ * page in a workspace that was deleted between page load and the insert.
+ * This is an expected race condition during E2E test teardown and concurrent
+ * user sessions, not an application bug.
+ *
+ * Matches two shapes:
+ * 1. PostgrestError objects with `code: "23503"` (from `{ data, error }` path)
+ * 2. Generic Error with a `code` property set to `"23503"` (thrown path)
+ */
+export function isForeignKeyViolationError(error: Error): boolean {
+  if (isPostgrestError(error)) {
+    return error.code === "23503";
+  }
+  return (
+    "code" in error &&
+    (error as Record<string, unknown>).code === "23503"
+  );
+}
+
+/**
  * Node.js native fetch (undici) wraps the real network error in the `cause`
  * property. These substrings in the cause message indicate transient failures.
  */
@@ -289,6 +310,7 @@ export function captureSupabaseError(
     isTransientNetworkError(error) ||
     isSchemaNotFoundError(error) ||
     isInsufficientPrivilegeError(error) ||
+    isForeignKeyViolationError(error) ||
     isSupabaseAuthLockError(error)
   ) {
     lazyCaptureException(error, { extra, level: "warning" });

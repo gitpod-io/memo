@@ -18,6 +18,7 @@ import { toast } from "@/lib/toast";
 import { getClient } from "@/lib/supabase/lazy-client";
 import {
   captureSupabaseError,
+  isForeignKeyViolationError,
   isInsufficientPrivilegeError,
   isSchemaNotFoundError,
 } from "@/lib/sentry";
@@ -307,7 +308,8 @@ export function PageTree({ userId }: PageTreeProps) {
       if (error) {
         if (
           !isSchemaNotFoundError(error) &&
-          !isInsufficientPrivilegeError(error)
+          !isInsufficientPrivilegeError(error) &&
+          !isForeignKeyViolationError(error)
         ) {
           captureSupabaseError(error, "page-tree:create-page");
         }

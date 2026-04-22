@@ -1241,6 +1241,38 @@ This applies to any client-side mutation where the RLS rejection is an expected
 authorization boundary (workspace limits, non-member access) and the user is
 already notified via toast.
 
+### Foreign key violations on deleted parent rows (PostgreSQL 23503)
+
+When a client inserts a row referencing a parent that was deleted between page
+load and the mutation (e.g. creating a page in a workspace that was deleted
+during E2E test teardown), PostgreSQL returns error code `23503`
+(`foreign_key_violation`). This is an expected race condition, not an
+application bug — the user already sees a toast error.
+
+`captureSupabaseError` automatically downgrades `23503` to warning level.
+Client-side code that guards before calling `captureSupabaseError` should also
+skip `isForeignKeyViolationError` to avoid reporting entirely:
+
+```typescript
+import {
+  captureSupabaseError,
+  isForeignKeyViolationError,
+  isInsufficientPrivilegeError,
+  isSchemaNotFoundError,
+} from "@/lib/sentry";
+
+if (error) {
+  if (
+    !isSchemaNotFoundError(error) &&
+    !isInsufficientPrivilegeError(error) &&
+    !isForeignKeyViolationError(error)
+  ) {
+    captureSupabaseError(error, "feature:operation");
+  }
+  toast.error("Failed to do thing", { duration: 8000 });
+}
+```
+
 ### Supabase auth lock contention errors
 
 The Supabase client uses the Web Lock API to serialize auth token refresh.

@@ -12,6 +12,7 @@ import {
   isTransientNetworkError,
   isSchemaNotFoundError,
   isInsufficientPrivilegeError,
+  isForeignKeyViolationError,
   isSupabaseAuthLockError,
   isSupabaseAuthLockContention,
   captureSupabaseError,
@@ -286,6 +287,53 @@ describe("isInsufficientPrivilegeError", () => {
   });
 });
 
+describe("isForeignKeyViolationError", () => {
+  it("detects PostgreSQL 23503 (foreign_key_violation) from PostgrestError", () => {
+    const error = makePostgrestError({
+      message: 'insert or update on table "pages" violates foreign key constraint "pages_workspace_id_fkey"',
+      code: "23503",
+    });
+    expect(isForeignKeyViolationError(error)).toBe(true);
+  });
+
+  it("detects 23503 from generic Error with code property (thrown path)", () => {
+    const error = Object.assign(
+      new Error('insert or update on table "pages" violates foreign key constraint "pages_workspace_id_fkey"'),
+      { code: "23503" },
+    );
+    expect(isForeignKeyViolationError(error)).toBe(true);
+  });
+
+  it("returns false for other PostgrestError codes", () => {
+    const error = makePostgrestError({
+      message: "duplicate key value violates unique constraint",
+      code: "23505",
+    });
+    expect(isForeignKeyViolationError(error)).toBe(false);
+  });
+
+  it("returns false for RLS violations (42501)", () => {
+    const error = makePostgrestError({
+      message: "new row violates row-level security policy",
+      code: "42501",
+    });
+    expect(isForeignKeyViolationError(error)).toBe(false);
+  });
+
+  it("returns false for generic errors without code", () => {
+    const error = new Error("Something went wrong");
+    expect(isForeignKeyViolationError(error)).toBe(false);
+  });
+
+  it("returns false for generic Error with non-23503 code property", () => {
+    const error = Object.assign(
+      new Error("duplicate key"),
+      { code: "23505" },
+    );
+    expect(isForeignKeyViolationError(error)).toBe(false);
+  });
+});
+
 describe("isSupabaseAuthLockError", () => {
   it("detects AbortError in PostgrestError details (MEMO-16/17/19)", () => {
     const error = makePostgrestError({
@@ -393,6 +441,21 @@ describe("captureSupabaseError", () => {
     expect(opts.level).toBe("warning");
     expect(opts.extra.operation).toBe("page-tree:create-page");
     expect(opts.extra.code).toBe("42501");
+  });
+
+  it("captures foreign key violations (23503) at warning level (MEMO-1B)", async () => {
+    const error = makePostgrestError({
+      message: 'insert or update on table "pages" violates foreign key constraint "pages_workspace_id_fkey"',
+      code: "23503",
+    });
+    captureSupabaseError(error, "page-tree:create-page");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [, opts] = captureExceptionMock.mock.calls[0];
+    expect(opts.level).toBe("warning");
+    expect(opts.extra.operation).toBe("page-tree:create-page");
+    expect(opts.extra.code).toBe("23503");
   });
 
   it("captures Node.js native fetch errors at warning level (MEMO-15)", async () => {
