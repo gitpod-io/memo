@@ -343,18 +343,79 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
   // Row / column / cell CRUD
   // -----------------------------------------------------------------------
 
-  const handleAddRow = useCallback(async () => {
-    const { data: rowPage, error } = await addRow(pageId, userId);
-    if (error || !rowPage) {
-      toast.error("Failed to add row", { duration: 8000 });
-      return;
-    }
-    // Append the new row optimistically
-    setRows((prev) => [
-      ...prev,
-      { page: rowPage as DatabaseRow["page"], values: {} },
-    ]);
-  }, [pageId, userId]);
+  const handleAddRow = useCallback(
+    async (initialValues?: Record<string, Record<string, unknown>>) => {
+      const { data: rowPage, error } = await addRow(
+        pageId,
+        userId,
+        initialValues,
+      );
+      if (error || !rowPage) {
+        toast.error("Failed to add row", { duration: 8000 });
+        return;
+      }
+      // Build optimistic row_values from initialValues
+      const optimisticValues: DatabaseRow["values"] = {};
+      if (initialValues) {
+        for (const [propertyId, value] of Object.entries(initialValues)) {
+          optimisticValues[propertyId] = {
+            id: "",
+            row_id: rowPage.id,
+            property_id: propertyId,
+            value,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+        }
+      }
+      setRows((prev) => [
+        ...prev,
+        { page: rowPage as DatabaseRow["page"], values: optimisticValues },
+      ]);
+    },
+    [pageId, userId],
+  );
+
+  const handleCardMove = useCallback(
+    async (
+      rowId: string,
+      propertyId: string,
+      newOptionId: string | null,
+    ) => {
+      const newValue: Record<string, unknown> = {
+        option_id: newOptionId,
+      };
+      // Optimistic update
+      setRows((prev) =>
+        prev.map((r) => {
+          if (r.page.id !== rowId) return r;
+          return {
+            ...r,
+            values: {
+              ...r.values,
+              [propertyId]: {
+                ...(r.values[propertyId] ?? {
+                  id: "",
+                  row_id: rowId,
+                  property_id: propertyId,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                }),
+                value: newValue,
+                updated_at: new Date().toISOString(),
+              },
+            },
+          };
+        }),
+      );
+
+      const { error } = await updateRowValue(rowId, propertyId, newValue);
+      if (error) {
+        toast.error("Failed to move card", { duration: 8000 });
+      }
+    },
+    [],
+  );
 
   const handleCellUpdate = useCallback(
     async (rowId: string, propertyId: string, value: Record<string, unknown>) => {
@@ -524,6 +585,8 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   properties={properties}
                   viewConfig={activeView.config}
                   workspaceSlug={workspaceSlug}
+                  onCardMove={handleCardMove}
+                  onAddRow={handleAddRow}
                 />
               ) : activeView?.type === "list" ? (
                 <ListView
