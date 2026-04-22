@@ -46,11 +46,12 @@ import { openImagePicker } from "@/components/editor/image-plugin";
 import { INSERT_CALLOUT_COMMAND } from "@/components/editor/callout-plugin";
 import { INSERT_COLLAPSIBLE_COMMAND } from "@/components/editor/collapsible-plugin";
 import { OPEN_PAGE_LINK_MENU_COMMAND } from "@/components/editor/page-link-plugin";
+import { OPEN_DATABASE_MENU_COMMAND } from "@/components/editor/database-plugin";
 import {
   TURN_INTO_COMMAND,
   TURN_INTO_OPTIONS,
 } from "@/components/editor/turn-into-plugin";
-import { ArrowRightLeft } from "lucide-react";
+import { ArrowRightLeft, Table2 } from "lucide-react";
 
 class SlashCommandOption extends MenuOption {
   title: string;
@@ -232,6 +233,13 @@ export function SlashCommandPlugin(): JSX.Element | null {
         icon: <Link className="h-5 w-5" />,
         onSelect: () => {
           editor.dispatchCommand(OPEN_PAGE_LINK_MENU_COMMAND, undefined);
+        },
+      }),
+      new SlashCommandOption("Database", {
+        description: "Embed an inline database view",
+        icon: <Table2 className="h-5 w-5" />,
+        onSelect: () => {
+          editor.dispatchCommand(OPEN_DATABASE_MENU_COMMAND, undefined);
         },
       }),
       // "Turn into" options — appear when user types /turn
