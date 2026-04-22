@@ -68,6 +68,13 @@ One paragraph: what this feature does and why a user cares.
 - [ ] Criterion 2
 - [ ] Criterion 3
 
+## Integration Requirements
+How this feature connects to existing components and systems. Include:
+- Which existing components this feature must use (not reimplement)
+- Layout requirements relative to the page shell (e.g., full-width vs content-width)
+- Interaction edge cases (rapid clicks, overlay dismissal, keyboard navigation)
+- Data flow: where data comes from, how it's passed to the UI
+
 ## Dependencies
 Depends on #N, #M (or "None")
 
@@ -76,6 +83,29 @@ Depends on #N, #M (or "None")
 - Reference .agents/conventions.md for component patterns
 - Reference .agents/architecture.md for data model
 ```
+
+#### Integration Requirements Guidance
+
+The "Integration Requirements" section prevents a class of bugs where features are
+implemented correctly in isolation but fail when integrated into the real app. When
+writing this section, consider:
+
+1. **Component reuse**: If a registry, factory, or shared component exists for this
+   domain, the issue must explicitly state "use X for Y" (e.g., "use the property
+   type registry for cell editing"). Without this, the implementer may reimplement
+   the behavior inline.
+
+2. **Layout context**: If the feature renders inside a page layout, specify whether
+   it should respect or break out of the page's content width constraints. Database
+   tables, for example, need full available width — not the editor's `max-w-3xl`.
+
+3. **Interaction edge cases**: For interactive UI, list the edge cases that must be
+   handled: rapid double-click (debounce), overlay dismissal before subsequent
+   interactions, keyboard navigation, focus management after dialog close.
+
+4. **Cross-component data flow**: If the feature involves data flowing between
+   components (e.g., a type picker that configures a cell editor), specify the
+   interface explicitly. Don't assume the implementer will discover the connection.
 
 #### Labels
 
@@ -146,6 +176,7 @@ need to be assessed and labeled before the Feature Builder or Bug Fixer can act.
 Every issue entering the backlog must have:
 - [ ] Description: what and why
 - [ ] Acceptance Criteria: testable checkboxes
+- [ ] Integration Requirements: component reuse, layout context, interaction edge cases, data flow (for UI features)
 - [ ] Dependencies: explicit issue refs or "None"
 - [ ] Technical Notes: relevant files, patterns, edge cases
 - [ ] 3 labels: status + priority + type

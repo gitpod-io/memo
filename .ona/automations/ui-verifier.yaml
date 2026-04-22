@@ -66,6 +66,37 @@ action:
                 intentional or unintentional visual changes. Include the diffs in the report
                 so a human can determine if the changes are acceptable.
 
+                ## Step 3b — Live site vs Storybook comparison
+
+                This step catches integration-level visual bugs — components that render
+                correctly in Storybook isolation but break in the real page context (e.g.,
+                layout constraints from parent containers, CSS cascade overrides, missing
+                component wiring, portal/overlay issues).
+
+                For each new or modified component in the PR diff:
+                1. Identify the corresponding Storybook story (from the `*.stories.tsx` file).
+                2. Screenshot the Storybook story at desktop viewport (1280×800) using the
+                   Storybook build from Step 3.
+                3. Screenshot the same component on the live site at the same viewport.
+                   Navigate to the page where the component appears, wait for it to render,
+                   and capture the relevant area.
+                4. Compare the two screenshots visually. Look for:
+                   - **Layout differences**: component constrained or stretched differently
+                     than in the story (e.g., max-width containers, flex/grid parents)
+                   - **Missing sub-components**: story shows the correct child component but
+                     live site renders a fallback (e.g., plain `<input>` instead of DatePicker)
+                   - **Style overrides**: page-level CSS affecting component appearance
+                   - **Overflow/clipping**: component content cut off by parent containers
+                   - **Portal/overlay issues**: dropdowns, popovers, or modals not rendering
+                     correctly in the full page context
+
+                If discrepancies are found, include them in the report with both screenshots
+                and a description of the difference. These are high-priority findings because
+                they indicate the component works in isolation but fails in production.
+
+                Note: This comparison requires the Storybook build from Step 3 to still be
+                running. Keep the server alive until this step completes, then clean up.
+
                 ## Step 4 — Visual verification (Playwright screenshots)
 
                 Take screenshots of affected pages on the live site. Some routes require

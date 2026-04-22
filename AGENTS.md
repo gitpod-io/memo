@@ -45,26 +45,59 @@ metrics/           → Daily/weekly metrics snapshots
 
 ## Testing
 
-- Unit tests (Vitest): utility functions, non-trivial logic, API route handlers
-- Integration tests (Vitest): API routes with mocked Supabase
-- E2E tests (Playwright): interactive features, critical user flows, new pages
-- Visual regression (Playwright): `pnpm test:visual` — screenshots Storybook stories and compares against committed baselines in `e2e/visual-regression.spec.ts-snapshots/`
-- Static analysis tests (Vitest): design spec compliance checks on source code
-- Skip tests for trivial layout-only components
+### Testing pyramid
 
-### When to write E2E tests
+Each test type has a specific purpose. Do not substitute one for another.
 
-- Drag-and-drop (editor blocks, sidebar pages)
-- Floating UI (toolbars, menus, popovers that appear/disappear based on user action)
+- **Unit tests (Vitest):** utility functions, non-trivial logic, API route handlers, data transformations. Mock external dependencies (Supabase, fetch).
+- **Component tests (Vitest + jsdom):** render components, verify callbacks fire, check state transitions. Use for logic-heavy components that don't need a real browser.
+- **E2E tests (Playwright):** interactive features, critical user flows, new pages. **Mandatory** for any PR that adds or modifies interactive UI — see below.
+- **Visual regression (Playwright):** `pnpm test:visual` — screenshots Storybook stories and compares against committed baselines in `e2e/visual-regression.spec.ts-snapshots/`
+- **Static analysis tests (Vitest):** structural convention enforcement only (e.g., "no bare catch blocks", "no `@ts-ignore`", migration validation). **Never** for verifying feature behavior — see below.
+- Skip tests for trivial layout-only components.
+
+### E2E tests are mandatory for interactive UI
+
+Any PR that adds or modifies components with user interactions (`onClick`, `onChange`, `onBlur`, `onKeyDown`, dropdowns, dialogs, popovers, drag-and-drop) **must** include E2E tests in the same PR. Do not defer E2E tests to follow-up issues.
+
+E2E tests are required for:
+- Buttons, dropdowns, and menus that trigger actions
+- Inline editing (click-to-edit cells, inputs that appear on interaction)
+- Dialogs and popovers (open, interact, dismiss)
+- Drag-and-drop (editor blocks, sidebar pages, column reorder)
 - Multi-step flows (auth, page creation, workspace switching)
-- Any feature where the bug would only manifest in a real browser (not jsdom)
+- Any feature where the bug would only manifest in a real browser
 
-### When unit tests are sufficient
-
+When unit tests are sufficient (no E2E needed):
 - Pure functions and utilities
 - API route handlers (mock Supabase)
 - Data transformations (markdown conversion, tree building)
-- Component rendering without complex interaction
+- Components with no event handlers (pure render)
+
+### PRs that change interaction flows must update E2E tests
+
+Any PR that changes a user-facing interaction flow (button behavior, dialog flow, dropdown behavior, keyboard shortcuts) must update **all** affected E2E tests in the same PR. Search for all references: `grep -r '<component-name>\|<selector>' e2e/` before committing.
+
+Do not merge interaction changes without verifying E2E tests pass. The PR Reviewer will block PRs that change interactive components without corresponding E2E test updates.
+
+### No source-grep tests for feature behavior
+
+Do not write Vitest tests that `readFileSync` source code and assert on string patterns (regex matching variable names, import paths, or code structure). These tests verify implementation details, not behavior. A refactor that preserves behavior but changes variable names breaks them; a bug with the right variable names passes them.
+
+Source-grep tests are allowed **only** for structural convention enforcement:
+- ✅ "All catch blocks capture the error variable" (convention check)
+- ✅ "No `@ts-ignore` in source files" (convention check)
+- ✅ "Migration files follow naming convention" (convention check)
+- ❌ "handleAddColumn accepts a PropertyType parameter" (feature behavior — use E2E or component test)
+- ❌ "addProperty is called with dynamic type, not hardcoded" (feature behavior — use E2E or component test)
+
+### Storybook is the visual source of truth
+
+Storybook stories are not just for regression detection — they are the reference for what components should look like. Verification must compare **rendered output**, not just source code tokens.
+
+- **Feature Builder:** After creating/modifying UI components, build Storybook, open stories in a browser, and visually verify the rendered output matches `.agents/design.md` before committing.
+- **PR Reviewer:** When reviewing UI PRs, build Storybook, open changed component stories, and verify the rendered output matches the design spec and PR intent.
+- **UI Verifier:** After merge, screenshot Storybook stories and corresponding live site pages, and compare for integration-level discrepancies (components that work in isolation but break in the real page context).
 
 ### E2E test location
 

@@ -547,6 +547,89 @@ Rules:
 
 ## Testing
 
+### Testing pyramid — what each test type covers
+
+Each test type has a specific purpose. Do not substitute one for another.
+
+| Test type | Purpose | Examples |
+|---|---|---|
+| Unit (Vitest) | Pure logic, data transformations, utilities | `database.test.ts` (CRUD with mocked Supabase), `formula.test.ts` (parser/evaluator), `page-tree.test.ts` (tree operations) |
+| Component (Vitest + jsdom) | Render components, verify callbacks, check state | Render `PropertyTypePicker`, click an option, verify `onSelect` fires with correct type |
+| E2E (Playwright) | User interaction flows in a real browser | Create database, add column via type picker, edit a cell, verify value persists |
+| Visual regression (Playwright) | Screenshot Storybook stories, compare baselines | Detect unintended visual changes to existing components |
+| Static analysis (Vitest) | Structural convention enforcement only | "No bare catch blocks", "no `@ts-ignore`", migration naming |
+
+**Anti-pattern: source-grep tests for feature behavior.** Do not write Vitest tests
+that `readFileSync` source code and assert on string patterns. These verify
+implementation details (variable names, import paths), not behavior. Use component
+tests or E2E tests instead.
+
+```typescript
+// ❌ Wrong — source-grep test for feature behavior
+const source = readFileSync(resolve(__dirname, "./database-view-client.tsx"), "utf-8");
+expect(source).toMatch(/PROPERTY_TYPE_LABEL\[type\]/);
+
+// ✅ Correct — component test for the same behavior
+render(<PropertyTypePicker onSelect={onSelect} />);
+await userEvent.click(screen.getByRole("button", { name: /add column/i }));
+await userEvent.click(screen.getByText("Date"));
+expect(onSelect).toHaveBeenCalledWith("date");
+```
+
+Source-grep tests are allowed only for convention enforcement:
+```typescript
+// ✅ Allowed — convention enforcement
+it("no bare catch blocks in source files", () => {
+  const files = glob.sync("src/**/*.ts");
+  for (const file of files) {
+    const source = readFileSync(file, "utf-8");
+    expect(source).not.toMatch(/catch\s*\{/);
+  }
+});
+```
+
+### E2E tests are mandatory for interactive UI
+
+Any PR that adds or modifies components with user interactions must include E2E
+tests in the same PR. This is not optional — the PR Reviewer will block PRs that
+add interactive components without E2E coverage.
+
+Interactive components include: buttons that trigger actions, dropdowns, dialogs,
+popovers, inline editing, drag-and-drop, keyboard shortcuts.
+
+When a PR changes an existing interaction flow (e.g., replacing a plain button with
+a dropdown, replacing `window.prompt` with a styled dialog), it must update **all**
+affected E2E tests. Search before committing:
+```bash
+grep -r '<component-name>\|<selector>\|<old-text>' e2e/
+```
+
+### Storybook as visual source of truth
+
+Storybook stories are not just for regression detection — they are the reference
+for what components should look like when rendered. Verification must compare
+**rendered output in a browser**, not just source code tokens.
+
+**Pre-merge verification (Feature Builder and PR Reviewer):**
+1. Build and serve Storybook: `pnpm build-storybook && python3 -m http.server 6099 -d storybook-static &`
+2. Open new/modified stories in a browser viewport
+3. Visually verify the rendered output matches `.agents/design.md`
+4. Fix discrepancies before committing
+5. Run `pnpm test:visual` to generate/update baselines
+6. Clean up: `kill $(lsof -ti:6099) 2>/dev/null; rm -rf storybook-static`
+
+**Post-merge verification (UI Verifier):**
+1. Screenshot Storybook stories for changed components
+2. Screenshot the corresponding live site pages
+3. Compare Storybook rendering against live site rendering
+4. Flag integration-level discrepancies (component works in isolation but breaks in page context)
+
+This catches bugs that static code review misses:
+- Layout constraints from parent containers (e.g., `max-w-3xl` on database views)
+- CSS cascade issues where page-level styles override component styles
+- Missing component wiring (e.g., registry editors not used in table view)
+- Portal/overlay interactions that only manifest in the full page context
+
 ### Vitest (unit / integration / static analysis)
 
 - Unit tests go next to the file they test: `foo.test.ts` alongside `foo.ts`
