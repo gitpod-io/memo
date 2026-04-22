@@ -158,6 +158,22 @@ describe("isTransientNetworkError", () => {
     expect(isTransientNetworkError(error)).toBe(true);
   });
 
+  it("detects 'TypeError: Failed to fetch' with Supabase hostname suffix (MEMO-1A regression)", () => {
+    const error = new Error(
+      "TypeError: Failed to fetch (yoipusltrtbvneuywzkj.supabase.co)",
+    );
+    expect(isTransientNetworkError(error)).toBe(true);
+  });
+
+  it("detects 'TypeError: Failed to fetch' with stack trace in PostgrestError details (MEMO-1A regression)", () => {
+    const error = makePostgrestError({
+      message: "TypeError: Failed to fetch (yoipusltrtbvneuywzkj.supabase.co)",
+      details:
+        "TypeError: Failed to fetch\n    at https://memo.software-factory.dev/_next/static/chunks/0vbg59c79mvs4.js:20:1653",
+    });
+    expect(isTransientNetworkError(error)).toBe(true);
+  });
+
   it("returns false when cause is not an Error instance", () => {
     const error = new Error("some error", { cause: "string cause" });
     expect(isTransientNetworkError(error)).toBe(false);
@@ -407,6 +423,21 @@ describe("captureSupabaseError", () => {
     const [, opts] = captureExceptionMock.mock.calls[0];
     expect(opts.level).toBe("warning");
     expect(opts.extra.operation).toBe("favorites:check");
+  });
+
+  it("captures hostname-suffixed transient network errors at warning level (MEMO-1A)", async () => {
+    const error = makePostgrestError({
+      message: "TypeError: Failed to fetch (yoipusltrtbvneuywzkj.supabase.co)",
+      details:
+        "TypeError: Failed to fetch\n    at https://memo.software-factory.dev/_next/static/chunks/0vbg59c79mvs4.js:20:1653",
+    });
+    captureSupabaseError(error, "create-workspace-dialog:create");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [, opts] = captureExceptionMock.mock.calls[0];
+    expect(opts.level).toBe("warning");
+    expect(opts.extra.operation).toBe("create-workspace-dialog:create");
   });
 
   it("captures non-network, non-RLS errors at default (error) level", async () => {
