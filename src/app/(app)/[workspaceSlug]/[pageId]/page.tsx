@@ -257,7 +257,7 @@ export default async function PageView({
   const isDatabase = page.is_database === true;
 
   return (
-    <div className="mx-auto max-w-3xl p-6">
+    <div className={`mx-auto p-6 ${isDatabase ? "" : "max-w-3xl"}`}>
       <div className="mb-2">
         <PageBreadcrumb items={breadcrumbItems} />
       </div>
