@@ -13,6 +13,16 @@ import { SortMenu } from "@/components/database/sort-menu";
 import { FilterBar } from "@/components/database/filter-bar";
 import { RenamePropertyDialog } from "@/components/database/rename-property-dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   sortRows,
   filterRows,
   type SortRule,
@@ -22,6 +32,7 @@ import {
   addProperty,
   addRow,
   addView,
+  deleteProperty,
   deleteView,
   loadDatabase,
   loadWorkspaceMembers,
@@ -180,6 +191,12 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
   // Rename property dialog state
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [renamingProperty, setRenamingProperty] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  // Delete property confirmation state
+  const [deletingProperty, setDeletingProperty] = useState<{
     id: string;
     name: string;
   } | null>(null);
@@ -641,6 +658,82 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     [pageId, properties],
   );
 
+  // Open the delete-property confirmation dialog (called from column header menu)
+  const handleRequestDeleteColumn = useCallback(
+    (propertyId: string) => {
+      const prop = properties.find((p) => p.id === propertyId);
+      if (!prop || prop.position === 0) return; // Title property cannot be deleted
+      setDeletingProperty({ id: prop.id, name: prop.name });
+    },
+    [properties],
+  );
+
+  // Confirmed deletion — remove property, clean up view configs, and persist
+  const handleConfirmDeleteColumn = useCallback(async () => {
+    if (!deletingProperty) return;
+    const { id: propertyId } = deletingProperty;
+    setDeletingProperty(null);
+
+    // Optimistic removal from properties
+    const prevProperties = properties;
+    setProperties((prev) => prev.filter((p) => p.id !== propertyId));
+
+    // Optimistic removal from visible_properties in all views
+    const prevViews = views;
+    setViews((prev) =>
+      prev.map((v) => {
+        const vp = v.config.visible_properties;
+        if (!vp || !vp.includes(propertyId)) return v;
+        return {
+          ...v,
+          config: {
+            ...v.config,
+            visible_properties: vp.filter((id: string) => id !== propertyId),
+          },
+        };
+      }),
+    );
+
+    // Optimistic removal from row values
+    setRows((prev) =>
+      prev.map((r) => {
+        if (!(propertyId in r.values)) return r;
+        const { [propertyId]: _, ...rest } = r.values;
+        return { ...r, values: rest };
+      }),
+    );
+
+    const { error } = await deleteProperty(propertyId);
+    if (error) {
+      toast.error("Failed to delete property", { duration: 8000 });
+      // Revert
+      setProperties(prevProperties);
+      setViews(prevViews);
+      const { data } = await loadDatabase(pageId);
+      if (data) {
+        setRows(data.rows);
+      }
+      return;
+    }
+
+    // Persist visible_properties cleanup for each affected view
+    for (const v of views) {
+      const vp = v.config.visible_properties;
+      if (vp && vp.includes(propertyId)) {
+        void updateView(v.id, {
+          config: {
+            ...v.config,
+            visible_properties: vp.filter((id: string) => id !== propertyId),
+          },
+        });
+      }
+    }
+  }, [deletingProperty, properties, views, pageId]);
+
+  const handleCancelDeleteColumn = useCallback(() => {
+    setDeletingProperty(null);
+  }, []);
+
   const handleDeleteRow = useCallback(
     async (rowId: string) => {
       // Optimistic removal
@@ -749,6 +842,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   onAddColumn={handleAddColumn}
                   onColumnHeaderClick={handleColumnHeaderClick}
                   onColumnReorder={handleColumnReorder}
+                  onDeleteColumn={handleRequestDeleteColumn}
                   onDeleteRow={handleDeleteRow}
                   sorts={activeSorts}
                   onSortToggle={handleSortToggle}
@@ -801,6 +895,34 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
         propertyName={renamingProperty?.name ?? ""}
         onRename={handlePropertyRename}
       />
+
+      {/* Delete property confirmation dialog */}
+      <AlertDialog
+        open={deletingProperty !== null}
+        onOpenChange={(open) => {
+          if (!open) handleCancelDeleteColumn();
+        }}
+      >
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete &ldquo;{deletingProperty?.name}&rdquo;?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the property and all its row values.
+              This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDeleteColumn}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleConfirmDeleteColumn}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

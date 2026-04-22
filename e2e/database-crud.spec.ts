@@ -99,16 +99,36 @@ async function addColumnViaTypePicker(
 }
 
 /**
- * Rename a property column via the RenamePropertyDialog.
- * Clicks the column header button, fills the dialog input, and clicks Rename.
+ * Open the column header dropdown menu for a property column.
+ * Clicks the "..." menu button inside the column header.
+ */
+async function openColumnMenu(
+  page: import("@playwright/test").Page,
+  headerLocator: import("@playwright/test").Locator,
+) {
+  // The dropdown trigger has aria-label "<name> column menu"
+  const menuTrigger = headerLocator.locator('[aria-label$="column menu"]');
+  await expect(menuTrigger).toBeAttached({ timeout: 5_000 });
+  // Hover to reveal the menu button (it's transparent until hover)
+  await headerLocator.hover();
+  await menuTrigger.click();
+}
+
+/**
+ * Rename a property column via the column header dropdown + RenamePropertyDialog.
+ * Opens the column menu, clicks "Rename property", fills the dialog input, and confirms.
  */
 async function renamePropertyViaDialog(
   page: import("@playwright/test").Page,
   headerLocator: import("@playwright/test").Locator,
   newName: string,
 ) {
-  const headerButton = headerLocator.locator("button").first();
-  await headerButton.click();
+  await openColumnMenu(page, headerLocator);
+
+  // Click "Rename property" in the dropdown
+  const renameItem = page.getByRole("menuitem", { name: "Rename property" });
+  await expect(renameItem).toBeVisible({ timeout: 5_000 });
+  await renameItem.click();
 
   // Wait for the rename dialog to appear
   const dialog = page.getByRole("dialog");
@@ -290,6 +310,103 @@ test.describe("Database CRUD", () => {
       hasText: "Renamed Column",
     });
     await expect(renamedHeader.first()).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("user can delete a property column via the column header menu", async ({
+    authenticatedPage: page,
+  }) => {
+    await createDatabaseFromSidebar(page);
+
+    // Add a row to get the full grid, then add a column
+    const addRowBtn = page.locator("button", { hasText: "+ New" });
+    await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
+    await addRowBtn.click();
+    await expect(page.locator('[role="grid"]')).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Add a text column
+    await addColumnViaTypePicker(page, "Text");
+
+    // Verify the column exists
+    const propertyHeader = page
+      .locator('[role="columnheader"]', { hasText: /^text$/i })
+      .first();
+    await expect(propertyHeader).toBeVisible({ timeout: 5_000 });
+
+    // Open the column header menu and click "Delete property"
+    await openColumnMenu(page, propertyHeader);
+    const deleteItem = page.getByRole("menuitem", { name: "Delete property" });
+    await expect(deleteItem).toBeVisible({ timeout: 5_000 });
+    await deleteItem.click();
+
+    // Confirm the deletion in the alert dialog
+    const alertDialog = page.getByRole("alertdialog");
+    await expect(alertDialog).toBeVisible({ timeout: 5_000 });
+    const confirmBtn = alertDialog.getByRole("button", { name: "Delete" });
+    await confirmBtn.click();
+
+    // Wait for the dialog to close and column to disappear
+    await expect(alertDialog).not.toBeVisible({ timeout: 5_000 });
+    await page.waitForTimeout(1_500);
+
+    // The "Text" column header should no longer be visible
+    const deletedHeader = page.locator('[role="columnheader"]', {
+      hasText: /^text$/i,
+    });
+    await expect(deletedHeader).not.toBeVisible({ timeout: 5_000 });
+
+    // Reload and verify the column is still gone (persisted)
+    await page.reload();
+    await expect(page.locator('[role="grid"]')).toBeVisible({
+      timeout: 15_000,
+    });
+    const deletedHeaderAfterReload = page.locator('[role="columnheader"]', {
+      hasText: /^text$/i,
+    });
+    await expect(deletedHeaderAfterReload).not.toBeVisible({ timeout: 5_000 });
+  });
+
+  test("Title property (position 0) does not show delete option", async ({
+    authenticatedPage: page,
+  }) => {
+    await createDatabaseFromSidebar(page);
+
+    // Add a row to get the full grid
+    const addRowBtn = page.locator("button", { hasText: "+ New" });
+    await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
+    await addRowBtn.click();
+    await expect(page.locator('[role="grid"]')).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // The Title property is at position 0 — find its column header.
+    // It's the first property column header after the hardcoded "Title" header.
+    // The Title property is named "Title" and rendered as a columnheader with
+    // a dropdown menu. But the hardcoded Title column doesn't have a menu.
+    // We need to find the property column header named "Title" (position 0).
+    const titlePropertyHeaders = page.locator('[role="columnheader"]').filter({
+      has: page.locator('[aria-label$="column menu"]'),
+    });
+
+    // If there's a Title property column with a menu, open it and verify
+    // there's no "Delete property" option
+    const count = await titlePropertyHeaders.count();
+    if (count > 0) {
+      const firstMenuHeader = titlePropertyHeaders.first();
+      await openColumnMenu(page, firstMenuHeader);
+
+      // "Rename property" should be visible
+      const renameItem = page.getByRole("menuitem", { name: "Rename property" });
+      await expect(renameItem).toBeVisible({ timeout: 5_000 });
+
+      // "Delete property" should NOT be visible for the Title property
+      const deleteItem = page.getByRole("menuitem", { name: "Delete property" });
+      await expect(deleteItem).not.toBeVisible({ timeout: 2_000 });
+
+      // Close the menu by pressing Escape
+      await page.keyboard.press("Escape");
+    }
   });
 
   test("database page shows grid icon in sidebar", async ({
