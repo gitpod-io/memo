@@ -10,6 +10,7 @@ vi.mock("@sentry/nextjs", () => ({
 
 import {
   isTransientNetworkError,
+  isTransientStorageError,
   isSchemaNotFoundError,
   isInsufficientPrivilegeError,
   isForeignKeyViolationError,
@@ -422,6 +423,43 @@ describe("isStatementTimeoutError", () => {
   });
 });
 
+describe("isTransientStorageError", () => {
+  it("detects StorageApiError database timeout (MEMO-1N)", () => {
+    const error = new Error("The connection to the database timed out");
+    error.name = "StorageApiError";
+    expect(isTransientStorageError(error)).toBe(true);
+  });
+
+  it("detects connection terminated due to connection timeout", () => {
+    const error = new Error("connection terminated due to connection timeout");
+    error.name = "StorageApiError";
+    expect(isTransientStorageError(error)).toBe(true);
+  });
+
+  it("detects timeout message regardless of error name", () => {
+    const error = new Error("The connection to the database timed out");
+    expect(isTransientStorageError(error)).toBe(true);
+  });
+
+  it("returns false for transient network errors", () => {
+    const error = new Error("Failed to fetch");
+    expect(isTransientStorageError(error)).toBe(false);
+  });
+
+  it("returns false for generic application errors", () => {
+    const error = new Error("Something went wrong");
+    expect(isTransientStorageError(error)).toBe(false);
+  });
+
+  it("returns false for PostgrestError timeouts (handled by isStatementTimeoutError)", () => {
+    const error = makePostgrestError({
+      message: "canceling statement due to statement timeout",
+      code: "57014",
+    });
+    expect(isTransientStorageError(error)).toBe(false);
+  });
+});
+
 describe("isSupabaseAuthLockError", () => {
   it("detects AbortError in PostgrestError details (MEMO-16/17/19)", () => {
     const error = makePostgrestError({
@@ -619,6 +657,18 @@ describe("captureSupabaseError", () => {
     expect(opts.level).toBe("warning");
     expect(opts.extra.operation).toBe("delete_account");
     expect(opts.extra.code).toBe("57014");
+  });
+
+  it("captures StorageApiError database timeout at warning level (MEMO-1N)", async () => {
+    const error = new Error("The connection to the database timed out");
+    error.name = "StorageApiError";
+    captureSupabaseError(error, "image-plugin:upload");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [, opts] = captureExceptionMock.mock.calls[0];
+    expect(opts.level).toBe("warning");
+    expect(opts.extra.operation).toBe("image-plugin:upload");
   });
 
   it("includes PostgrestError fields in extra", async () => {

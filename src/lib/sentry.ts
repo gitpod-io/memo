@@ -199,6 +199,24 @@ export function isStatementTimeoutError(error: Error): boolean {
 }
 
 /**
+ * True when the error is a Supabase Storage API timeout. These are server-side
+ * connection pool timeouts returned as HTTP 544 responses, not client-side
+ * fetch failures. The `StorageApiError` from `@supabase/storage-js` has
+ * `message` and `name` but lacks `code`, `details`, and `hint` — so it fails
+ * the `isPostgrestError` check and none of the existing transient classifiers
+ * match it.
+ *
+ * See: Sentry MEMO-1N
+ */
+export function isTransientStorageError(error: Error): boolean {
+  const msg = error.message;
+  return (
+    msg.includes("The connection to the database timed out") ||
+    msg.includes("connection terminated due to connection timeout")
+  );
+}
+
+/**
  * Node.js native fetch (undici) wraps the real network error in the `cause`
  * property. These substrings in the cause message indicate transient failures.
  */
@@ -350,6 +368,7 @@ export function captureSupabaseError(
 
   if (
     isTransientNetworkError(error) ||
+    isTransientStorageError(error) ||
     isSchemaNotFoundError(error) ||
     isInsufficientPrivilegeError(error) ||
     isForeignKeyViolationError(error) ||
