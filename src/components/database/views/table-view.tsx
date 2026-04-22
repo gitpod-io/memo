@@ -29,6 +29,7 @@ import {
   buildComputedValue,
   getPropertyTypeConfig,
 } from "@/components/database/property-types";
+import { evaluateFormulaForRow } from "@/components/database/property-types/formula";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -399,6 +400,7 @@ export function TableView({
             row={row}
             rowIndex={rowIndex}
             visibleProperties={visibleProperties}
+            allProperties={properties}
             rowHeightClass={rowHeightClass}
             workspaceSlug={workspaceSlug}
             editingCell={editingCell}
@@ -431,6 +433,7 @@ interface TableRowProps {
   row: DatabaseRow;
   rowIndex: number;
   visibleProperties: DatabaseProperty[];
+  allProperties: DatabaseProperty[];
   rowHeightClass: string;
   workspaceSlug: string;
   editingCell: EditingCell | null;
@@ -443,6 +446,7 @@ function TableRow({
   row,
   rowIndex,
   visibleProperties,
+  allProperties,
   rowHeightClass,
   workspaceSlug,
   editingCell,
@@ -475,13 +479,17 @@ function TableRow({
           editingCell?.rowId === row.page.id &&
           editingCell?.propertyId === prop.id;
 
-        // Computed types derive values from page metadata, not row_values
-        const cellValue = isComputedType(prop.type)
-          ? undefined
-          : row.values[prop.id];
+        // Computed types derive values from page metadata, not row_values.
+        // Formula types evaluate expressions against the row's property values.
+        const cellValue =
+          isComputedType(prop.type) || prop.type === "formula"
+            ? undefined
+            : row.values[prop.id];
         const computedValue = isComputedType(prop.type)
           ? buildComputedValue(prop.type, row.page)
-          : undefined;
+          : prop.type === "formula"
+            ? evaluateFormulaForRow(prop, row, allProperties)
+            : undefined;
 
         return (
           <TableCell

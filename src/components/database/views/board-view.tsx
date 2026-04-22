@@ -4,6 +4,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { getPropertyTypeConfig } from "@/components/database/property-types/index";
+import { evaluateFormulaForRow } from "@/components/database/property-types/formula";
 import type {
   DatabaseProperty,
   DatabaseRow,
@@ -249,6 +250,7 @@ export function BoardView({
           key={column.id}
           column={column}
           visibleProperties={visibleProperties}
+          allProperties={properties}
           workspaceSlug={workspaceSlug}
           dragState={dragState}
           dropTarget={dropTarget}
@@ -282,6 +284,7 @@ interface ColumnData {
 interface BoardColumnProps {
   column: ColumnData;
   visibleProperties: DatabaseProperty[];
+  allProperties: DatabaseProperty[];
   workspaceSlug: string;
   dragState: DragState | null;
   dropTarget: DropTarget | null;
@@ -308,6 +311,7 @@ const COLOR_DOT_STYLES: Record<string, string> = {
 function BoardColumn({
   column,
   visibleProperties,
+  allProperties,
   workspaceSlug,
   dragState,
   dropTarget,
@@ -367,6 +371,7 @@ function BoardColumn({
             columnId={column.id}
             index={index}
             visibleProperties={visibleProperties}
+            allProperties={allProperties}
             workspaceSlug={workspaceSlug}
             isDragging={dragState?.rowId === row.page.id}
             showDropIndicatorBefore={
@@ -407,6 +412,7 @@ interface BoardCardProps {
   columnId: string;
   index: number;
   visibleProperties: DatabaseProperty[];
+  allProperties: DatabaseProperty[];
   workspaceSlug: string;
   isDragging: boolean;
   showDropIndicatorBefore: boolean;
@@ -420,6 +426,7 @@ function BoardCard({
   columnId,
   index,
   visibleProperties,
+  allProperties,
   workspaceSlug,
   isDragging,
   showDropIndicatorBefore,
@@ -458,6 +465,17 @@ function BoardCard({
         {visibleProperties.length > 0 && (
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {visibleProperties.map((prop) => {
+              if (prop.type === "formula") {
+                const formulaValue = evaluateFormulaForRow(prop, row, allProperties);
+                if (formulaValue._error || !formulaValue._display) return null;
+                return (
+                  <CardPropertyValue
+                    key={prop.id}
+                    property={prop}
+                    value={formulaValue}
+                  />
+                );
+              }
               const rv = row.values[prop.id];
               if (!rv) return null;
               return (
