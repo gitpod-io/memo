@@ -108,7 +108,7 @@ export function FormulaConfigEditor({
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         placeholder='e.g. prop("Price") * prop("Quantity")'
-        className="min-h-[60px] font-mono text-xs"
+        className="min-h-16 font-mono text-xs"
         rows={2}
       />
       {preview && (
