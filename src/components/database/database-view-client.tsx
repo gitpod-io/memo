@@ -11,6 +11,7 @@ import { PageCover } from "@/components/page-cover";
 import { ViewTabs, VIEW_TYPE_LABELS } from "@/components/database/view-tabs";
 import { SortMenu } from "@/components/database/sort-menu";
 import { FilterBar } from "@/components/database/filter-bar";
+import { RenamePropertyDialog } from "@/components/database/rename-property-dialog";
 import {
   sortRows,
   filterRows,
@@ -173,6 +174,13 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
   const [views, setViews] = useState<DatabaseView[]>([]);
   const [rows, setRows] = useState<DatabaseRow[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Rename property dialog state
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [renamingProperty, setRenamingProperty] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   // Active view: from URL ?view= param, or first view by position
   const viewIdFromUrl = searchParams.get("view");
@@ -552,28 +560,35 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
   }, [pageId, properties.length]);
 
   const handleColumnHeaderClick = useCallback(
-    async (propertyId: string) => {
+    (propertyId: string) => {
       const prop = properties.find((p) => p.id === propertyId);
       if (!prop) return;
+      setRenamingProperty({ id: prop.id, name: prop.name });
+      setRenameDialogOpen(true);
+    },
+    [properties],
+  );
 
-      const newName = window.prompt("Rename property", prop.name);
-      if (newName === null || newName.trim() === "" || newName === prop.name) return;
+  const handlePropertyRename = useCallback(
+    async (newName: string) => {
+      if (!renamingProperty) return;
+      const { id: propertyId, name: oldName } = renamingProperty;
 
       // Optimistic update
       setProperties((prev) =>
-        prev.map((p) => (p.id === propertyId ? { ...p, name: newName.trim() } : p)),
+        prev.map((p) => (p.id === propertyId ? { ...p, name: newName } : p)),
       );
 
-      const { error } = await updateProperty(propertyId, { name: newName.trim() });
+      const { error } = await updateProperty(propertyId, { name: newName });
       if (error) {
         toast.error("Failed to rename property", { duration: 8000 });
         // Revert
         setProperties((prev) =>
-          prev.map((p) => (p.id === propertyId ? { ...p, name: prop.name } : p)),
+          prev.map((p) => (p.id === propertyId ? { ...p, name: oldName } : p)),
         );
       }
     },
-    [properties],
+    [renamingProperty],
   );
 
   const handleColumnReorder = useCallback(
@@ -751,6 +766,14 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
           </>
         )}
       </div>
+
+      {/* Rename property dialog */}
+      <RenamePropertyDialog
+        open={renameDialogOpen}
+        onOpenChange={setRenameDialogOpen}
+        propertyName={renamingProperty?.name ?? ""}
+        onRename={handlePropertyRename}
+      />
     </>
   );
 }
