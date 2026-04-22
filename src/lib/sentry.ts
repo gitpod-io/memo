@@ -208,16 +208,24 @@ export function isTransientNetworkError(error: Error): boolean {
   const msg = error.message;
   const details = isPostgrestError(error) ? error.details : "";
 
-  // Browser-style fetch errors
+  // Browser-style fetch errors.
+  // The Supabase client may append the hostname in parentheses, e.g.
+  // "TypeError: Failed to fetch (example.supabase.co)" — use startsWith
+  // for patterns that have known suffixes, exact match for the rest.
   if (
-    msg === "TypeError: Failed to fetch" ||
-    details === "TypeError: Failed to fetch" ||
+    msg.startsWith("TypeError: Failed to fetch") ||
     msg === "Failed to fetch" ||
     msg === "Load failed" ||
     msg === "NetworkError when attempting to fetch resource." ||
     msg === "The Internet connection appears to be offline." ||
     msg === "Network request failed"
   ) {
+    return true;
+  }
+
+  // Supabase may embed "TypeError: Failed to fetch" in the details field,
+  // sometimes with a full stack trace appended.
+  if (details.startsWith("TypeError: Failed to fetch")) {
     return true;
   }
 

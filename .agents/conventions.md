@@ -201,6 +201,9 @@ Transient network errors are automatically captured at `warning` level instead o
 Browser-style messages: `TypeError: Failed to fetch`, `Failed to fetch`,
 `Load failed`, `NetworkError when attempting to fetch resource.`,
 `The Internet connection appears to be offline.`, `Network request failed`.
+The Supabase client may append the hostname in parentheses, e.g.
+`TypeError: Failed to fetch (example.supabase.co)` — use `startsWith` matching,
+not exact equality, for the `TypeError: Failed to fetch` pattern.
 
 Node.js native fetch (undici) messages: `fetch failed` or `TypeError: fetch failed`
 (top-level), with the real cause wrapped in `error.cause` — look for `ECONNRESET`,
