@@ -202,10 +202,13 @@ Browser-style messages: `TypeError: Failed to fetch`, `Failed to fetch`,
 `Load failed`, `NetworkError when attempting to fetch resource.`,
 `The Internet connection appears to be offline.`, `Network request failed`.
 
-Node.js native fetch (undici) messages: `fetch failed` (top-level), with the real
-cause wrapped in `error.cause` — look for `ECONNRESET`, `ENOTFOUND`, `ETIMEDOUT`,
-`UND_ERR_SOCKET` in the cause message. Always check the `cause` chain for
-server-side fetch errors, not just the top-level message.
+Node.js native fetch (undici) messages: `fetch failed` or `TypeError: fetch failed`
+(top-level), with the real cause wrapped in `error.cause` — look for `ECONNRESET`,
+`ENOTFOUND`, `ETIMEDOUT`, `UND_ERR_SOCKET` in the cause message. When Supabase
+wraps a Node.js fetch error as a PostgrestError, the message becomes
+`"TypeError: fetch failed"` and the cause chain (ECONNRESET etc.) is embedded in
+the `details` string rather than `error.cause`. Always check both `error.cause`
+and `details` for server-side fetch errors, not just the top-level message.
 
 ### Always use `captureSupabaseError` for Supabase errors
 

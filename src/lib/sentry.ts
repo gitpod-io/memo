@@ -154,6 +154,10 @@ const NODE_FETCH_CAUSE_PATTERNS = [
  * Checks both browser-style fetch errors (top-level message) and Node.js
  * native fetch errors (undici), which use `"fetch failed"` as the message
  * and wrap the real cause (ECONNRESET, ENOTFOUND, etc.) in `error.cause`.
+ *
+ * When Supabase wraps a Node.js fetch error as a PostgrestError, the message
+ * becomes `"TypeError: fetch failed"` and the cause chain (ECONNRESET etc.)
+ * is embedded in the `details` string rather than `error.cause`.
  */
 export function isTransientNetworkError(error: Error): boolean {
   const msg = error.message;
@@ -172,8 +176,14 @@ export function isTransientNetworkError(error: Error): boolean {
     return true;
   }
 
-  // Node.js native fetch (undici): top-level message is "fetch failed"
-  if (msg === "fetch failed") {
+  // Node.js native fetch (undici): message is "fetch failed" or
+  // "TypeError: fetch failed" (when Supabase wraps the error)
+  if (msg === "fetch failed" || msg === "TypeError: fetch failed") {
+    return true;
+  }
+
+  // Supabase may embed "TypeError: fetch failed" in the details field
+  if (details.includes("TypeError: fetch failed")) {
     return true;
   }
 
@@ -182,6 +192,14 @@ export function isTransientNetworkError(error: Error): boolean {
   if (
     causeMsg &&
     NODE_FETCH_CAUSE_PATTERNS.some((pattern) => causeMsg.includes(pattern))
+  ) {
+    return true;
+  }
+
+  // Supabase PostgrestErrors embed the cause chain in the details string
+  if (
+    details &&
+    NODE_FETCH_CAUSE_PATTERNS.some((pattern) => details.includes(pattern))
   ) {
     return true;
   }
