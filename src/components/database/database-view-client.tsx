@@ -36,6 +36,7 @@ import {
   captureSupabaseError,
   isInsufficientPrivilegeError,
 } from "@/lib/sentry";
+import { PROPERTY_TYPE_LABEL } from "@/lib/property-icons";
 import type {
   DatabaseProperty,
   DatabaseRow,
@@ -558,7 +559,14 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
       if (isAddingColumn.current) return;
       isAddingColumn.current = true;
       try {
-        const name = `Property ${properties.length + 1}`;
+        const baseLabel = PROPERTY_TYPE_LABEL[type];
+        const existingNames = new Set(properties.map((p) => p.name));
+        let name = baseLabel;
+        let suffix = 2;
+        while (existingNames.has(name)) {
+          name = `${baseLabel} ${suffix}`;
+          suffix++;
+        }
         const { data: newProp, error } = await addProperty(pageId, name, type);
         if (error || !newProp) {
           toast.error("Failed to add column", { duration: 8000 });
@@ -569,7 +577,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
         isAddingColumn.current = false;
       }
     },
-    [pageId, properties.length],
+    [pageId, properties],
   );
 
   const handleColumnHeaderClick = useCallback(

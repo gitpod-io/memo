@@ -62,6 +62,71 @@ describe("property type selector regression (#538)", () => {
 });
 
 /**
+ * Regression test for issue #563: default column name should match the selected
+ * property type instead of using a generic "Property N" name.
+ */
+describe("default column name matches property type (#563)", () => {
+  const viewClient = readViewClient();
+
+  it("imports PROPERTY_TYPE_LABEL from property-icons", () => {
+    expect(viewClient).toContain("PROPERTY_TYPE_LABEL");
+    expect(viewClient).toMatch(
+      /import\s*\{[^}]*PROPERTY_TYPE_LABEL[^}]*\}\s*from\s*["']@\/lib\/property-icons["']/,
+    );
+  });
+
+  it("does not use the generic 'Property N' naming pattern", () => {
+    // The old pattern: `Property ${properties.length + 1}`
+    expect(viewClient).not.toMatch(/`Property \$\{properties\.length/);
+  });
+
+  it("generates a name from PROPERTY_TYPE_LABEL[type]", () => {
+    expect(viewClient).toMatch(/PROPERTY_TYPE_LABEL\[type\]/);
+  });
+
+  it("handles name collisions by appending a number suffix", () => {
+    // Must check existing names and append a suffix when there's a collision
+    expect(viewClient).toMatch(/existingNames\.has\(name\)/);
+    expect(viewClient).toMatch(/`\$\{baseLabel\} \$\{suffix\}`/);
+  });
+});
+
+/**
+ * Regression test for issue #563: date cells in table view should use the
+ * DateEditor (calendar picker) instead of a plain text input.
+ */
+describe("table view uses registry editors for specialized types (#563)", () => {
+  const tableView = readTableView();
+
+  it("uses getPropertyTypeConfig to look up editors in the editing path", () => {
+    // The editing branch must call getPropertyTypeConfig to get the Editor
+    expect(tableView).toMatch(/getPropertyTypeConfig\(propertyType\)/);
+  });
+
+  it("renders a RegistryEditorCell for non-text-input types", () => {
+    expect(tableView).toContain("RegistryEditorCell");
+  });
+
+  it("does not use plain input for date type editing", () => {
+    // The plain-input exclusion list only includes text, number, url, email, phone.
+    // Date is NOT excluded, so it uses the registry editor (DateEditor / calendar picker).
+    const plainInputTypes = tableView.match(
+      /hasRegistryEditor\s*=[\s\S]+?;/,
+    )?.[0];
+    expect(plainInputTypes).toBeDefined();
+    // date should NOT be in the plain-input exclusion list
+    expect(plainInputTypes).not.toContain('"date"');
+  });
+
+  it("RegistryEditorCell passes value, property, onChange, and onBlur to Editor", () => {
+    expect(tableView).toMatch(/<Editor[\s\S]*?value=\{/);
+    expect(tableView).toMatch(/<Editor[\s\S]*?property=\{property\}/);
+    expect(tableView).toMatch(/<Editor[\s\S]*?onChange=\{/);
+    expect(tableView).toMatch(/<Editor[\s\S]*?onBlur=\{/);
+  });
+});
+
+/**
  * Regression test for issue #547 / Sentry MEMO-1E: DropdownMenuLabel must be
  * inside DropdownMenuGroup.
  *
