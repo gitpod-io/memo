@@ -373,9 +373,11 @@ test.describe("Database list view", () => {
       { timeout: 15_000 },
     );
 
-    // The page should show the row title in the heading area
+    // The page should show the row title in the heading area.
+    // Use .first() because the title may appear in multiple places
+    // (page heading, sidebar tree item, breadcrumb).
     await expect(
-      page.getByRole("button", { name: "Item Alpha" }),
+      page.getByRole("button", { name: "Item Alpha" }).first(),
     ).toBeVisible({ timeout: 10_000 });
   });
 

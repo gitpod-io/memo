@@ -85,16 +85,41 @@ async function deleteTestWorkspace(workspaceId: string): Promise<void> {
  * Delete all non-personal workspaces owned by the given user.
  * Called in beforeAll to guarantee a clean slate regardless of what
  * previous (possibly crashed) test runs left behind.
+ *
+ * Also cleans up workspaces where the user is a member but not the
+ * creator (e.g. workspaces created via UI by other test files).
  */
 async function cleanupAllNonPersonalWorkspaces(
   userId: string
 ): Promise<void> {
   const admin = getAdminClient();
+
+  // Delete workspaces created by this user
   await admin
     .from("workspaces")
     .delete()
     .eq("is_personal", false)
     .eq("created_by", userId);
+
+  // Also delete any non-personal workspaces where the user is a member
+  // but not the creator (handles workspaces created via RPC where
+  // created_by might differ from expectations)
+  const { data: memberships } = await admin
+    .from("members")
+    .select("workspace_id, workspaces(id, is_personal)")
+    .eq("user_id", userId);
+
+  if (memberships) {
+    for (const m of memberships) {
+      const ws = m.workspaces as unknown as {
+        id: string;
+        is_personal: boolean;
+      };
+      if (ws && !ws.is_personal) {
+        await admin.from("workspaces").delete().eq("id", ws.id);
+      }
+    }
+  }
 }
 
 /**
@@ -130,7 +155,7 @@ test.describe("Workspace settings", () => {
     // Remove all non-personal workspaces for the test user to guarantee
     // we stay under the 3-workspace limit, even if a previous run crashed
     // and afterAll never ran.
-    await cleanupAllNonPersonalWorkspaces(userId).catch(() => {});
+    await cleanupAllNonPersonalWorkspaces(userId);
   });
 
   test.afterAll(async () => {
