@@ -104,9 +104,9 @@ async function fillCell(
  * Set up a database with a new property column and N rows with values.
  *
  * The database starts with 1 default property ("Title"). This adds a second
- * property column ("Property 2") and populates it. Each row has 2 editable
- * property cells: [Title, Property 2]. Property 2 cells are at odd indices
- * (1, 3, 5, ...).
+ * property column (named "Text" after its type label) and populates it.
+ * Each row has 2 editable property cells: [Title, Text]. Text column cells
+ * are at odd indices (1, 3, 5, ...).
  */
 async function setupDatabaseWithValues(
   page: import("@playwright/test").Page,
@@ -121,14 +121,14 @@ async function setupDatabaseWithValues(
     await page.waitForTimeout(1_000);
   }
 
-  // Fill Property 2 column (odd indices: 1, 3, 5, ...)
+  // Fill Text column (odd indices: 1, 3, 5, ...)
   for (let i = 0; i < values.length; i++) {
     await fillCell(page, i * 2 + 1, values[i]);
   }
 }
 
 /**
- * Get the Property 2 column cell for a given row index.
+ * Get the Text column cell for a given row index.
  */
 function prop2Cell(
   page: import("@playwright/test").Page,
@@ -138,10 +138,10 @@ function prop2Cell(
 }
 
 /**
- * Add a sort rule for "Property 2" via the Sort menu.
+ * Add a sort rule for the "Text" column via the Sort menu.
  * Leaves the sort menu open after adding.
  */
-async function addSortOnProperty2(page: import("@playwright/test").Page) {
+async function addSortOnTextColumn(page: import("@playwright/test").Page) {
   const sortButton = page.locator("button", { hasText: "Sort" }).first();
   await expect(sortButton).toBeVisible({ timeout: 5_000 });
   await sortButton.click();
@@ -151,23 +151,23 @@ async function addSortOnProperty2(page: import("@playwright/test").Page) {
   await addSortBtn.click();
 
   // The property picker is inside the sort menu dropdown (a div with
-  // class max-h-48). Pick "Property 2" specifically.
+  // class max-h-48). Pick "Text" specifically.
   const sortDropdown = page.locator(".max-h-48");
   await expect(sortDropdown).toBeVisible({ timeout: 5_000 });
-  const prop2Option = sortDropdown.locator("button", {
-    hasText: "Property 2",
+  const textOption = sortDropdown.locator("button", {
+    hasText: "Text",
   });
-  await expect(prop2Option).toBeVisible({ timeout: 5_000 });
-  await prop2Option.click();
+  await expect(textOption).toBeVisible({ timeout: 5_000 });
+  await textOption.click();
 
   // Wait for sort to apply
   await page.waitForTimeout(2_000);
 }
 
 /**
- * Add a filter rule for "Property 2" containing the given value.
+ * Add a filter rule for the "Text" column containing the given value.
  */
-async function addFilterOnProperty2(
+async function addFilterOnTextColumn(
   page: import("@playwright/test").Page,
   value: string,
 ) {
@@ -176,14 +176,14 @@ async function addFilterOnProperty2(
   await addFilterBtn.click();
 
   // The filter property picker is an absolute-positioned dropdown (z-50).
-  // Pick "Property 2".
+  // Pick "Text".
   const filterDropdown = page.locator(".z-50").first();
   await expect(filterDropdown).toBeVisible({ timeout: 5_000 });
-  const prop2Option = filterDropdown.locator("button", {
-    hasText: "Property 2",
+  const textOption = filterDropdown.locator("button", {
+    hasText: "Text",
   });
-  await expect(prop2Option).toBeVisible({ timeout: 5_000 });
-  await prop2Option.click();
+  await expect(textOption).toBeVisible({ timeout: 5_000 });
+  await textOption.click();
 
   // Pick "contains" operator
   const operatorDropdown = page.locator(".z-50").first();
@@ -225,13 +225,13 @@ test.describe("Database sort, filter, and multi-view management", () => {
     await createDatabaseFromSidebar(page);
     await setupDatabaseWithValues(page, ["Cherry", "Apple", "Banana"]);
 
-    // Verify initial order in Property 2 column
+    // Verify initial order in Text column
     await expect(prop2Cell(page, 0)).toHaveText("Cherry");
     await expect(prop2Cell(page, 1)).toHaveText("Apple");
     await expect(prop2Cell(page, 2)).toHaveText("Banana");
 
-    // Add ascending sort on Property 2
-    await addSortOnProperty2(page);
+    // Add ascending sort on Text column
+    await addSortOnTextColumn(page);
     await closeSortMenu(page);
 
     // Verify ascending order: Apple, Banana, Cherry
@@ -250,8 +250,8 @@ test.describe("Database sort, filter, and multi-view management", () => {
     await expect(prop2Cell(page, 0)).toHaveText("Hello");
     await expect(prop2Cell(page, 1)).toHaveText("World");
 
-    // Add filter: Property 2 contains "Hello"
-    await addFilterOnProperty2(page, "Hello");
+    // Add filter: Text column contains "Hello"
+    await addFilterOnTextColumn(page, "Hello");
 
     // "Hello" row should be visible, "World" row should be hidden
     await expect(
@@ -268,8 +268,8 @@ test.describe("Database sort, filter, and multi-view management", () => {
     await createDatabaseFromSidebar(page);
     await setupDatabaseWithValues(page, ["Foo", "Bar"]);
 
-    // Add filter: Property 2 contains "Foo"
-    await addFilterOnProperty2(page, "Foo");
+    // Add filter: Text column contains "Foo"
+    await addFilterOnTextColumn(page, "Foo");
 
     // Only "Foo" should be visible
     await expect(
@@ -379,8 +379,8 @@ test.describe("Database sort, filter, and multi-view management", () => {
     await createDatabaseFromSidebar(page);
     await setupDatabaseWithValues(page, ["Alpha", "Beta"]);
 
-    // Add ascending sort on Property 2, then toggle to descending
-    await addSortOnProperty2(page);
+    // Add ascending sort on Text column, then toggle to descending
+    await addSortOnTextColumn(page);
 
     // The sort rule should now show "Asc" — click to toggle to descending.
     // The toggle button has aria-label "Sort ascending" or "Sort descending".

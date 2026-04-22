@@ -176,9 +176,9 @@ test.describe("Database CRUD", () => {
     // Add a text column via the property type picker dropdown
     await addColumnViaTypePicker(page, "Text");
 
-    // The new column should contain "Property" in its name
+    // The new column should be named after its type label ("Text")
     const newHeader = page.locator('[role="columnheader"]', {
-      hasText: /property/i,
+      hasText: /^text$/i,
     });
     await expect(newHeader.first()).toBeVisible({ timeout: 5_000 });
   });
@@ -275,10 +275,10 @@ test.describe("Database CRUD", () => {
     // Add a column via the property type picker
     await addColumnViaTypePicker(page, "Text");
 
-    // Click the property column header to open the rename dialog,
-    // fill in the new name, and confirm.
+    // Click the column header (named "Text" after its type) to open
+    // the rename dialog, fill in the new name, and confirm.
     const propertyHeader = page
-      .locator('[role="columnheader"]', { hasText: /property/i })
+      .locator('[role="columnheader"]', { hasText: /^text$/i })
       .first();
     await renamePropertyViaDialog(page, propertyHeader, "Renamed Column");
 

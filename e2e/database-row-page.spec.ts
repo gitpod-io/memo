@@ -132,9 +132,9 @@ test.describe("Database Row Page", () => {
     await expect(editor).toBeVisible({ timeout: 15_000 });
 
     // The properties header should be visible with the property name label.
-    // Properties are rendered as rows with a label (w-32 text-right) and a value cell.
-    // The added column is named "Property N" by default.
-    const propertyLabel = page.locator("text=/Property \\d+/i").first();
+    // Properties are rendered as rows with a label (w-32 text-right) and
+    // a value cell. The added column is named after its type label ("Text").
+    const propertyLabel = page.locator("text=Text").first();
     await expect(propertyLabel).toBeVisible({ timeout: 10_000 });
 
     // The value cell should show "Empty" since no value has been set
