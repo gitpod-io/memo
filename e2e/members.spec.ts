@@ -73,12 +73,23 @@ test.describe("Workspace member management", () => {
   let invitedUserId: string | undefined;
   let workspaceSlug: string;
 
-  // Remove stale test users from previous runs whose cleanup was interrupted.
-  // Without this, a leftover member with display_name "E2E Member" causes
-  // the re-invite test to find 2 matching elements (strict mode violation).
+  // Remove stale test users and invites from previous runs whose cleanup was
+  // interrupted. Without this, leftover members or invites cause strict mode
+  // violations or false positives in subsequent runs.
   test.beforeAll(async () => {
     await cleanupStaleTestUsers(INVITE_DISPLAY_NAME).catch(() => {});
     await cleanupInvitesForEmail(INVITE_EMAIL).catch(() => {});
+    // Clean up stale invites from previous runs with different timestamps
+    try {
+      const admin = getAdminClient();
+      await admin
+        .from("workspace_invites")
+        .delete()
+        .like("email", "e2e-member-%@test.local")
+        .is("accepted_at", null);
+    } catch {
+      // Ignore cleanup failures
+    }
   });
 
   test.afterAll(async () => {
@@ -106,10 +117,20 @@ test.describe("Workspace member management", () => {
     // Submit the invite
     await page.getByRole("button", { name: "Invite", exact: true }).click();
 
-    // Wait for the invite link to appear (PR #240 replaced "Invite sent." with a copyable link)
+    // Wait for the invite link URL to appear below the form. The invite form
+    // shows the link as text followed by a copy button. Scope to the form's
+    // parent to avoid matching the pending invites table's copy buttons.
+    const inviteFormSection = page.locator("form").locator("..");
     await expect(
-      page.getByRole("button", { name: "Copy invite link" })
+      inviteFormSection.getByRole("button", { name: "Copy invite link" })
     ).toBeVisible({ timeout: 10_000 });
+
+    // The invite form triggers router.refresh() after insert. Wait for the
+    // pending invite to appear in the server-rendered list, confirming the
+    // DB write has propagated and the page has re-rendered with fresh data.
+    await expect(page.locator(`text=${INVITE_EMAIL}`)).toBeVisible({
+      timeout: 10_000,
+    });
   });
 
   test("invited user appears in the pending invites list", async ({
@@ -155,11 +176,17 @@ test.describe("Workspace member management", () => {
   }) => {
     await goToMembersPage(page, workspaceSlug);
 
-    // Re-invite the same email
-    await page.fill("#invite-email", INVITE_EMAIL);
+    // Re-invite the same email. Wait for the form to be interactive before
+    // filling — the page is a server component that hydrates the client form.
+    const emailInput = page.locator("#invite-email");
+    await expect(emailInput).toBeVisible({ timeout: 5_000 });
+    await emailInput.fill(INVITE_EMAIL);
     await page.getByRole("button", { name: "Invite", exact: true }).click();
+
+    // Wait for the invite link URL to appear below the form
+    const reInviteFormSection = page.locator("form").locator("..");
     await expect(
-      page.getByRole("button", { name: "Copy invite link" })
+      reInviteFormSection.getByRole("button", { name: "Copy invite link" })
     ).toBeVisible({ timeout: 10_000 });
 
     // Create the test user via admin API so they can accept the invite

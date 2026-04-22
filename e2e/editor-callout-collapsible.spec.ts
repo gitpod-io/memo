@@ -1,9 +1,9 @@
 import { test, expect } from "./fixtures/auth";
-import { navigateToEditorPage } from "./fixtures/editor-helpers";
+import { navigateToEditorPage, selectSlashOption } from "./fixtures/editor-helpers";
 
 /**
  * Helper: insert a block via the slash command menu.
- * Types `/<command>`, waits for the matching option, and clicks it.
+ * Types `/`, waits for the matching option, and clicks it.
  */
 async function insertViaSlashCommand(
   page: import("@playwright/test").Page,
@@ -15,11 +15,7 @@ async function insertViaSlashCommand(
   await page.keyboard.press("Enter");
   await page.keyboard.type("/");
 
-  const option = page
-    .locator('[role="option"]')
-    .filter({ hasText: commandLabel });
-  await expect(option).toBeVisible({ timeout: 3_000 });
-  await option.click();
+  await selectSlashOption(page, commandLabel);
 }
 
 test.describe("Callout block", () => {

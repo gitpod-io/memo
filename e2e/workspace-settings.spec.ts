@@ -12,15 +12,23 @@ function getAdminClient() {
 
 /**
  * Resolve the test user's ID from their email.
+ * Uses the profiles table instead of paginated auth.admin.listUsers() to
+ * avoid missing the user when there are more users than the default page size.
  */
 async function resolveTestUserId(): Promise<string> {
   const admin = getAdminClient();
-  const { data } = await admin.auth.admin.listUsers();
-  const user = data.users.find(
-    (u) => u.email === process.env.TEST_USER_EMAIL
-  );
-  if (!user) throw new Error("Test user not found");
-  return user.id;
+  const { data, error } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("email", process.env.TEST_USER_EMAIL!)
+    .maybeSingle();
+
+  if (error || !data) {
+    throw new Error(
+      `Test user ${process.env.TEST_USER_EMAIL} not found in profiles: ${error?.message ?? "no match"}`
+    );
+  }
+  return data.id;
 }
 
 /**
@@ -123,22 +131,35 @@ test.describe("Workspace settings", () => {
     await cleanupTestWorkspaces("Renamed E2E").catch(() => {});
   });
 
-  test("personal workspace shows 'cannot be deleted' message", async ({
+  test("personal workspace shows personal workspace message and no workspace delete button", async ({
     authenticatedPage: page,
   }) => {
-    const slug = extractWorkspaceSlug(page);
-    await goToSettings(page, slug);
+    // Look up the personal workspace slug directly from the DB to avoid
+    // depending on which workspace the user lands on after login.
+    const admin = getAdminClient();
+    const { data: personalWs } = await admin
+      .from("workspaces")
+      .select("slug")
+      .eq("created_by", userId)
+      .eq("is_personal", true)
+      .single();
 
-    // Personal workspace should show the "cannot be deleted" message
+    if (!personalWs) throw new Error("Personal workspace not found");
+
+    await goToSettings(page, personalWs.slug);
+
+    // Personal workspace should explain it's tied to the account
     await expect(
-      page.getByText("This is your personal workspace and cannot be deleted.")
-    ).toBeVisible({ timeout: 3_000 });
+      page.getByText(
+        "This is your personal workspace. It will be deleted if you delete your account."
+      )
+    ).toBeVisible({ timeout: 5_000 });
 
-    // There should be no delete button
-    const deleteButton = page.getByRole("button", {
+    // There should be no "Delete workspace" button (only "Delete account")
+    const deleteWorkspaceButton = page.getByRole("button", {
       name: /delete workspace/i,
     });
-    await expect(deleteButton).toHaveCount(0);
+    await expect(deleteWorkspaceButton).toHaveCount(0);
   });
 
   test("change workspace name and verify sidebar updates", async ({

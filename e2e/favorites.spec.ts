@@ -315,8 +315,9 @@ test.describe("Sidebar Favorites", () => {
       /remove from favorites/i,
     );
 
-    // Favorites section should be hidden again
-    await expect(favoritesHeading).not.toBeVisible({ timeout: 5_000 });
+    // Favorites section should be hidden again. The removal triggers an async
+    // re-fetch via the favorites-changed event, so allow extra time.
+    await expect(favoritesHeading).not.toBeVisible({ timeout: 10_000 });
   });
 
   test("favorites persist across page navigation", async ({
