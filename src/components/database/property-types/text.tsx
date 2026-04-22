@@ -5,14 +5,18 @@ import { Input } from "@/components/ui/input";
 import type { RendererProps, EditorProps } from "./index";
 
 export function TextRenderer({ value }: RendererProps) {
-  const text = typeof value.text === "string" ? value.text : "";
+  const text = typeof value.text === "string"
+    ? value.text
+    : typeof value.value === "string" ? value.value : "";
   if (!text) return null;
   return <span className="truncate text-sm">{text}</span>;
 }
 
 export function TextEditor({ value, onChange, onBlur }: EditorProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const text = typeof value.text === "string" ? value.text : "";
+  const text = typeof value.text === "string"
+    ? value.text
+    : typeof value.value === "string" ? value.value : "";
 
   useEffect(() => {
     inputRef.current?.focus();

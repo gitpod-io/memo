@@ -18,7 +18,9 @@ function formatPhone(raw: string): string {
 }
 
 export function PhoneRenderer({ value }: RendererProps) {
-  const phone = typeof value.phone === "string" ? value.phone : "";
+  const phone = typeof value.phone === "string"
+    ? value.phone
+    : typeof value.value === "string" ? value.value : "";
   if (!phone) return null;
 
   return <span className="truncate text-sm">{formatPhone(phone)}</span>;
@@ -26,7 +28,9 @@ export function PhoneRenderer({ value }: RendererProps) {
 
 export function PhoneEditor({ value, onChange, onBlur }: EditorProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const phone = typeof value.phone === "string" ? value.phone : "";
+  const phone = typeof value.phone === "string"
+    ? value.phone
+    : typeof value.value === "string" ? value.value : "";
 
   useEffect(() => {
     inputRef.current?.focus();

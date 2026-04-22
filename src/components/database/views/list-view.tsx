@@ -292,26 +292,54 @@ function CompactSelectBadge({ label, color }: { label: string; color?: string })
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** Maps a property type to the key its registry editor/renderer expects. */
+function valueKeyForType(propertyType: PropertyType): string {
+  switch (propertyType) {
+    case "text":
+      return "text";
+    case "number":
+      return "number";
+    case "url":
+      return "url";
+    case "email":
+      return "email";
+    case "phone":
+      return "phone";
+    case "checkbox":
+      return "checked";
+    case "date":
+      return "date";
+    default:
+      return "value";
+  }
+}
+
 function extractDisplayValue(value: RowValue | undefined, propertyType: PropertyType): string {
   if (!value) return "";
 
   const raw = value.value;
   if (!raw) return "";
 
-  const inner = raw.value;
+  const key = valueKeyForType(propertyType);
+  const typed = raw[key];
+  const legacy = raw.value;
 
   switch (propertyType) {
-    case "checkbox":
-      return inner === true ? "true" : inner === false ? "false" : "";
+    case "checkbox": {
+      const checked = typed ?? legacy;
+      return checked === true ? "true" : checked === false ? "false" : "";
+    }
     case "multi_select":
       return (raw.items as { value: string }[] | undefined)
         ?.map((i) => i.value)
         .join(", ") ?? "";
-    default:
+    default: {
+      const inner = typed ?? legacy;
       if (typeof inner === "string") return inner;
       if (typeof inner === "number") return String(inner);
       if (inner === null || inner === undefined) return "";
       return String(inner);
+    }
   }
 }
 

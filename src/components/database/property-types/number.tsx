@@ -28,7 +28,7 @@ function formatNumber(raw: unknown, format: NumberFormat): string {
 }
 
 export function NumberRenderer({ value, property }: RendererProps) {
-  const raw = value.number;
+  const raw = value.number ?? value.value;
   if (raw === undefined || raw === null || raw === "") return null;
 
   const format = (property.config.format as NumberFormat) ?? "number";
@@ -44,7 +44,7 @@ export function NumberRenderer({ value, property }: RendererProps) {
 
 export function NumberEditor({ value, onChange, onBlur }: EditorProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const raw = value.number;
+  const raw = value.number ?? value.value;
   const numStr =
     raw !== undefined && raw !== null && raw !== "" ? String(raw) : "";
 
