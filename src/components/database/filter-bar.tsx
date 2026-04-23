@@ -474,7 +474,7 @@ function SelectFilterValueEditor({
             key={opt.id}
             type="button"
             onClick={() => onSelectValue(opt.id)}
-            className="flex w-full items-center gap-2 px-2 py-1 text-sm hover:bg-white/[0.04]"
+            className="flex w-full items-center gap-2 px-2 py-1 text-sm hover:bg-overlay-hover"
           >
             <SelectOptionBadge name={opt.name} color={opt.color} />
           </button>
