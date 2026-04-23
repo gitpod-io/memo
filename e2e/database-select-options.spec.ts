@@ -420,6 +420,21 @@ test.describe("Select/Multi-select option persistence", () => {
     const dropdownInput = page.locator('input[placeholder="Search or create…"]');
     await expect(dropdownInput).toBeVisible({ timeout: 5_000 });
 
+    // Create an option first — the color change button only appears next to existing options
+    await dropdownInput.fill("ColorTest");
+    const createBtn = page.locator("button").filter({ hasText: /Create/ });
+    await expect(createBtn).toBeVisible({ timeout: 3_000 });
+    await createBtn.click();
+
+    // Wait for persistence, then re-open the dropdown
+    await page.waitForTimeout(1_500);
+    const selectCellAgain = page.locator('[role="gridcell"][tabindex="0"]').first();
+    await expect(selectCellAgain).toBeVisible({ timeout: 5_000 });
+    await selectCellAgain.click();
+
+    const dropdownInputAgain = page.locator('input[placeholder="Search or create…"]');
+    await expect(dropdownInputAgain).toBeVisible({ timeout: 5_000 });
+
     // Click the color dot to open the color picker
     const colorDot = page.locator('button[aria-label="Change color"]').first();
     await expect(colorDot).toBeVisible({ timeout: 3_000 });
