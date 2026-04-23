@@ -356,12 +356,7 @@ function isValueNull(row: DatabaseRow, prop: DatabaseProperty): boolean {
     return getComputedValue(row, prop.type) === null;
   }
 
-  const rv = row.values[prop.id];
-  if (!rv) return true;
-  const inner = rv.value?.value;
-  if (inner === undefined || inner === null || inner === "") return true;
-  if (Array.isArray(inner) && inner.length === 0) return true;
-  return false;
+  return isEmpty(row.values[prop.id]);
 }
 
 /**
