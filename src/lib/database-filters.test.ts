@@ -236,6 +236,42 @@ describe("sortRows", () => {
     sortRows(rows, sorts, allProps);
     expect(rows.map((r) => r.page.id)).toEqual(original.map((r) => r.page.id));
   });
+
+  it("sorts text stored with type-specific key (not legacy value key)", () => {
+    const prop = makeProp("p-t2", "Label", "text");
+    const typedRows = [
+      makeRow("t1", "Row1", { "p-t2": { text: "Cherry" } }),
+      makeRow("t2", "Row2", { "p-t2": { text: "Apple" } }),
+      makeRow("t3", "Row3", { "p-t2": { text: "Banana" } }),
+    ];
+    const sorts: SortRule[] = [{ property_id: "p-t2", direction: "asc" }];
+    const result = sortRows(typedRows, sorts, [prop]);
+    expect(result.map((r) => r.page.id)).toEqual(["t2", "t3", "t1"]);
+  });
+
+  it("sorts numbers stored with type-specific key", () => {
+    const prop = makeProp("p-n2", "Score", "number");
+    const typedRows = [
+      makeRow("n1", "Row1", { "p-n2": { number: 30 } }),
+      makeRow("n2", "Row2", { "p-n2": { number: 10 } }),
+      makeRow("n3", "Row3", { "p-n2": { number: 20 } }),
+    ];
+    const sorts: SortRule[] = [{ property_id: "p-n2", direction: "asc" }];
+    const result = sortRows(typedRows, sorts, [prop]);
+    expect(result.map((r) => r.page.id)).toEqual(["n2", "n3", "n1"]);
+  });
+
+  it("null-sorts rows with type-specific keys correctly", () => {
+    const prop = makeProp("p-t3", "Name", "text");
+    const mixedRows = [
+      makeRow("m1", "Row1", { "p-t3": { text: "Zebra" } }),
+      makeRow("m2", "Row2", {}),
+      makeRow("m3", "Row3", { "p-t3": { text: "Aardvark" } }),
+    ];
+    const sorts: SortRule[] = [{ property_id: "p-t3", direction: "asc" }];
+    const result = sortRows(mixedRows, sorts, [prop]);
+    expect(result.map((r) => r.page.id)).toEqual(["m3", "m1", "m2"]);
+  });
 });
 
 // ---------------------------------------------------------------------------

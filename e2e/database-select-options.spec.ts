@@ -464,6 +464,11 @@ test.describe("Select/Multi-select option persistence", () => {
     const reloadedDropdown = page.locator('input[placeholder="Search or create…"]');
     await expect(reloadedDropdown).toBeVisible({ timeout: 5_000 });
 
+    // Click the color dot to open the color picker panel
+    const reloadedColorDot = page.locator('button[aria-label="Change color"]').first();
+    await expect(reloadedColorDot).toBeVisible({ timeout: 3_000 });
+    await reloadedColorDot.click();
+
     // The red color button should have the active indicator (ring)
     const activeRedBtn = page.locator('button[aria-label="Color: red"]');
     await expect(activeRedBtn).toBeVisible({ timeout: 3_000 });
