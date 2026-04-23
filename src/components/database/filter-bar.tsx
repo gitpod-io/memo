@@ -273,7 +273,7 @@ function PropertyPicker({
   onSelect: (propertyId: string) => void;
 }) {
   return (
-    <div className="absolute left-0 top-full z-50 mt-1 w-56 border border-border bg-background py-1 shadow-md">
+    <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-sm border border-border bg-background py-1 shadow-md">
       {properties.map((prop) => {
         const Icon = PROPERTY_TYPE_ICON[prop.type];
         return (
@@ -306,7 +306,7 @@ function OperatorPicker({
   const operators = getOperatorsForType(propertyType);
 
   return (
-    <div className="absolute left-0 top-full z-50 mt-1 w-48 border border-border bg-background py-1 shadow-md">
+    <div className="absolute left-0 top-full z-50 mt-1 w-48 rounded-sm border border-border bg-background py-1 shadow-md">
       {operators.map((op) => (
         <button
           key={op}
@@ -410,7 +410,7 @@ function TextInputFilterValueEditor({
   placeholder: string;
 }) {
   return (
-    <div className="absolute left-0 top-full z-50 mt-1 w-56 border border-border bg-background p-2 shadow-md">
+    <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-sm border border-border bg-background p-2 shadow-md">
       <Input
         autoFocus
         value={valueInput}
@@ -455,7 +455,7 @@ function SelectFilterValueEditor({
   );
 
   return (
-    <div className="absolute left-0 top-full z-50 mt-1 w-56 border border-border bg-background shadow-md">
+    <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-sm border border-border bg-background shadow-md">
       <div className="p-1.5">
         <Input
           autoFocus
@@ -503,7 +503,7 @@ function DateFilterValueEditor({
   const [dateValue, setDateValue] = useState("");
 
   return (
-    <div className="absolute left-0 top-full z-50 mt-1 w-56 border border-border bg-background p-2 shadow-md">
+    <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-sm border border-border bg-background p-2 shadow-md">
       <Input
         autoFocus
         type="date"
