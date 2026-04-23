@@ -341,7 +341,7 @@ Database views render structured data within the existing page layout. When a pa
 ### Filter & Sort Bar
 
 - Position: between view tabs and the database grid.
-- Background: `bg-muted p-2`, sharp corners.
+- Background: transparent (no `bg-muted`), `p-2`, sharp corners.
 - Active filters: `Badge` components with property name, operator, value. `variant="secondary"`, `text-xs`.
 - Remove filter: `X` icon (12px) on each badge, hover `text-destructive`.
 - `+ Add filter` button: `ghost` variant, `text-xs text-muted-foreground`.
