@@ -214,7 +214,11 @@ Pin to a specific version to avoid breaking changes.
 | ListTabIndentationPlugin | N/A (custom) | Implemented |
 | PageLinkPlugin (`[[` trigger + search) | N/A (custom) | Implemented |
 | TablePlugin + TableActionMenuPlugin | `plugins/TablePlugin` | Implemented |
-| DatabasePlugin (inline database block) | N/A (custom) | Planned |
+| DatabasePlugin (inline database block) | N/A (custom) | Implemented |
+| TurnIntoPlugin + TurnIntoMenu (block transformation) | N/A (custom) | Implemented |
+| AutoLinkPlugin (URL/email auto-detection) | `@lexical/react/LexicalAutoLinkPlugin` | Implemented |
+| WordCountPlugin (word count + reading time) | N/A (custom) | Implemented |
+| CodeLanguageSelectorPlugin (code block language picker) | `plugins/CodeActionMenuPlugin` | Implemented |
 | ToolbarPlugin (top toolbar) | `plugins/ToolbarPlugin` | Deferred |
 
 ### Custom nodes
@@ -227,7 +231,7 @@ Pin to a specific version to avoid breaking changes.
 | CollapsibleTitleNode | ElementNode | `<summary>` title for toggle blocks | Implemented |
 | CollapsibleContentNode | ElementNode | Content area for toggle blocks | Implemented |
 | PageLinkNode | DecoratorNode | Inline page link pill (stores pageId, renders title + icon) | Implemented |
-| DatabaseNode | DecoratorNode | Inline database embed (stores databaseId + viewId, renders compact view) | Planned |
+| DatabaseNode | DecoratorNode | Inline database embed (stores databaseId + viewId, renders compact view) | Implemented |
 | DividerNode | HorizontalRuleNode (`@lexical/react`) | Horizontal divider | Built-in |
 
 ### Skipped plugins (not needed for MVP)
@@ -375,6 +379,7 @@ src/
 │   │           └── members/page.tsx # /[workspaceSlug]/settings/members (+ generateMetadata)
 │   └── api/
 │       ├── account/route.ts # Account deletion (DELETE) → calls delete_account RPC
+│       ├── feedback/route.ts # POST: submit user feedback (bug, feature, general) with optional screenshot
 │       ├── health/route.ts  # Health check endpoint (DB connectivity)
 │       ├── pages/[pageId]/versions/route.ts       # GET: list versions, POST: create version snapshot
 │       ├── pages/[pageId]/versions/[versionId]/route.ts # GET: single version content, POST: restore version
@@ -417,9 +422,14 @@ src/
 │   │   ├── page-link-plugin.tsx       # [[ trigger detection, page search dropdown, INSERT_PAGE_LINK_COMMAND
 │   │   ├── collapsible-plugin.tsx   # Collapsible insert command + toggle handling
 │   │   ├── table-action-menu-plugin.tsx # Table cell context menu (add/delete rows/columns)
-│   │   ├── database-node.tsx        # DatabaseNode (DecoratorNode) — inline database embed (planned)
-│   │   └── database-plugin.tsx      # Database insert command + inline rendering (planned)
-│   ├── database/                # Database views system (planned)
+│   │   ├── database-node.tsx        # DatabaseNode (DecoratorNode) — inline database embed
+│   │   ├── database-plugin.tsx      # Database insert command + inline rendering
+│   │   ├── turn-into-plugin.tsx     # Block transformation command (paragraph ↔ heading ↔ list ↔ quote ↔ code)
+│   │   ├── turn-into-menu.tsx       # Floating menu UI for turn-into transformations
+│   │   ├── auto-link-plugin.tsx     # Auto-detect URLs and emails, convert to links
+│   │   ├── word-count-plugin.tsx    # Word count + reading time display below editor
+│   │   └── code-language-selector-plugin.tsx # Floating language picker for code blocks
+│   ├── database/                # Database views system
 │   │   ├── database-view-client.tsx     # Main client component: loads data, manages view state
 │   │   ├── view-tabs.tsx                # Horizontal tab bar for switching views
 │   │   ├── filter-bar.tsx               # Active filter pills + add filter UI
@@ -434,8 +444,14 @@ src/
 │   │   │   ├── list-view.tsx            # Compact vertical list
 │   │   │   ├── calendar-view.tsx        # Month grid with date-positioned items
 │   │   │   └── gallery-view.tsx         # Responsive card grid with cover + title
+│   │   ├── property-type-picker.tsx      # Dropdown menu for selecting property type when adding columns
+│   │   ├── rename-property-dialog.tsx   # Styled dialog replacing window.prompt for column rename
 │   │   ├── row-properties-header.tsx    # Properties displayed above editor when row opened as page
 │   │   └── new-database-dialog.tsx      # Dialog for creating a new database
+│   ├── feedback/
+│   │   └── feedback-form.tsx        # User feedback form with type selector, screenshot capture, and submission
+│   ├── keyboard-shortcuts-dialog.tsx # ⌘+? keyboard shortcuts reference dialog
+│   ├── providers.tsx                # Client-side providers wrapper (Toaster, TooltipProvider)
 │   ├── delete-account-section.tsx # Account deletion danger zone with double-confirm dialog
 │   ├── emoji-picker.tsx         # Floating emoji grid with search, used by page icon picker
 │   ├── page-cover.tsx           # Page cover image: upload, display, change, remove (saves to pages.cover_url)
@@ -462,6 +478,8 @@ src/
 │       ├── badge.tsx
 │       ├── button.tsx
 │       ├── card.tsx
+│       ├── checkbox.tsx
+│       ├── context-menu.tsx
 │       ├── dialog.tsx
 │       ├── dropdown-menu.tsx
 │       ├── input.tsx
@@ -470,15 +488,26 @@ src/
 │       ├── separator.tsx
 │       ├── sheet.tsx
 │       ├── table.tsx
+│       ├── textarea.tsx
 │       └── tooltip.tsx
 ├── lib/
+│   ├── capture.ts          # lazyCaptureException — dynamic import of Sentry to reduce bundle size
+│   ├── database.ts         # Database CRUD: create/delete databases, property/row/view CRUD, data loading
+│   ├── database-filters.ts # Client-side filter engine for database views (text, number, date, select, etc.)
+│   ├── formula.ts          # Formula parser and evaluator for formula property type
 │   ├── page-tree.ts        # Pure functions: tree building, reorder, nest/unnest, drop computation
+│   ├── property-icons.ts   # Shared PropertyType → icon + label mapping for database components
 │   ├── retry.ts            # retryOnNetworkError helper (exponential backoff for transient failures)
 │   ├── sentry.ts           # captureSupabaseError helper (structured Sentry reporting)
-│   ├── utils.ts            # cn() utility (clsx + tailwind-merge)
+│   ├── toast.ts            # Lazy-loaded sonner toast wrapper to reduce initial bundle size
+│   ├── track-event.ts      # Client-side usage event tracking (trackEventClient)
+│   ├── track-event-server.ts # Server-side usage event tracking (trackEvent)
 │   ├── types.ts            # Database entity types
+│   ├── use-persisted-expanded.ts # Hook for persisting sidebar tree expansion state to localStorage
+│   ├── use-screenshot.ts   # Hook for capturing screenshots via html2canvas (feedback form)
+│   ├── utils.ts            # cn() utility (clsx + tailwind-merge)
+│   ├── word-count.ts       # Word count and reading time calculation utilities
 │   ├── workspace.ts        # Workspace utilities: slug generation, validation, limits
-│   ├── database.ts         # Database CRUD: create/delete databases, property/row/view CRUD, data loading
 │   └── supabase/
 │       ├── client.ts       # Browser client (createBrowserClient)
 │       ├── server.ts       # Server component client (createServerClient + cookies)
