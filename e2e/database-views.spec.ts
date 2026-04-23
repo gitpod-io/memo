@@ -437,3 +437,153 @@ test.describe("Database sort, filter, and multi-view management", () => {
     await expect(prop2Cell(page, 1)).toHaveText("Alpha", { timeout: 5_000 });
   });
 });
+
+// ---------------------------------------------------------------------------
+// View tab context menu tests (regression for #623)
+// ---------------------------------------------------------------------------
+
+test.describe("Database view tab context menu actions", () => {
+  /**
+   * Add a second view (List) so context menu delete is enabled.
+   */
+  async function addListView(page: import("@playwright/test").Page) {
+    const addViewBtn = page.locator('button[aria-label="Add view"]');
+    await expect(addViewBtn).toBeVisible({ timeout: 5_000 });
+    await addViewBtn.click();
+
+    const listViewOption = page.locator('[role="menuitem"]', {
+      hasText: "List view",
+    });
+    await expect(listViewOption).toBeVisible({ timeout: 5_000 });
+    await listViewOption.click();
+    await page.waitForTimeout(2_000);
+
+    await expect(
+      page.locator("button", { hasText: "List view" }),
+    ).toBeVisible({ timeout: 5_000 });
+  }
+
+  test("context menu rename enters inline edit mode", async ({
+    authenticatedPage: page,
+  }) => {
+    await createDatabaseFromSidebar(page);
+    await addRow(page);
+
+    // Right-click the "Default view" tab to open context menu
+    const defaultTab = page.locator("button", { hasText: "Default view" });
+    await expect(defaultTab).toBeVisible({ timeout: 10_000 });
+    await defaultTab.click({ button: "right" });
+
+    // Click "Rename" in the context menu
+    const renameItem = page.locator('[data-slot="context-menu-item"]', {
+      hasText: "Rename",
+    });
+    await expect(renameItem).toBeVisible({ timeout: 5_000 });
+    await renameItem.click();
+
+    // The inline rename input should appear
+    const renameInput = page.locator('input[aria-label="Rename view"]');
+    await expect(renameInput).toBeVisible({ timeout: 5_000 });
+
+    // Type a new name and confirm
+    await renameInput.fill("Renamed via context menu");
+    await renameInput.press("Enter");
+    await page.waitForTimeout(2_000);
+
+    // The tab should show the new name
+    await expect(
+      page.locator("button", { hasText: "Renamed via context menu" }),
+    ).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("context menu delete opens confirmation dialog and removes view", async ({
+    authenticatedPage: page,
+  }) => {
+    await createDatabaseFromSidebar(page);
+    await addRow(page);
+
+    // Add a second view so delete is enabled
+    await addListView(page);
+
+    // Right-click the "List view" tab
+    const listTab = page.locator("button", { hasText: "List view" });
+    await expect(listTab).toBeVisible({ timeout: 5_000 });
+    await listTab.click({ button: "right" });
+
+    // Click "Delete view" in the context menu
+    const deleteItem = page.locator('[data-slot="context-menu-item"]', {
+      hasText: "Delete view",
+    });
+    await expect(deleteItem).toBeVisible({ timeout: 5_000 });
+    await deleteItem.click();
+
+    // The delete confirmation dialog should appear
+    const dialog = page.locator('[role="alertdialog"]');
+    await expect(dialog).toBeVisible({ timeout: 5_000 });
+    await expect(
+      dialog.locator('[data-slot="alert-dialog-title"]'),
+    ).toContainText("Delete");
+
+    // Confirm deletion
+    const confirmBtn = dialog.locator("button", { hasText: "Delete" });
+    await expect(confirmBtn).toBeVisible({ timeout: 5_000 });
+    await confirmBtn.click();
+    await page.waitForTimeout(2_000);
+
+    // The "List view" tab should be gone
+    await expect(
+      page.locator("button", { hasText: "List view" }),
+    ).toBeHidden({ timeout: 5_000 });
+
+    // The "Default view" tab should still be visible
+    await expect(
+      page.locator("button", { hasText: "Default view" }),
+    ).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("context menu duplicate creates a copy of the view", async ({
+    authenticatedPage: page,
+  }) => {
+    await createDatabaseFromSidebar(page);
+    await addRow(page);
+
+    // Right-click the "Default view" tab
+    const defaultTab = page.locator("button", { hasText: "Default view" });
+    await expect(defaultTab).toBeVisible({ timeout: 10_000 });
+    await defaultTab.click({ button: "right" });
+
+    // Click "Duplicate" in the context menu
+    const duplicateItem = page.locator('[data-slot="context-menu-item"]', {
+      hasText: "Duplicate",
+    });
+    await expect(duplicateItem).toBeVisible({ timeout: 5_000 });
+    await duplicateItem.click();
+    await page.waitForTimeout(2_000);
+
+    // A new tab should appear (the duplicate). The exact name depends on
+    // the implementation but there should now be more than one tab.
+    const viewTabs = page.locator(
+      '[data-slot="context-menu-trigger"] button',
+    );
+    await expect(viewTabs).toHaveCount(2, { timeout: 5_000 });
+  });
+
+  test("context menu delete is disabled when only one view exists", async ({
+    authenticatedPage: page,
+  }) => {
+    await createDatabaseFromSidebar(page);
+    await addRow(page);
+
+    // Right-click the only view tab
+    const defaultTab = page.locator("button", { hasText: "Default view" });
+    await expect(defaultTab).toBeVisible({ timeout: 10_000 });
+    await defaultTab.click({ button: "right" });
+
+    // The "Delete view" item should be visible but disabled
+    const deleteItem = page.locator('[data-slot="context-menu-item"]', {
+      hasText: "Delete view",
+    });
+    await expect(deleteItem).toBeVisible({ timeout: 5_000 });
+    await expect(deleteItem).toHaveAttribute("data-disabled", "");
+  });
+});

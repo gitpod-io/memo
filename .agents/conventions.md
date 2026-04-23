@@ -905,6 +905,25 @@ const [dialogOpen, setDialogOpen] = useState(false);
 </DropdownMenuItem>
 ```
 
+### Menu item click handlers — `onClick`, not `onSelect`
+
+Base UI's `MenuItem` (used by `ContextMenuItem` and `DropdownMenuItem`) uses
+`onClick` for item actions. The Radix-style `onSelect` prop does not exist on
+Base UI primitives — it is silently ignored if passed, causing menu actions to
+never fire.
+
+```typescript
+// ✅ Correct — Base UI uses onClick
+<ContextMenuItem onClick={() => handleAction("rename")}>
+  Rename
+</ContextMenuItem>
+
+// ❌ Wrong — onSelect is silently ignored by Base UI
+<ContextMenuItem onSelect={() => handleAction("rename")}>
+  Rename
+</ContextMenuItem>
+```
+
 ### Button primitives
 
 Buttons use `@base-ui/react/button` internally. The `Button` component accepts

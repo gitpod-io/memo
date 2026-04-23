@@ -358,7 +358,7 @@ export function ViewTabs({
                 </ContextMenuTrigger>
                 <ContextMenuContent>
                   <ContextMenuItem
-                    onSelect={() =>
+                    onClick={() =>
                       handleContextMenuAction(view.id, "rename")
                     }
                   >
@@ -366,7 +366,7 @@ export function ViewTabs({
                     <span>Rename</span>
                   </ContextMenuItem>
                   <ContextMenuItem
-                    onSelect={() =>
+                    onClick={() =>
                       handleContextMenuAction(view.id, "duplicate")
                     }
                   >
@@ -385,7 +385,7 @@ export function ViewTabs({
                   ) : (
                     <ContextMenuItem
                       variant="destructive"
-                      onSelect={() =>
+                      onClick={() =>
                         handleContextMenuAction(view.id, "delete")
                       }
                     >
