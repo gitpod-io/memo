@@ -331,7 +331,7 @@ export function PageSearch() {
             if (query.trim()) setOpen(true);
           }}
           onKeyDown={handleKeyDown}
-          className="h-7 border-white/[0.06] bg-transparent pl-7 pr-7 text-sm placeholder:text-muted-foreground"
+          className="h-7 border-overlay-border bg-transparent pl-7 pr-7 text-sm placeholder:text-muted-foreground"
           aria-label="Search pages"
           aria-expanded={showResults}
           role="combobox"
@@ -357,17 +357,17 @@ export function PageSearch() {
         <div
           id="search-results"
           role="listbox"
-          className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] overflow-y-auto border border-white/[0.06] bg-muted rounded-sm shadow-md"
+          className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] overflow-y-auto border border-overlay-border bg-muted rounded-sm shadow-md"
         >
           {showSkeleton && (
             <div className="flex flex-col">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="flex flex-col gap-1 px-3 py-2">
                   <div className="flex items-center gap-2">
-                    <div className="h-4 w-4 shrink-0 bg-white/[0.08] animate-pulse" />
-                    <div className="h-3.5 w-32 bg-white/[0.08] animate-pulse" />
+                    <div className="h-4 w-4 shrink-0 bg-overlay-active animate-pulse" />
+                    <div className="h-3.5 w-32 bg-overlay-active animate-pulse" />
                   </div>
-                  <div className="h-3 w-48 bg-white/[0.08] animate-pulse ml-6" />
+                  <div className="h-3 w-48 bg-overlay-active animate-pulse ml-6" />
                 </div>
               ))}
             </div>
@@ -387,8 +387,8 @@ export function PageSearch() {
               aria-selected={index === selectedIndex}
               className={`flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-none ${
                 index === selectedIndex
-                  ? "bg-white/[0.08]"
-                  : "hover:bg-white/[0.04]"
+                  ? "bg-overlay-active"
+                  : "hover:bg-overlay-hover"
               }`}
               onClick={() => handleNavigate(result)}
               onMouseEnter={() => setSelectedIndex(index)}

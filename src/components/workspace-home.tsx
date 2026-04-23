@@ -170,14 +170,14 @@ export function WorkspaceHome({
       </div>
       {recentVisits.length > 0 && (
         <div className="mt-6">
-          <h2 className="mb-2 text-xs uppercase tracking-widest text-white/30">
+          <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
             Recently Visited
           </h2>
           <div className="flex flex-col gap-0.5">
             {recentVisits.map((visit) => (
               <button
                 key={visit.page_id}
-                className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-white/[0.04]"
+                className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-overlay-hover"
                 onClick={() =>
                   router.push(`/${workspace.slug}/${visit.page_id}`)
                 }
@@ -204,7 +204,7 @@ export function WorkspaceHome({
         </div>
       )}
       <div className="mt-6">
-        <h2 className="mb-2 text-xs uppercase tracking-widest text-white/30">
+        <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
           All Pages
         </h2>
         <div className="mb-3 flex items-center gap-2">
@@ -258,7 +258,7 @@ export function WorkspaceHome({
             {filteredAndSorted.map((page) => (
               <button
                 key={page.id}
-                className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-white/[0.04]"
+                className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-overlay-hover"
                 onClick={() =>
                   router.push(`/${workspace.slug}/${page.id}`)
                 }

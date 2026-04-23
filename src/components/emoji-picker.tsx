@@ -181,7 +181,7 @@ export function EmojiPicker({
       {open && (
         <div
           ref={floatingRef}
-          className="fixed z-50 w-[calc(100vw-16px)] rounded-sm border border-white/[0.06] bg-popover p-2 shadow-md sm:w-72"
+          className="fixed z-50 w-[calc(100vw-16px)] rounded-sm border border-overlay-border bg-popover p-2 shadow-md sm:w-72"
           role="dialog"
           aria-label="Emoji picker"
         >
@@ -191,13 +191,13 @@ export function EmojiPicker({
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder="Filter..."
-            className="mb-2 h-9 w-full border border-white/[0.06] bg-muted px-2 py-1 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:outline-none"
+            className="mb-2 h-9 w-full border border-overlay-border bg-muted px-2 py-1 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:outline-none"
             aria-label="Filter emojis"
           />
           {hasIcon && onRemove && (
             <button
               onClick={handleRemove}
-              className="mb-2 w-full px-2 py-1 text-left text-xs text-muted-foreground hover:bg-white/[0.04]"
+              className="mb-2 w-full px-2 py-1 text-left text-xs text-muted-foreground hover:bg-overlay-hover"
             >
               Remove icon
             </button>
@@ -205,7 +205,7 @@ export function EmojiPicker({
           <div className="max-h-60 overflow-y-auto">
             {filteredCategories.map((category) => (
               <div key={category.label}>
-                <div className="px-1 py-1 text-xs tracking-widest uppercase text-white/30">
+                <div className="px-1 py-1 text-xs tracking-widest uppercase text-label-faint">
                   {category.label}
                 </div>
                 <div className="grid grid-cols-6 gap-0.5 sm:grid-cols-8">
@@ -213,7 +213,7 @@ export function EmojiPicker({
                     <button
                       key={emoji}
                       onClick={() => handleSelect(emoji)}
-                      className="flex min-h-11 min-w-11 items-center justify-center text-lg hover:bg-white/[0.04] sm:min-h-8 sm:min-w-8"
+                      className="flex min-h-11 min-w-11 items-center justify-center text-lg hover:bg-overlay-hover sm:min-h-8 sm:min-w-8"
                       aria-label={`Select ${emoji}`}
                     >
                       {emoji}

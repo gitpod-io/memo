@@ -96,7 +96,7 @@ export function KeyboardShortcutsDialog({
         <div className="flex flex-col gap-6">
           {sections.map((section) => (
             <div key={section.title} className="flex flex-col gap-2">
-              <h3 className="text-xs tracking-widest uppercase text-white/30">
+              <h3 className="text-xs tracking-widest uppercase text-label-faint">
                 {section.title}
               </h3>
               <div className="flex flex-col gap-1">

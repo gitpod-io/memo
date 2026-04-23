@@ -57,7 +57,7 @@ export class CollapsibleContainerNode extends ElementNode {
   createDOM(): HTMLElement {
     const details = document.createElement("details");
     details.className =
-      "mt-3 border border-white/[0.06] text-sm rounded-sm";
+      "mt-3 border border-overlay-border text-sm rounded-sm";
     if (this.__open) {
       details.open = true;
     }
@@ -126,7 +126,7 @@ export class CollapsibleTitleNode extends ElementNode {
   createDOM(): HTMLElement {
     const summary = document.createElement("summary");
     summary.className =
-      "flex items-center gap-1.5 p-3 text-sm font-medium text-foreground hover:bg-white/[0.04] list-none";
+      "flex items-center gap-1.5 p-3 text-sm font-medium text-foreground hover:bg-overlay-hover list-none";
 
     // Add a toggle chevron button as the visual affordance.
     // The chevron rotates when the parent <details> is open.
@@ -134,7 +134,7 @@ export class CollapsibleTitleNode extends ElementNode {
     chevron.type = "button";
     chevron.contentEditable = "false";
     chevron.className =
-      "collapsible-toggle flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-white/[0.08] transition-transform duration-150";
+      "collapsible-toggle flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-overlay-active transition-transform duration-150";
     chevron.setAttribute("aria-label", "Toggle section");
     chevron.innerHTML =
       '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
@@ -237,7 +237,7 @@ export class CollapsibleContentNode extends ElementNode {
 
   createDOM(): HTMLElement {
     const div = document.createElement("div");
-    div.className = "border-t border-white/[0.06] p-3 text-sm";
+    div.className = "border-t border-overlay-border p-3 text-sm";
     return div;
   }
 

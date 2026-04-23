@@ -10,7 +10,7 @@ const meta: Meta<typeof PropertyTypePicker> = {
   },
   decorators: [
     (Story) => (
-      <div className="flex h-10 w-12 items-center justify-center border border-white/[0.06] bg-muted">
+      <div className="flex h-10 w-12 items-center justify-center border border-overlay-border bg-muted">
         <Story />
       </div>
     ),

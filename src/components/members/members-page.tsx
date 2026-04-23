@@ -115,7 +115,7 @@ export function MembersPage({
             }}
             onError={setError}
           />
-          <Separator className="bg-white/[0.06]" />
+          <Separator className="bg-overlay-border" />
         </>
       )}
 
@@ -132,7 +132,7 @@ export function MembersPage({
 
       {isAdmin && invites.length > 0 && (
         <>
-          <Separator className="bg-white/[0.06]" />
+          <Separator className="bg-overlay-border" />
           <PendingInviteList
             invites={invites}
             onRevoke={handleRevokeInvite}

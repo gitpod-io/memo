@@ -138,7 +138,7 @@ export function FavoritesSection({ userId }: FavoritesSectionProps) {
 
   return (
     <div className="flex flex-col gap-0.5">
-      <p className="px-2 text-xs tracking-widest uppercase text-white/30">
+      <p className="px-2 text-xs tracking-widest uppercase text-label-faint">
         Favorites
       </p>
       {favorites.map((fav) => {
@@ -148,8 +148,8 @@ export function FavoritesSection({ userId }: FavoritesSectionProps) {
             key={fav.id}
             className={`group flex items-center gap-2 px-2 py-0.5 text-sm ${
               isSelected
-                ? "bg-white/[0.08] font-medium text-white/70"
-                : "text-muted-foreground hover:bg-white/[0.04]"
+                ? "bg-overlay-active font-medium text-label-subtle"
+                : "text-muted-foreground hover:bg-overlay-hover"
             }`}
           >
             <span className="flex h-4 w-4 shrink-0 items-center justify-center">

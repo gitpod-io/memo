@@ -18,7 +18,7 @@ function PageLinkPill({
   if (loading) {
     return (
       <span className="inline-flex items-center gap-1 bg-muted px-1.5 py-0.5 text-sm text-muted-foreground align-baseline">
-        <span className="inline-block h-3.5 w-16 animate-pulse bg-white/[0.08]" />
+        <span className="inline-block h-3.5 w-16 animate-pulse bg-overlay-active" />
       </span>
     );
   }
@@ -33,7 +33,7 @@ function PageLinkPill({
   }
 
   return (
-    <span className="inline-flex items-center gap-1 bg-muted px-1.5 py-0.5 text-sm text-foreground hover:bg-white/[0.08] align-baseline cursor-pointer">
+    <span className="inline-flex items-center gap-1 bg-muted px-1.5 py-0.5 text-sm text-foreground hover:bg-overlay-active align-baseline cursor-pointer">
       {icon ? (
         <span className="shrink-0 text-sm">{icon}</span>
       ) : (

@@ -199,7 +199,7 @@ export function FloatingLinkEditorPlugin({
   return createPortal(
     <div
       ref={editorRef}
-      className="fixed z-50 flex items-center gap-1 border border-white/[0.06] bg-popover px-2 py-1.5 shadow-md rounded-sm"
+      className="fixed z-50 flex items-center gap-1 border border-overlay-border bg-popover px-2 py-1.5 shadow-md rounded-sm"
       onMouseDown={(e) => e.stopPropagation()}
     >
       {isEditing ? (

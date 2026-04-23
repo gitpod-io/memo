@@ -34,8 +34,8 @@ function FavoriteItem({
     <div
       className={`group flex items-center gap-2 px-2 py-0.5 text-sm ${
         isSelected
-          ? "bg-white/[0.08] font-medium text-white/70"
-          : "text-muted-foreground hover:bg-white/[0.04]"
+          ? "bg-overlay-active font-medium text-label-subtle"
+          : "text-muted-foreground hover:bg-overlay-hover"
       }`}
     >
       <span className="flex h-4 w-4 shrink-0 items-center justify-center">
@@ -62,7 +62,7 @@ export const WithFavorites: Story = {
   render: () => (
     <div className="w-56 bg-muted p-2">
       <div className="flex flex-col gap-0.5">
-        <p className="px-2 text-xs tracking-widest uppercase text-white/30">
+        <p className="px-2 text-xs tracking-widest uppercase text-label-faint">
           Favorites
         </p>
         {mockFavorites.map((fav) => (
@@ -82,7 +82,7 @@ export const WithSelectedFavorite: Story = {
   render: () => (
     <div className="w-56 bg-muted p-2">
       <div className="flex flex-col gap-0.5">
-        <p className="px-2 text-xs tracking-widest uppercase text-white/30">
+        <p className="px-2 text-xs tracking-widest uppercase text-label-faint">
           Favorites
         </p>
         <FavoriteItem icon="📝" title="Meeting Notes" isSelected />
@@ -98,7 +98,7 @@ export const SingleFavorite: Story = {
   render: () => (
     <div className="w-56 bg-muted p-2">
       <div className="flex flex-col gap-0.5">
-        <p className="px-2 text-xs tracking-widest uppercase text-white/30">
+        <p className="px-2 text-xs tracking-widest uppercase text-label-faint">
           Favorites
         </p>
         <FavoriteItem icon="📝" title="Meeting Notes" />

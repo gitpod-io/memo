@@ -429,6 +429,35 @@ export default function GlobalError({
 - Layout, navigation structure → server component
 - Real-time subscriptions → client component
 
+## Theme (Light/Dark Mode)
+
+Theme is managed by `src/lib/theme.tsx` which provides `ThemeProvider` and `useTheme`.
+
+- **Storage:** `localStorage("memo-theme")` — values: `"light"`, `"dark"`, `"system"`.
+- **Mechanism:** `data-theme="light|dark"` attribute on `<html>`, plus `.dark` class for shadcn.
+- **Flash prevention:** Inline `<script>` in `<head>` reads localStorage before React hydrates.
+- **System detection:** `prefers-color-scheme` media query listener when preference is `"system"`.
+- **Default:** `"dark"` (existing users who haven't set a preference get dark mode).
+
+```typescript
+// Reading theme in a client component
+import { useTheme } from "@/lib/theme";
+
+function MyComponent() {
+  const { preference, resolved, setPreference } = useTheme();
+  // preference: "light" | "dark" | "system"
+  // resolved: "light" | "dark" (actual applied theme)
+}
+```
+
+Rules:
+- Never hardcode `white/[0.xx]` or `black/[0.xx]` — use overlay/label tokens.
+- Use `bg-overlay-hover` instead of `bg-white/[0.04]`.
+- Use `border-overlay-border` instead of `border-white/[0.06]`.
+- Use `text-label-faint` instead of `text-white/30`.
+- The Toaster in `providers.tsx` reads `resolved` theme to pass to Sonner.
+- Storybook has a toolbar theme switcher — stories render in both themes.
+
 ## File Naming
 
 - Components: `kebab-case.tsx` (e.g., `page-list.tsx`)

@@ -32,7 +32,7 @@ function EmojiPickerDemo({
     >
       <button
         data-testid="emoji-trigger"
-        className="flex min-h-11 min-w-11 items-center justify-center rounded-sm text-4xl leading-none hover:bg-white/[0.04]"
+        className="flex min-h-11 min-w-11 items-center justify-center rounded-sm text-4xl leading-none hover:bg-overlay-hover"
       >
         {emoji ?? "➕"}
       </button>
@@ -47,7 +47,7 @@ export const Closed: Story = {
     onSelect: fn(),
     hasIcon: false,
     children: (
-      <button className="flex min-h-11 min-w-11 items-center justify-center rounded-sm text-4xl leading-none hover:bg-white/[0.04]">
+      <button className="flex min-h-11 min-w-11 items-center justify-center rounded-sm text-4xl leading-none hover:bg-overlay-hover">
         ➕
       </button>
     ),

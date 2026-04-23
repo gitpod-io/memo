@@ -116,7 +116,7 @@ function PageLinkComponent({ pageId }: { pageId: string }) {
   if (loading) {
     return (
       <span className="inline-flex items-center gap-1 bg-muted px-1.5 py-0.5 text-sm text-muted-foreground align-baseline">
-        <span className="inline-block h-3.5 w-16 animate-pulse bg-white/[0.08]" />
+        <span className="inline-block h-3.5 w-16 animate-pulse bg-overlay-active" />
       </span>
     );
   }
@@ -139,7 +139,7 @@ function PageLinkComponent({ pageId }: { pageId: string }) {
         e.preventDefault();
         router.push(href);
       }}
-      className="inline-flex items-center gap-1 bg-muted px-1.5 py-0.5 text-sm text-foreground hover:bg-white/[0.08] align-baseline cursor-pointer"
+      className="inline-flex items-center gap-1 bg-muted px-1.5 py-0.5 text-sm text-foreground hover:bg-overlay-active align-baseline cursor-pointer"
       title={title ?? ""}
     >
       {icon ? (

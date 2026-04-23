@@ -175,7 +175,7 @@ export function SortMenu({
                     key={prop.id}
                     type="button"
                     onClick={() => addSort(prop.id)}
-                    className="flex w-full items-center gap-2 px-2 py-1.5 text-sm hover:bg-white/[0.04]"
+                    className="flex w-full items-center gap-2 px-2 py-1.5 text-sm hover:bg-overlay-hover"
                   >
                     <Icon className="h-3.5 w-3.5 text-muted-foreground" />
                     <span>{prop.name}</span>

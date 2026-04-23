@@ -27,7 +27,7 @@ function Swatch({
   return (
     <div className="flex items-center gap-3">
       <div
-        className="h-10 w-10 shrink-0 border border-white/[0.06]"
+        className="h-10 w-10 shrink-0 border border-overlay-border"
         style={{ backgroundColor: `var(${cssVar})` }}
       />
       <div className="flex flex-col">
@@ -49,7 +49,7 @@ function SwatchGroup({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <h3 className="text-xs font-medium uppercase tracking-widest text-white/30">
+      <h3 className="text-xs font-medium uppercase tracking-widest text-label-faint">
         {title}
       </h3>
       <div className="grid grid-cols-2 gap-x-8 gap-y-3">
@@ -129,6 +129,25 @@ export const Colors: Story = {
           { name: "chart-5", cssVar: "--chart-5", oklch: "oklch(0.30 0.012 255)" },
         ]}
       />
+      <SwatchGroup
+        title="Overlays (theme-adaptive)"
+        tokens={[
+          { name: "overlay-subtle", cssVar: "--overlay-subtle", oklch: "white 2% / black 2%" },
+          { name: "overlay-hover", cssVar: "--overlay-hover", oklch: "white 4% / black 4%" },
+          { name: "overlay-border", cssVar: "--overlay-border", oklch: "white 6% / black 8%" },
+          { name: "overlay-active", cssVar: "--overlay-active", oklch: "white 8% / black 6%" },
+          { name: "overlay-strong", cssVar: "--overlay-strong", oklch: "white 12% / black 12%" },
+          { name: "overlay-heavy", cssVar: "--overlay-heavy", oklch: "white 20% / black 20%" },
+        ]}
+      />
+      <SwatchGroup
+        title="Labels (theme-adaptive)"
+        tokens={[
+          { name: "label-faint", cssVar: "--label-faint", oklch: "white 30% / dark 40%" },
+          { name: "label-muted", cssVar: "--label-muted", oklch: "white 50% / dark 55%" },
+          { name: "label-subtle", cssVar: "--label-subtle", oklch: "white 70% / dark 70%" },
+        ]}
+      />
     </div>
   ),
 };
@@ -140,7 +159,7 @@ export const Colors: Story = {
 export const SyntaxHighlighting: Story = {
   render: () => (
     <div className="flex max-w-3xl flex-col gap-3">
-      <h3 className="text-xs font-medium uppercase tracking-widest text-white/30">
+      <h3 className="text-xs font-medium uppercase tracking-widest text-label-faint">
         Code Colors
       </h3>
       <div className="grid grid-cols-2 gap-x-8 gap-y-3">
@@ -187,11 +206,11 @@ export const SyntaxHighlighting: Story = {
 export const Typography: Story = {
   render: () => (
     <div className="flex max-w-3xl flex-col gap-6">
-      <h3 className="text-xs font-medium uppercase tracking-widest text-white/30">
+      <h3 className="text-xs font-medium uppercase tracking-widest text-label-faint">
         Typography Scale
       </h3>
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1 border-b border-white/[0.06] pb-4">
+        <div className="flex flex-col gap-1 border-b border-overlay-border pb-4">
           <span className="text-3xl font-bold text-foreground">
             Page title — text-3xl font-bold
           </span>
@@ -199,7 +218,7 @@ export const Typography: Story = {
             30px · Used for the page title in the editor
           </span>
         </div>
-        <div className="flex flex-col gap-1 border-b border-white/[0.06] pb-4">
+        <div className="flex flex-col gap-1 border-b border-overlay-border pb-4">
           <span className="text-2xl font-semibold text-foreground">
             Heading 1 — text-2xl font-semibold
           </span>
@@ -207,7 +226,7 @@ export const Typography: Story = {
             24px · Top-level section headings
           </span>
         </div>
-        <div className="flex flex-col gap-1 border-b border-white/[0.06] pb-4">
+        <div className="flex flex-col gap-1 border-b border-overlay-border pb-4">
           <span className="text-xl font-semibold text-foreground">
             Heading 2 — text-xl font-semibold
           </span>
@@ -215,7 +234,7 @@ export const Typography: Story = {
             20px · Sub-section headings
           </span>
         </div>
-        <div className="flex flex-col gap-1 border-b border-white/[0.06] pb-4">
+        <div className="flex flex-col gap-1 border-b border-overlay-border pb-4">
           <span className="text-lg font-medium text-foreground">
             Heading 3 — text-lg font-medium
           </span>
@@ -223,7 +242,7 @@ export const Typography: Story = {
             18px · Minor headings
           </span>
         </div>
-        <div className="flex flex-col gap-1 border-b border-white/[0.06] pb-4">
+        <div className="flex flex-col gap-1 border-b border-overlay-border pb-4">
           <span className="text-sm font-normal text-foreground">
             Body text — text-sm font-normal
           </span>
@@ -231,7 +250,7 @@ export const Typography: Story = {
             14px · All body content, paragraphs, list items
           </span>
         </div>
-        <div className="flex flex-col gap-1 border-b border-white/[0.06] pb-4">
+        <div className="flex flex-col gap-1 border-b border-overlay-border pb-4">
           <span className="text-sm font-medium text-foreground">
             UI label — text-sm font-medium
           </span>
@@ -239,7 +258,7 @@ export const Typography: Story = {
             14px · Sidebar items, buttons, form labels
           </span>
         </div>
-        <div className="flex flex-col gap-1 border-b border-white/[0.06] pb-4">
+        <div className="flex flex-col gap-1 border-b border-overlay-border pb-4">
           <span className="text-xs font-normal text-muted-foreground">
             Secondary text — text-xs text-muted-foreground
           </span>
@@ -257,14 +276,14 @@ export const Typography: Story = {
         </div>
       </div>
       <div className="mt-2 flex flex-col gap-1">
-        <h3 className="text-xs font-medium uppercase tracking-widest text-white/30">
+        <h3 className="text-xs font-medium uppercase tracking-widest text-label-faint">
           Section Label Convention
         </h3>
-        <span className="text-xs font-normal uppercase tracking-widest text-white/30">
+        <span className="text-xs font-normal uppercase tracking-widest text-label-faint">
           Workspaces
         </span>
         <span className="text-xs text-muted-foreground">
-          text-xs tracking-widest uppercase text-white/30
+          text-xs tracking-widest uppercase text-label-faint
         </span>
       </div>
     </div>
@@ -303,7 +322,7 @@ function SpacingBox({
 export const Spacing: Story = {
   render: () => (
     <div className="flex max-w-3xl flex-col gap-6">
-      <h3 className="text-xs font-medium uppercase tracking-widest text-white/30">
+      <h3 className="text-xs font-medium uppercase tracking-widest text-label-faint">
         Spacing Scale
       </h3>
       <div className="flex flex-col gap-4">
@@ -314,7 +333,7 @@ export const Spacing: Story = {
         <SpacingBox label="Between major sections" pxValue={32} tailwindClass="gap-8" />
       </div>
       <div className="mt-2 flex flex-col gap-3">
-        <h3 className="text-xs font-medium uppercase tracking-widest text-white/30">
+        <h3 className="text-xs font-medium uppercase tracking-widest text-label-faint">
           Key Dimensions
         </h3>
         <div className="flex flex-col gap-2 text-xs text-muted-foreground">
@@ -334,7 +353,7 @@ export const Spacing: Story = {
 export const Corners: Story = {
   render: () => (
     <div className="flex max-w-3xl flex-col gap-6">
-      <h3 className="text-xs font-medium uppercase tracking-widest text-white/30">
+      <h3 className="text-xs font-medium uppercase tracking-widest text-label-faint">
         Corner Radius Rules
       </h3>
       <p className="text-xs text-muted-foreground">
@@ -343,30 +362,30 @@ export const Corners: Story = {
       </p>
       <div className="grid grid-cols-2 gap-8">
         <div className="flex flex-col gap-2">
-          <span className="text-xs font-medium uppercase tracking-widest text-white/30">
+          <span className="text-xs font-medium uppercase tracking-widest text-label-faint">
             Default (sharp)
           </span>
           <div className="flex flex-col gap-3">
-            <div className="flex h-9 items-center justify-center border border-white/[0.06] bg-primary px-4 text-sm font-medium text-primary-foreground">
+            <div className="flex h-9 items-center justify-center border border-overlay-border bg-primary px-4 text-sm font-medium text-primary-foreground">
               Button
             </div>
-            <div className="flex h-9 items-center border border-white/[0.06] bg-background px-3 text-sm text-muted-foreground">
+            <div className="flex h-9 items-center border border-overlay-border bg-background px-3 text-sm text-muted-foreground">
               Input
             </div>
-            <div className="border border-white/[0.06] bg-card p-4 text-sm">
+            <div className="border border-overlay-border bg-card p-4 text-sm">
               Card / Dialog
             </div>
           </div>
         </div>
         <div className="flex flex-col gap-2">
-          <span className="text-xs font-medium uppercase tracking-widest text-white/30">
+          <span className="text-xs font-medium uppercase tracking-widest text-label-faint">
             Exceptions (rounded-sm)
           </span>
           <div className="flex flex-col gap-3">
-            <div className="rounded-sm border border-white/[0.06] bg-popover p-3 text-sm shadow-md">
+            <div className="rounded-sm border border-overlay-border bg-popover p-3 text-sm shadow-md">
               Dropdown / Popover
             </div>
-            <div className="rounded-sm border border-white/[0.06] bg-popover p-3 text-sm shadow-md">
+            <div className="rounded-sm border border-overlay-border bg-popover p-3 text-sm shadow-md">
               Toast notification
             </div>
             <div className="rounded-sm bg-muted p-4 text-sm">

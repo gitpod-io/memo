@@ -238,7 +238,7 @@ export function RowPropertiesHeader({
   const hiddenCount = properties.length - COLLAPSED_LIMIT;
 
   return (
-    <div className="mb-4 border-b border-white/[0.06] pb-4">
+    <div className="mb-4 border-b border-overlay-border pb-4">
       <div className="space-y-1.5">
         {visibleProperties.map((property) => {
           // Build a minimal DatabaseRow for formula evaluation

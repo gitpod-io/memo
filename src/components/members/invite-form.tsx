@@ -160,7 +160,7 @@ export function InviteForm({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-xs tracking-widest uppercase text-white/30">
+      <p className="text-xs tracking-widest uppercase text-label-faint">
         Invite
       </p>
       <form onSubmit={handleSubmit} className="flex items-end gap-2">

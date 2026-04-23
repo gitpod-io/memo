@@ -58,7 +58,7 @@ function ScreenshotSection({
 }) {
   if (loading) {
     return (
-      <div className="h-20 animate-pulse border border-white/[0.06] bg-muted" />
+      <div className="h-20 animate-pulse border border-overlay-border bg-muted" />
     );
   }
 
@@ -69,7 +69,7 @@ function ScreenshotSection({
           <img
             src={screenshot}
             alt="Screenshot preview"
-            className="h-20 w-auto border border-white/[0.06] object-cover"
+            className="h-20 w-auto border border-overlay-border object-cover"
           />
           <button
             type="button"
@@ -92,7 +92,7 @@ function ScreenshotSection({
   return (
     <button
       type="button"
-      className="flex h-20 items-center justify-center gap-2 border border-dashed border-white/[0.06] text-muted-foreground transition-colors hover:border-white/[0.12] hover:text-foreground"
+      className="flex h-20 items-center justify-center gap-2 border border-dashed border-overlay-border text-muted-foreground transition-colors hover:border-overlay-strong hover:text-foreground"
     >
       <ImagePlus className="h-4 w-4" />
       <span className="text-xs">Upload screenshot</span>

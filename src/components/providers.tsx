@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { ThemeProvider, useTheme } from "@/lib/theme";
 
 const TooltipProvider = dynamic(
   () =>
@@ -11,17 +12,26 @@ const Toaster = dynamic(() =>
   import("sonner").then((mod) => mod.Toaster),
 );
 
+function ThemedToaster() {
+  const { resolved } = useTheme();
+  return (
+    <Toaster
+      theme={resolved}
+      position="bottom-right"
+      toastOptions={{
+        className: "rounded-sm font-mono text-sm",
+      }}
+    />
+  );
+}
+
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <TooltipProvider>
-      {children}
-      <Toaster
-        theme="dark"
-        position="bottom-right"
-        toastOptions={{
-          className: "rounded-sm font-mono text-sm",
-        }}
-      />
-    </TooltipProvider>
+    <ThemeProvider>
+      <TooltipProvider>
+        {children}
+        <ThemedToaster />
+      </TooltipProvider>
+    </ThemeProvider>
   );
 }

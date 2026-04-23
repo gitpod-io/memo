@@ -170,7 +170,7 @@ export function WorkspaceSettingsForm({
 
       {!workspace.is_personal && isOwner && (
         <>
-          <Separator className="bg-white/[0.06]" />
+          <Separator className="bg-overlay-border" />
           <div className="flex flex-col gap-3">
             <h2 className="text-sm font-medium text-destructive">
               Danger zone
@@ -214,7 +214,7 @@ export function WorkspaceSettingsForm({
 
       {workspace.is_personal && (
         <>
-          <Separator className="bg-white/[0.06]" />
+          <Separator className="bg-overlay-border" />
           <p className="text-xs text-muted-foreground">
             This is your personal workspace. It will be deleted if you delete
             your account.

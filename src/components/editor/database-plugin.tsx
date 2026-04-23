@@ -360,13 +360,13 @@ export function DatabasePlugin(): JSX.Element | null {
   return createPortal(
     <div
       ref={menuRef}
-      className="fixed z-50 w-72 overflow-hidden rounded-sm border border-white/[0.06] bg-popover shadow-md"
+      className="fixed z-50 w-72 overflow-hidden rounded-sm border border-overlay-border bg-popover shadow-md"
       style={{
         top: anchorRect.bottom + 4,
         left: anchorRect.left,
       }}
     >
-      <div className="flex items-center gap-2 border-b border-white/[0.06] px-2 py-1.5">
+      <div className="flex items-center gap-2 border-b border-overlay-border px-2 py-1.5">
         <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         <input
           ref={searchInputRef}
@@ -384,8 +384,8 @@ export function DatabasePlugin(): JSX.Element | null {
         <button
           className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm outline-none ${
             selectedIndex === 0
-              ? "bg-white/[0.08] text-foreground"
-              : "text-muted-foreground hover:bg-white/[0.04]"
+              ? "bg-overlay-active text-foreground"
+              : "text-muted-foreground hover:bg-overlay-hover"
           }`}
           onClick={() => createAndInsert()}
           onMouseEnter={() => setSelectedIndex(0)}
@@ -410,8 +410,8 @@ export function DatabasePlugin(): JSX.Element | null {
             key={db.id}
             className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm outline-none ${
               selectedIndex === index + 1
-                ? "bg-white/[0.08] text-foreground"
-                : "text-muted-foreground hover:bg-white/[0.04]"
+                ? "bg-overlay-active text-foreground"
+                : "text-muted-foreground hover:bg-overlay-hover"
             }`}
             onClick={() => insertDatabase(db)}
             onMouseEnter={() => setSelectedIndex(index + 1)}

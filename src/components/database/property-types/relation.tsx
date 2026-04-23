@@ -66,7 +66,7 @@ function RelationPill({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex max-w-[160px] items-center gap-1 bg-muted px-1.5 py-0.5 text-sm text-foreground hover:bg-white/[0.08] align-baseline cursor-pointer"
+      className="inline-flex max-w-[160px] items-center gap-1 bg-muted px-1.5 py-0.5 text-sm text-foreground hover:bg-overlay-active align-baseline cursor-pointer"
       title={page.title}
       aria-label={`Navigate to ${page.title || "Untitled"}`}
     >
@@ -174,7 +174,7 @@ export function RelationRenderer({ value }: RendererProps) {
             key={id}
             className="inline-flex items-center gap-1 bg-muted px-1.5 py-0.5 text-sm text-muted-foreground align-baseline"
           >
-            <span className="inline-block h-3.5 w-16 animate-pulse bg-white/[0.08]" />
+            <span className="inline-block h-3.5 w-16 animate-pulse bg-overlay-active" />
           </span>
         ))}
       </div>
@@ -354,7 +354,7 @@ export function RelationEditor({
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="h-5 animate-pulse bg-white/[0.06]"
+                className="h-5 animate-pulse bg-overlay-border"
               />
             ))}
           </div>
@@ -373,7 +373,7 @@ export function RelationEditor({
                 aria-label={`${isSelected ? "Remove" : "Add"} ${row.title}`}
                 className={cn(
                   "flex w-full items-center gap-2 px-2 py-1 text-sm",
-                  "hover:bg-white/[0.04]",
+                  "hover:bg-overlay-hover",
                 )}
               >
                 {row.icon ? (

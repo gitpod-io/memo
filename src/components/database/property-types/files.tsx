@@ -153,7 +153,7 @@ function FileListItem({
   onRemove: () => void;
 }) {
   return (
-    <div className="flex items-center gap-2 px-2 py-1.5 hover:bg-white/[0.04]">
+    <div className="flex items-center gap-2 px-2 py-1.5 hover:bg-overlay-hover">
       <div className="shrink-0">
         {isImageFile(file.name) ? (
           <img

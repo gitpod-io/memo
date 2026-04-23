@@ -169,7 +169,7 @@ export function FloatingToolbarPlugin({
   return createPortal(
     <div
       ref={toolbarRef}
-      className="fixed z-50 flex items-center gap-0.5 border border-white/[0.06] bg-popover p-1 shadow-md"
+      className="fixed z-50 flex items-center gap-0.5 border border-overlay-border bg-popover p-1 shadow-md"
       role="toolbar"
       aria-label="Text formatting"
     >
@@ -237,8 +237,8 @@ function ToolbarButton({
       onMouseDown={(e) => e.preventDefault()}
       className={`flex h-11 w-11 sm:h-7 sm:w-7 items-center justify-center text-sm ${
         active
-          ? "bg-white/[0.08] text-foreground"
-          : "text-muted-foreground hover:bg-white/[0.04] hover:text-foreground"
+          ? "bg-overlay-active text-foreground"
+          : "text-muted-foreground hover:bg-overlay-hover hover:text-foreground"
       }`}
       onClick={onClick}
       aria-label={label}

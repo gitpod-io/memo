@@ -653,7 +653,7 @@ export function PageTree({ userId }: PageTreeProps) {
 
   return (
     <div className="flex flex-1 flex-col gap-1 overflow-y-auto">
-      <p className="px-2 text-xs tracking-widest uppercase text-white/30">
+      <p className="px-2 text-xs tracking-widest uppercase text-label-faint">
         Pages
       </p>
 
@@ -831,8 +831,8 @@ function PageTreeItem({
       <div
         className={`group relative flex items-center gap-0.5 py-0.5 pr-1 text-sm ${
           isSelected
-            ? "bg-white/[0.08] font-medium text-white/70"
-            : "text-muted-foreground hover:bg-white/[0.04]"
+            ? "bg-overlay-active font-medium text-label-subtle"
+            : "text-muted-foreground hover:bg-overlay-hover"
         } ${isDragged ? "opacity-50" : ""}`}
         style={{ paddingLeft: `${depth * 12 + 4}px` }}
         draggable

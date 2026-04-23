@@ -146,7 +146,7 @@ function LanguageDropdown({
       <button
         ref={triggerRef}
         type="button"
-        className="flex items-center gap-1 px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-white/[0.04] rounded-sm transition-none"
+        className="flex items-center gap-1 px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-overlay-hover rounded-sm transition-none"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -172,7 +172,7 @@ function LanguageDropdown({
           ref={listRef}
           role="listbox"
           aria-label="Select language"
-          className="absolute right-0 top-full mt-1 max-h-60 w-40 overflow-y-auto rounded-sm border border-white/[0.06] bg-popover p-1 shadow-md"
+          className="absolute right-0 top-full mt-1 max-h-60 w-40 overflow-y-auto rounded-sm border border-overlay-border bg-popover p-1 shadow-md"
         >
           {LANGUAGE_OPTIONS.map((opt, index) => (
             <button
@@ -182,10 +182,10 @@ function LanguageDropdown({
               aria-selected={opt.value === language}
               className={`flex w-full items-center px-2 py-1 text-left text-xs ${
                 opt.value === language
-                  ? "text-foreground bg-white/[0.08]"
+                  ? "text-foreground bg-overlay-active"
                   : focusedIndex === index
-                    ? "text-foreground bg-white/[0.04]"
-                    : "text-muted-foreground hover:bg-white/[0.04] hover:text-foreground"
+                    ? "text-foreground bg-overlay-hover"
+                    : "text-muted-foreground hover:bg-overlay-hover hover:text-foreground"
               }`}
               onClick={(e) => {
                 e.preventDefault();

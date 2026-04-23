@@ -297,7 +297,7 @@ export function ViewTabs({
 
   return (
     <>
-      <div className="flex items-center border-b border-white/[0.06]">
+      <div className="flex items-center border-b border-overlay-border">
         <div className="flex items-center gap-0 overflow-x-auto">
           {views.map((view, index) => {
             const Icon = VIEW_TYPE_ICON[view.type];

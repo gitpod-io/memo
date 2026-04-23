@@ -60,7 +60,7 @@ export const SELECT_COLOR_STYLES: Record<
   SelectOptionColor,
   { bg: string; text: string }
 > = {
-  gray: { bg: "bg-white/[0.08]", text: "text-foreground" },
+  gray: { bg: "bg-overlay-active", text: "text-foreground" },
   blue: { bg: "bg-blue-500/20", text: "text-blue-400" },
   green: { bg: "bg-green-500/20", text: "text-green-400" },
   yellow: { bg: "bg-yellow-500/20", text: "text-yellow-400" },

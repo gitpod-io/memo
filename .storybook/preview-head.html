@@ -5,8 +5,9 @@
   rel="stylesheet"
 />
 <script>
-  // Add dark class to html element so @custom-variant dark (&:is(.dark *))
-  // activates and all dark-mode CSS variables resolve correctly.
+  // Default to dark theme. The Storybook decorator will update
+  // data-theme and .dark class when the toolbar theme changes.
+  document.documentElement.setAttribute("data-theme", "dark");
   document.documentElement.classList.add("dark");
 </script>
 <style>

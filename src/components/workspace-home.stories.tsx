@@ -124,7 +124,7 @@ function PageItem({
   isDatabase?: boolean;
 }) {
   return (
-    <button className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-white/[0.04]">
+    <button className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-overlay-hover">
       <span className="flex h-4 w-4 shrink-0 items-center justify-center">
         {icon ? (
           <span className="text-sm">{icon}</span>
@@ -201,7 +201,7 @@ export const WithPages: Story = {
         </Button>
       </div>
       <div className="mt-6">
-        <h2 className="mb-2 text-xs uppercase tracking-widest text-white/30">
+        <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
           All Pages
         </h2>
         <SortFilterBar />
@@ -232,7 +232,7 @@ export const WithRecentVisits: Story = {
         </Button>
       </div>
       <div className="mt-6">
-        <h2 className="mb-2 text-xs uppercase tracking-widest text-white/30">
+        <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
           Recently Visited
         </h2>
         <div className="flex flex-col gap-0.5">
@@ -248,7 +248,7 @@ export const WithRecentVisits: Story = {
         </div>
       </div>
       <div className="mt-6">
-        <h2 className="mb-2 text-xs uppercase tracking-widest text-white/30">
+        <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
           All Pages
         </h2>
         <SortFilterBar />
@@ -279,7 +279,7 @@ export const FilterNoResults: Story = {
         </Button>
       </div>
       <div className="mt-6">
-        <h2 className="mb-2 text-xs uppercase tracking-widest text-white/30">
+        <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
           All Pages
         </h2>
         <div className="mb-3 flex items-center gap-2">

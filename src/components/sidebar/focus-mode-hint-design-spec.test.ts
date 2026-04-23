@@ -25,7 +25,7 @@ describe("focus-mode-hint design spec compliance", () => {
   it("kbd element uses text-xs from the typography scale", () => {
     // The keyboard shortcut label should use text-xs (12px), the smallest
     // allowed size in the typography scale.
-    expect(source).toContain("text-xs text-white/30");
+    expect(source).toContain("text-xs text-label-faint");
   });
 });
 

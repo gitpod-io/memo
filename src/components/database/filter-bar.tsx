@@ -262,7 +262,7 @@ function PropertyPicker({
             key={prop.id}
             type="button"
             onClick={() => onSelect(prop.id)}
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-white/[0.04]"
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-overlay-hover"
           >
             <Icon className="h-3.5 w-3.5 text-muted-foreground" />
             <span>{prop.name}</span>
@@ -294,7 +294,7 @@ function OperatorPicker({
           type="button"
           onClick={() => onSelect(op)}
           className={cn(
-            "flex w-full items-center px-3 py-1.5 text-sm hover:bg-white/[0.04]",
+            "flex w-full items-center px-3 py-1.5 text-sm hover:bg-overlay-hover",
           )}
         >
           {getOperatorLabel(op)}

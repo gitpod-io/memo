@@ -31,13 +31,13 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col gap-2 p-2">
       <WorkspaceSwitcher userId={userId} />
-      <Separator className="bg-white/[0.06]" />
+      <Separator className="bg-overlay-border" />
       <PageSearch />
-      <Separator className="bg-white/[0.06]" />
+      <Separator className="bg-overlay-border" />
       <FavoritesSection userId={userId} />
       <PageTree userId={userId} />
       <TrashSection />
-      <Separator className="bg-white/[0.06]" />
+      <Separator className="bg-overlay-border" />
       <FeedbackForm />
       <UserMenu displayName={displayName} email={email} />
     </div>
@@ -68,7 +68,7 @@ export function AppSidebar(props: AppSidebarProps) {
 
   return (
     <aside
-      className="h-full w-60 shrink-0 border-r border-white/[0.06] bg-muted transition-[width,opacity] duration-200 ease-out"
+      className="h-full w-60 shrink-0 border-r border-overlay-border bg-muted transition-[width,opacity] duration-200 ease-out"
       style={{
         width: open ? 240 : 0,
         opacity: open ? 1 : 0,

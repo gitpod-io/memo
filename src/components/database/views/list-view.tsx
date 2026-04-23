@@ -67,7 +67,7 @@ export function ListView({
           <button
             type="button"
             onClick={() => onAddRow()}
-            className="flex w-full items-center gap-1.5 border-t border-white/[0.06] px-3 py-2 text-sm text-muted-foreground hover:bg-white/[0.04]"
+            className="flex w-full items-center gap-1.5 border-t border-overlay-border px-3 py-2 text-sm text-muted-foreground hover:bg-overlay-hover"
           >
             <Plus className="h-3.5 w-3.5" />
             New
@@ -92,7 +92,7 @@ export function ListView({
         <button
           type="button"
           onClick={() => onAddRow()}
-          className="flex w-full items-center gap-1.5 border-t border-white/[0.06] px-3 py-2 text-sm text-muted-foreground hover:bg-white/[0.04]"
+          className="flex w-full items-center gap-1.5 border-t border-overlay-border px-3 py-2 text-sm text-muted-foreground hover:bg-overlay-hover"
         >
           <Plus className="h-3.5 w-3.5" />
           New
@@ -116,7 +116,7 @@ function ListRow({ row, visibleProperties, workspaceSlug }: ListRowProps) {
   return (
     <Link
       href={`/${workspaceSlug}/${row.page.id}`}
-      className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-white/[0.04]"
+      className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-overlay-hover"
       role="listitem"
     >
       {/* Row icon */}
@@ -285,7 +285,7 @@ function CompactPropertyValue({ value, property, propertyType }: CompactProperty
 // ---------------------------------------------------------------------------
 
 const SELECT_COLORS: Record<string, { bg: string; text: string }> = {
-  gray: { bg: "bg-white/[0.08]", text: "text-foreground" },
+  gray: { bg: "bg-overlay-active", text: "text-foreground" },
   blue: { bg: "bg-blue-500/20", text: "text-blue-400" },
   green: { bg: "bg-green-500/20", text: "text-green-400" },
   yellow: { bg: "bg-yellow-500/20", text: "text-yellow-400" },
@@ -398,14 +398,14 @@ function ListSkeleton() {
     <div className="w-full">
       {Array.from({ length: 5 }, (_, i) => (
         <div key={i} className="flex items-center gap-2 px-3 py-2">
-          <div className="h-4 w-4 animate-pulse bg-white/[0.06]" />
+          <div className="h-4 w-4 animate-pulse bg-overlay-border" />
           <div
-            className="h-3 animate-pulse bg-white/[0.06]"
+            className="h-3 animate-pulse bg-overlay-border"
             style={{ width: `${40 + (i % 3) * 15}%` }}
           />
           <div className="ml-auto flex gap-3">
-            <div className="h-3 w-16 animate-pulse bg-white/[0.06]" />
-            <div className="h-3 w-12 animate-pulse bg-white/[0.06]" />
+            <div className="h-3 w-16 animate-pulse bg-overlay-border" />
+            <div className="h-3 w-12 animate-pulse bg-overlay-border" />
           </div>
         </div>
       ))}

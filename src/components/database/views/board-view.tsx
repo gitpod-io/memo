@@ -297,7 +297,7 @@ interface BoardColumnProps {
 }
 
 const COLOR_DOT_STYLES: Record<string, string> = {
-  gray: "bg-white/40",
+  gray: "bg-muted-foreground",
   blue: "bg-blue-400",
   green: "bg-green-400",
   yellow: "bg-yellow-400",
@@ -396,7 +396,7 @@ function BoardColumn({
         <button
           type="button"
           onClick={() => onAddCard(column.id)}
-          className="mt-1 w-full p-1.5 text-left text-xs text-muted-foreground hover:bg-white/[0.04]"
+          className="mt-1 w-full p-1.5 text-left text-xs text-muted-foreground hover:bg-overlay-hover"
         >
           + New
         </button>
@@ -456,7 +456,7 @@ function BoardCard({
         onDragEnd={onDragEnd}
         onDragOver={handleCardDragOver}
         className={cn(
-          "mb-1.5 block border border-white/[0.06] bg-muted p-3",
+          "mb-1.5 block border border-overlay-border bg-muted p-3",
           isDragging && "opacity-50 shadow-lg",
         )}
       >
@@ -527,17 +527,17 @@ function BoardSkeleton() {
       {Array.from({ length: 4 }).map((_, colIdx) => (
         <div key={colIdx} className="w-72 shrink-0 bg-muted/50 p-2">
           <div className="mb-2 flex items-center gap-1.5">
-            <div className="h-2 w-2 animate-pulse bg-white/[0.06]" />
-            <div className="h-3 w-16 animate-pulse bg-white/[0.06]" />
+            <div className="h-2 w-2 animate-pulse bg-overlay-border" />
+            <div className="h-3 w-16 animate-pulse bg-overlay-border" />
           </div>
           {Array.from({ length: colIdx === 0 ? 3 : colIdx === 1 ? 2 : 1 }).map(
             (_, cardIdx) => (
               <div
                 key={cardIdx}
-                className="mb-1.5 border border-white/[0.06] bg-muted p-3"
+                className="mb-1.5 border border-overlay-border bg-muted p-3"
               >
-                <div className="h-4 w-3/4 animate-pulse bg-white/[0.06]" />
-                <div className="mt-1.5 h-3 w-1/2 animate-pulse bg-white/[0.06]" />
+                <div className="h-4 w-3/4 animate-pulse bg-overlay-border" />
+                <div className="mt-1.5 h-3 w-1/2 animate-pulse bg-overlay-border" />
               </div>
             ),
           )}

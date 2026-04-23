@@ -400,7 +400,7 @@ export function TableView({
           style={{ gridTemplateColumns }}
         >
           {/* Header row */}
-          <div className="border-b border-white/[0.06] p-2">
+          <div className="border-b border-overlay-border p-2">
             <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
               Title
             </span>
@@ -420,7 +420,7 @@ export function TableView({
               <div
                 key={prop.id}
                 className={cn(
-                  "relative border-b border-white/[0.06] p-2",
+                  "relative border-b border-overlay-border p-2",
                   onColumnReorder && "cursor-grab",
                   isDragging && "opacity-50",
                 )}
@@ -443,7 +443,7 @@ export function TableView({
               </div>
             );
           })}
-          <div className="border-b border-white/[0.06] p-2" />
+          <div className="border-b border-overlay-border p-2" />
         </div>
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <FileText className="mb-3 h-10 w-10 text-muted-foreground/30" />
@@ -456,7 +456,7 @@ export function TableView({
           <button
             type="button"
             onClick={() => onAddRow()}
-            className="w-full border-t border-white/[0.06] p-2 text-left text-sm text-muted-foreground hover:bg-white/[0.02]"
+            className="w-full border-t border-overlay-border p-2 text-left text-sm text-muted-foreground hover:bg-overlay-subtle"
           >
             + New
           </button>
@@ -475,7 +475,7 @@ export function TableView({
       >
         {/* --- Header row --- */}
         <div
-          className="sticky top-0 z-10 border-b border-white/[0.06] bg-background p-2"
+          className="sticky top-0 z-10 border-b border-overlay-border bg-background p-2"
           role="columnheader"
         >
           <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
@@ -499,7 +499,7 @@ export function TableView({
             <div
               key={prop.id}
               className={cn(
-                "group/header relative sticky top-0 z-10 border-b border-white/[0.06] bg-background p-2",
+                "group/header relative sticky top-0 z-10 border-b border-overlay-border bg-background p-2",
                 onColumnReorder && "cursor-grab",
                 isDragging && "opacity-50",
               )}
@@ -581,7 +581,7 @@ export function TableView({
                   "absolute right-0 top-0 h-full w-1 cursor-col-resize",
                   resizingColumn === prop.id
                     ? "bg-accent"
-                    : "bg-transparent group-hover/header:bg-white/[0.06]",
+                    : "bg-transparent group-hover/header:bg-overlay-border",
                 )}
                 onMouseDown={(e) => handleResizeStart(prop.id, e)}
                 role="separator"
@@ -592,7 +592,7 @@ export function TableView({
         })}
 
         {/* Add column header button */}
-        <div className="sticky top-0 z-10 flex items-center border-b border-white/[0.06] bg-background px-2">
+        <div className="sticky top-0 z-10 flex items-center border-b border-overlay-border bg-background px-2">
           {onAddColumn && (
             <PropertyTypePicker onSelect={onAddColumn} />
           )}
@@ -622,7 +622,7 @@ export function TableView({
         <button
           type="button"
           onClick={() => onAddRow()}
-          className="w-full border-t border-white/[0.06] p-2 text-left text-sm text-muted-foreground hover:bg-white/[0.02]"
+          className="w-full border-t border-overlay-border p-2 text-left text-sm text-muted-foreground hover:bg-overlay-subtle"
         >
           + New
         </button>
@@ -667,7 +667,7 @@ function TableRow({
       {/* Title cell */}
       <div
         className={cn(
-          "group/row flex items-center border-b border-white/[0.06] p-2 hover:bg-white/[0.02]",
+          "group/row flex items-center border-b border-overlay-border p-2 hover:bg-overlay-subtle",
           rowHeightClass,
         )}
         role="gridcell"
@@ -732,7 +732,7 @@ function TableRow({
       {/* Empty cell under add-column */}
       <div
         className={cn(
-          "border-b border-white/[0.06]",
+          "border-b border-overlay-border",
           rowHeightClass,
         )}
         role="gridcell"
@@ -822,7 +822,7 @@ function TableCell({
     return (
       <div
         className={cn(
-          "flex items-center border-b border-white/[0.06] p-0",
+          "flex items-center border-b border-overlay-border p-0",
           rowHeightClass,
         )}
         role="gridcell"
@@ -853,7 +853,7 @@ function TableCell({
     return (
       <div
         className={cn(
-          "flex items-center justify-center border-b border-white/[0.06] p-2 hover:bg-white/[0.02]",
+          "flex items-center justify-center border-b border-overlay-border p-2 hover:bg-overlay-subtle",
           rowHeightClass,
         )}
         role="gridcell"
@@ -893,7 +893,7 @@ function TableCell({
       return (
         <div
           className={cn(
-            "flex items-center border-b border-white/[0.06] p-2",
+            "flex items-center border-b border-overlay-border p-2",
             "cursor-default",
             rowHeightClass,
           )}
@@ -908,7 +908,7 @@ function TableCell({
   return (
     <div
       className={cn(
-        "flex items-center border-b border-white/[0.06] p-2 hover:bg-white/[0.02]",
+        "flex items-center border-b border-overlay-border p-2 hover:bg-overlay-subtle",
         isReadOnly ? "cursor-default" : "cursor-text",
         rowHeightClass,
       )}
@@ -1015,7 +1015,7 @@ function RegistryEditorCell({
         <div
           ref={cellRef}
           className={cn(
-            "border-b border-white/[0.06]",
+            "border-b border-overlay-border",
             rowHeightClass,
           )}
           role="gridcell"
@@ -1042,7 +1042,7 @@ function RegistryEditorCell({
   return (
     <div
       className={cn(
-        "relative border-b border-white/[0.06]",
+        "relative border-b border-overlay-border",
         rowHeightClass,
       )}
       role="gridcell"
@@ -1179,7 +1179,7 @@ function CellRenderer({ value, property, propertyType, displayValue }: CellRende
 // ---------------------------------------------------------------------------
 
 const SELECT_COLORS: Record<string, { bg: string; text: string }> = {
-  gray: { bg: "bg-white/[0.08]", text: "text-foreground" },
+  gray: { bg: "bg-overlay-active", text: "text-foreground" },
   blue: { bg: "bg-blue-500/20", text: "text-blue-400" },
   green: { bg: "bg-green-500/20", text: "text-green-400" },
   yellow: { bg: "bg-yellow-500/20", text: "text-yellow-400" },
@@ -1282,20 +1282,20 @@ function TableSkeleton({ rowHeight, columnCount }: TableSkeletonProps) {
   return (
     <div className="w-full">
       {/* Header skeleton */}
-      <div className="flex border-b border-white/[0.06]">
+      <div className="flex border-b border-overlay-border">
         {cols.map((i) => (
           <div key={i} className="flex-1 p-2">
-            <div className="h-3 w-16 animate-pulse bg-white/[0.06]" />
+            <div className="h-3 w-16 animate-pulse bg-overlay-border" />
           </div>
         ))}
       </div>
       {/* Row skeletons */}
       {Array.from({ length: skeletonRows }, (_, rowIdx) => (
-        <div key={rowIdx} className={cn("flex border-b border-white/[0.06]", rowHeight)}>
+        <div key={rowIdx} className={cn("flex border-b border-overlay-border", rowHeight)}>
           {cols.map((colIdx) => (
             <div key={colIdx} className="flex flex-1 items-center p-2">
               <div
-                className="h-3 animate-pulse bg-white/[0.06]"
+                className="h-3 animate-pulse bg-overlay-border"
                 style={{ width: colIdx === 0 ? "60%" : "40%" }}
               />
             </div>

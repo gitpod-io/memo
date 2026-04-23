@@ -27,7 +27,7 @@ function TrashItem({
   title: string;
 }) {
   return (
-    <div className="group flex items-center gap-2 px-2 py-0.5 text-sm text-muted-foreground hover:bg-white/[0.04]">
+    <div className="group flex items-center gap-2 px-2 py-0.5 text-sm text-muted-foreground hover:bg-overlay-hover">
       <span className="flex h-4 w-4 shrink-0 items-center justify-center">
         {icon ? (
           <span className="text-sm">{icon}</span>
@@ -63,7 +63,7 @@ export const Collapsed: Story = {
     <div className="w-56 bg-muted p-2">
       <div className="flex flex-col gap-0.5">
         <button
-          className="flex items-center gap-2 px-2 py-0.5 text-xs tracking-widest uppercase text-white/30 hover:text-white/50"
+          className="flex items-center gap-2 px-2 py-0.5 text-xs tracking-widest uppercase text-label-faint hover:text-label-muted"
           aria-expanded={false}
         >
           <Trash2 className="h-3 w-3" />
@@ -80,7 +80,7 @@ export const Expanded: Story = {
     <div className="w-56 bg-muted p-2">
       <div className="flex flex-col gap-0.5">
         <button
-          className="flex items-center gap-2 px-2 py-0.5 text-xs tracking-widest uppercase text-white/30 hover:text-white/50"
+          className="flex items-center gap-2 px-2 py-0.5 text-xs tracking-widest uppercase text-label-faint hover:text-label-muted"
           aria-expanded={true}
         >
           <Trash2 className="h-3 w-3" />
@@ -110,7 +110,7 @@ export const SingleItem: Story = {
     <div className="w-56 bg-muted p-2">
       <div className="flex flex-col gap-0.5">
         <button
-          className="flex items-center gap-2 px-2 py-0.5 text-xs tracking-widest uppercase text-white/30 hover:text-white/50"
+          className="flex items-center gap-2 px-2 py-0.5 text-xs tracking-widest uppercase text-label-faint hover:text-label-muted"
           aria-expanded={true}
         >
           <Trash2 className="h-3 w-3" />

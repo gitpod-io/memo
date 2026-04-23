@@ -64,7 +64,7 @@ export default async function Home() {
           </a>
           <Link
             href="/sign-in"
-            className="inline-flex items-center px-4 py-2 border border-white/[0.06] text-sm font-medium hover:bg-muted"
+            className="inline-flex items-center px-4 py-2 border border-overlay-border text-sm font-medium hover:bg-muted"
           >
             Sign In
           </Link>
