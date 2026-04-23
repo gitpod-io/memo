@@ -24,7 +24,7 @@ action:
                 {
                   "date": "YYYY-MM-DD",
                   "day_number": N,
-                  "loc": { "total": N, "delta": N, "by_language": { "TypeScript": N, "CSS": N } },
+                  "loc": { "total": N, "delta": N, "by_language": { "TypeScript": N, "SQL": N, "CSS": N } },
                   "files": { "total": N, "delta": N },
                   "prs": { "total": N, "delta": N, "currently_open": N },
                   "commits": { "total": N, "delta": N },
@@ -113,10 +113,10 @@ action:
 
                 **GitHub Issues:**
                 ```
-                gh issue list --label "status:backlog" --state open --json number --jq 'length'
-                gh issue list --label "status:in-progress" --state open --json number --jq 'length'
-                gh issue list --label "status:in-review" --state open --json number --jq 'length'
-                gh issue list --label "status:done" --state closed --json number --jq 'length'
+                gh issue list --label "status:backlog" --state open --limit 500 --json number --jq 'length'
+                gh issue list --label "status:in-progress" --state open --limit 500 --json number --jq 'length'
+                gh issue list --label "status:in-review" --state open --limit 500 --json number --jq 'length'
+                gh issue list --label "status:done" --state closed --limit 500 --json number --jq 'length'
                 ```
 
                 **Delta fields (loc, files):**
@@ -132,7 +132,9 @@ action:
                 3. Confirm `commits.total >= commits.delta`.
                 4. Confirm `prs.total` is >= yesterday's `prs.total` (cumulative never decreases).
                 5. Confirm `commits.total` is >= yesterday's `commits.total`.
-                6. If any check fails, re-collect the data for that field.
+                6. Confirm `issues.done` is >= yesterday's `issues.done` (closed issues never decrease).
+                7. Confirm `by_language` values sum to `loc.total`. If they don't, a language is missing from the extraction.
+                8. If any check fails, re-collect the data for that field.
 
                 ## 4. Commit and PR
 
