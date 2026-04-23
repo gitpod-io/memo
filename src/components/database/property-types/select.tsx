@@ -68,6 +68,22 @@ export function SelectEditor({
     [localOptions, onChange],
   );
 
+  const handleColorChange = useCallback(
+    (optionId: string, color: string) => {
+      const updated = localOptions.map((o) =>
+        o.id === optionId ? { ...o, color } : o,
+      );
+      setLocalOptions(updated);
+      // Persist the updated options config via _newOptions
+      const currentId = getSelectedId(value);
+      onChange({
+        option_id: currentId,
+        _newOptions: updated,
+      });
+    },
+    [localOptions, value, onChange],
+  );
+
   return (
     <div className="w-full">
       <SelectDropdown
@@ -78,6 +94,7 @@ export function SelectEditor({
         onDeselect={handleDeselect}
         onCreate={handleCreate}
         onClose={onBlur}
+        onColorChange={handleColorChange}
       />
     </div>
   );

@@ -10,6 +10,7 @@ import type {
   DatabaseViewConfig,
   PropertyType,
   RowValue,
+  SelectOption,
 } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -141,6 +142,7 @@ function ListRow({ row, visibleProperties, workspaceSlug }: ListRowProps) {
               <CompactPropertyValue
                 key={prop.id}
                 value={cellValue}
+                property={prop}
                 propertyType={prop.type}
               />
             );
@@ -157,10 +159,49 @@ function ListRow({ row, visibleProperties, workspaceSlug }: ListRowProps) {
 
 interface CompactPropertyValueProps {
   value: RowValue | undefined;
+  property: DatabaseProperty;
   propertyType: PropertyType;
 }
 
-function CompactPropertyValue({ value, propertyType }: CompactPropertyValueProps) {
+function CompactPropertyValue({ value, property, propertyType }: CompactPropertyValueProps) {
+  // Select/multi-select resolve option IDs from property config directly
+  switch (propertyType) {
+    case "select": {
+      const raw = value?.value as Record<string, unknown> | undefined;
+      const optionId = typeof raw?.option_id === "string" ? raw.option_id : null;
+      if (!optionId) return null;
+      const options = getSelectOptions(property.config);
+      const option = options.find((o) => o.id === optionId);
+      if (!option) return null;
+      return <CompactSelectBadge label={option.name} color={option.color} />;
+    }
+
+    case "multi_select": {
+      const raw = value?.value as Record<string, unknown> | undefined;
+      const optionIds = Array.isArray(raw?.option_ids)
+        ? (raw.option_ids as string[])
+        : [];
+      if (optionIds.length === 0) return null;
+      const options = getSelectOptions(property.config);
+      const optionMap = new Map(options.map((o) => [o.id, o]));
+      return (
+        <span className="flex items-center gap-1">
+          {optionIds.map((id) => {
+            const option = optionMap.get(id);
+            if (!option) return null;
+            return (
+              <CompactSelectBadge key={id} label={option.name} color={option.color} />
+            );
+          })}
+        </span>
+      );
+    }
+
+    default:
+      break;
+  }
+
+  // Non-select types use the extracted display value string
   const displayValue = extractDisplayValue(value, propertyType);
 
   if (!displayValue) {
@@ -168,25 +209,6 @@ function CompactPropertyValue({ value, propertyType }: CompactPropertyValueProps
   }
 
   switch (propertyType) {
-    case "select": {
-      const color = (value?.value as Record<string, unknown>)?.color as string | undefined;
-      return <CompactSelectBadge label={displayValue} color={color} />;
-    }
-
-    case "multi_select": {
-      const items = (value?.value as Record<string, unknown>)?.items as
-        | { value: string; color?: string }[]
-        | undefined;
-      if (!items || items.length === 0) return null;
-      return (
-        <span className="flex items-center gap-1">
-          {items.map((item, i) => (
-            <CompactSelectBadge key={i} label={item.value} color={item.color} />
-          ))}
-        </span>
-      );
-    }
-
     case "checkbox": {
       const checked = value?.value?.value === true;
       return (
@@ -271,6 +293,7 @@ const SELECT_COLORS: Record<string, { bg: string; text: string }> = {
   red: { bg: "bg-red-500/20", text: "text-red-400" },
   purple: { bg: "bg-purple-500/20", text: "text-purple-400" },
   pink: { bg: "bg-pink-500/20", text: "text-pink-400" },
+  cyan: { bg: "bg-cyan-500/20", text: "text-cyan-400" },
 };
 
 function CompactSelectBadge({ label, color }: { label: string; color?: string }) {
@@ -291,6 +314,13 @@ function CompactSelectBadge({ label, color }: { label: string; color?: string })
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+function getSelectOptions(config: Record<string, unknown>): SelectOption[] {
+  if (Array.isArray(config.options)) {
+    return config.options as SelectOption[];
+  }
+  return [];
+}
 
 /** Maps a property type to the key its registry editor/renderer expects. */
 function valueKeyForType(propertyType: PropertyType): string {
@@ -329,10 +359,11 @@ function extractDisplayValue(value: RowValue | undefined, propertyType: Property
       const checked = typed ?? legacy;
       return checked === true ? "true" : checked === false ? "false" : "";
     }
+    case "select":
     case "multi_select":
-      return (raw.items as { value: string }[] | undefined)
-        ?.map((i) => i.value)
-        .join(", ") ?? "";
+      // Select/multi-select rendering is handled directly by CompactPropertyValue
+      // using option IDs from the raw value and the property config.
+      return "";
     default: {
       const inner = typed ?? legacy;
       if (typeof inner === "string") return inner;

@@ -88,6 +88,21 @@ export function MultiSelectEditor({
     [localOptions, selectedIds, onChange],
   );
 
+  const handleColorChange = useCallback(
+    (optionId: string, color: string) => {
+      const updated = localOptions.map((o) =>
+        o.id === optionId ? { ...o, color } : o,
+      );
+      setLocalOptions(updated);
+      // Persist the updated options config via _newOptions
+      onChange({
+        option_ids: selectedIds,
+        _newOptions: updated,
+      });
+    },
+    [localOptions, selectedIds, onChange],
+  );
+
   return (
     <div className="w-full">
       <SelectDropdown
@@ -98,6 +113,7 @@ export function MultiSelectEditor({
         onDeselect={handleDeselect}
         onCreate={handleCreate}
         onClose={onBlur}
+        onColorChange={handleColorChange}
       />
     </div>
   );
