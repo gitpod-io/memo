@@ -4,6 +4,7 @@ const insertMock = vi.fn();
 const fromMock = vi.fn(() => ({ insert: insertMock }));
 const createClientMock = vi.fn(() => Promise.resolve({ from: fromMock }));
 const captureSupabaseErrorMock = vi.fn();
+const isUsageTrackingDisabledMock = vi.fn().mockReturnValue(false);
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: () => createClientMock(),
@@ -14,11 +15,16 @@ vi.mock("@/lib/sentry", () => ({
     captureSupabaseErrorMock(error, operation),
 }));
 
+vi.mock("@/lib/usage-tracking-guard", () => ({
+  isUsageTrackingDisabled: () => isUsageTrackingDisabledMock(),
+}));
+
 import { trackEvent } from "./track-event-server";
 
 beforeEach(() => {
   vi.clearAllMocks();
   insertMock.mockResolvedValue({ error: null });
+  isUsageTrackingDisabledMock.mockReturnValue(false);
 });
 
 describe("trackEvent (server)", () => {
@@ -88,5 +94,17 @@ describe("trackEvent (server)", () => {
 
     // Non-Error values are silently swallowed (no captureSupabaseError call)
     expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
+  });
+
+  it("skips insert when usage tracking is disabled", async () => {
+    isUsageTrackingDisabledMock.mockReturnValue(true);
+
+    await trackEvent("page.created", "user-123", {
+      workspaceId: "ws-456",
+    });
+
+    expect(createClientMock).not.toHaveBeenCalled();
+    expect(fromMock).not.toHaveBeenCalled();
+    expect(insertMock).not.toHaveBeenCalled();
   });
 });

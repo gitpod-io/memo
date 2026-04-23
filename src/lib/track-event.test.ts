@@ -1,16 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const captureSupabaseErrorMock = vi.fn();
+const isUsageTrackingDisabledMock = vi.fn().mockReturnValue(false);
 
 vi.mock("@/lib/sentry", () => ({
   captureSupabaseError: (error: unknown, operation: unknown) =>
     captureSupabaseErrorMock(error, operation),
 }));
 
+vi.mock("@/lib/usage-tracking-guard", () => ({
+  isUsageTrackingDisabled: () => isUsageTrackingDisabledMock(),
+}));
+
 import { trackEventClient } from "./track-event";
 
 beforeEach(() => {
   vi.clearAllMocks();
+  isUsageTrackingDisabledMock.mockReturnValue(false);
 });
 
 describe("trackEventClient", () => {
@@ -68,5 +74,18 @@ describe("trackEventClient", () => {
         "trackEvent:editor.export",
       );
     });
+  });
+
+  it("skips insert when usage tracking is disabled", () => {
+    isUsageTrackingDisabledMock.mockReturnValue(true);
+
+    const clientInsertMock = vi.fn().mockResolvedValue({ error: null });
+    const clientFromMock = vi.fn(() => ({ insert: clientInsertMock }));
+    const fakeClient = { from: clientFromMock } as never;
+
+    trackEventClient(fakeClient, "page.created", "user-789");
+
+    expect(clientFromMock).not.toHaveBeenCalled();
+    expect(clientInsertMock).not.toHaveBeenCalled();
   });
 });
