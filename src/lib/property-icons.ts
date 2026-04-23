@@ -4,6 +4,7 @@
 import {
   Calendar,
   CheckSquare,
+  CircleDot,
   Clock,
   FileText,
   Hash,
@@ -25,6 +26,7 @@ export const PROPERTY_TYPE_ICON: Record<
   number: Hash,
   select: List,
   multi_select: List,
+  status: CircleDot,
   checkbox: CheckSquare,
   date: Calendar,
   url: LinkIcon,
@@ -44,6 +46,7 @@ export const PROPERTY_TYPE_LABEL: Record<PropertyType, string> = {
   number: "Number",
   select: "Select",
   multi_select: "Multi-select",
+  status: "Status",
   checkbox: "Checkbox",
   date: "Date",
   url: "URL",

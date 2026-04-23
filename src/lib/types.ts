@@ -127,6 +127,7 @@ export type PropertyType =
   | "number"
   | "select"
   | "multi_select"
+  | "status"
   | "checkbox"
   | "date"
   | "url"

@@ -31,6 +31,15 @@ const config: StorybookConfig = {
       clientPort: 443,
       protocol: "wss",
     };
+
+    // Next.js CJS modules (e.g. next/link) reference `process.env` at
+    // import-time. Vite doesn't provide a Node-style `process` global, so we
+    // inject a minimal shim via `define`.
+    config.define = {
+      ...config.define,
+      "process.env": JSON.stringify({}),
+    };
+
     return config;
   },
 };

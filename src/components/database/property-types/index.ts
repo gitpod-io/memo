@@ -20,6 +20,7 @@ import {
 } from "./computed";
 import { RelationRenderer, RelationEditor } from "./relation";
 import { FormulaRenderer } from "./formula";
+import { StatusRenderer, StatusEditor } from "./status";
 
 // ---------------------------------------------------------------------------
 // Shared prop interfaces
@@ -90,6 +91,7 @@ const registry: Partial<Record<PropertyType, PropertyTypeConfig>> = {
   number: { Renderer: NumberRenderer, Editor: NumberEditor },
   select: { Renderer: SelectRenderer, Editor: SelectEditor },
   multi_select: { Renderer: MultiSelectRenderer, Editor: MultiSelectEditor },
+  status: { Renderer: StatusRenderer, Editor: StatusEditor },
   checkbox: { Renderer: CheckboxRenderer, Editor: CheckboxEditor },
   date: { Renderer: DateRenderer, Editor: DateEditor },
   url: { Renderer: UrlRenderer, Editor: UrlEditor },
@@ -125,6 +127,7 @@ export const STANDARD_PROPERTY_TYPES: readonly PropertyType[] = [
   "number",
   "select",
   "multi_select",
+  "status",
   "checkbox",
   "date",
   "url",

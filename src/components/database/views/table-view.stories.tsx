@@ -72,6 +72,16 @@ const mockProperties: DatabaseProperty[] = [
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
   },
+  {
+    id: "prop-stage",
+    database_id: "db-1",
+    name: "Stage",
+    type: "status",
+    config: {},
+    position: 6,
+    created_at: "2026-04-01T00:00:00Z",
+    updated_at: "2026-04-01T00:00:00Z",
+  },
 ];
 
 function makeRow(
@@ -112,6 +122,7 @@ const mockRows: DatabaseRow[] = [
     "prop-due": { value: "2026-04-30" },
     "prop-url": { value: "https://example.com/design" },
     "prop-done": { value: false },
+    "prop-stage": { option_id: "status-in-progress" },
   }),
   makeRow("row-2", "API authentication", "🔐", {
     "prop-status": { value: "Done", color: "green" },
@@ -119,12 +130,14 @@ const mockRows: DatabaseRow[] = [
     "prop-due": { value: "2026-04-15" },
     "prop-url": { value: "https://example.com/auth" },
     "prop-done": { value: true },
+    "prop-stage": { option_id: "status-done" },
   }),
   makeRow("row-3", "Database migrations", null, {
     "prop-status": { value: "To Do", color: "gray" },
     "prop-priority": { value: "Medium", color: "yellow" },
     "prop-due": { value: "2026-05-10" },
     "prop-done": { value: false },
+    "prop-stage": { option_id: "status-not-started" },
   }),
   makeRow("row-4", "User onboarding flow", "🚀", {
     "prop-status": { value: "In Review", color: "purple" },
@@ -132,6 +145,7 @@ const mockRows: DatabaseRow[] = [
     "prop-due": { value: "2026-05-01" },
     "prop-url": { value: "https://example.com/onboarding" },
     "prop-done": { value: false },
+    "prop-stage": { option_id: "status-in-progress" },
   }),
   makeRow("row-5", "", null, {
     "prop-status": { value: "To Do", color: "gray" },

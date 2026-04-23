@@ -350,7 +350,7 @@ Database views render structured data within the existing page layout. When a pa
 ### Table View
 
 - Full-width spreadsheet grid within `max-w-3xl` content area (can overflow with horizontal scroll).
-- Column headers: `bg-muted`, `text-xs font-medium text-muted-foreground`, `uppercase tracking-widest`, `p-2`, `border-b border-white/[0.06]`.
+- Column headers: `bg-background` (same as data rows), `text-xs font-medium text-muted-foreground`, `uppercase tracking-widest`, `p-2`, `border-b border-white/[0.06]`. Trailing column uses `minmax(48px, 1fr)` to fill remaining width.
 - Column resize: drag handle on right edge of header, `cursor-col-resize`, 2px `bg-accent` indicator while dragging.
 - Cells: `p-2 text-sm`, `border-b border-white/[0.06]`. Click to edit inline.
 - Row hover: `bg-white/[0.02]`.
@@ -409,6 +409,7 @@ Inline cell rendering and editing patterns for each property type:
 | Number | Right-aligned, formatted | Input `type="number"` |
 | Select | Colored badge | Dropdown with options, create new inline |
 | Multi-select | Multiple colored badges, wrapping | Dropdown with checkboxes, create new inline |
+| Status | Colored badge (select variant with defaults: Not Started / In Progress / Done) | Same dropdown as Select; new statuses can be added inline |
 | Checkbox | Centered checkbox icon | Toggle on click (no separate edit mode) |
 | Date | Formatted date string (`MMM D, YYYY`) | Date picker popover |
 | URL | Truncated link, `text-accent`, external icon | Input field |

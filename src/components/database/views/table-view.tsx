@@ -44,6 +44,7 @@ import {
   getPropertyTypeConfig,
 } from "@/components/database/property-types";
 import { evaluateFormulaForRow } from "@/components/database/property-types/formula";
+import { DEFAULT_STATUS_OPTIONS } from "@/components/database/property-types/status";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -206,12 +207,14 @@ export function TableView({
     return properties;
   }, [properties, viewConfig.visible_properties]);
 
-  // Grid template: title column + property columns + add-column button
+  // Grid template: title column + property columns + flexible trailing column.
+  // The trailing column uses 1fr so it stretches to fill remaining viewport
+  // width instead of creating a hard cutoff (matches Notion behaviour).
   const gridTemplateColumns = useMemo(() => {
     const cols = [
       `${TITLE_COLUMN_WIDTH}px`,
       ...visibleProperties.map((p) => `${columnWidths[p.id] ?? DEFAULT_COLUMN_WIDTH}px`),
-      "48px", // add column button
+      "minmax(48px, 1fr)",
     ];
     return cols.join(" ");
   }, [visibleProperties, columnWidths]);
@@ -397,7 +400,7 @@ export function TableView({
           style={{ gridTemplateColumns }}
         >
           {/* Header row */}
-          <div className="border-b border-white/[0.06] bg-muted p-2">
+          <div className="border-b border-white/[0.06] p-2">
             <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
               Title
             </span>
@@ -417,7 +420,7 @@ export function TableView({
               <div
                 key={prop.id}
                 className={cn(
-                  "relative border-b border-white/[0.06] bg-muted p-2",
+                  "relative border-b border-white/[0.06] p-2",
                   onColumnReorder && "cursor-grab",
                   isDragging && "opacity-50",
                 )}
@@ -440,7 +443,7 @@ export function TableView({
               </div>
             );
           })}
-          <div className="border-b border-white/[0.06] bg-muted p-2" />
+          <div className="border-b border-white/[0.06] p-2" />
         </div>
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <FileText className="mb-3 h-10 w-10 text-muted-foreground/30" />
@@ -472,7 +475,7 @@ export function TableView({
       >
         {/* --- Header row --- */}
         <div
-          className="sticky top-0 z-10 border-b border-white/[0.06] bg-muted p-2"
+          className="sticky top-0 z-10 border-b border-white/[0.06] bg-background p-2"
           role="columnheader"
         >
           <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
@@ -496,7 +499,7 @@ export function TableView({
             <div
               key={prop.id}
               className={cn(
-                "group/header relative sticky top-0 z-10 border-b border-white/[0.06] bg-muted p-2",
+                "group/header relative sticky top-0 z-10 border-b border-white/[0.06] bg-background p-2",
                 onColumnReorder && "cursor-grab",
                 isDragging && "opacity-50",
               )}
@@ -589,7 +592,7 @@ export function TableView({
         })}
 
         {/* Add column header button */}
-        <div className="sticky top-0 z-10 flex items-center justify-center border-b border-white/[0.06] bg-muted">
+        <div className="sticky top-0 z-10 flex items-center justify-start border-b border-white/[0.06] bg-background pl-2">
           {onAddColumn && (
             <PropertyTypePicker onSelect={onAddColumn} />
           )}
@@ -942,6 +945,7 @@ const PORTALED_EDITOR_TYPES: ReadonlySet<PropertyType> = new Set([
   "date",
   "select",
   "multi_select",
+  "status",
 ]);
 
 // ---------------------------------------------------------------------------
@@ -1066,11 +1070,12 @@ interface CellRendererProps {
 
 function CellRenderer({ value, property, propertyType, displayValue }: CellRendererProps) {
   switch (propertyType) {
-    case "select": {
+    case "select":
+    case "status": {
       const raw = value?.value as Record<string, unknown> | undefined;
       const optionId = typeof raw?.option_id === "string" ? raw.option_id : null;
       if (!optionId) return null;
-      const options = getSelectOptions(property.config);
+      const options = getSelectOptions(property.config, propertyType);
       const option = options.find((o) => o.id === optionId);
       if (!option) return null;
       return <SelectBadge label={option.name} color={option.color} />;
@@ -1082,7 +1087,7 @@ function CellRenderer({ value, property, propertyType, displayValue }: CellRende
         ? (raw.option_ids as string[])
         : [];
       if (optionIds.length === 0) return null;
-      const options = getSelectOptions(property.config);
+      const options = getSelectOptions(property.config, propertyType);
       const optionMap = new Map(options.map((o) => [o.id, o]));
       return (
         <div className="flex flex-wrap gap-1">
@@ -1204,10 +1209,11 @@ function SelectBadge({ label, color }: { label: string; color?: string }) {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function getSelectOptions(config: Record<string, unknown>): SelectOption[] {
-  if (Array.isArray(config.options)) {
+function getSelectOptions(config: Record<string, unknown>, type?: PropertyType): SelectOption[] {
+  if (Array.isArray(config.options) && config.options.length > 0) {
     return config.options as SelectOption[];
   }
+  if (type === "status") return DEFAULT_STATUS_OPTIONS;
   return [];
 }
 
@@ -1230,7 +1236,8 @@ function extractDisplayValue(value: RowValue | undefined, propertyType: Property
     }
     case "select":
     case "multi_select":
-      // Select/multi-select rendering is handled directly by CellRenderer
+    case "status":
+      // Select/multi-select/status rendering is handled directly by CellRenderer
       // using option IDs from the raw value and the property config.
       return "";
     default: {
@@ -1275,7 +1282,7 @@ function TableSkeleton({ rowHeight, columnCount }: TableSkeletonProps) {
   return (
     <div className="w-full">
       {/* Header skeleton */}
-      <div className="flex border-b border-white/[0.06] bg-muted">
+      <div className="flex border-b border-white/[0.06]">
         {cols.map((i) => (
           <div key={i} className="flex-1 p-2">
             <div className="h-3 w-16 animate-pulse bg-white/[0.06]" />
