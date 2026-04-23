@@ -224,14 +224,23 @@ test.describe("Type-specific database filter operators", () => {
     // Pick "before" operator
     await operatorDropdown.locator("button", { hasText: "before" }).click();
 
-    // Value input should be a date input
-    const dateInput = page.locator('input[type="date"]');
-    await expect(dateInput).toBeVisible({ timeout: 5_000 });
+    // Custom DatePicker calendar should appear (not a native date input)
+    const calendarPicker = page.locator(".z-50").first();
+    await expect(calendarPicker).toBeVisible({ timeout: 5_000 });
 
-    // Fill and apply
-    await dateInput.fill("2026-06-01");
-    const applyBtn = page.locator(".z-50 button", { hasText: "Apply" });
-    await applyBtn.click();
+    // Should show month navigation and a "Today" button
+    const prevMonthBtn = calendarPicker.getByRole("button", { name: "Previous month" });
+    const nextMonthBtn = calendarPicker.getByRole("button", { name: "Next month" });
+    const todayBtn = calendarPicker.locator("button", { hasText: "Today" });
+    await expect(prevMonthBtn).toBeVisible({ timeout: 5_000 });
+    await expect(nextMonthBtn).toBeVisible({ timeout: 5_000 });
+    await expect(todayBtn).toBeVisible({ timeout: 5_000 });
+
+    // Native date input should NOT be present
+    await expect(page.locator('input[type="date"]')).toBeHidden();
+
+    // Click "Today" to select today's date and apply the filter
+    await todayBtn.click();
 
     // Filter badge should appear
     const badge = page.locator('[data-slot="badge"]', { hasText: "before" });
