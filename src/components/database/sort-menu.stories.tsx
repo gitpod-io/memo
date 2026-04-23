@@ -64,7 +64,7 @@ const meta: Meta<typeof SortMenu> = {
   },
   decorators: [
     (Story) => (
-      <div className="flex max-w-3xl justify-end bg-background p-4">
+      <div className="flex max-w-3xl bg-background p-4">
         <Story />
       </div>
     ),
@@ -116,7 +116,7 @@ export const Interactive: Story = {
 
     return (
       <div className="space-y-4">
-        <div className="flex justify-end">
+        <div className="flex">
           <SortMenu
             properties={mockProperties}
             sorts={sorts}

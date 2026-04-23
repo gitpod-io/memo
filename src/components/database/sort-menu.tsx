@@ -107,7 +107,7 @@ export function SortMenu({
       </Button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-64 border border-border bg-background shadow-md">
+        <div className="absolute left-0 top-full z-50 mt-1 w-64 border border-border bg-background shadow-md">
           {/* Active sorts */}
           {sorts.length > 0 && (
             <div className="border-b border-border px-1 py-1">
