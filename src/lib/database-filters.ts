@@ -89,6 +89,7 @@ const OPERATORS_BY_TYPE: Record<PropertyType, FilterOperator[]> = {
   number: NUMBER_OPERATORS,
   select: SELECT_OPERATORS,
   multi_select: MULTI_SELECT_OPERATORS,
+  status: SELECT_OPERATORS,
   checkbox: CHECKBOX_OPERATORS,
   date: DATE_OPERATORS,
   url: STRING_LIKE_OPERATORS,
