@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PROPERTY_TYPE_ICON } from "@/lib/property-icons";
-import type { DatabaseProperty } from "@/lib/types";
+import type { DatabaseProperty, SelectOption } from "@/lib/types";
+import { SelectOptionBadge } from "./property-types/select-option-badge";
 import {
   getOperatorsForType,
   getOperatorLabel,
@@ -35,6 +36,17 @@ type AddFilterStep =
   | { step: "pick-property" }
   | { step: "pick-operator"; propertyId: string }
   | { step: "pick-value"; propertyId: string; operator: FilterOperator };
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function getSelectOptions(config: Record<string, unknown>): SelectOption[] {
+  if (Array.isArray(config.options)) {
+    return config.options as SelectOption[];
+  }
+  return [];
+}
 
 // ---------------------------------------------------------------------------
 // FilterBar
@@ -83,7 +95,7 @@ export function FilterBar({
       if (addState.step !== "pick-operator") return;
 
       if (!operatorNeedsValue(operator)) {
-        // is_empty / is_not_empty — add filter immediately
+        // is_empty / is_not_empty / is_checked / is_not_checked — add immediately
         onFiltersChange([
           ...filters,
           {
@@ -106,6 +118,23 @@ export function FilterBar({
     [addState, filters, onFiltersChange],
   );
 
+  const commitFilter = useCallback(
+    (value: unknown) => {
+      if (addState.step !== "pick-value") return;
+      onFiltersChange([
+        ...filters,
+        {
+          property_id: addState.propertyId,
+          operator: addState.operator,
+          value,
+        },
+      ]);
+      setAddState({ step: "closed" });
+      setValueInput("");
+    },
+    [addState, filters, onFiltersChange],
+  );
+
   const handleValueSubmit = useCallback(() => {
     if (addState.step !== "pick-value") return;
     const trimmed = valueInput.trim();
@@ -118,21 +147,15 @@ export function FilterBar({
       const n = Number(trimmed);
       if (!Number.isNaN(n)) value = n;
     }
-    if (prop?.type === "checkbox") {
-      value = trimmed === "true" || trimmed === "1";
-    }
 
-    onFiltersChange([
-      ...filters,
-      {
-        property_id: addState.propertyId,
-        operator: addState.operator,
-        value,
-      },
-    ]);
-    setAddState({ step: "closed" });
-    setValueInput("");
-  }, [addState, valueInput, filters, onFiltersChange, properties]);
+    commitFilter(value);
+  }, [addState, valueInput, properties, commitFilter]);
+
+  // Resolve the property for the current pick-value step
+  const activeProperty =
+    addState.step === "pick-value"
+      ? properties.find((p) => p.id === addState.propertyId)
+      : undefined;
 
   return (
     <div className="flex flex-wrap items-center gap-1.5"
@@ -143,9 +166,23 @@ export function FilterBar({
         const prop = properties.find((p) => p.id === filter.property_id);
         const propName = prop?.name ?? "Unknown";
         const opLabel = getOperatorLabel(filter.operator);
-        const valueLabel = operatorNeedsValue(filter.operator)
-          ? ` ${String(filter.value ?? "")}`
-          : "";
+
+        let valueLabel = "";
+        if (operatorNeedsValue(filter.operator) && filter.value != null) {
+          // For select/status/multi_select, resolve option name from config
+          if (
+            (prop?.type === "select" ||
+              prop?.type === "status" ||
+              prop?.type === "multi_select") &&
+            typeof filter.value === "string"
+          ) {
+            const options = getSelectOptions(prop.config);
+            const opt = options.find((o) => o.id === filter.value);
+            valueLabel = ` ${opt?.name ?? String(filter.value)}`;
+          } else {
+            valueLabel = ` ${String(filter.value)}`;
+          }
+        }
 
         return (
           <Badge
@@ -205,37 +242,19 @@ export function FilterBar({
           />
         )}
 
-        {/* Step 3: Enter value */}
-        {addState.step === "pick-value" && (
-          <div className="absolute left-0 top-full z-50 mt-1 w-56 border border-border bg-background p-2 shadow-md">
-            <Input
-              autoFocus
-              value={valueInput}
-              onChange={(e) => setValueInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleValueSubmit();
-                if (e.key === "Escape") {
-                  setAddState({ step: "closed" });
-                  setValueInput("");
-                }
-              }}
-              placeholder="Enter value…"
-              className="h-7 text-xs"
-              type={
-                properties.find((p) => p.id === addState.propertyId)?.type ===
-                "number"
-                  ? "number"
-                  : "text"
-              }
-            />
-            <Button
-              size="sm"
-              className="mt-1.5 h-6 w-full text-xs"
-              onClick={handleValueSubmit}
-            >
-              Apply
-            </Button>
-          </div>
+        {/* Step 3: Enter value — type-specific editor */}
+        {addState.step === "pick-value" && activeProperty && (
+          <FilterValueEditor
+            property={activeProperty}
+            valueInput={valueInput}
+            onValueInputChange={setValueInput}
+            onSubmit={handleValueSubmit}
+            onSelectValue={commitFilter}
+            onClose={() => {
+              setAddState({ step: "closed" });
+              setValueInput("");
+            }}
+          />
         )}
       </div>
     </div>
@@ -300,6 +319,211 @@ function OperatorPicker({
           {getOperatorLabel(op)}
         </button>
       ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// FilterValueEditor — type-specific value input
+// ---------------------------------------------------------------------------
+
+function FilterValueEditor({
+  property,
+  valueInput,
+  onValueInputChange,
+  onSubmit,
+  onSelectValue,
+  onClose,
+}: {
+  property: DatabaseProperty;
+  valueInput: string;
+  onValueInputChange: (v: string) => void;
+  onSubmit: () => void;
+  onSelectValue: (value: unknown) => void;
+  onClose: () => void;
+}) {
+  switch (property.type) {
+    case "select":
+    case "status":
+    case "multi_select":
+      return (
+        <SelectFilterValueEditor
+          property={property}
+          onSelectValue={onSelectValue}
+          onClose={onClose}
+        />
+      );
+
+    case "date":
+    case "created_time":
+    case "updated_time":
+      return (
+        <DateFilterValueEditor
+          onSelectValue={onSelectValue}
+          onClose={onClose}
+        />
+      );
+
+    case "number":
+      return (
+        <TextInputFilterValueEditor
+          valueInput={valueInput}
+          onValueInputChange={onValueInputChange}
+          onSubmit={onSubmit}
+          onClose={onClose}
+          inputType="number"
+          placeholder="Enter number…"
+        />
+      );
+
+    default:
+      return (
+        <TextInputFilterValueEditor
+          valueInput={valueInput}
+          onValueInputChange={onValueInputChange}
+          onSubmit={onSubmit}
+          onClose={onClose}
+          inputType="text"
+          placeholder="Enter value…"
+        />
+      );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// TextInputFilterValueEditor — generic text/number input
+// ---------------------------------------------------------------------------
+
+function TextInputFilterValueEditor({
+  valueInput,
+  onValueInputChange,
+  onSubmit,
+  onClose,
+  inputType,
+  placeholder,
+}: {
+  valueInput: string;
+  onValueInputChange: (v: string) => void;
+  onSubmit: () => void;
+  onClose: () => void;
+  inputType: "text" | "number";
+  placeholder: string;
+}) {
+  return (
+    <div className="absolute left-0 top-full z-50 mt-1 w-56 border border-border bg-background p-2 shadow-md">
+      <Input
+        autoFocus
+        value={valueInput}
+        onChange={(e) => onValueInputChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onSubmit();
+          if (e.key === "Escape") onClose();
+        }}
+        placeholder={placeholder}
+        className="h-7 text-xs"
+        type={inputType}
+      />
+      <Button
+        size="sm"
+        className="mt-1.5 h-6 w-full text-xs"
+        onClick={onSubmit}
+      >
+        Apply
+      </Button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// SelectFilterValueEditor — dropdown with existing options
+// ---------------------------------------------------------------------------
+
+function SelectFilterValueEditor({
+  property,
+  onSelectValue,
+  onClose,
+}: {
+  property: DatabaseProperty;
+  onSelectValue: (value: unknown) => void;
+  onClose: () => void;
+}) {
+  const [query, setQuery] = useState("");
+  const options = getSelectOptions(property.config);
+  const trimmed = query.trim().toLowerCase();
+  const filtered = options.filter((opt) =>
+    opt.name.toLowerCase().includes(trimmed),
+  );
+
+  return (
+    <div className="absolute left-0 top-full z-50 mt-1 w-56 border border-border bg-background shadow-md">
+      <div className="p-1.5">
+        <Input
+          autoFocus
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") onClose();
+          }}
+          placeholder="Search options…"
+          className="h-7 text-xs"
+        />
+      </div>
+      <div className="max-h-48 overflow-y-auto px-1 pb-1">
+        {filtered.map((opt) => (
+          <button
+            key={opt.id}
+            type="button"
+            onClick={() => onSelectValue(opt.id)}
+            className="flex w-full items-center gap-2 px-2 py-1 text-sm hover:bg-white/[0.04]"
+          >
+            <SelectOptionBadge name={opt.name} color={opt.color} />
+          </button>
+        ))}
+        {filtered.length === 0 && (
+          <p className="px-2 py-1.5 text-xs text-muted-foreground">
+            No options
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// DateFilterValueEditor — native date input
+// ---------------------------------------------------------------------------
+
+function DateFilterValueEditor({
+  onSelectValue,
+  onClose,
+}: {
+  onSelectValue: (value: unknown) => void;
+  onClose: () => void;
+}) {
+  const [dateValue, setDateValue] = useState("");
+
+  return (
+    <div className="absolute left-0 top-full z-50 mt-1 w-56 border border-border bg-background p-2 shadow-md">
+      <Input
+        autoFocus
+        type="date"
+        value={dateValue}
+        onChange={(e) => setDateValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && dateValue) onSelectValue(dateValue);
+          if (e.key === "Escape") onClose();
+        }}
+        className="h-7 text-xs"
+      />
+      <Button
+        size="sm"
+        className="mt-1.5 h-6 w-full text-xs"
+        onClick={() => {
+          if (dateValue) onSelectValue(dateValue);
+        }}
+      >
+        Apply
+      </Button>
     </div>
   );
 }
