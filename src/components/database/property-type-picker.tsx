@@ -26,7 +26,7 @@ export function PropertyTypePicker({ onSelect }: PropertyTypePickerProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="flex h-full w-full items-center justify-center text-muted-foreground hover:text-foreground"
+        className="flex h-full items-center text-muted-foreground hover:text-foreground"
         aria-label="Add column"
       >
         <Plus className="h-3.5 w-3.5" />
