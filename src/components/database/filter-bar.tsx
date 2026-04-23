@@ -16,6 +16,7 @@ import {
   type FilterOperator,
   type FilterRule,
 } from "@/lib/database-filters";
+import { DatePicker } from "./property-types/date";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -490,7 +491,7 @@ function SelectFilterValueEditor({
 }
 
 // ---------------------------------------------------------------------------
-// DateFilterValueEditor — native date input
+// DateFilterValueEditor — custom DatePicker calendar
 // ---------------------------------------------------------------------------
 
 function DateFilterValueEditor({
@@ -500,30 +501,13 @@ function DateFilterValueEditor({
   onSelectValue: (value: unknown) => void;
   onClose: () => void;
 }) {
-  const [dateValue, setDateValue] = useState("");
-
   return (
-    <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-sm border border-border bg-background p-2 shadow-md">
-      <Input
-        autoFocus
-        type="date"
-        value={dateValue}
-        onChange={(e) => setDateValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && dateValue) onSelectValue(dateValue);
-          if (e.key === "Escape") onClose();
-        }}
-        className="h-7 text-xs"
+    <div className="absolute left-0 top-full z-50 mt-1">
+      <DatePicker
+        selectedDate={null}
+        onSelect={(iso) => onSelectValue(iso)}
+        onClose={onClose}
       />
-      <Button
-        size="sm"
-        className="mt-1.5 h-6 w-full text-xs"
-        onClick={() => {
-          if (dateValue) onSelectValue(dateValue);
-        }}
-      >
-        Apply
-      </Button>
     </div>
   );
 }
