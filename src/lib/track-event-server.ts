@@ -1,4 +1,5 @@
 import { captureSupabaseError } from "@/lib/sentry";
+import { isUsageTrackingDisabled } from "@/lib/usage-tracking-guard";
 
 /**
  * Server-side product analytics. Inserts a row into `usage_events` using the
@@ -17,6 +18,8 @@ export async function trackEvent(
     metadata?: Record<string, unknown>;
   },
 ): Promise<void> {
+  if (isUsageTrackingDisabled()) return;
+
   try {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();

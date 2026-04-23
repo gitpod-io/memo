@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { captureSupabaseError } from "@/lib/sentry";
+import { isUsageTrackingDisabled } from "@/lib/usage-tracking-guard";
 
 /**
  * Client-side variant of `trackEvent`. Accepts a Supabase browser client
@@ -19,6 +20,8 @@ export function trackEventClient(
     metadata?: Record<string, unknown>;
   },
 ): void {
+  if (isUsageTrackingDisabled()) return;
+
   Promise.resolve(
     supabase
       .from("usage_events")

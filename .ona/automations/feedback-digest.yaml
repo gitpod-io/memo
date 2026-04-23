@@ -48,20 +48,30 @@ action:
 
                 ## Step 2: Query usage events (past 7 days)
 
-                Fetch usage events from the last 7 days, grouped by event_name:
+                Fetch usage events from the last 7 days, grouped by event_name.
+                **Exclude the test user** used by automations (E2E tests, post-merge
+                verifiers) so their activity does not inflate real usage numbers.
+
+                Read the test user email from the `TEST_USER_EMAIL` environment variable.
+                If it is not set, use an empty array for excluded_emails.
 
                 ```bash
-                SEVEN_DAYS_AGO=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-7d +%Y-%m-%dT%H:%M:%SZ)
+                EXCLUDED='[]'
+                if [ -n "${TEST_USER_EMAIL}" ]; then
+                  EXCLUDED="[\"${TEST_USER_EMAIL}\"]"
+                fi
                 curl -s "${SUPABASE_URL}/rest/v1/rpc/usage_event_counts_7d" \
                   -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
                   -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
                   -X POST -H "Content-Type: application/json" \
-                  -d "{}"
+                  -d "{\"excluded_emails\": ${EXCLUDED}}"
                 ```
 
-                If the RPC function does not exist, fall back to fetching raw events:
+                If the RPC function does not exist, fall back to fetching raw events
+                (note: the fallback does not exclude test users — prefer the RPC):
 
                 ```bash
+                SEVEN_DAYS_AGO=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-7d +%Y-%m-%dT%H:%M:%SZ)
                 curl -s "${SUPABASE_URL}/rest/v1/usage_events?created_at=gte.${SEVEN_DAYS_AGO}&order=event_name.asc&select=event_name" \
                   -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
                   -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}"

@@ -34,5 +34,9 @@ export default defineConfig({
         url: "http://localhost:3000",
         reuseExistingServer: true,
         timeout: 30_000,
+        env: {
+          ...process.env,
+          NEXT_PUBLIC_DISABLE_USAGE_TRACKING: "true",
+        },
       },
 });
