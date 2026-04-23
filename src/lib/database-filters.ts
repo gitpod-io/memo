@@ -27,7 +27,9 @@ export type FilterOperator =
   | "gte"
   | "lte"
   | "before"
-  | "after";
+  | "after"
+  | "is_checked"
+  | "is_not_checked";
 
 export interface FilterRule {
   property_id: string;
@@ -64,7 +66,7 @@ const MULTI_SELECT_OPERATORS: FilterOperator[] = [
   "is_empty",
   "is_not_empty",
 ];
-const CHECKBOX_OPERATORS: FilterOperator[] = ["equals"];
+const CHECKBOX_OPERATORS: FilterOperator[] = ["is_checked", "is_not_checked"];
 const DATE_OPERATORS: FilterOperator[] = [
   "equals",
   "before",
@@ -132,12 +134,21 @@ export function getOperatorLabel(operator: FilterOperator): string {
       return "before";
     case "after":
       return "after";
+    case "is_checked":
+      return "is checked";
+    case "is_not_checked":
+      return "is not checked";
   }
 }
 
 /** Whether the operator requires a user-provided value. */
 export function operatorNeedsValue(operator: FilterOperator): boolean {
-  return operator !== "is_empty" && operator !== "is_not_empty";
+  return (
+    operator !== "is_empty" &&
+    operator !== "is_not_empty" &&
+    operator !== "is_checked" &&
+    operator !== "is_not_checked"
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -147,15 +158,33 @@ export function operatorNeedsValue(operator: FilterOperator): boolean {
 /**
  * Extract a comparable primitive from a RowValue.
  * RowValue.value is `Record<string, unknown>` — the inner shape depends on
- * the property type. Most types store `{ value: <primitive> }`.
+ * the property type. Newer data uses type-specific keys (text, number,
+ * checked, date, option_id, etc.), while legacy data uses a generic `value` key.
  */
 function extractPrimitive(
   rv: RowValue | undefined,
 ): string | number | boolean | null {
   if (!rv) return null;
-  const inner = rv.value?.value;
-  if (inner === undefined || inner === null || inner === "") return null;
-  return inner as string | number | boolean;
+  const raw = rv.value;
+  if (!raw) return null;
+
+  // Try type-specific keys first, then fall back to legacy `value` key
+  const candidates = [
+    raw.text,
+    raw.number,
+    raw.checked,
+    raw.date,
+    raw.url,
+    raw.email,
+    raw.phone,
+    raw.value,
+  ];
+  for (const c of candidates) {
+    if (c !== undefined && c !== null && c !== "") {
+      return c as string | number | boolean;
+    }
+  }
+  return null;
 }
 
 /**
@@ -171,8 +200,11 @@ function extractString(rv: RowValue | undefined): string {
  * Extract a numeric value.
  */
 function extractNumber(rv: RowValue | undefined): number | null {
-  const v = extractPrimitive(rv);
-  if (v === null) return null;
+  if (!rv) return null;
+  const raw = rv.value;
+  if (!raw) return null;
+  const v = raw.number ?? raw.value;
+  if (v === undefined || v === null || v === "") return null;
   const n = Number(v);
   return Number.isNaN(n) ? null : n;
 }
@@ -181,9 +213,26 @@ function extractNumber(rv: RowValue | undefined): number | null {
  * Extract a date string (ISO 8601) for date comparisons.
  */
 function extractDate(rv: RowValue | undefined): string | null {
-  const v = extractPrimitive(rv);
-  if (v === null) return null;
+  if (!rv) return null;
+  const raw = rv.value;
+  if (!raw) return null;
+  const v = raw.date ?? raw.value;
+  if (v === undefined || v === null || v === "") return null;
   return String(v);
+}
+
+/**
+ * Extract the select option_id from a select/status value.
+ * Newer data stores `{ option_id: "uuid" }`, legacy stores `{ value: "name" }`.
+ */
+function extractSelectId(rv: RowValue | undefined): string | null {
+  if (!rv) return null;
+  const raw = rv.value;
+  if (!raw) return null;
+  if (typeof raw.option_id === "string" && raw.option_id) return raw.option_id;
+  // Legacy format: value is the option name string
+  if (typeof raw.value === "string" && raw.value) return raw.value;
+  return null;
 }
 
 /**
@@ -191,20 +240,33 @@ function extractDate(rv: RowValue | undefined): string | null {
  */
 function isEmpty(rv: RowValue | undefined): boolean {
   if (!rv) return true;
-  const inner = rv.value?.value;
-  if (inner === undefined || inner === null || inner === "") return true;
-  if (Array.isArray(inner) && inner.length === 0) return true;
-  return false;
+  const raw = rv.value;
+  if (!raw) return true;
+
+  // Check type-specific keys
+  for (const key of [
+    "text", "number", "checked", "date", "url", "email", "phone",
+    "option_id", "option_ids", "value",
+  ]) {
+    const v = raw[key];
+    if (v !== undefined && v !== null && v !== "") {
+      if (Array.isArray(v) && v.length === 0) continue;
+      return false;
+    }
+  }
+  return true;
 }
 
 /**
- * Extract the first selected option name from a multi-select value.
- * Multi-select stores `{ value: string[] }` or `{ value: ["opt1", "opt2"] }`.
+ * Extract multi-select option IDs.
+ * Newer data stores `{ option_ids: string[] }`, legacy stores `{ value: string[] }`.
  */
 function extractMultiSelectValues(rv: RowValue | undefined): string[] {
   if (!rv) return [];
-  const inner = rv.value?.value;
-  if (Array.isArray(inner)) return inner.map(String);
+  const raw = rv.value;
+  if (!raw) return [];
+  if (Array.isArray(raw.option_ids)) return raw.option_ids.map(String);
+  if (Array.isArray(raw.value)) return raw.value.map(String);
   return [];
 }
 
@@ -438,6 +500,16 @@ function matchesFilter(
     return !isEmpty(row.values[prop.id]);
   }
 
+  // Handle checkbox operators (no value needed)
+  if (filter.operator === "is_checked") {
+    const rv = row.values[prop.id];
+    return extractPrimitive(rv) === true;
+  }
+  if (filter.operator === "is_not_checked") {
+    const rv = row.values[prop.id];
+    return extractPrimitive(rv) !== true;
+  }
+
   // Computed properties
   if (isComputed) {
     const cv = getComputedValue(row, prop.type);
@@ -464,7 +536,8 @@ function matchesFilter(
       return matchNumberFilter(extractNumber(rv), filter);
 
     case "select":
-      return matchStringFilter(extractString(rv), filter);
+    case "status":
+      return matchSelectFilter(extractSelectId(rv), filter);
 
     case "multi_select":
       return matchMultiSelectFilter(extractMultiSelectValues(rv), filter);
@@ -519,14 +592,35 @@ function matchNumberFilter(
   }
 }
 
+function matchSelectFilter(
+  value: string | null,
+  filter: FilterRule,
+): boolean {
+  if (value === null) return false;
+  const filterVal = String(filter.value ?? "");
+  switch (filter.operator) {
+    case "equals":
+      // Match by option ID or by name (case-insensitive for legacy data)
+      return (
+        value === filterVal || value.toLowerCase() === filterVal.toLowerCase()
+      );
+    default:
+      return true;
+  }
+}
+
 function matchMultiSelectFilter(
   values: string[],
   filter: FilterRule,
 ): boolean {
-  const filterVal = String(filter.value ?? "").toLowerCase();
+  const filterVal = String(filter.value ?? "");
   switch (filter.operator) {
     case "contains":
-      return values.some((v) => v.toLowerCase().includes(filterVal));
+      // Match by option ID or by name (case-insensitive for legacy data)
+      return values.some(
+        (v) =>
+          v === filterVal || v.toLowerCase() === filterVal.toLowerCase(),
+      );
     default:
       return true;
   }

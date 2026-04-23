@@ -339,12 +339,24 @@ describe("filterRows", () => {
   });
 
   // Select filters
-  it("filters select equals", () => {
+  it("filters select equals (legacy name format)", () => {
     const filters: FilterRule[] = [
       { property_id: "p-sel", operator: "equals", value: "Done" },
     ];
     const result = filterRows(rows, filters, allProps);
     expect(result.map((r) => r.page.id)).toEqual(["r1"]);
+  });
+
+  it("filters select equals with option_id format", () => {
+    // Row with option_id format data
+    const optIdRow = makeRow("r-opt", "OptRow", {
+      "p-sel": { option_id: "opt-done-id" },
+    });
+    const filters: FilterRule[] = [
+      { property_id: "p-sel", operator: "equals", value: "opt-done-id" },
+    ];
+    const result = filterRows([optIdRow, rows[1]], filters, allProps);
+    expect(result.map((r) => r.page.id)).toEqual(["r-opt"]);
   });
 
   // Multi-select filters
@@ -365,7 +377,7 @@ describe("filterRows", () => {
     expect(result.map((r) => r.page.id)).toEqual(["r3", "r4"]);
   });
 
-  // Checkbox filters
+  // Checkbox filters (legacy equals operator)
   it("filters checkbox equals true", () => {
     const filters: FilterRule[] = [
       { property_id: "p-cb", operator: "equals", value: true },
@@ -381,6 +393,24 @@ describe("filterRows", () => {
     const result = filterRows(rows, filters, allProps);
     // r2 and r3 are false, r4 has no checkbox value (null ≠ false)
     expect(result.map((r) => r.page.id)).toEqual(["r2", "r3"]);
+  });
+
+  // Checkbox filters (new is_checked / is_not_checked operators)
+  it("filters checkbox is_checked", () => {
+    const filters: FilterRule[] = [
+      { property_id: "p-cb", operator: "is_checked", value: null },
+    ];
+    const result = filterRows(rows, filters, allProps);
+    expect(result.map((r) => r.page.id)).toEqual(["r1"]);
+  });
+
+  it("filters checkbox is_not_checked", () => {
+    const filters: FilterRule[] = [
+      { property_id: "p-cb", operator: "is_not_checked", value: null },
+    ];
+    const result = filterRows(rows, filters, allProps);
+    // r2 and r3 are false, r4 has no checkbox value — all are "not checked"
+    expect(result.map((r) => r.page.id)).toEqual(["r2", "r3", "r4"]);
   });
 
   // Date filters
@@ -485,7 +515,7 @@ describe("getOperatorsForType", () => {
 
   it("returns type-appropriate operators for checkbox", () => {
     const ops = getOperatorsForType("checkbox");
-    expect(ops).toEqual(["equals"]);
+    expect(ops).toEqual(["is_checked", "is_not_checked"]);
   });
 
   it("returns type-appropriate operators for date", () => {
@@ -516,6 +546,11 @@ describe("operatorNeedsValue", () => {
   it("returns false for is_empty and is_not_empty", () => {
     expect(operatorNeedsValue("is_empty")).toBe(false);
     expect(operatorNeedsValue("is_not_empty")).toBe(false);
+  });
+
+  it("returns false for is_checked and is_not_checked", () => {
+    expect(operatorNeedsValue("is_checked")).toBe(false);
+    expect(operatorNeedsValue("is_not_checked")).toBe(false);
   });
 
   it("returns true for all other operators", () => {

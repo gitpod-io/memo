@@ -25,7 +25,13 @@ const mockProperties: DatabaseProperty[] = [
     database_id: "db-1",
     name: "Status",
     type: "select",
-    config: {},
+    config: {
+      options: [
+        { id: "opt-todo", name: "To Do", color: "gray" },
+        { id: "opt-progress", name: "In Progress", color: "blue" },
+        { id: "opt-done", name: "Done", color: "green" },
+      ],
+    },
     position: 1,
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
@@ -67,6 +73,22 @@ const mockProperties: DatabaseProperty[] = [
     type: "url",
     config: {},
     position: 5,
+    created_at: "2026-04-01T00:00:00Z",
+    updated_at: "2026-04-01T00:00:00Z",
+  },
+  {
+    id: "prop-tags",
+    database_id: "db-1",
+    name: "Tags",
+    type: "multi_select",
+    config: {
+      options: [
+        { id: "tag-frontend", name: "Frontend", color: "blue" },
+        { id: "tag-backend", name: "Backend", color: "green" },
+        { id: "tag-design", name: "Design", color: "purple" },
+      ],
+    },
+    position: 6,
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
   },
@@ -125,7 +147,7 @@ export const MultipleFilters: Story = {
     filters: [
       { property_id: "prop-name", operator: "contains", value: "design" },
       { property_id: "prop-score", operator: "gte", value: 5 },
-      { property_id: "prop-done", operator: "equals", value: true },
+      { property_id: "prop-done", operator: "is_checked", value: null },
     ],
   },
 };
@@ -140,15 +162,51 @@ export const EmptyOperators: Story = {
   },
 };
 
+/** Select filter showing resolved option name from config. */
+export const SelectFilter: Story = {
+  args: {
+    filters: [
+      { property_id: "prop-status", operator: "equals", value: "opt-done" },
+    ],
+  },
+};
+
+/** Multi-select filter with option badge. */
+export const MultiSelectFilter: Story = {
+  args: {
+    filters: [
+      { property_id: "prop-tags", operator: "contains", value: "tag-frontend" },
+    ],
+  },
+};
+
+/** Date filter. */
+export const DateFilter: Story = {
+  args: {
+    filters: [
+      { property_id: "prop-due", operator: "before", value: "2026-06-01" },
+    ],
+  },
+};
+
+/** Checkbox filter with is_checked / is_not_checked operators. */
+export const CheckboxFilter: Story = {
+  args: {
+    filters: [
+      { property_id: "prop-done", operator: "is_checked", value: null },
+    ],
+  },
+};
+
 /** Many filters to test wrapping behavior. */
 export const ManyFilters: Story = {
   args: {
     filters: [
       { property_id: "prop-name", operator: "contains", value: "project" },
-      { property_id: "prop-status", operator: "equals", value: "Active" },
+      { property_id: "prop-status", operator: "equals", value: "opt-progress" },
       { property_id: "prop-score", operator: "gt", value: 10 },
       { property_id: "prop-due", operator: "before", value: "2026-06-01" },
-      { property_id: "prop-done", operator: "equals", value: false },
+      { property_id: "prop-done", operator: "is_not_checked", value: null },
       { property_id: "prop-url", operator: "is_not_empty", value: null },
     ],
   },
