@@ -39,7 +39,7 @@ function StaticTurnIntoMenu({
 }) {
   return (
     <div className="mx-auto max-w-xs">
-      <div className="max-h-[300px] w-56 overflow-y-auto rounded-sm border border-white/[0.06] bg-popover p-1 shadow-md">
+      <div className="max-h-[300px] w-56 overflow-y-auto rounded-sm border border-overlay-border bg-popover p-1 shadow-md">
         <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
           {title}
         </div>
@@ -49,8 +49,8 @@ function StaticTurnIntoMenu({
             type="button"
             className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm outline-none ${
               highlightedIndex === index
-                ? "bg-white/[0.08] text-foreground"
-                : "text-muted-foreground hover:bg-white/[0.04]"
+                ? "bg-overlay-active text-foreground"
+                : "text-muted-foreground hover:bg-overlay-hover"
             }`}
             role="option"
             aria-selected={highlightedIndex === index}
@@ -140,7 +140,7 @@ export const FromCodeBlock: Story = {
 export const NoTransformations: Story = {
   render: () => (
     <div className="mx-auto max-w-xs">
-      <div className="max-h-[300px] w-56 overflow-y-auto rounded-sm border border-white/[0.06] bg-popover p-1 shadow-md">
+      <div className="max-h-[300px] w-56 overflow-y-auto rounded-sm border border-overlay-border bg-popover p-1 shadow-md">
         <div className="px-2 py-1.5 text-xs text-muted-foreground">
           No transformations available
         </div>

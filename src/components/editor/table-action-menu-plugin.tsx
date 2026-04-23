@@ -113,54 +113,54 @@ function TableActionMenu({
   return createPortal(
     <div
       ref={menuRef}
-      className="fixed z-50 w-48 overflow-hidden rounded-sm border border-white/[0.06] bg-popover p-1 shadow-md"
+      className="fixed z-50 w-48 overflow-hidden rounded-sm border border-overlay-border bg-popover p-1 shadow-md"
       style={{ top: anchorPosition.y, left: anchorPosition.x }}
     >
       <button
-        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-white/[0.04] hover:text-foreground"
+        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-overlay-hover hover:text-foreground"
         onClick={insertRowAbove}
       >
         <ArrowDown className="h-4 w-4 rotate-180" />
         Insert row above
       </button>
       <button
-        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-white/[0.04] hover:text-foreground"
+        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-overlay-hover hover:text-foreground"
         onClick={insertRowBelow}
       >
         <ArrowDown className="h-4 w-4" />
         Insert row below
       </button>
       <button
-        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-white/[0.04] hover:text-foreground"
+        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-overlay-hover hover:text-foreground"
         onClick={insertColumnLeft}
       >
         <ArrowRight className="h-4 w-4 rotate-180" />
         Insert column left
       </button>
       <button
-        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-white/[0.04] hover:text-foreground"
+        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-overlay-hover hover:text-foreground"
         onClick={insertColumnRight}
       >
         <ArrowRight className="h-4 w-4" />
         Insert column right
       </button>
-      <div className="my-1 border-t border-white/[0.06]" />
+      <div className="my-1 border-t border-overlay-border" />
       <button
-        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-destructive hover:bg-white/[0.04]"
+        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-destructive hover:bg-overlay-hover"
         onClick={deleteRow}
       >
         <Trash2 className="h-4 w-4" />
         Delete row
       </button>
       <button
-        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-destructive hover:bg-white/[0.04]"
+        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-destructive hover:bg-overlay-hover"
         onClick={deleteColumn}
       >
         <Trash2 className="h-4 w-4" />
         Delete column
       </button>
       <button
-        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-destructive hover:bg-white/[0.04]"
+        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-destructive hover:bg-overlay-hover"
         onClick={deleteTable}
       >
         <Trash2 className="h-4 w-4" />

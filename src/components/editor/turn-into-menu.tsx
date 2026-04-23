@@ -121,7 +121,7 @@ export function TurnIntoMenu({
   if (options.length === 0) {
     return (
       <div
-        className={`max-h-[300px] w-56 overflow-y-auto rounded-sm border border-white/[0.06] bg-popover p-1 shadow-md ${className}`}
+        className={`max-h-[300px] w-56 overflow-y-auto rounded-sm border border-overlay-border bg-popover p-1 shadow-md ${className}`}
       >
         <div className="px-2 py-1.5 text-xs text-muted-foreground">
           No transformations available
@@ -133,7 +133,7 @@ export function TurnIntoMenu({
   return (
     <div
       ref={menuRef}
-      className={`max-h-[300px] w-56 overflow-y-auto rounded-sm border border-white/[0.06] bg-popover p-1 shadow-md ${className}`}
+      className={`max-h-[300px] w-56 overflow-y-auto rounded-sm border border-overlay-border bg-popover p-1 shadow-md ${className}`}
       role="listbox"
       aria-label="Turn into"
     >
@@ -143,8 +143,8 @@ export function TurnIntoMenu({
           type="button"
           className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm outline-none ${
             highlightedIndex === index
-              ? "bg-white/[0.08] text-foreground"
-              : "text-muted-foreground hover:bg-white/[0.04]"
+              ? "bg-overlay-active text-foreground"
+              : "text-muted-foreground hover:bg-overlay-hover"
           }`}
           onClick={() => handleSelect(option)}
           onMouseEnter={() => setHighlightedIndex(index)}

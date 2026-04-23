@@ -87,7 +87,7 @@ export function PendingInviteList({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-xs tracking-widest uppercase text-white/30">
+      <p className="text-xs tracking-widest uppercase text-label-faint">
         Pending invites ({invites.length})
       </p>
       <Table>

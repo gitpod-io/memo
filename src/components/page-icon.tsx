@@ -55,7 +55,7 @@ export function PageIcon({ pageId, initialIcon }: PageIconProps) {
           hasIcon
         >
           <button
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-sm text-4xl leading-none hover:bg-white/[0.04] sm:min-h-10 sm:min-w-10"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-sm text-4xl leading-none hover:bg-overlay-hover sm:min-h-10 sm:min-w-10"
             aria-label={`Page icon: ${icon}. Click to change`}
           >
             {icon}
@@ -75,7 +75,7 @@ export function PageIcon({ pageId, initialIcon }: PageIconProps) {
         hasIcon={false}
       >
         <button
-          className="flex min-h-11 items-center gap-1 rounded-sm px-1.5 text-xs text-muted-foreground hover:bg-white/[0.04] sm:min-h-7"
+          className="flex min-h-11 items-center gap-1 rounded-sm px-1.5 text-xs text-muted-foreground hover:bg-overlay-hover sm:min-h-7"
           aria-label="Add page icon"
         >
           <SmilePlus className="h-3.5 w-3.5" />

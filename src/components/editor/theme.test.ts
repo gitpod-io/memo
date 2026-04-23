@@ -59,8 +59,8 @@ describe("editorTheme", () => {
 
   it("blockquote border uses design-spec opacity", () => {
     const quote = editorTheme.quote as string;
-    expect(quote).toContain("border-white/[0.06]");
-    expect(quote).not.toContain("border-white/[0.12]");
+    expect(quote).toContain("border-overlay-border");
+    expect(quote).not.toContain("border-overlay-strong");
   });
 });
 

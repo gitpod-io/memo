@@ -37,7 +37,7 @@ export const Default: Story = {
           <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
         </DropdownMenuTrigger>
         <DropdownMenuContent side="bottom" align="start" sideOffset={4}>
-          <p className="px-1.5 py-1 text-xs tracking-widest uppercase text-white/30">
+          <p className="px-1.5 py-1 text-xs tracking-widest uppercase text-label-faint">
             Workspaces
           </p>
           <DropdownMenuItem>

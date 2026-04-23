@@ -42,8 +42,8 @@ function VersionItem({
   return (
     <button
       type="button"
-      className={`w-full border-b border-white/[0.06] px-4 py-3 text-left transition-none hover:bg-white/[0.04] ${
-        selected ? "bg-white/[0.08]" : ""
+      className={`w-full border-b border-overlay-border px-4 py-3 text-left transition-none hover:bg-overlay-hover ${
+        selected ? "bg-overlay-active" : ""
       }`}
     >
       <div className="text-sm" suppressHydrationWarning>
@@ -79,7 +79,7 @@ export const WithVersions: Story = {
   render: () => (
     <Sheet defaultOpen>
       <SheetContent side="right" className="flex flex-col p-0">
-        <SheetHeader className="border-b border-white/[0.06] p-4">
+        <SheetHeader className="border-b border-overlay-border p-4">
           <SheetTitle className="flex items-center gap-2 text-sm font-medium">
             <History className="h-4 w-4" />
             Version history
@@ -103,7 +103,7 @@ export const VersionSelected: Story = {
   render: () => (
     <Sheet defaultOpen>
       <SheetContent side="right" className="flex flex-col p-0">
-        <SheetHeader className="border-b border-white/[0.06] p-4">
+        <SheetHeader className="border-b border-overlay-border p-4">
           <SheetTitle className="flex items-center gap-2 text-sm font-medium">
             <History className="h-4 w-4" />
             Version history
@@ -117,7 +117,7 @@ export const VersionSelected: Story = {
             <VersionItem key={v.id} createdAt={v.created_at} selected={i === 1} />
           ))}
         </div>
-        <div className="border-t border-white/[0.06] p-4">
+        <div className="border-t border-overlay-border p-4">
           <Button className="w-full" size="sm">
             <RotateCcw className="h-4 w-4" />
             Restore this version
@@ -133,7 +133,7 @@ export const Empty: Story = {
   render: () => (
     <Sheet defaultOpen>
       <SheetContent side="right" className="flex flex-col p-0">
-        <SheetHeader className="border-b border-white/[0.06] p-4">
+        <SheetHeader className="border-b border-overlay-border p-4">
           <SheetTitle className="flex items-center gap-2 text-sm font-medium">
             <History className="h-4 w-4" />
             Version history
@@ -160,7 +160,7 @@ export const Loading: Story = {
   render: () => (
     <Sheet defaultOpen>
       <SheetContent side="right" className="flex flex-col p-0">
-        <SheetHeader className="border-b border-white/[0.06] p-4">
+        <SheetHeader className="border-b border-overlay-border p-4">
           <SheetTitle className="flex items-center gap-2 text-sm font-medium">
             <History className="h-4 w-4" />
             Version history

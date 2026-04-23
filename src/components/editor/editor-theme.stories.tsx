@@ -169,8 +169,8 @@ export const Callouts: Story = {
 export const Collapsible: Story = {
   render: () => (
     <div className="mx-auto max-w-2xl">
-      <details className="mt-3 border border-white/[0.06] text-sm rounded-sm" open>
-        <summary className="flex items-center gap-1.5 p-3 text-sm font-medium text-foreground hover:bg-white/[0.04] list-none cursor-pointer">
+      <details className="mt-3 border border-overlay-border text-sm rounded-sm" open>
+        <summary className="flex items-center gap-1.5 p-3 text-sm font-medium text-foreground hover:bg-overlay-hover list-none cursor-pointer">
           <svg
             width="14"
             height="14"
@@ -186,7 +186,7 @@ export const Collapsible: Story = {
           </svg>
           Click to expand
         </summary>
-        <div className="border-t border-white/[0.06] p-3 text-sm">
+        <div className="border-t border-overlay-border p-3 text-sm">
           <p className={editorTheme.paragraph}>
             This is the collapsible content area. It can contain any editor
             content including paragraphs, lists, and code blocks.
@@ -194,8 +194,8 @@ export const Collapsible: Story = {
         </div>
       </details>
 
-      <details className="mt-3 border border-white/[0.06] text-sm rounded-sm">
-        <summary className="flex items-center gap-1.5 p-3 text-sm font-medium text-foreground hover:bg-white/[0.04] list-none cursor-pointer">
+      <details className="mt-3 border border-overlay-border text-sm rounded-sm">
+        <summary className="flex items-center gap-1.5 p-3 text-sm font-medium text-foreground hover:bg-overlay-hover list-none cursor-pointer">
           <svg
             width="14"
             height="14"
@@ -211,7 +211,7 @@ export const Collapsible: Story = {
           </svg>
           Collapsed section
         </summary>
-        <div className="border-t border-white/[0.06] p-3 text-sm">
+        <div className="border-t border-overlay-border p-3 text-sm">
           <p className={editorTheme.paragraph}>Hidden content.</p>
         </div>
       </details>

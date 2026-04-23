@@ -68,7 +68,7 @@ const DatabaseViewClient = dynamic(
           </div>
         </div>
         <div className="mt-6 space-y-3">
-          <div className="flex items-center gap-2 border-b border-white/[0.06] pb-2">
+          <div className="flex items-center gap-2 border-b border-overlay-border pb-2">
             <div className="h-5 w-20 animate-pulse bg-muted" />
             <div className="h-5 w-20 animate-pulse bg-muted" />
           </div>

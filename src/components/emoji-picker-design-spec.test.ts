@@ -29,9 +29,9 @@ describe("emoji-picker design spec compliance", () => {
   });
 
   it("filter input has border per input spec", () => {
-    // Design spec: Inputs should have border-white/[0.06] border.
+    // Design spec: Inputs should have border-overlay-border border.
     const precedingClass = source.match(
-      /className="[^"]*border border-white\/\[0\.06\][^"]*"[\s\S]*?aria-label="Filter emojis"/
+      /className="[^"]*border border-overlay-border[^"]*"[\s\S]*?aria-label="Filter emojis"/
     );
     expect(precedingClass).not.toBeNull();
   });

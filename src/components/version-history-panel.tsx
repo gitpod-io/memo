@@ -129,7 +129,7 @@ export function VersionHistoryPanel({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex flex-col p-0">
-        <SheetHeader className="border-b border-white/[0.06] p-4">
+        <SheetHeader className="border-b border-overlay-border p-4">
           <SheetTitle className="flex items-center gap-2 text-sm font-medium">
             <History className="h-4 w-4" />
             Version history
@@ -170,8 +170,8 @@ export function VersionHistoryPanel({
                     ? handleDeselect()
                     : handleSelectVersion(version.id)
                 }
-                className={`w-full border-b border-white/[0.06] px-4 py-3 text-left transition-none hover:bg-white/[0.04] ${
-                  selectedId === version.id ? "bg-white/[0.08]" : ""
+                className={`w-full border-b border-overlay-border px-4 py-3 text-left transition-none hover:bg-overlay-hover ${
+                  selectedId === version.id ? "bg-overlay-active" : ""
                 }`}
               >
                 <div className="text-sm">
@@ -193,7 +193,7 @@ export function VersionHistoryPanel({
         </div>
 
         {selectedId && (
-          <div className="border-t border-white/[0.06] p-4">
+          <div className="border-t border-overlay-border p-4">
             <Button
               onClick={handleRestore}
               disabled={restoring}

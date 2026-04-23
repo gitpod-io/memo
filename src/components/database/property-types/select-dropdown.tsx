@@ -147,7 +147,7 @@ export function SelectDropdown({
                 onClick={() => handleOptionClick(opt.id)}
                 className={cn(
                   "flex w-full items-center gap-2 px-2 py-1 text-sm",
-                  "hover:bg-white/[0.04]",
+                  "hover:bg-overlay-hover",
                 )}
               >
                 {multi && (
@@ -191,7 +191,7 @@ export function SelectDropdown({
           <button
             type="button"
             onClick={handleCreate}
-            className="flex w-full items-center gap-2 px-2 py-1 text-sm hover:bg-white/[0.04]"
+            className="flex w-full items-center gap-2 px-2 py-1 text-sm hover:bg-overlay-hover"
           >
             <Plus className="size-3.5 text-muted-foreground" />
             <span className="text-muted-foreground">Create</span>

@@ -49,7 +49,7 @@ export const Default: Story = {
         </div>
       </form>
 
-      <Separator className="bg-white/[0.06]" />
+      <Separator className="bg-overlay-border" />
 
       <div className="flex flex-col gap-3">
         <h2 className="text-sm font-medium text-destructive">Danger zone</h2>
@@ -103,7 +103,7 @@ export const PersonalWorkspace: Story = {
         </div>
       </form>
 
-      <Separator className="bg-white/[0.06]" />
+      <Separator className="bg-overlay-border" />
 
       <p className="text-xs text-muted-foreground">
         This is your personal workspace and cannot be deleted.

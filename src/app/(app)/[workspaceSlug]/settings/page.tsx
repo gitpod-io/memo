@@ -73,7 +73,7 @@ export default async function WorkspaceSettingsPage({
       </div>
       {workspace.is_personal && (
         <>
-          <Separator className="mt-8 bg-white/[0.06]" />
+          <Separator className="mt-8 bg-overlay-border" />
           <div className="mt-8">
             <DeleteAccountSection userEmail={userEmail} />
           </div>

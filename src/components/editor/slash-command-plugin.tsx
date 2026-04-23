@@ -333,7 +333,7 @@ export function SlashCommandPlugin(): JSX.Element | null {
         return createPortal(
           <div
             ref={menuRef}
-            className="fixed z-50 max-h-[300px] w-64 overflow-y-auto rounded-sm border border-white/[0.06] bg-popover p-1 shadow-md"
+            className="fixed z-50 max-h-[300px] w-64 overflow-y-auto rounded-sm border border-overlay-border bg-popover p-1 shadow-md"
           >
             {items.map((option, index) => (
               <button
@@ -341,8 +341,8 @@ export function SlashCommandPlugin(): JSX.Element | null {
                 ref={(el) => option.setRefElement(el)}
                 className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm outline-none ${
                   selectedIndex === index
-                    ? "bg-white/[0.08] text-foreground"
-                    : "text-muted-foreground hover:bg-white/[0.04]"
+                    ? "bg-overlay-active text-foreground"
+                    : "text-muted-foreground hover:bg-overlay-hover"
                 }`}
                 onClick={() => selectOptionAndCleanUp(option)}
                 onMouseEnter={() => setHighlightedIndex(index)}

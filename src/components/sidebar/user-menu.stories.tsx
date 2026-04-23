@@ -1,7 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import {
+  Keyboard,
   LogOut,
+  Monitor,
+  Moon,
   Settings,
+  Sun,
   User,
   Users,
 } from "lucide-react";
@@ -11,6 +15,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -54,6 +63,33 @@ export const Default: Story = {
             <Users className="h-4 w-4" />
             Members
           </DropdownMenuItem>
+          <DropdownMenuItem>
+            <Keyboard className="h-4 w-4" />
+            Keyboard shortcuts
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Sun className="h-4 w-4" />
+              Theme
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuRadioGroup value="dark">
+                <DropdownMenuRadioItem value="light">
+                  <Sun className="h-4 w-4" />
+                  Light
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="dark">
+                  <Moon className="h-4 w-4" />
+                  Dark
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="system">
+                  <Monitor className="h-4 w-4" />
+                  System
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
           <DropdownMenuSeparator />
           <DropdownMenuItem>
             <LogOut className="h-4 w-4" />

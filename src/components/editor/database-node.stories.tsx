@@ -44,8 +44,8 @@ function InlineDatabaseMock({
   // Loading skeleton
   if (loading) {
     return (
-      <div className="mt-3 border border-white/[0.06]">
-        <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06]">
+      <div className="mt-3 border border-overlay-border">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-overlay-border">
           <div className="h-4 w-32 animate-pulse bg-muted" />
           <div className="h-3.5 w-3.5 animate-pulse bg-muted" />
         </div>
@@ -65,7 +65,7 @@ function InlineDatabaseMock({
   // Deleted / not found
   if (deleted) {
     return (
-      <div className="mt-3 flex items-center gap-2 border border-white/[0.06] px-3 py-3 text-sm text-muted-foreground">
+      <div className="mt-3 flex items-center gap-2 border border-overlay-border px-3 py-3 text-sm text-muted-foreground">
         <Table2 className="h-4 w-4 shrink-0" />
         Database not found
       </div>
@@ -73,9 +73,9 @@ function InlineDatabaseMock({
   }
 
   return (
-    <div className="mt-3 border border-white/[0.06]">
+    <div className="mt-3 border border-overlay-border">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06]">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-overlay-border">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-sm font-medium text-accent hover:underline truncate cursor-pointer">
             {icon && <span className="mr-1">{icon}</span>}
@@ -117,13 +117,13 @@ function InlineDatabaseMock({
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr>
-              <th className="bg-muted p-2 text-left text-xs font-medium uppercase tracking-widest text-muted-foreground border-b border-white/[0.06]">
+              <th className="bg-muted p-2 text-left text-xs font-medium uppercase tracking-widest text-muted-foreground border-b border-overlay-border">
                 Title
               </th>
               {columns.map((col) => (
                 <th
                   key={col}
-                  className="bg-muted p-2 text-left text-xs font-medium uppercase tracking-widest text-muted-foreground border-b border-white/[0.06]"
+                  className="bg-muted p-2 text-left text-xs font-medium uppercase tracking-widest text-muted-foreground border-b border-overlay-border"
                 >
                   {col}
                 </th>
@@ -144,7 +144,7 @@ function InlineDatabaseMock({
               rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="hover:bg-white/[0.02] border-b border-white/[0.06]"
+                  className="hover:bg-overlay-subtle border-b border-overlay-border"
                 >
                   <td className="p-2 text-sm truncate max-w-[200px]">
                     {row.icon && <span className="mr-1">{row.icon}</span>}

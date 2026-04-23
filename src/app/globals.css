@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is([data-theme="dark"] *));
 
 @theme inline {
   --font-sans: var(--font-jetbrains-mono);
@@ -44,6 +44,15 @@
   --color-code-constant: var(--code-constant);
   --color-code-type: var(--code-type);
   --color-code-builtin: var(--code-builtin);
+  --color-overlay-subtle: var(--overlay-subtle);
+  --color-overlay-hover: var(--overlay-hover);
+  --color-overlay-border: var(--overlay-border);
+  --color-overlay-active: var(--overlay-active);
+  --color-overlay-strong: var(--overlay-strong);
+  --color-overlay-heavy: var(--overlay-heavy);
+  --color-label-faint: var(--label-faint);
+  --color-label-muted: var(--label-muted);
+  --color-label-subtle: var(--label-subtle);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -53,8 +62,62 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Dark-only theme — Memo uses no light mode */
+/*
+ * Light mode (default).
+ * Palette derived from Ona's web color scheme — neutral cool-gray surfaces,
+ * blue-tinted accents, high-contrast text on light backgrounds.
+ */
 :root {
+  --background: oklch(0.985 0.002 255);
+  --foreground: oklch(0.18 0.01 255);
+  --card: oklch(0.97 0.003 255);
+  --card-foreground: oklch(0.18 0.01 255);
+  --popover: oklch(0.97 0.003 255);
+  --popover-foreground: oklch(0.18 0.01 255);
+  --primary: oklch(0.45 0.04 248);
+  --primary-foreground: oklch(0.985 0.002 255);
+  --secondary: oklch(0.93 0.005 255);
+  --secondary-foreground: oklch(0.18 0.01 255);
+  --muted: oklch(0.93 0.005 255);
+  --muted-foreground: oklch(0.45 0.015 255);
+  --accent: oklch(0.45 0.08 248);
+  --accent-foreground: oklch(0.18 0.01 255);
+  --destructive: oklch(0.55 0.2 25);
+  --border: oklch(0.88 0.005 255);
+  --input: oklch(0.88 0.005 255);
+  --ring: oklch(0.45 0.08 248);
+  --chart-1: oklch(0.45 0.04 248);
+  --chart-2: oklch(0.45 0.08 248);
+  --chart-3: oklch(0.55 0.015 255);
+  --chart-4: oklch(0.70 0.01 255);
+  --chart-5: oklch(0.80 0.005 255);
+  --radius: 0rem;
+  --sidebar: oklch(0.96 0.003 255);
+  --sidebar-foreground: oklch(0.18 0.01 255);
+  --sidebar-primary: oklch(0.45 0.04 248);
+  --sidebar-primary-foreground: oklch(0.985 0.002 255);
+  --sidebar-accent: oklch(0.93 0.005 255);
+  --sidebar-accent-foreground: oklch(0.18 0.01 255);
+  --sidebar-border: oklch(0.88 0.005 255);
+  --sidebar-ring: oklch(0.45 0.08 248);
+  --code-keyword: oklch(0.45 0.15 300);
+  --code-string: oklch(0.40 0.12 150);
+  --code-constant: oklch(0.50 0.15 25);
+  --code-type: oklch(0.45 0.10 80);
+  --code-builtin: oklch(0.40 0.10 200);
+  --overlay-subtle: oklch(0 0 0 / 0.02);
+  --overlay-hover: oklch(0 0 0 / 0.04);
+  --overlay-border: oklch(0 0 0 / 0.08);
+  --overlay-active: oklch(0 0 0 / 0.06);
+  --overlay-strong: oklch(0 0 0 / 0.12);
+  --overlay-heavy: oklch(0 0 0 / 0.20);
+  --label-faint: oklch(0.45 0.01 255 / 0.40);
+  --label-muted: oklch(0.35 0.01 255 / 0.55);
+  --label-subtle: oklch(0.25 0.01 255 / 0.70);
+}
+
+/* Dark mode */
+[data-theme="dark"] {
   --background: oklch(0.13 0.008 255);
   --foreground: oklch(0.87 0.01 255);
   --card: oklch(0.16 0.008 255);
@@ -78,7 +141,6 @@
   --chart-3: oklch(0.55 0.012 255);
   --chart-4: oklch(0.40 0.012 255);
   --chart-5: oklch(0.30 0.012 255);
-  --radius: 0rem;
   --sidebar: oklch(0.16 0.008 255);
   --sidebar-foreground: oklch(0.87 0.01 255);
   --sidebar-primary: oklch(0.74 0.032 248);
@@ -92,9 +154,21 @@
   --code-constant: oklch(0.65 0.15 25);
   --code-type: oklch(0.75 0.08 80);
   --code-builtin: oklch(0.70 0.08 200);
+  --overlay-subtle: oklch(1 0 0 / 0.02);
+  --overlay-hover: oklch(1 0 0 / 0.04);
+  --overlay-border: oklch(1 0 0 / 0.06);
+  --overlay-active: oklch(1 0 0 / 0.08);
+  --overlay-strong: oklch(1 0 0 / 0.12);
+  --overlay-heavy: oklch(1 0 0 / 0.20);
+  --label-faint: oklch(1 0 0 / 0.30);
+  --label-muted: oklch(1 0 0 / 0.50);
+  --label-subtle: oklch(1 0 0 / 0.70);
 }
 
-/* Duplicate for .dark class to satisfy shadcn components that check for it */
+/*
+ * .dark class — shadcn components check for this.
+ * Applied alongside data-theme="dark" by the theme script.
+ */
 .dark {
   --background: oklch(0.13 0.008 255);
   --foreground: oklch(0.87 0.01 255);
@@ -132,6 +206,15 @@
   --code-constant: oklch(0.65 0.15 25);
   --code-type: oklch(0.75 0.08 80);
   --code-builtin: oklch(0.70 0.08 200);
+  --overlay-subtle: oklch(1 0 0 / 0.02);
+  --overlay-hover: oklch(1 0 0 / 0.04);
+  --overlay-border: oklch(1 0 0 / 0.06);
+  --overlay-active: oklch(1 0 0 / 0.08);
+  --overlay-strong: oklch(1 0 0 / 0.12);
+  --overlay-heavy: oklch(1 0 0 / 0.20);
+  --label-faint: oklch(1 0 0 / 0.30);
+  --label-muted: oklch(1 0 0 / 0.50);
+  --label-subtle: oklch(1 0 0 / 0.70);
 }
 
 @layer base {

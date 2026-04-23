@@ -27,31 +27,68 @@ Principles (in priority order):
 
 ## Color
 
-Dark mode only. Use oklch values via CSS variables — same hue family as software-factory.dev (hue 250–255, cool-blue undertones). No arbitrary hex values. No light mode.
+Light and dark mode. Use oklch values via CSS variables — same hue family as
+software-factory.dev (hue 250–255, cool-blue undertones). Light mode palette
+derived from Ona's web color scheme (ona.com). No arbitrary hex values.
 
-| Token | Value | Usage |
-|---|---|---|
-| `--background` | `oklch(0.13 0.008 255)` | Page background |
-| `--foreground` | `oklch(0.87 0.01 255)` | Primary text |
-| `--muted` | `oklch(0.22 0.012 255)` | Secondary surfaces (sidebar, hover states) |
-| `--muted-foreground` | `oklch(0.55 0.012 255)` | Secondary text, placeholders, timestamps |
-| `--border` | `oklch(0.22 0.012 255)` | All borders and dividers |
-| `--primary` | `oklch(0.74 0.032 248)` | Primary buttons, active states |
-| `--primary-foreground` | `oklch(0.13 0.008 255)` | Text on primary |
-| `--accent` | `oklch(0.60 0.06 248)` | Links, selected items, focus rings |
-| `--destructive` | `oklch(0.55 0.2 25)` | Delete actions, error states |
+Theme is controlled by `data-theme="light|dark"` on `<html>`. The `.dark` class
+is also applied for shadcn compatibility. User preference (light/dark/system) is
+stored in `localStorage("memo-theme")` and applied before first paint via an
+inline script in `<head>`.
+
+### Core Tokens
+
+| Token | Dark | Light | Usage |
+|---|---|---|---|
+| `--background` | `oklch(0.13 0.008 255)` | `oklch(0.985 0.002 255)` | Page background |
+| `--foreground` | `oklch(0.87 0.01 255)` | `oklch(0.18 0.01 255)` | Primary text |
+| `--muted` | `oklch(0.22 0.012 255)` | `oklch(0.93 0.005 255)` | Secondary surfaces |
+| `--muted-foreground` | `oklch(0.55 0.012 255)` | `oklch(0.45 0.015 255)` | Secondary text, placeholders |
+| `--border` | `oklch(0.22 0.012 255)` | `oklch(0.88 0.005 255)` | Borders and dividers |
+| `--primary` | `oklch(0.74 0.032 248)` | `oklch(0.45 0.04 248)` | Primary buttons, active states |
+| `--primary-foreground` | `oklch(0.13 0.008 255)` | `oklch(0.985 0.002 255)` | Text on primary |
+| `--accent` | `oklch(0.60 0.06 248)` | `oklch(0.45 0.08 248)` | Links, selected items, focus rings |
+| `--destructive` | `oklch(0.55 0.2 25)` | `oklch(0.55 0.2 25)` | Delete actions, error states |
+
+### Overlay Tokens (theme-adaptive)
+
+Replace all hardcoded `white/[0.xx]` and `black/[0.xx]` opacity values with these
+semantic tokens. They flip between white-on-dark and black-on-light automatically.
+
+| Token | Dark | Light | Usage |
+|---|---|---|---|
+| `--overlay-subtle` | `white 2%` | `black 2%` | Very faint row hover |
+| `--overlay-hover` | `white 4%` | `black 4%` | Hover states |
+| `--overlay-border` | `white 6%` | `black 8%` | Subtle borders, separators |
+| `--overlay-active` | `white 8%` | `black 6%` | Selected/active states |
+| `--overlay-strong` | `white 12%` | `black 12%` | Stronger borders |
+| `--overlay-heavy` | `white 20%` | `black 20%` | Heavy emphasis |
+
+Tailwind classes: `bg-overlay-hover`, `border-overlay-border`, etc.
+
+### Label Tokens (theme-adaptive)
+
+Replace all hardcoded `text-white/30`, `text-white/50`, `text-white/70` with these.
+
+| Token | Dark | Light | Usage |
+|---|---|---|---|
+| `--label-faint` | `white 30%` | `dark 40%` | Section headings, kbd hints |
+| `--label-muted` | `white 50%` | `dark 55%` | Hover on faint labels |
+| `--label-subtle` | `white 70%` | `dark 70%` | Selected item text |
+
+Tailwind classes: `text-label-faint`, `text-label-muted`, `text-label-subtle`.
 
 ### Syntax Highlighting Tokens
 
 Used in the Lexical editor code block theme (`src/components/editor/theme.ts`).
 
-| Token | Value | Usage |
-|---|---|---|
-| `--code-keyword` | `oklch(0.65 0.12 300)` | Keywords, operators (purple) |
-| `--code-string` | `oklch(0.70 0.12 150)` | Strings, chars, selectors (green) |
-| `--code-constant` | `oklch(0.65 0.15 25)` | Booleans, numbers, constants, tags (red-orange) |
-| `--code-type` | `oklch(0.75 0.08 80)` | Class names, type annotations (yellow) |
-| `--code-builtin` | `oklch(0.70 0.08 200)` | Built-in functions and types (cyan) |
+| Token | Dark | Light | Usage |
+|---|---|---|---|
+| `--code-keyword` | `oklch(0.65 0.12 300)` | `oklch(0.45 0.15 300)` | Keywords, operators (purple) |
+| `--code-string` | `oklch(0.70 0.12 150)` | `oklch(0.40 0.12 150)` | Strings, chars, selectors (green) |
+| `--code-constant` | `oklch(0.65 0.15 25)` | `oklch(0.50 0.15 25)` | Booleans, numbers, constants (red-orange) |
+| `--code-type` | `oklch(0.75 0.08 80)` | `oklch(0.45 0.10 80)` | Class names, type annotations (yellow) |
+| `--code-builtin` | `oklch(0.70 0.08 200)` | `oklch(0.40 0.10 200)` | Built-in functions and types (cyan) |
 
 Tokens that already map to existing colors: `text-primary` for functions/properties/attrs,
 `text-muted-foreground` for comments/punctuation, `text-destructive` for deleted text.
@@ -60,7 +97,7 @@ Rules:
 - No color outside this token set without updating this file first.
 - Accent color is used sparingly — selected sidebar item, focused input, links. Not decorative.
 - Borders are near-invisible: 1px solid `--border` (matches `--muted`, blends with surfaces). No box shadows except for dropdowns and modals.
-- Use `white/` opacity scale for subtle text hierarchy (e.g. `text-white/40`, `text-white/20`) where token classes feel too heavy.
+- Use overlay and label tokens for subtle hierarchy — never hardcode `white/` or `black/` opacity values.
 
 ---
 
@@ -539,7 +576,6 @@ When a database row is opened as a full page, properties display above the Lexic
 
 ## What NOT to Do
 
-- No light mode. Dark only.
 - No gradients on UI surfaces (background gradients on the page shell are acceptable).
 - No custom scrollbars.
 - No loading spinners — use skeletons.
@@ -551,4 +587,5 @@ When a database row is opened as a full page, properties display above the Lexic
 - No "empty" pages with just a button — always provide context.
 - No rounded corners except the explicit exceptions in the Corners section.
 - No system font stack — use JetBrains Mono everywhere.
-- No visible borders — borders should blend with surfaces (`border-white/[0.06]` or match `--border` to `--muted`).
+- No visible borders — borders should blend with surfaces (`border-overlay-border` or match `--border` to `--muted`).
+- No hardcoded `white/` or `black/` opacity values — use overlay and label tokens instead.

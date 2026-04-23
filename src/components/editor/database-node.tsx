@@ -208,8 +208,8 @@ function InlineDatabaseComponent({
   // Loading skeleton
   if (loading) {
     return (
-      <div className="mt-3 border border-white/[0.06]">
-        <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06]">
+      <div className="mt-3 border border-overlay-border">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-overlay-border">
           <div className="h-4 w-32 animate-pulse bg-muted" />
           <div className="h-3.5 w-3.5 animate-pulse bg-muted" />
         </div>
@@ -229,7 +229,7 @@ function InlineDatabaseComponent({
   // Deleted / not found
   if (deleted || !data) {
     return (
-      <div className="mt-3 flex items-center gap-2 border border-white/[0.06] px-3 py-3 text-sm text-muted-foreground">
+      <div className="mt-3 flex items-center gap-2 border border-overlay-border px-3 py-3 text-sm text-muted-foreground">
         <Table2 className="h-4 w-4 shrink-0" />
         Database not found
       </div>
@@ -244,9 +244,9 @@ function InlineDatabaseComponent({
     : data.properties.slice(0, 4);
 
   return (
-    <div className="mt-3 border border-white/[0.06]">
+    <div className="mt-3 border border-overlay-border">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06]">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-overlay-border">
         <div className="flex items-center gap-2 min-w-0">
           <a
             href={href}
@@ -299,13 +299,13 @@ function InlineDatabaseComponent({
           <thead>
             <tr>
               {/* Title column */}
-              <th className="bg-muted p-2 text-left text-xs font-medium uppercase tracking-widest text-muted-foreground border-b border-white/[0.06]">
+              <th className="bg-muted p-2 text-left text-xs font-medium uppercase tracking-widest text-muted-foreground border-b border-overlay-border">
                 Title
               </th>
               {visibleProperties.map((prop) => (
                 <th
                   key={prop.id}
-                  className="bg-muted p-2 text-left text-xs font-medium uppercase tracking-widest text-muted-foreground border-b border-white/[0.06]"
+                  className="bg-muted p-2 text-left text-xs font-medium uppercase tracking-widest text-muted-foreground border-b border-overlay-border"
                 >
                   {prop.name}
                 </th>
@@ -326,7 +326,7 @@ function InlineDatabaseComponent({
               data.rows.map((row) => (
                 <tr
                   key={row.page.id}
-                  className="hover:bg-white/[0.02] border-b border-white/[0.06]"
+                  className="hover:bg-overlay-subtle border-b border-overlay-border"
                 >
                   <td className="p-2 text-sm truncate max-w-[200px]">
                     {row.page.icon && (

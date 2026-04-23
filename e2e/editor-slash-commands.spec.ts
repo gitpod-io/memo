@@ -89,11 +89,11 @@ test.describe("Editor slash commands", () => {
     await expect(options.first()).toBeVisible({ timeout: 3_000 });
 
     // First option should be selected by default
-    await expect(options.first()).toHaveClass(/bg-white/);
+    await expect(options.first()).toHaveClass(/bg-overlay-active/);
 
     // Arrow down should move selection
     await page.keyboard.press("ArrowDown");
-    await expect(options.nth(1)).toHaveClass(/bg-white/);
+    await expect(options.nth(1)).toHaveClass(/bg-overlay-active/);
 
     // Escape should close the menu
     await page.keyboard.press("Escape");
@@ -122,12 +122,12 @@ test.describe("Editor slash commands", () => {
     for (let i = 0; i < stepsToNavigate; i++) {
       await page.keyboard.press("ArrowDown");
       // The (i+1)th option should be highlighted, not the first
-      await expect(options.nth(i + 1)).toHaveClass(/bg-white/);
+      await expect(options.nth(i + 1)).toHaveClass(/bg-overlay-active/);
     }
 
     // Navigate back up and verify it doesn't jump
     await page.keyboard.press("ArrowUp");
-    await expect(options.nth(stepsToNavigate - 1)).toHaveClass(/bg-white/);
+    await expect(options.nth(stepsToNavigate - 1)).toHaveClass(/bg-overlay-active/);
   });
 
   test("selected item scrolls into view when navigating with arrow keys", async ({
@@ -154,7 +154,7 @@ test.describe("Editor slash commands", () => {
 
     // The last option should be selected and visible (scrolled into view)
     const lastOption = options.nth(totalOptions - 1);
-    await expect(lastOption).toHaveClass(/bg-white/);
+    await expect(lastOption).toHaveClass(/bg-overlay-active/);
     await expect(lastOption).toBeInViewport();
   });
 });

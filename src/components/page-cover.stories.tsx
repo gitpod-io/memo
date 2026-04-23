@@ -74,7 +74,7 @@ export const WithoutCover: Story = {
   render: () => (
     <div className="mb-1 opacity-100">
       <button
-        className="flex min-h-11 items-center gap-1 rounded-sm px-1.5 text-xs text-muted-foreground hover:bg-white/[0.04] sm:min-h-7"
+        className="flex min-h-11 items-center gap-1 rounded-sm px-1.5 text-xs text-muted-foreground hover:bg-overlay-hover sm:min-h-7"
         aria-label="Add cover image"
       >
         <ImagePlus className="h-3.5 w-3.5" />
@@ -88,7 +88,7 @@ export const Uploading: Story = {
   render: () => (
     <div className="mb-1 opacity-100">
       <button
-        className="flex min-h-11 items-center gap-1 rounded-sm px-1.5 text-xs text-muted-foreground hover:bg-white/[0.04] sm:min-h-7"
+        className="flex min-h-11 items-center gap-1 rounded-sm px-1.5 text-xs text-muted-foreground hover:bg-overlay-hover sm:min-h-7"
         aria-label="Add cover image"
         disabled
       >

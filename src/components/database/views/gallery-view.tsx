@@ -117,8 +117,8 @@ export function GalleryView({
           onClick={handleAddRow}
           aria-label="Add new page"
           className={cn(
-            "flex items-center justify-center border border-dashed border-white/[0.12] bg-muted/50",
-            "text-muted-foreground hover:border-white/[0.2] hover:text-foreground",
+            "flex items-center justify-center border border-dashed border-overlay-strong bg-muted/50",
+            "text-muted-foreground hover:border-overlay-heavy hover:text-foreground",
             cardSizeClass,
           )}
         >
@@ -161,7 +161,7 @@ function GalleryCard({
     <Link
       href={`/${workspaceSlug}/${row.page.id}`}
       className={cn(
-        "group/card flex flex-col overflow-hidden border border-white/[0.06] bg-muted",
+        "group/card flex flex-col overflow-hidden border border-overlay-border bg-muted",
         cardSizeClass,
       )}
     >
@@ -200,13 +200,13 @@ function GallerySkeleton({ cardSizeClass }: { cardSizeClass: string }) {
         <div
           key={i}
           className={cn(
-            "flex flex-col overflow-hidden border border-white/[0.06] bg-muted",
+            "flex flex-col overflow-hidden border border-overlay-border bg-muted",
             cardSizeClass,
           )}
         >
-          <div className="flex-1 animate-pulse bg-white/[0.04]" />
+          <div className="flex-1 animate-pulse bg-overlay-hover" />
           <div className="p-3">
-            <div className="h-4 w-3/4 animate-pulse bg-white/[0.06]" />
+            <div className="h-4 w-3/4 animate-pulse bg-overlay-border" />
           </div>
         </div>
       ))}

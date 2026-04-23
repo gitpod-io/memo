@@ -451,7 +451,7 @@ src/
 │   ├── feedback/
 │   │   └── feedback-form.tsx        # User feedback form with type selector, screenshot capture, and submission
 │   ├── keyboard-shortcuts-dialog.tsx # ⌘+? keyboard shortcuts reference dialog
-│   ├── providers.tsx                # Client-side providers wrapper (Toaster, TooltipProvider)
+│   ├── providers.tsx                # Client-side providers wrapper (ThemeProvider, Toaster, TooltipProvider)
 │   ├── delete-account-section.tsx # Account deletion danger zone with double-confirm dialog
 │   ├── emoji-picker.tsx         # Floating emoji grid with search, used by page icon picker
 │   ├── page-cover.tsx           # Page cover image: upload, display, change, remove (saves to pages.cover_url)
@@ -499,6 +499,7 @@ src/
 │   ├── property-icons.ts   # Shared PropertyType → icon + label mapping for database components
 │   ├── retry.ts            # retryOnNetworkError helper (exponential backoff for transient failures)
 │   ├── sentry.ts           # captureSupabaseError helper (structured Sentry reporting)
+│   ├── theme.tsx            # ThemeProvider + useTheme hook (light/dark/system, localStorage persistence)
 │   ├── toast.ts            # Lazy-loaded sonner toast wrapper to reduce initial bundle size
 │   ├── track-event.ts      # Client-side usage event tracking (trackEventClient)
 │   ├── track-event-server.ts # Server-side usage event tracking (trackEvent)

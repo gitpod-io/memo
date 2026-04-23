@@ -179,7 +179,7 @@ export function FloatingImageToolbarPlugin({
       {createPortal(
         <div
           ref={toolbarRef}
-          className="fixed z-50 flex items-center gap-0.5 border border-white/[0.06] bg-popover p-1 shadow-md"
+          className="fixed z-50 flex items-center gap-0.5 border border-overlay-border bg-popover p-1 shadow-md"
           role="toolbar"
           aria-label="Image tools"
           onMouseDown={(e) => e.preventDefault()}
@@ -205,7 +205,7 @@ export function FloatingImageToolbarPlugin({
           >
             <AlignRight className="h-4 w-4" />
           </ToolbarButton>
-          <div className="mx-0.5 h-4 w-px bg-white/[0.06]" />
+          <div className="mx-0.5 h-4 w-px bg-overlay-border" />
           <ToolbarButton
             active={false}
             onClick={() => setCropOpen(true)}
@@ -261,8 +261,8 @@ function ToolbarButton({
       type="button"
       className={`flex h-7 w-7 items-center justify-center text-xs ${
         active
-          ? "bg-white/[0.08] text-foreground"
-          : "text-muted-foreground hover:bg-white/[0.04] hover:text-foreground"
+          ? "bg-overlay-active text-foreground"
+          : "text-muted-foreground hover:bg-overlay-hover hover:text-foreground"
       }`}
       onClick={onClick}
       aria-label={label}

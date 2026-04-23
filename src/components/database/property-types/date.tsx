@@ -225,7 +225,7 @@ function DatePicker({
               }}
               className={cn(
                 "flex size-8 items-center justify-center text-xs",
-                "hover:bg-white/[0.04]",
+                "hover:bg-overlay-hover",
                 isSelected && "bg-accent text-background font-medium",
                 isToday && !isSelected && "text-accent font-medium",
               )}

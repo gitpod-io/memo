@@ -148,7 +148,7 @@ function ViewConfigDropdown({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="inline-flex h-7 items-center gap-1 rounded-sm px-2 text-xs text-muted-foreground outline-none transition-colors hover:bg-white/[0.06] hover:text-foreground"
+        className="inline-flex h-7 items-center gap-1 rounded-sm px-2 text-xs text-muted-foreground outline-none transition-colors hover:bg-overlay-border hover:text-foreground"
         data-testid={`view-config-${label.toLowerCase().replace(/\s+/g, "-")}`}
       >
         {label}: {selectedName ?? "None"}
@@ -197,7 +197,7 @@ function DatabaseSkeleton() {
   return (
     <div className="space-y-3">
       {/* View tabs skeleton */}
-      <div className="flex items-center gap-2 border-b border-white/[0.06] pb-2">
+      <div className="flex items-center gap-2 border-b border-overlay-border pb-2">
         <div className="h-5 w-20 animate-pulse bg-muted" />
         <div className="h-5 w-20 animate-pulse bg-muted" />
         <div className="h-5 w-20 animate-pulse bg-muted" />

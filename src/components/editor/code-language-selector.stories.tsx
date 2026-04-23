@@ -26,7 +26,7 @@ function CodeBlockWithLanguage({
         <div className="absolute right-2 top-2 z-10" contentEditable={false}>
           <button
             type="button"
-            className="flex items-center gap-1 px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-white/[0.04] rounded-sm"
+            className="flex items-center gap-1 px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-overlay-hover rounded-sm"
             aria-label={`Code language: ${language}`}
           >
             {language}
@@ -158,7 +158,7 @@ export const WithDropdownOpen: Story = {
         <div className="absolute right-2 top-2 z-10" contentEditable={false}>
           <button
             type="button"
-            className="flex items-center gap-1 px-2 py-0.5 text-xs text-foreground bg-white/[0.04] rounded-sm"
+            className="flex items-center gap-1 px-2 py-0.5 text-xs text-foreground bg-overlay-hover rounded-sm"
             aria-expanded="true"
           >
             JavaScript
@@ -178,7 +178,7 @@ export const WithDropdownOpen: Story = {
           </button>
           <div
             role="listbox"
-            className="absolute right-0 top-full mt-1 max-h-60 w-40 overflow-y-auto rounded-sm border border-white/[0.06] bg-popover p-1 shadow-md"
+            className="absolute right-0 top-full mt-1 max-h-60 w-40 overflow-y-auto rounded-sm border border-overlay-border bg-popover p-1 shadow-md"
           >
             {[
               "C",
@@ -206,8 +206,8 @@ export const WithDropdownOpen: Story = {
                 aria-selected={lang === "JavaScript"}
                 className={`flex w-full items-center px-2 py-1 text-left text-xs ${
                   lang === "JavaScript"
-                    ? "text-foreground bg-white/[0.08]"
-                    : "text-muted-foreground hover:bg-white/[0.04] hover:text-foreground"
+                    ? "text-foreground bg-overlay-active"
+                    : "text-muted-foreground hover:bg-overlay-hover hover:text-foreground"
                 }`}
               >
                 {lang}

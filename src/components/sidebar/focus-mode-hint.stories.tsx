@@ -21,7 +21,7 @@ function HintButton({ shortcut }: { shortcut: string }) {
       >
         <Minimize2 className="h-3 w-3" />
         Exit focus mode
-        <kbd className="ml-1 text-xs text-white/30">{shortcut}</kbd>
+        <kbd className="ml-1 text-xs text-label-faint">{shortcut}</kbd>
       </Button>
     </div>
   );

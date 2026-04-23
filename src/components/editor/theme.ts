@@ -8,7 +8,7 @@ export const editorTheme: EditorThemeClasses = {
     h3: "mt-4 text-lg font-medium text-foreground",
   },
   quote:
-    "mt-3 border-l-2 border-white/[0.06] pl-4 text-sm text-muted-foreground italic",
+    "mt-3 border-l-2 border-overlay-border pl-4 text-sm text-muted-foreground italic",
   list: {
     ul: "mt-0.5 list-disc pl-6 text-sm",
     ol: "mt-0.5 list-decimal pl-6 text-sm",
@@ -64,13 +64,13 @@ export const editorTheme: EditorThemeClasses = {
     code: "bg-muted px-1.5 py-0.5 text-sm font-mono rounded-sm",
   },
   link: "text-accent underline cursor-pointer hover:text-accent/80",
-  horizontalRule: "mt-3 mb-3 border-t border-white/[0.06]",
-  table: "mt-3 w-full border-collapse border border-white/[0.06] text-sm",
+  horizontalRule: "mt-3 mb-3 border-t border-overlay-border",
+  table: "mt-3 w-full border-collapse border border-overlay-border text-sm",
   tableCell:
-    "relative border border-white/[0.06] px-3 py-2 text-sm text-foreground align-top",
+    "relative border border-overlay-border px-3 py-2 text-sm text-foreground align-top",
   tableCellHeader:
-    "relative border border-white/[0.06] px-3 py-2 text-sm font-medium text-foreground bg-muted align-top",
+    "relative border border-overlay-border px-3 py-2 text-sm font-medium text-foreground bg-muted align-top",
   tableRow: "",
-  tableCellSelected: "bg-white/[0.08]",
+  tableCellSelected: "bg-overlay-active",
   tableSelected: "outline-2 outline-accent outline",
 };

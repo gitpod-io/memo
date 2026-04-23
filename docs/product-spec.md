@@ -17,7 +17,7 @@ documentation, and project planning.
 - Slash commands for block insertion
 - Clean typography with generous whitespace
 - Smooth transitions, no jarring state changes
-- Dark mode only (see `.agents/design.md` for full visual spec)
+- Light and dark mode with system preference detection (see `.agents/design.md` for full visual spec)
 
 ## Technical Decisions
 
@@ -65,7 +65,6 @@ documentation, and project planning.
 - AI writing features
 - Offline support
 - Mobile native apps
-- Light mode
 - Comments on pages
 
 ## Data Model
@@ -327,7 +326,7 @@ These criteria are used by the Feature Planner to create GitHub Issues and by th
 - [ ] Sidebar collapses on mobile (Sheet component)
 - [ ] Responsive: works on desktop (≥1024px), tablet (768-1023px), mobile (<768px)
 - [ ] Keyboard shortcut: ⌘+\ to toggle sidebar
-- [ ] Dark mode only (per design spec)
+- [x] Light and dark mode with theme toggle and system preference detection
 - [ ] JetBrains Mono font throughout
 - [ ] Sharp corners on all components (per design spec)
 

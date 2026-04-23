@@ -346,7 +346,7 @@ export function CalendarView({
         {DAY_HEADERS.map((day) => (
           <div
             key={day}
-            className="border border-white/[0.06] p-1 text-center text-xs uppercase tracking-widest text-muted-foreground"
+            className="border border-overlay-border p-1 text-center text-xs uppercase tracking-widest text-muted-foreground"
           >
             {day}
           </div>
@@ -417,7 +417,7 @@ function CalendarDayCell({ cell, workspaceSlug, onClick }: CalendarDayCellProps)
   return (
     <div
       className={cn(
-        "relative min-h-24 border border-white/[0.06] p-1",
+        "relative min-h-24 border border-overlay-border p-1",
         cell.isToday && "bg-accent/10",
         onClick && "cursor-pointer",
       )}
@@ -498,7 +498,7 @@ function CalendarItem({ row, workspaceSlug }: CalendarItemProps) {
     <Link
       href={`/${workspaceSlug}/${row.page.id}`}
       onClick={(e) => e.stopPropagation()}
-      className="mb-0.5 block truncate bg-muted px-1 py-0.5 text-xs hover:bg-white/[0.08]"
+      className="mb-0.5 block truncate bg-muted px-1 py-0.5 text-xs hover:bg-overlay-active"
     >
       {row.page.icon && <span className="mr-1">{row.page.icon}</span>}
       {title}
@@ -515,10 +515,10 @@ function CalendarSkeleton() {
     <div>
       {/* Header skeleton */}
       <div className="mb-3 flex items-center gap-2">
-        <div className="h-6 w-40 animate-pulse bg-white/[0.06]" />
-        <div className="h-7 w-7 animate-pulse bg-white/[0.06]" />
-        <div className="h-7 w-7 animate-pulse bg-white/[0.06]" />
-        <div className="h-7 w-14 animate-pulse bg-white/[0.06]" />
+        <div className="h-6 w-40 animate-pulse bg-overlay-border" />
+        <div className="h-7 w-7 animate-pulse bg-overlay-border" />
+        <div className="h-7 w-7 animate-pulse bg-overlay-border" />
+        <div className="h-7 w-14 animate-pulse bg-overlay-border" />
       </div>
 
       {/* Day headers skeleton */}
@@ -526,9 +526,9 @@ function CalendarSkeleton() {
         {Array.from({ length: 7 }).map((_, i) => (
           <div
             key={i}
-            className="border border-white/[0.06] p-1 text-center"
+            className="border border-overlay-border p-1 text-center"
           >
-            <div className="mx-auto h-3 w-8 animate-pulse bg-white/[0.06]" />
+            <div className="mx-auto h-3 w-8 animate-pulse bg-overlay-border" />
           </div>
         ))}
       </div>
@@ -538,11 +538,11 @@ function CalendarSkeleton() {
         {Array.from({ length: 35 }).map((_, i) => (
           <div
             key={i}
-            className="min-h-24 border border-white/[0.06] p-1"
+            className="min-h-24 border border-overlay-border p-1"
           >
-            <div className="h-3 w-4 animate-pulse bg-white/[0.06]" />
+            <div className="h-3 w-4 animate-pulse bg-overlay-border" />
             {i % 5 === 0 && (
-              <div className="mt-1 h-4 w-3/4 animate-pulse bg-white/[0.06]" />
+              <div className="mt-1 h-4 w-3/4 animate-pulse bg-overlay-border" />
             )}
           </div>
         ))}

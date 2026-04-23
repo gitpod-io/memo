@@ -92,7 +92,7 @@ export function MemberList({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-xs tracking-widest uppercase text-white/30">
+      <p className="text-xs tracking-widest uppercase text-label-faint">
         Members ({members.length})
       </p>
       <Table>
