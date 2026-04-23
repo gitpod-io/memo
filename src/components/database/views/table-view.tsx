@@ -592,7 +592,7 @@ export function TableView({
         })}
 
         {/* Add column header button */}
-        <div className="sticky top-0 z-10 flex items-center justify-start border-b border-white/[0.06] bg-background pl-2">
+        <div className="sticky top-0 z-10 flex items-center border-b border-white/[0.06] bg-background px-2">
           {onAddColumn && (
             <PropertyTypePicker onSelect={onAddColumn} />
           )}

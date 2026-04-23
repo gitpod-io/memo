@@ -3,10 +3,10 @@ import { readFileSync } from "fs";
 import { resolve } from "path";
 
 /**
- * Regression test for issue #524: filter/sort toolbar design spec compliance.
+ * Regression test for filter/sort toolbar design spec compliance.
  *
  * The design spec (.agents/design.md → Filter & Sort Bar) requires:
- * - Background: bg-muted p-2, sharp corners.
+ * - Background: transparent (no bg-muted), p-2, sharp corners.
  */
 
 function readSource(): string {
@@ -19,14 +19,13 @@ function readSource(): string {
 describe("filter/sort toolbar design spec compliance", () => {
   const source = readSource();
 
-  it("toolbar container has bg-muted background", () => {
-    // Design spec: "Background: bg-muted p-2, sharp corners."
-    // The sort/filter toolbar div must include bg-muted.
+  it("toolbar container does not have bg-muted background", () => {
+    // Design spec: toolbar uses transparent background (same as page).
     const toolbarMatch = source.match(
       /Sort & filter toolbar[\s\S]*?<div className="([^"]*)"/,
     );
     expect(toolbarMatch).not.toBeNull();
-    expect(toolbarMatch![1]).toContain("bg-muted");
+    expect(toolbarMatch![1]).not.toContain("bg-muted");
   });
 
   it("toolbar container has p-2 padding", () => {
