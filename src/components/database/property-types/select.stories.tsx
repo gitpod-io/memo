@@ -95,14 +95,23 @@ export const Editor: Story = {
 };
 
 function SelectEditorEmptyDemo() {
-  const prop = makeProp();
+  const [prop, setProp] = useState(makeProp());
   const [value, setValue] = useState<Record<string, unknown>>({});
   return (
     <div className="w-64 bg-background p-2">
       <SelectEditor
         value={value}
         property={prop}
-        onChange={setValue}
+        onChange={(v) => {
+          setValue(v);
+          // Simulate parent persisting _newOptions to property config
+          if (v._newOptions) {
+            setProp((prev) => ({
+              ...prev,
+              config: { ...prev.config, options: v._newOptions },
+            }));
+          }
+        }}
         onBlur={() => {}}
       />
     </div>

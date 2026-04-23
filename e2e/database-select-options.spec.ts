@@ -336,4 +336,121 @@ test.describe("Select/Multi-select option persistence", () => {
       }
     }
   });
+
+  test("selecting an option populates the table cell with a color badge", async ({
+    authenticatedPage: page,
+  }) => {
+    await navigateToDatabase(page);
+
+    // Click the select cell to open the dropdown
+    const selectCell = page.locator('[role="gridcell"][tabindex="0"]').first();
+    await expect(selectCell).toBeVisible({ timeout: 10_000 });
+    await selectCell.click();
+
+    const dropdownInput = page.locator('input[placeholder="Search or create…"]');
+    await expect(dropdownInput).toBeVisible({ timeout: 5_000 });
+
+    // Create a fresh option
+    await dropdownInput.fill("Urgent");
+    const createBtn = page.locator("button").filter({ hasText: /Create/ });
+    await expect(createBtn).toBeVisible({ timeout: 3_000 });
+    await createBtn.click();
+
+    // Wait for the dropdown to close and the cell to update
+    await page.waitForTimeout(1_500);
+
+    // The cell should now display the option name as a badge
+    const grid = page.locator('[role="grid"]');
+    await expect(grid.getByText("Urgent")).toBeVisible({ timeout: 5_000 });
+
+    // Reload and verify the badge persists
+    await page.reload();
+    await expect(page.locator('[role="grid"]')).toBeVisible({ timeout: 15_000 });
+    const reloadedGrid = page.locator('[role="grid"]');
+    await expect(reloadedGrid.getByText("Urgent")).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("selecting a multi-select option populates the table cell", async ({
+    authenticatedPage: page,
+  }) => {
+    await navigateToDatabase(page);
+
+    // Click the multi-select cell
+    const multiSelectCell = page.locator('[role="gridcell"][tabindex="0"]').nth(1);
+    await expect(multiSelectCell).toBeVisible({ timeout: 10_000 });
+    await multiSelectCell.click();
+
+    const dropdownInput = page.locator('input[placeholder="Search or create…"]');
+    await expect(dropdownInput).toBeVisible({ timeout: 5_000 });
+
+    // Create a tag
+    await dropdownInput.fill("Infra");
+    const createBtn = page.locator("button").filter({ hasText: /Create/ });
+    await expect(createBtn).toBeVisible({ timeout: 3_000 });
+    await createBtn.click();
+
+    // Wait for persistence
+    await page.waitForTimeout(1_500);
+
+    // Click outside to close the dropdown
+    await page.locator('[role="grid"]').click({ position: { x: 10, y: 10 } });
+    await page.waitForTimeout(500);
+
+    // The cell should display the tag
+    const grid = page.locator('[role="grid"]');
+    await expect(grid.getByText("Infra")).toBeVisible({ timeout: 5_000 });
+
+    // Reload and verify persistence
+    await page.reload();
+    await expect(page.locator('[role="grid"]')).toBeVisible({ timeout: 15_000 });
+    const reloadedGrid = page.locator('[role="grid"]');
+    await expect(reloadedGrid.getByText("Infra")).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("color picker changes option color", async ({
+    authenticatedPage: page,
+  }) => {
+    await navigateToDatabase(page);
+
+    // Click the select cell to open the dropdown
+    const selectCell = page.locator('[role="gridcell"][tabindex="0"]').first();
+    await expect(selectCell).toBeVisible({ timeout: 10_000 });
+    await selectCell.click();
+
+    const dropdownInput = page.locator('input[placeholder="Search or create…"]');
+    await expect(dropdownInput).toBeVisible({ timeout: 5_000 });
+
+    // Click the color dot to open the color picker
+    const colorDot = page.locator('button[aria-label="Change color"]').first();
+    await expect(colorDot).toBeVisible({ timeout: 3_000 });
+    await colorDot.click();
+
+    // The color picker should appear with color buttons
+    const redColorBtn = page.locator('button[aria-label="Color: red"]');
+    await expect(redColorBtn).toBeVisible({ timeout: 3_000 });
+    await redColorBtn.click();
+
+    // Wait for persistence
+    await page.waitForTimeout(1_500);
+
+    // Close the dropdown
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(500);
+
+    // Reload and verify the color persisted
+    await page.reload();
+    await expect(page.locator('[role="grid"]')).toBeVisible({ timeout: 15_000 });
+
+    // Re-open the dropdown and check the option has a red color
+    const reloadedCell = page.locator('[role="gridcell"][tabindex="0"]').first();
+    await expect(reloadedCell).toBeVisible({ timeout: 10_000 });
+    await reloadedCell.click();
+
+    const reloadedDropdown = page.locator('input[placeholder="Search or create…"]');
+    await expect(reloadedDropdown).toBeVisible({ timeout: 5_000 });
+
+    // The red color button should have the active indicator (ring)
+    const activeRedBtn = page.locator('button[aria-label="Color: red"]');
+    await expect(activeRedBtn).toBeVisible({ timeout: 3_000 });
+  });
 });

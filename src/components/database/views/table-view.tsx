@@ -36,6 +36,7 @@ import type {
   DatabaseViewConfig,
   PropertyType,
   RowValue,
+  SelectOption,
 } from "@/lib/types";
 import {
   isComputedType,
@@ -924,6 +925,7 @@ function TableCell({
     >
       <CellRenderer
         value={value}
+        property={property}
         propertyType={propertyType}
         displayValue={displayValue}
       />
@@ -1057,11 +1059,49 @@ function RegistryEditorCell({
 
 interface CellRendererProps {
   value: RowValue | undefined;
+  property: DatabaseProperty;
   propertyType: PropertyType;
   displayValue: string;
 }
 
-function CellRenderer({ value, propertyType, displayValue }: CellRendererProps) {
+function CellRenderer({ value, property, propertyType, displayValue }: CellRendererProps) {
+  switch (propertyType) {
+    case "select": {
+      const raw = value?.value as Record<string, unknown> | undefined;
+      const optionId = typeof raw?.option_id === "string" ? raw.option_id : null;
+      if (!optionId) return null;
+      const options = getSelectOptions(property.config);
+      const option = options.find((o) => o.id === optionId);
+      if (!option) return null;
+      return <SelectBadge label={option.name} color={option.color} />;
+    }
+
+    case "multi_select": {
+      const raw = value?.value as Record<string, unknown> | undefined;
+      const optionIds = Array.isArray(raw?.option_ids)
+        ? (raw.option_ids as string[])
+        : [];
+      if (optionIds.length === 0) return null;
+      const options = getSelectOptions(property.config);
+      const optionMap = new Map(options.map((o) => [o.id, o]));
+      return (
+        <div className="flex flex-wrap gap-1">
+          {optionIds.map((id) => {
+            const option = optionMap.get(id);
+            if (!option) return null;
+            return (
+              <SelectBadge key={id} label={option.name} color={option.color} />
+            );
+          })}
+        </div>
+      );
+    }
+
+    default:
+      break;
+  }
+
+  // Non-select types require a displayValue string
   if (!displayValue) {
     return null;
   }
@@ -1097,25 +1137,6 @@ function CellRenderer({ value, propertyType, displayValue }: CellRendererProps) 
           {displayValue}
         </span>
       );
-
-    case "select": {
-      const color = (value?.value as Record<string, unknown>)?.color as string | undefined;
-      return <SelectBadge label={displayValue} color={color} />;
-    }
-
-    case "multi_select": {
-      const items = (value?.value as Record<string, unknown>)?.items as
-        | { value: string; color?: string }[]
-        | undefined;
-      if (!items || items.length === 0) return null;
-      return (
-        <div className="flex flex-wrap gap-1">
-          {items.map((item, i) => (
-            <SelectBadge key={i} label={item.value} color={item.color} />
-          ))}
-        </div>
-      );
-    }
 
     case "date":
       return (
@@ -1161,6 +1182,7 @@ const SELECT_COLORS: Record<string, { bg: string; text: string }> = {
   red: { bg: "bg-red-500/20", text: "text-red-400" },
   purple: { bg: "bg-purple-500/20", text: "text-purple-400" },
   pink: { bg: "bg-pink-500/20", text: "text-pink-400" },
+  cyan: { bg: "bg-cyan-500/20", text: "text-cyan-400" },
 };
 
 function SelectBadge({ label, color }: { label: string; color?: string }) {
@@ -1182,6 +1204,13 @@ function SelectBadge({ label, color }: { label: string; color?: string }) {
 // Helpers
 // ---------------------------------------------------------------------------
 
+function getSelectOptions(config: Record<string, unknown>): SelectOption[] {
+  if (Array.isArray(config.options)) {
+    return config.options as SelectOption[];
+  }
+  return [];
+}
+
 function extractDisplayValue(value: RowValue | undefined, propertyType: PropertyType): string {
   if (!value) return "";
 
@@ -1199,11 +1228,11 @@ function extractDisplayValue(value: RowValue | undefined, propertyType: Property
       const checked = typed ?? legacy;
       return checked === true ? "true" : checked === false ? "false" : "";
     }
+    case "select":
     case "multi_select":
-      // Multi-select is handled specially in CellRenderer
-      return (raw.items as { value: string }[] | undefined)
-        ?.map((i) => i.value)
-        .join(", ") ?? "";
+      // Select/multi-select rendering is handled directly by CellRenderer
+      // using option IDs from the raw value and the property config.
+      return "";
     default: {
       const inner = typed ?? legacy;
       if (typeof inner === "string") return inner;
