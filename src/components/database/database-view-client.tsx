@@ -23,6 +23,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown, Check } from "lucide-react";
+import {
   sortRows,
   filterRows,
   type SortRule,
@@ -52,6 +59,7 @@ import type {
   DatabaseProperty,
   DatabaseRow,
   DatabaseView,
+  DatabaseViewConfig,
   DatabaseViewType,
   PropertyType,
 } from "@/lib/types";
@@ -116,6 +124,57 @@ export interface DatabaseViewClientProps {
   workspaceId: string;
   workspaceSlug: string;
   userId: string;
+}
+
+// ---------------------------------------------------------------------------
+// ViewConfigDropdown — toolbar dropdown for selecting a property (group_by, date_property)
+// ---------------------------------------------------------------------------
+
+interface ViewConfigDropdownProps {
+  label: string;
+  selectedId: string | null;
+  options: DatabaseProperty[];
+  onSelect: (propertyId: string) => void;
+}
+
+function ViewConfigDropdown({
+  label,
+  selectedId,
+  options,
+  onSelect,
+}: ViewConfigDropdownProps) {
+  const selectedName = options.find((p) => p.id === selectedId)?.name;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className="inline-flex h-7 items-center gap-1 rounded-sm px-2 text-xs text-muted-foreground outline-none transition-colors hover:bg-white/[0.06] hover:text-foreground"
+        data-testid={`view-config-${label.toLowerCase().replace(/\s+/g, "-")}`}
+      >
+        {label}: {selectedName ?? "None"}
+        <ChevronDown className="size-3" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        {options.length === 0 ? (
+          <div className="px-2 py-1.5 text-xs text-muted-foreground">
+            No matching properties
+          </div>
+        ) : (
+          options.map((prop) => (
+            <DropdownMenuItem
+              key={prop.id}
+              onClick={() => onSelect(prop.id)}
+              className="gap-2 text-xs"
+            >
+              {prop.id === selectedId && <Check className="size-3" />}
+              {prop.id !== selectedId && <span className="size-3" />}
+              {prop.name}
+            </DropdownMenuItem>
+          ))
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -272,7 +331,22 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
   const handleAddView = useCallback(
     async (type: DatabaseViewType) => {
       const name = `${VIEW_TYPE_LABELS[type]} view`;
-      const { data: newView, error } = await addView(pageId, name, type, {});
+
+      // Auto-detect a default config property for board and calendar views
+      let config: DatabaseViewConfig = {};
+      if (type === "board") {
+        const firstSelect = properties.find((p) => p.type === "select");
+        if (firstSelect) {
+          config = { group_by: firstSelect.id };
+        }
+      } else if (type === "calendar") {
+        const firstDate = properties.find((p) => p.type === "date");
+        if (firstDate) {
+          config = { date_property: firstDate.id };
+        }
+      }
+
+      const { data: newView, error } = await addView(pageId, name, type, config);
       if (error || !newView) {
         toast.error("Failed to create view", { duration: 8000 });
         return;
@@ -283,7 +357,34 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
       params.set("view", newView.id);
       router.replace(`?${params.toString()}`, { scroll: false });
     },
-    [pageId, router, searchParams],
+    [pageId, properties, router, searchParams],
+  );
+
+  // Update the active view's config (used by board/calendar config dropdowns)
+  const handleViewConfigChange = useCallback(
+    async (configPatch: Partial<DatabaseViewConfig>) => {
+      if (!activeView) return;
+      const newConfig = { ...activeView.config, ...configPatch };
+
+      // Optimistic update
+      setViews((prev) =>
+        prev.map((v) =>
+          v.id === activeView.id ? { ...v, config: newConfig } : v,
+        ),
+      );
+
+      const { error } = await updateView(activeView.id, { config: newConfig });
+      if (error) {
+        toast.error("Failed to update view configuration", { duration: 8000 });
+        // Revert
+        setViews((prev) =>
+          prev.map((v) =>
+            v.id === activeView.id ? { ...v, config: activeView.config } : v,
+          ),
+        );
+      }
+    },
+    [activeView],
   );
 
   // Rename a view
@@ -859,6 +960,22 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   filters={activeFilters}
                   onFiltersChange={handleFiltersChange}
                 />
+                {activeView.type === "board" && (
+                  <ViewConfigDropdown
+                    label="Group by"
+                    selectedId={activeView.config.group_by ?? null}
+                    options={properties.filter((p) => p.type === "select")}
+                    onSelect={(id) => handleViewConfigChange({ group_by: id })}
+                  />
+                )}
+                {activeView.type === "calendar" && (
+                  <ViewConfigDropdown
+                    label="Date property"
+                    selectedId={activeView.config.date_property ?? null}
+                    options={properties.filter((p) => p.type === "date")}
+                    onSelect={(id) => handleViewConfigChange({ date_property: id })}
+                  />
+                )}
               </div>
             )}
 
