@@ -224,14 +224,15 @@ test.describe("Type-specific database filter operators", () => {
     // Pick "before" operator
     await operatorDropdown.locator("button", { hasText: "before" }).click();
 
-    // Value input should be a date input
-    const dateInput = page.locator('input[type="date"]');
-    await expect(dateInput).toBeVisible({ timeout: 5_000 });
+    // Custom DatePicker calendar should appear (not a native date input)
+    const datePicker = page.locator('[data-testid="filter-date-picker"]');
+    await expect(datePicker).toBeVisible({ timeout: 5_000 });
 
-    // Fill and apply
-    await dateInput.fill("2026-06-01");
-    const applyBtn = page.locator(".z-50 button", { hasText: "Apply" });
-    await applyBtn.click();
+    // The calendar should show month/year header and day buttons
+    await expect(datePicker.locator("button", { hasText: "Today" })).toBeVisible({ timeout: 5_000 });
+
+    // Click "Today" to select today's date and apply the filter
+    await datePicker.locator("button", { hasText: "Today" }).click();
 
     // Filter badge should appear
     const badge = page.locator('[data-slot="badge"]', { hasText: "before" });

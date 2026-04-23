@@ -91,7 +91,7 @@ export function DateRenderer({ value }: RendererProps) {
 // Date Picker
 // ---------------------------------------------------------------------------
 
-function DatePicker({
+export function DatePicker({
   selectedDate,
   onSelect,
   onClose,

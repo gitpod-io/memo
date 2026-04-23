@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { PROPERTY_TYPE_ICON } from "@/lib/property-icons";
 import type { DatabaseProperty, SelectOption } from "@/lib/types";
 import { SelectOptionBadge } from "./property-types/select-option-badge";
+import { DatePicker } from "./property-types/date";
 import {
   getOperatorsForType,
   getOperatorLabel,
@@ -490,7 +491,7 @@ function SelectFilterValueEditor({
 }
 
 // ---------------------------------------------------------------------------
-// DateFilterValueEditor — native date input
+// DateFilterValueEditor — custom DatePicker matching table cell editor
 // ---------------------------------------------------------------------------
 
 function DateFilterValueEditor({
@@ -500,30 +501,13 @@ function DateFilterValueEditor({
   onSelectValue: (value: unknown) => void;
   onClose: () => void;
 }) {
-  const [dateValue, setDateValue] = useState("");
-
   return (
-    <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-sm border border-border bg-background p-2 shadow-md">
-      <Input
-        autoFocus
-        type="date"
-        value={dateValue}
-        onChange={(e) => setDateValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && dateValue) onSelectValue(dateValue);
-          if (e.key === "Escape") onClose();
-        }}
-        className="h-7 text-xs"
+    <div className="absolute left-0 top-full z-50 mt-1" data-testid="filter-date-picker">
+      <DatePicker
+        selectedDate={null}
+        onSelect={(iso) => onSelectValue(iso)}
+        onClose={onClose}
       />
-      <Button
-        size="sm"
-        className="mt-1.5 h-6 w-full text-xs"
-        onClick={() => {
-          if (dateValue) onSelectValue(dateValue);
-        }}
-      >
-        Apply
-      </Button>
     </div>
   );
 }
