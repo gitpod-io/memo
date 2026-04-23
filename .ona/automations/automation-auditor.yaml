@@ -53,7 +53,7 @@ action:
 
                 ## Output
 
-                Create a branch: `chore/audit-YYYY-WNN`
+                Create a branch: `chore/audit-YYYY-MM-DD`
 
                 Update these files as needed (include in the same commit):
                 - `.agents/quality.md` — always update with current grades
@@ -62,7 +62,13 @@ action:
                 - `.agents/design.md` — if new UI patterns need documenting
                 - `AGENTS.md` — if rules need adding or updating (only for clear, repeated problems)
 
-                Write metrics/weekly/YYYY-WNN-audit.md:
+                IMPORTANT: If a previous audit file already exists for this week (e.g.,
+                `metrics/weekly/YYYY-WNN-audit.md` or `metrics/weekly/YYYY-WNN-audit-*.md`),
+                do NOT overwrite it. Instead, append a date suffix to the new file:
+                `metrics/weekly/YYYY-WNN-audit-YYYY-MM-DD.md`. This preserves the historical
+                record from earlier runs.
+
+                Write metrics/weekly/YYYY-WNN-audit-YYYY-MM-DD.md (or YYYY-WNN-audit.md if this is the first run of the week):
 
                 # Automation Audit — Week NN
 
@@ -124,5 +130,5 @@ action:
                 - Keep additions minimal — one rule per observed problem.
                 - If everything is working well, say so and move on.
 
-                Commit: `chore: automation audit YYYY-WNN`
+                Commit: `chore: automation audit YYYY-MM-DD`
                 Push and open a PR.
