@@ -58,6 +58,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Serve Storybook and run visual regression tests
         run: |
+          echo '{"cleanUrls": false}' > storybook-static/serve.json
           npx serve storybook-static -l 6099 --no-clipboard &
           timeout 30 bash -c 'until curl -sf http://localhost:6099 > /dev/null; do sleep 1; done'
           pnpm test:visual
