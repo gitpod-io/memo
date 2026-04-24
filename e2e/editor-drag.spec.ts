@@ -125,4 +125,39 @@ test.describe("Editor drag-and-drop", () => {
       expect(Math.abs(handleBox.y - blockBox.y)).toBeLessThan(20);
     }
   });
+
+  test("drag handle bottom aligns with first line bottom for paragraph blocks", async ({
+    authenticatedPage: page,
+  }) => {
+    await navigateToEditorPage(page);
+
+    const editor = page.locator('[contenteditable="true"]');
+    await expect(editor).toBeVisible({ timeout: 10_000 });
+
+    const uid = Date.now().toString();
+    const marker = `AlignTest ${uid}`;
+    await moveToParagraphBlock(page, editor);
+    await page.keyboard.type(marker);
+
+    const block = editor.locator("p").filter({ hasText: marker });
+    await expect(block).toBeVisible({ timeout: 3_000 });
+    await block.hover();
+
+    const dragHandle = page.locator(".memo-draggable-block-menu");
+    await expect(dragHandle).toHaveCSS("opacity", "1", { timeout: 2_000 });
+
+    const handleBox = await dragHandle.boundingBox();
+    const blockBox = await block.boundingBox();
+    if (!handleBox || !blockBox) {
+      test.skip(true, "Could not get bounding boxes");
+      return;
+    }
+
+    // For a single-line paragraph (text-sm, line-height 20px), the handle
+    // (h-5 = 20px) should start at the block top so its bottom aligns with
+    // the first line bottom. Allow 4px tolerance for sub-pixel rendering.
+    const handleBottom = handleBox.y + handleBox.height;
+    const blockFirstLineBottom = blockBox.y + 20; // text-sm line-height
+    expect(Math.abs(handleBottom - blockFirstLineBottom)).toBeLessThan(4);
+  });
 });

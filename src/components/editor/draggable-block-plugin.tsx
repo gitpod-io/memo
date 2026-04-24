@@ -20,6 +20,8 @@ const DROP_INDICATOR_CLASSNAME = "memo-drop-indicator";
 const HANDLE_LEFT_OFFSET = 0;
 // Vertical dead zone — mouse must be within this distance of a block to show handle
 const HANDLE_DEAD_ZONE = 16;
+// Height of the drag handle icon (h-5 = 20px)
+const HANDLE_HEIGHT = 20;
 
 function getTopLevelBlockElements(
   anchorElem: HTMLElement
@@ -123,7 +125,18 @@ function setMenuPosition(
   const targetRect = targetElem.getBoundingClientRect();
   const anchorRect = anchorElem.getBoundingClientRect();
 
-  menuRef.style.top = `${targetRect.top - anchorRect.top + targetRect.height / 2 - 12}px`;
+  // Align the handle with the first line of text in the block.
+  // For blocks with padding (code, callout), offset by paddingTop so the
+  // handle aligns with the text, not the block border.
+  const style = getComputedStyle(targetElem);
+  const paddingTop = parseFloat(style.paddingTop) || 0;
+  const lineHeight = parseFloat(style.lineHeight) || HANDLE_HEIGHT;
+
+  // Position so the handle's bottom edge meets the first line's bottom edge
+  const firstLineTop = targetRect.top - anchorRect.top + paddingTop;
+  const offset = Math.max(0, lineHeight - HANDLE_HEIGHT);
+
+  menuRef.style.top = `${firstLineTop + offset}px`;
   menuRef.style.left = `${HANDLE_LEFT_OFFSET}px`;
   menuRef.style.opacity = "1";
 }
