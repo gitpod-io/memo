@@ -33,7 +33,7 @@ test.describe("Markdown import and export", () => {
     await page.keyboard.type("Second item");
 
     // Wait for auto-save to persist
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("networkidle");
 
     // Open the page menu — scoped to <main> to avoid sidebar "Page actions" buttons
     const main = page.locator("main");

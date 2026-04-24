@@ -21,7 +21,6 @@ test.describe("Editor floating link editor", () => {
     await page.keyboard.press("End");
     await page.keyboard.press("Enter");
     await editor.pressSequentially("link text here");
-    await page.waitForTimeout(200);
 
     // Select text
     await page.keyboard.down("Shift");
@@ -34,7 +33,6 @@ test.describe("Editor floating link editor", () => {
 
     const linkBtn = toolbar.getByRole("button", { name: /link/i });
     await linkBtn.click();
-    await page.waitForTimeout(300);
 
     // A new link element should be created
     const links = editor.locator("a");
@@ -52,7 +50,6 @@ test.describe("Editor floating link editor", () => {
     await page.keyboard.press("End");
     await page.keyboard.press("Enter");
     await editor.pressSequentially("click me");
-    await page.waitForTimeout(200);
 
     await page.keyboard.down("Shift");
     await page.keyboard.press("Home");
@@ -60,7 +57,6 @@ test.describe("Editor floating link editor", () => {
 
     // Use Cmd/Ctrl+K to create link
     await page.keyboard.press(`${mod}+k`);
-    await page.waitForTimeout(500);
 
     // The link editor popover should appear with a URL input
     const linkEditor = page.locator('input[type="url"]');
@@ -69,7 +65,6 @@ test.describe("Editor floating link editor", () => {
     // Type a URL and save
     await linkEditor.fill("https://example.com");
     await page.keyboard.press("Enter");
-    await page.waitForTimeout(300);
 
     // The link should now have the URL
     const link = editor.locator('a[href="https://example.com"]').last();
@@ -90,32 +85,27 @@ test.describe("Editor floating link editor", () => {
     await page.keyboard.press("End");
     await page.keyboard.press("Enter");
     await editor.pressSequentially("remove me");
-    await page.waitForTimeout(200);
 
     await page.keyboard.down("Shift");
     await page.keyboard.press("Home");
     await page.keyboard.up("Shift");
 
     await page.keyboard.press(`${mod}+k`);
-    await page.waitForTimeout(500);
 
     const linkInput = page.locator('input[type="url"]');
     await expect(linkInput).toBeVisible({ timeout: 3_000 });
     await linkInput.fill("https://example.com");
     await page.keyboard.press("Enter");
-    await page.waitForTimeout(300);
 
     // Click on the link we just created to show the link editor
     const link = editor.locator('a[href="https://example.com"]').last();
     await expect(link).toBeVisible();
     await link.click();
-    await page.waitForTimeout(300);
 
     // Click remove button
     const removeBtn = page.getByRole("button", { name: /remove link/i });
     await expect(removeBtn).toBeVisible({ timeout: 3_000 });
     await removeBtn.click();
-    await page.waitForTimeout(300);
 
     // The link we created should be gone — count should be back to what it was
     const links = editor.locator("a");

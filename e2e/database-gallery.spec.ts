@@ -299,9 +299,6 @@ test.describe("Database gallery view", () => {
     await expect(addButton).toBeVisible({ timeout: 5_000 });
     await addButton.click();
 
-    // Wait for the new card to appear
-    await page.waitForTimeout(2_000);
-
     // A new "Untitled" card should appear in the gallery
     await expect(
       page.locator("a").filter({ hasText: "Untitled" }),

@@ -27,8 +27,8 @@ test.describe("visual regression", () => {
       const url = `${STORYBOOK_URL}/iframe.html?id=${story.id}&viewMode=story`;
       await page.goto(url, { waitUntil: "networkidle" });
 
-      // Wait for any animations/transitions to settle
-      await page.waitForTimeout(300);
+      // Wait for animations/transitions to settle
+      await page.waitForLoadState("networkidle");
 
       const safeName = `${story.title}--${story.name}`
         .replace(/[^a-zA-Z0-9-]/g, "-")

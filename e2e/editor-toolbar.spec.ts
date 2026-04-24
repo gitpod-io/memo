@@ -19,7 +19,6 @@ test.describe("Editor floating toolbar", () => {
     await page.keyboard.press("End");
     await page.keyboard.press("Enter");
     await editor.pressSequentially("Select this text for toolbar");
-    await page.waitForTimeout(200);
 
     // Select the text
     await page.keyboard.down("Shift");
@@ -44,7 +43,6 @@ test.describe("Editor floating toolbar", () => {
     await page.keyboard.press("End");
     await page.keyboard.press("Enter");
     await page.keyboard.type(marker);
-    await page.waitForTimeout(200);
 
     // Select the text we just typed
     await page.keyboard.down("Shift");
@@ -76,7 +74,6 @@ test.describe("Editor floating toolbar", () => {
     await page.keyboard.press("End");
     await page.keyboard.press("Enter");
     await editor.pressSequentially("deselect test");
-    await page.waitForTimeout(200);
 
     // Select text
     await page.keyboard.down("Shift");
@@ -88,7 +85,6 @@ test.describe("Editor floating toolbar", () => {
 
     // Click somewhere to collapse selection
     await editor.click();
-    await page.waitForTimeout(300);
 
     // Toolbar should disappear
     await expect(toolbar).not.toBeVisible({ timeout: 2_000 });
@@ -107,7 +103,6 @@ test.describe("Editor floating toolbar", () => {
     await page.keyboard.press("End");
     await page.keyboard.press("Enter");
     await page.keyboard.type(marker);
-    await page.waitForTimeout(200);
 
     // Select text
     await page.keyboard.down("Shift");
@@ -116,7 +111,6 @@ test.describe("Editor floating toolbar", () => {
 
     // Apply bold via keyboard shortcut
     await page.keyboard.press(`${mod}+b`);
-    await page.waitForTimeout(200);
 
     // Filter by our unique text to avoid matching pre-existing bold elements
     const boldText = editor.locator("strong").filter({ hasText: marker });

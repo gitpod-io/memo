@@ -397,10 +397,7 @@ test.describe("Board and calendar view configuration", () => {
     await priorityOption.click();
 
     // Wait for the board to re-render with Priority columns
-    await page.waitForTimeout(2_000);
-
-    // The Group by button should now show "Priority"
-    await expect(groupByBtn).toContainText("Priority");
+    await expect(groupByBtn).toContainText("Priority", { timeout: 10_000 });
 
     // Priority columns should be visible
     for (const option of SELECT_OPTIONS_PRIORITY) {
@@ -505,11 +502,8 @@ test.describe("Board and calendar view configuration", () => {
     await expect(createdDateOption).toBeVisible({ timeout: 5_000 });
     await createdDateOption.click();
 
-    // Wait for the calendar to re-render
-    await page.waitForTimeout(2_000);
-
-    // The Date property button should now show "Created Date"
-    await expect(datePropBtn).toContainText("Created Date");
+    // Wait for the calendar to re-render with the new date property
+    await expect(datePropBtn).toContainText("Created Date", { timeout: 10_000 });
 
     // Items should still be visible (they have Created Date values too)
     await expect(

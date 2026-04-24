@@ -408,14 +408,11 @@ test.describe("Database board view", () => {
       );
     }, cardHandle);
 
-    // Wait for the optimistic update and Supabase write
-    await page.waitForTimeout(2_000);
-
     // Verify "Task Beta" is now in the "Done" column
     const updatedDoneColumn = getBoardColumn(page, "Done");
     await expect(
       updatedDoneColumn.locator("a").filter({ hasText: "Task Beta" }),
-    ).toBeVisible({ timeout: 5_000 });
+    ).toBeVisible({ timeout: 10_000 });
   });
 
   test("create a new row from within a board column", async ({
@@ -439,11 +436,9 @@ test.describe("Database board view", () => {
     await addButton.click();
 
     // Wait for the new card to appear
-    await page.waitForTimeout(2_000);
-
-    // The column should now have one more card
-    const countAfter = await inProgressColumn.locator("a").count();
-    expect(countAfter).toBe(countBefore + 1);
+    await expect(
+      inProgressColumn.locator("a"),
+    ).toHaveCount(countBefore + 1, { timeout: 10_000 });
 
     // The new card should show "Untitled"
     await expect(inProgressColumn.getByText("Untitled")).toBeVisible({

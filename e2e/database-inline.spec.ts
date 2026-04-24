@@ -277,8 +277,8 @@ test.describe("Inline DatabaseNode", () => {
 
     await insertInlineDatabaseBlock(page, uniqueDbName);
 
-    // Wait for auto-save
-    await page.waitForTimeout(3_000);
+    // Wait for auto-save to complete
+    await page.waitForLoadState("networkidle");
 
     await page.reload({ waitUntil: "domcontentloaded" });
 

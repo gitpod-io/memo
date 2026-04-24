@@ -220,8 +220,8 @@ test.describe("Select/Multi-select option persistence", () => {
     await expect(createBtn).toBeVisible({ timeout: 3_000 });
     await createBtn.click();
 
-    // Wait for persistence to complete
-    await page.waitForTimeout(2_000);
+    // Wait for the dropdown to close (persistence complete when cell updates)
+    await expect(dropdownInput).not.toBeVisible({ timeout: 5_000 });
 
     // Reload the page to verify persistence
     await page.reload();
@@ -264,8 +264,8 @@ test.describe("Select/Multi-select option persistence", () => {
     await expect(createBtn).toBeVisible({ timeout: 3_000 });
     await createBtn.click();
 
-    // The cell exits editing mode after onChange. Wait and re-click.
-    await page.waitForTimeout(1_500);
+    // The cell exits editing mode after onChange. Wait for dropdown to close.
+    await expect(dropdownInput).not.toBeVisible({ timeout: 5_000 });
 
     // Re-click to create the second tag
     const multiSelectCellAgain = page.locator('[role="gridcell"][data-col]').nth(1);
@@ -279,8 +279,8 @@ test.describe("Select/Multi-select option persistence", () => {
     await expect(createBtn2).toBeVisible({ timeout: 3_000 });
     await createBtn2.click();
 
-    // Wait for persistence
-    await page.waitForTimeout(2_000);
+    // Wait for the dropdown to close (persistence complete)
+    await expect(dropdownInput2).not.toBeVisible({ timeout: 5_000 });
 
     // Reload the page
     await page.reload();
@@ -319,7 +319,9 @@ test.describe("Select/Multi-select option persistence", () => {
     const createBtn = page.locator("button").filter({ hasText: /Create/ });
     await expect(createBtn).toBeVisible({ timeout: 3_000 });
     await createBtn.click();
-    await page.waitForTimeout(2_000);
+
+    // Wait for the dropdown to close (persistence complete)
+    await expect(dropdownInput).not.toBeVisible({ timeout: 5_000 });
 
     // Verify via the admin API that _newOptions is not in the row value
     const admin = getAdminClient();
@@ -357,7 +359,7 @@ test.describe("Select/Multi-select option persistence", () => {
     await createBtn.click();
 
     // Wait for the dropdown to close and the cell to update
-    await page.waitForTimeout(1_500);
+    await expect(dropdownInput).not.toBeVisible({ timeout: 5_000 });
 
     // The cell should now display the option name as a badge
     const grid = page.locator('[role="grid"]');
@@ -389,12 +391,8 @@ test.describe("Select/Multi-select option persistence", () => {
     await expect(createBtn).toBeVisible({ timeout: 3_000 });
     await createBtn.click();
 
-    // Wait for persistence
-    await page.waitForTimeout(1_500);
-
-    // Click outside to close the dropdown
-    await page.locator('[role="grid"]').click({ position: { x: 10, y: 10 } });
-    await page.waitForTimeout(500);
+    // Wait for the dropdown to close after selection
+    await expect(dropdownInput).not.toBeVisible({ timeout: 5_000 });
 
     // The cell should display the tag
     const grid = page.locator('[role="grid"]');
@@ -426,8 +424,8 @@ test.describe("Select/Multi-select option persistence", () => {
     await expect(createBtn).toBeVisible({ timeout: 3_000 });
     await createBtn.click();
 
-    // Wait for persistence, then re-open the dropdown
-    await page.waitForTimeout(1_500);
+    // Wait for the dropdown to close (persistence complete), then re-open
+    await expect(dropdownInput).not.toBeVisible({ timeout: 5_000 });
     const selectCellAgain = page.locator('[role="gridcell"][data-col]').first();
     await expect(selectCellAgain).toBeVisible({ timeout: 5_000 });
     await selectCellAgain.click();
@@ -445,12 +443,11 @@ test.describe("Select/Multi-select option persistence", () => {
     await expect(redColorBtn).toBeVisible({ timeout: 3_000 });
     await redColorBtn.click();
 
-    // Wait for persistence
-    await page.waitForTimeout(1_500);
-
-    // Close the dropdown
+    // Close the dropdown and wait for it to disappear
     await page.keyboard.press("Escape");
-    await page.waitForTimeout(500);
+    await expect(
+      page.locator('button[aria-label="Color: red"]'),
+    ).not.toBeVisible({ timeout: 5_000 });
 
     // Reload and verify the color persisted
     await page.reload();

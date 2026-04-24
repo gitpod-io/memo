@@ -292,10 +292,12 @@ test.describe("Workspace settings", () => {
       'button[aria-label="Switch workspace"]'
     );
     await workspaceTrigger.click();
-    await page.waitForTimeout(500);
+
+    // Wait for the dropdown menu to appear
+    const menuItems = page.locator('[role="menuitem"]');
+    await expect(menuItems.first()).toBeVisible({ timeout: 5_000 });
 
     // The deleted workspace name should not appear in the dropdown
-    const menuItems = page.locator('[role="menuitem"]');
     const count = await menuItems.count();
     for (let i = 0; i < count; i++) {
       const text = await menuItems.nth(i).textContent();

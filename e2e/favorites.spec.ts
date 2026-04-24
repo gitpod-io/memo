@@ -41,7 +41,9 @@ test.describe("Sidebar Favorites", () => {
     await page.keyboard.press("Enter");
 
     // Wait for the title to propagate to the sidebar
-    await page.waitForTimeout(1_000);
+    await expect(
+      page.getByRole("complementary").locator(`text=${title}`),
+    ).toBeVisible({ timeout: 10_000 });
 
     // Extract page ID from URL
     const segments = new URL(page.url()).pathname.split("/").filter(Boolean);
@@ -65,12 +67,10 @@ test.describe("Sidebar Favorites", () => {
     menuItemName: RegExp,
   ) {
     await treeItem.hover();
-    await page.waitForTimeout(300);
 
     const moreBtn = treeItem.locator('[aria-label="Page actions"]');
     await expect(moreBtn).toBeVisible({ timeout: 3_000 });
     await moreBtn.click();
-    await page.waitForTimeout(300);
 
     const menuItem = page.getByRole("menuitem", { name: menuItemName });
     await expect(menuItem).toBeVisible({ timeout: 3_000 });
@@ -123,11 +123,12 @@ test.describe("Sidebar Favorites", () => {
       if (!rowExists) break;
 
       await favoriteRow.hover();
-      await page.waitForTimeout(300);
 
       // Click the remove button — use force since opacity transition may lag
       await removeBtn.click({ force: true });
-      await page.waitForTimeout(500);
+
+      // Wait for the favorite to be removed
+      await expect(removeBtn).not.toBeVisible({ timeout: 5_000 });
     }
   }
 

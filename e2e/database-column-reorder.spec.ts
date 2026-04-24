@@ -304,12 +304,11 @@ test.describe("Table view column drag-and-drop reorder", () => {
       [alphaHandle, gammaHandle] as const,
     );
 
-    // Wait for the drag sequence (300 + 100ms) + optimistic update + Supabase write
-    await page.waitForTimeout(3_000);
-
-    // Verify new order: Beta, Gamma, Alpha
-    const newOrder = await getColumnOrder(page);
-    expect(newOrder).toEqual(["BETA", "GAMMA", "ALPHA"]);
+    // Wait for the drag sequence to complete and verify new order: Beta, Gamma, Alpha
+    await expect(async () => {
+      const newOrder = await getColumnOrder(page);
+      expect(newOrder).toEqual(["BETA", "GAMMA", "ALPHA"]);
+    }).toPass({ timeout: 10_000 });
   });
 
   test("column order persists after page reload", async ({
@@ -385,7 +384,10 @@ test.describe("Table view column drag-and-drop reorder", () => {
     );
 
     // Wait for drag sequence + Supabase write to complete
-    await page.waitForTimeout(4_000);
+    await expect(async () => {
+      const order = await getColumnOrder(page);
+      expect(order).toEqual(["BETA", "GAMMA", "ALPHA"]);
+    }).toPass({ timeout: 10_000 });
 
     // Verify optimistic update worked
     const orderBeforeReload = await getColumnOrder(page);

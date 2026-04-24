@@ -97,7 +97,8 @@ async function addColumnViaTypePicker(
   await expect(menuItem).toBeVisible({ timeout: 5_000 });
   await menuItem.click();
 
-  await page.waitForTimeout(1_500);
+  // Wait for the menu to close (column added)
+  await expect(menuItem).not.toBeVisible({ timeout: 5_000 });
 }
 
 // ---------------------------------------------------------------------------
@@ -138,7 +139,9 @@ test.describe("Database Row Page", () => {
     const textMenuItem = page.getByRole("menuitem", { name: "Text" });
     await expect(textMenuItem).toBeVisible({ timeout: 5_000 });
     await textMenuItem.click();
-    await page.waitForTimeout(1_500);
+
+    // Wait for the menu to close
+    await expect(textMenuItem).not.toBeVisible({ timeout: 5_000 });
 
     // Navigate to the row page
     const rowLink = page.locator('[role="gridcell"] a').first();
@@ -252,8 +255,8 @@ test.describe("Database Row Page", () => {
     await editor.click();
     await page.keyboard.type("Hello from the row page");
 
-    // Wait for auto-save
-    await page.waitForTimeout(2_000);
+    // Wait for auto-save to complete
+    await page.waitForLoadState("networkidle");
 
     // Verify the content is visible in the editor
     await expect(editor).toContainText("Hello from the row page");
@@ -349,7 +352,6 @@ test.describe("Database Row Page", () => {
     // Type a value and blur to save
     await cellInput.fill("Hello from table");
     await page.locator("h1, input[aria-label]").first().click();
-    await page.waitForTimeout(1_500);
 
     // Verify the value is displayed in the table cell
     await expect(

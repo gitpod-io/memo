@@ -79,7 +79,9 @@ async function addColumnOfType(
   const menuItem = page.getByRole("menuitem", { name: typeName, exact: true });
   await expect(menuItem).toBeVisible({ timeout: 5_000 });
   await menuItem.click();
-  await page.waitForTimeout(1_500);
+
+  // Wait for the menu to close (column added)
+  await expect(menuItem).not.toBeVisible({ timeout: 5_000 });
 }
 
 // ---------------------------------------------------------------------------

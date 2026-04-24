@@ -18,12 +18,10 @@ test.describe("Page Duplication", () => {
     const urlBefore = page.url();
 
     await selectedItem.hover();
-    await page.waitForTimeout(300);
 
     const moreBtn = selectedItem.locator('[aria-label="Page actions"]');
     await expect(moreBtn).toBeVisible({ timeout: 3_000 });
     await moreBtn.click();
-    await page.waitForTimeout(300);
 
     const duplicateItem = page.getByRole("menuitem", { name: /duplicate/i });
     await expect(duplicateItem).toBeVisible({ timeout: 3_000 });
@@ -97,7 +95,7 @@ test.describe("Page Duplication", () => {
     await page.keyboard.type(content);
 
     // Wait for auto-save to persist content to the database
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("networkidle");
 
     const originalUrl = page.url();
 
@@ -108,7 +106,6 @@ test.describe("Page Duplication", () => {
       .first();
     await expect(pageMenuBtn).toBeVisible({ timeout: 5_000 });
     await pageMenuBtn.click();
-    await page.waitForTimeout(300);
 
     const duplicateItem = page.getByRole("menuitem", { name: /duplicate/i });
     await expect(duplicateItem).toBeVisible({ timeout: 3_000 });
@@ -143,7 +140,6 @@ test.describe("Page Duplication", () => {
       .first();
     await expect(pageMenuBtn).toBeVisible({ timeout: 5_000 });
     await pageMenuBtn.click();
-    await page.waitForTimeout(300);
 
     const duplicateItem = page.getByRole("menuitem", { name: /duplicate/i });
     await expect(duplicateItem).toBeVisible({ timeout: 3_000 });

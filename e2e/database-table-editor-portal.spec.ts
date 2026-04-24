@@ -74,7 +74,8 @@ async function addColumnViaTypePicker(
   await expect(menuItem).toBeVisible({ timeout: 5_000 });
   await menuItem.click();
 
-  await page.waitForTimeout(1_500);
+  // Wait for the menu to close (column added)
+  await expect(menuItem).not.toBeVisible({ timeout: 5_000 });
 }
 
 // ---------------------------------------------------------------------------
@@ -246,7 +247,6 @@ test.describe("Table editor portals", () => {
 
     // Select "In Progress" and verify the badge renders
     await dropdown.getByText("In Progress").click();
-    await page.waitForTimeout(500);
 
     // The status badge should now be visible in the cell
     const badge = page.locator('[role="grid"]').getByText("In Progress");

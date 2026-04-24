@@ -92,7 +92,6 @@ test.describe("Authentication", () => {
     const userMenuTrigger = page.locator("button").filter({ hasText: /@|sign out/i });
     if ((await userMenuTrigger.count()) > 0) {
       await userMenuTrigger.first().click();
-      await page.waitForTimeout(300);
     }
 
     const signOutBtn = page.getByRole("menuitem", { name: /sign out/i }).or(

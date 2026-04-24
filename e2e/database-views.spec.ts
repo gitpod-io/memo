@@ -78,7 +78,9 @@ async function addColumn(page: import("@playwright/test").Page) {
   const textMenuItem = page.getByRole("menuitem", { name: "Text" });
   await expect(textMenuItem).toBeVisible({ timeout: 5_000 });
   await textMenuItem.click();
-  await page.waitForTimeout(1_500);
+
+  // Wait for the column to appear in the grid header
+  await expect(textMenuItem).not.toBeVisible({ timeout: 5_000 });
 }
 
 /**
@@ -97,7 +99,9 @@ async function fillCell(
   await expect(cellInput).toBeVisible({ timeout: 5_000 });
   await cellInput.fill(value);
   await page.locator("h1, input[aria-label]").first().click();
-  await page.waitForTimeout(1_000);
+
+  // Wait for the cell input to disappear (blur complete, value persisted)
+  await expect(cellInput).not.toBeVisible({ timeout: 5_000 });
 }
 
 /**
@@ -118,7 +122,8 @@ async function setupDatabaseWithValues(
   for (let i = 1; i < values.length; i++) {
     const addRowBtn = page.locator("button", { hasText: "+ New" });
     await addRowBtn.click();
-    await page.waitForTimeout(1_000);
+    // Wait for the new row to appear in the grid
+    await expect(page.locator('[role="row"]')).toHaveCount(i + 2, { timeout: 10_000 });
   }
 
   // Fill Text column (odd indices: 1, 3, 5, ...)
@@ -160,8 +165,8 @@ async function addSortOnTextColumn(page: import("@playwright/test").Page) {
   await expect(textOption).toBeVisible({ timeout: 5_000 });
   await textOption.click();
 
-  // Wait for sort to apply
-  await page.waitForTimeout(2_000);
+  // Wait for the sort property picker to close (sort applied)
+  await expect(sortDropdown).not.toBeVisible({ timeout: 5_000 });
 }
 
 /**
@@ -203,7 +208,8 @@ async function addFilterOnTextColumn(
   await expect(applyBtn).toBeVisible({ timeout: 5_000 });
   await applyBtn.click();
 
-  await page.waitForTimeout(2_000);
+  // Wait for the filter dropdown to close (filter applied)
+  await expect(applyBtn).not.toBeVisible({ timeout: 5_000 });
 }
 
 /**
@@ -211,7 +217,10 @@ async function addFilterOnTextColumn(
  */
 async function closeSortMenu(page: import("@playwright/test").Page) {
   await page.locator("h1, input[aria-label]").first().click();
-  await page.waitForTimeout(500);
+  // Wait for the sort menu to close
+  await expect(
+    page.locator("button", { hasText: "Add sort" }),
+  ).not.toBeVisible({ timeout: 5_000 });
 }
 
 // ---------------------------------------------------------------------------
@@ -285,7 +294,6 @@ test.describe("Database sort, filter, and multi-view management", () => {
     );
     await expect(removeFilterBtn).toBeVisible({ timeout: 5_000 });
     await removeFilterBtn.click();
-    await page.waitForTimeout(2_000);
 
     // Both rows should reappear
     await expect(
@@ -316,11 +324,10 @@ test.describe("Database sort, filter, and multi-view management", () => {
     });
     await expect(listViewOption).toBeVisible({ timeout: 5_000 });
     await listViewOption.click();
-    await page.waitForTimeout(2_000);
 
     // The new "List view" tab should be visible
     const listTab = page.locator("button", { hasText: "List view" });
-    await expect(listTab).toBeVisible({ timeout: 5_000 });
+    await expect(listTab).toBeVisible({ timeout: 10_000 });
 
     // The list view renders rows as links with a FileText icon.
     const listItems = page.locator("a").filter({
@@ -335,7 +342,6 @@ test.describe("Database sort, filter, and multi-view management", () => {
     const tableTab = page.locator("button", { hasText: "Default view" });
     await expect(tableTab).toBeVisible({ timeout: 5_000 });
     await tableTab.click();
-    await page.waitForTimeout(1_500);
 
     // The grid should be visible again
     await expect(page.locator('[role="grid"]')).toBeVisible({ timeout: 10_000 });
@@ -361,11 +367,10 @@ test.describe("Database sort, filter, and multi-view management", () => {
     // Clear and type a new name
     await renameInput.fill("My Custom View");
     await renameInput.press("Enter");
-    await page.waitForTimeout(2_000);
 
     // The tab should now show the new name
     const renamedTab = page.locator("button", { hasText: "My Custom View" });
-    await expect(renamedTab).toBeVisible({ timeout: 5_000 });
+    await expect(renamedTab).toBeVisible({ timeout: 10_000 });
 
     // The old name should no longer be visible
     await expect(
@@ -387,7 +392,6 @@ test.describe("Database sort, filter, and multi-view management", () => {
     const toggleBtn = page.locator('button[aria-label="Sort ascending"]');
     await expect(toggleBtn).toBeVisible({ timeout: 5_000 });
     await toggleBtn.click();
-    await page.waitForTimeout(1_000);
 
     await closeSortMenu(page);
 
@@ -430,7 +434,6 @@ test.describe("Database sort, filter, and multi-view management", () => {
 
     // Wait for the grid to stabilize with data after view switch
     await expect(page.locator('[role="grid"]')).toBeVisible({ timeout: 10_000 });
-    await page.waitForTimeout(1_000);
 
     // The first view should still have descending sort: Beta, Alpha
     await expect(prop2Cell(page, 0)).toHaveText("Beta", { timeout: 10_000 });
@@ -456,11 +459,10 @@ test.describe("Database view tab context menu actions", () => {
     });
     await expect(listViewOption).toBeVisible({ timeout: 5_000 });
     await listViewOption.click();
-    await page.waitForTimeout(2_000);
 
     await expect(
       page.locator("button", { hasText: "List view" }),
-    ).toBeVisible({ timeout: 5_000 });
+    ).toBeVisible({ timeout: 10_000 });
   }
 
   test("context menu rename enters inline edit mode", async ({
@@ -488,12 +490,11 @@ test.describe("Database view tab context menu actions", () => {
     // Type a new name and confirm
     await renameInput.fill("Renamed via context menu");
     await renameInput.press("Enter");
-    await page.waitForTimeout(2_000);
 
     // The tab should show the new name
     await expect(
       page.locator("button", { hasText: "Renamed via context menu" }),
-    ).toBeVisible({ timeout: 5_000 });
+    ).toBeVisible({ timeout: 10_000 });
   });
 
   test("context menu delete opens confirmation dialog and removes view", async ({
@@ -528,12 +529,11 @@ test.describe("Database view tab context menu actions", () => {
     const confirmBtn = dialog.locator("button", { hasText: "Delete" });
     await expect(confirmBtn).toBeVisible({ timeout: 5_000 });
     await confirmBtn.click();
-    await page.waitForTimeout(2_000);
 
     // The "List view" tab should be gone
     await expect(
       page.locator("button", { hasText: "List view" }),
-    ).toBeHidden({ timeout: 5_000 });
+    ).toBeHidden({ timeout: 10_000 });
 
     // The "Default view" tab should still be visible
     await expect(
@@ -558,14 +558,13 @@ test.describe("Database view tab context menu actions", () => {
     });
     await expect(duplicateItem).toBeVisible({ timeout: 5_000 });
     await duplicateItem.click();
-    await page.waitForTimeout(2_000);
 
     // A new tab should appear (the duplicate). The exact name depends on
     // the implementation but there should now be more than one tab.
     const viewTabs = page.locator(
       '[data-slot="context-menu-trigger"] button',
     );
-    await expect(viewTabs).toHaveCount(2, { timeout: 5_000 });
+    await expect(viewTabs).toHaveCount(2, { timeout: 10_000 });
   });
 
   test("context menu delete is disabled when only one view exists", async ({
