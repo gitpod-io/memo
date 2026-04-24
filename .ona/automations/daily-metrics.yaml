@@ -28,10 +28,18 @@ action:
                   "files": { "total": N, "delta": N },
                   "prs": { "total": N, "delta": N, "currently_open": N },
                   "commits": { "total": N, "delta": N },
+                  "issues": {
+                    "backlog": N,
+                    "in_progress": N,
+                    "in_review": N,
+                    "done": N,
+                    "opened_today": N,
+                    "closed_today": N
+                  },
+                  "tests": { "unit": N, "e2e": N },
+                  "ci": { "runs_total": N, "runs_passed": N, "pass_rate_pct": N },
                   "test_coverage_pct": N,
-                  "ci_pass_rate_pct": N,
                   "autonomous_pct": N,
-                  "issues": { "backlog": N, "in_progress": N, "in_review": N, "done": N },
                   "human_minutes": null,
                   "agent_minutes": null
                 }
@@ -40,12 +48,19 @@ action:
                 Field definitions (read these carefully):
                 - `day_number`: Days since project start. Day 1 = 2026-04-13.
                 - `prs.total`: Cumulative PRs merged since project start (all time).
-                - `prs.delta`: PRs merged TODAY only (since midnight UTC).
+                - `prs.delta`: Computed as `prs.total - yesterday.prs.total`. Do NOT use a date-filtered query for this — compute it from the cumulative values.
                 - `prs.currently_open`: PRs in open state right now.
                 - `commits.total`: Cumulative commits on main (all time).
-                - `commits.delta`: Commits made TODAY only (since midnight UTC).
+                - `commits.delta`: Computed as `commits.total - yesterday.commits.total`. Do NOT use `git log --since` for this — compute it from the cumulative values.
                 - `loc.total` / `files.total`: Current totals in the codebase right now.
                 - `loc.delta` / `files.delta`: Difference from yesterday's snapshot.
+                - `issues.opened_today`: Issues created today (since midnight UTC).
+                - `issues.closed_today`: Issues closed today (since midnight UTC).
+                - `tests.unit`: Number of unit test cases (from Vitest).
+                - `tests.e2e`: Number of E2E test cases (from Playwright).
+                - `ci.runs_total`: Total GitHub Actions workflow runs created today.
+                - `ci.runs_passed`: Runs with conclusion "success" created today.
+                - `ci.pass_rate_pct`: `round((ci.runs_passed / ci.runs_total) * 100, 1)`. If runs_total is 0, set to 100.
                 - `autonomous_pct`: Percentage of merged PRs that were NOT labeled `ona-user`.
                 - `test_coverage_pct`: Statement coverage from Vitest, or null if unavailable.
                 - `human_minutes` / `agent_minutes`: Always null (filled manually).
@@ -53,6 +68,7 @@ action:
                 ## 2. Data Collection Commands
 
                 Run these on latest main. Use the EXACT commands — do not improvise alternatives.
+                Replace YYYY-MM-DD with today's date everywhere.
 
                 **Lines of code:**
                 ```
@@ -67,14 +83,9 @@ action:
 
                 **PRs — cumulative merged (all time):**
                 ```
-                gh pr list --state merged --limit 500 --json number --jq 'length'
+                gh pr list --state merged --limit 1000 --json number --jq 'length'
                 ```
-
-                **PRs — merged today (UTC):**
-                ```
-                gh pr list --state merged --limit 500 --json mergedAt --jq '[.[] | select(.mergedAt >= "YYYY-MM-DDT00:00:00Z")] | length'
-                ```
-                Replace YYYY-MM-DD with today's date.
+                If the result is exactly 1000, there may be more. Paginate or note the limit.
 
                 **PRs — currently open:**
                 ```
@@ -86,16 +97,10 @@ action:
                 git rev-list --count HEAD
                 ```
 
-                **Commits — today (UTC):**
-                ```
-                git log --oneline --since="YYYY-MM-DDT00:00:00Z" --format="%H" | wc -l
-                ```
-                Replace YYYY-MM-DD with today's date.
-
                 **Autonomous PR ratio:**
                 ```
-                TOTAL=$(gh pr list --state merged --limit 500 --json number --jq 'length')
-                ONA_USER=$(gh pr list --state merged --label "ona-user" --limit 500 --json number --jq 'length')
+                TOTAL=$(gh pr list --state merged --limit 1000 --json number --jq 'length')
+                ONA_USER=$(gh pr list --state merged --label "ona-user" --limit 1000 --json number --jq 'length')
                 ```
                 Calculate: `autonomous_pct = round(((TOTAL - ONA_USER) / TOTAL) * 100)`. If TOTAL is 0, set to 0.
 
@@ -105,38 +110,62 @@ action:
                 ```
                 Then read `coverage/coverage-summary.json` → `total.statements.pct`. If the command fails or the file is missing, set to null.
 
-                **CI pass rate:**
+                **Test counts:**
                 ```
-                TOTAL=$(gh run list --created "YYYY-MM-DD" --limit 500 --json conclusion --jq 'length')
-                SUCCESS=$(gh run list --created "YYYY-MM-DD" --limit 500 --json conclusion --jq '[.[] | select(.conclusion == "success")] | length')
+                pnpm vitest run --reporter=json 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['numTotalTests'])"
                 ```
-                Replace YYYY-MM-DD with today's date.
-                Calculate: `round((SUCCESS / TOTAL) * 100)`. If TOTAL is 0, set to 100.
+                For E2E count:
+                ```
+                npx playwright test --list 2>/dev/null | tail -1
+                ```
+                This prints a line like "Total: 213 tests in 15 files". Extract the number.
+                If either command fails, use the value from yesterday's snapshot.
 
-                **GitHub Issues:**
+                **CI pass rate (today's runs only):**
                 ```
-                gh issue list --label "status:backlog" --state open --limit 500 --json number --jq 'length'
-                gh issue list --label "status:in-progress" --state open --limit 500 --json number --jq 'length'
-                gh issue list --label "status:in-review" --state open --limit 500 --json number --jq 'length'
-                gh issue list --label "status:done" --state closed --limit 500 --json number --jq 'length'
+                gh run list --created "YYYY-MM-DD" --limit 500 --json conclusion --jq '[.[] | .conclusion] | group_by(.) | map({(.[0]): length}) | add'
+                ```
+                This returns a JSON object like `{"success": 74, "failure": 4}`.
+                - `ci.runs_total` = sum of all values
+                - `ci.runs_passed` = the "success" count
+                - `ci.pass_rate_pct` = `round((runs_passed / runs_total) * 100, 1)`
+                If runs_total is 0 (automation runs before any CI today), set pass_rate_pct to null.
+
+                **Issues — status counts:**
+                ```
+                gh issue list --label "status:backlog" --state open --limit 1000 --json number --jq 'length'
+                gh issue list --label "status:in-progress" --state open --limit 1000 --json number --jq 'length'
+                gh issue list --label "status:in-review" --state open --limit 1000 --json number --jq 'length'
+                gh issue list --label "status:done" --state closed --limit 1000 --json number --jq 'length'
                 ```
 
-                **Delta fields (loc, files):**
+                **Issues — opened/closed today:**
+                ```
+                gh issue list --state all --limit 500 --json number,createdAt --jq '[.[] | select(.createdAt >= "YYYY-MM-DDT00:00:00Z")] | length'
+                gh issue list --state closed --limit 500 --json number,closedAt --jq '[.[] | select(.closedAt >= "YYYY-MM-DDT00:00:00Z")] | length'
+                ```
+
+                **Delta fields (prs, commits, loc, files):**
                 Read yesterday's snapshot from `metrics/daily/`. If no previous file exists, delta = total.
+                - `prs.delta = prs.total - yesterday.prs.total`
+                - `commits.delta = commits.total - yesterday.commits.total`
                 - `loc.delta = loc.total - yesterday.loc.total`
                 - `files.delta = files.total - yesterday.files.total`
 
                 ## 3. Validation
 
                 After generating the JSON, verify it before committing:
-                1. Confirm ALL of these fields exist: `date`, `day_number`, `loc.total`, `loc.delta`, `loc.by_language`, `files.total`, `files.delta`, `prs.total`, `prs.delta`, `prs.currently_open`, `commits.total`, `commits.delta`, `test_coverage_pct`, `ci_pass_rate_pct`, `autonomous_pct`, `issues.backlog`, `issues.in_progress`, `issues.in_review`, `issues.done`, `human_minutes`, `agent_minutes`.
+                1. Confirm ALL required fields exist (see schema above).
                 2. Confirm `prs.total >= prs.delta` (cumulative must be >= daily).
                 3. Confirm `commits.total >= commits.delta`.
                 4. Confirm `prs.total` is >= yesterday's `prs.total` (cumulative never decreases).
                 5. Confirm `commits.total` is >= yesterday's `commits.total`.
-                6. Confirm `issues.done` is >= yesterday's `issues.done` (closed issues never decrease).
+                6. Confirm `issues.done` is >= yesterday's `issues.done` (closed issues never decrease). If it decreased, re-run the issues query — this likely means a pagination limit was hit.
                 7. Confirm `by_language` values sum to `loc.total`. If they don't, a language is missing from the extraction.
-                8. If any check fails, re-collect the data for that field.
+                8. Confirm `ci.pass_rate_pct` equals `round((ci.runs_passed / ci.runs_total) * 100, 1)`.
+                9. Confirm `prs.delta` equals `prs.total - yesterday.prs.total` (not from a date-filtered query).
+                10. Confirm `commits.delta` equals `commits.total - yesterday.commits.total`.
+                11. If any check fails, re-collect the data for that field.
 
                 ## 4. Commit and PR
 
