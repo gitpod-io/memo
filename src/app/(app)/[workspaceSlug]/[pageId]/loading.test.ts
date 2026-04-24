@@ -11,16 +11,22 @@ import { resolve } from "path";
  */
 
 const PAGE_DIR = resolve(__dirname);
+const DB_CLIENT_PATH = resolve(
+  __dirname,
+  "../../../../components/database/database-view-client.tsx",
+);
 
 describe("[pageId] route loading state", () => {
   it("loading.tsx exists for the [pageId] route segment", () => {
     expect(existsSync(resolve(PAGE_DIR, "loading.tsx"))).toBe(true);
   });
 
-  it("loading skeleton uses the same layout container as page-view-client", () => {
+  it("loading skeleton uses a full-width container to avoid layout shift for database pages (#682)", () => {
     const loading = readFileSync(resolve(PAGE_DIR, "loading.tsx"), "utf-8");
-    // Must match the outer container from PageViewClient
-    expect(loading).toContain("mx-auto max-w-3xl p-6");
+    // Must use full-width (no max-w-3xl) so the skeleton doesn't shift when
+    // the server component renders a database page at full width
+    expect(loading).toContain("mx-auto p-6");
+    expect(loading).not.toContain("max-w-3xl");
   });
 
   it("loading skeleton includes animate-pulse elements", () => {
@@ -52,5 +58,21 @@ describe("[pageId] route loading state", () => {
     // dynamic() loading fallbacks create a second skeleton that shifts after
     // loading.tsx, causing visible layout jank during navigation.
     expect(page).not.toMatch(/\bdynamic\b/);
+  });
+
+  it("page.tsx passes initialData to DatabaseViewClient for database pages (#682)", () => {
+    const page = readFileSync(resolve(PAGE_DIR, "page.tsx"), "utf-8");
+    // Server component must pre-fetch database data and pass it as initialData
+    // to eliminate the client-side loading skeleton that causes flicker
+    expect(page).toContain("initialData={initialDatabaseData}");
+    expect(page).toContain("initialDatabaseData");
+  });
+
+  it("DatabaseViewClient accepts initialData prop and skips fetch when provided (#682)", () => {
+    const client = readFileSync(DB_CLIENT_PATH, "utf-8");
+    // The component must accept initialData in its props interface
+    expect(client).toContain("initialData");
+    // When initialData is provided, loading should start as false
+    expect(client).toContain("!hasInitialData");
   });
 });

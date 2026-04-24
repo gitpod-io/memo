@@ -1,6 +1,6 @@
 export default function PageLoading() {
   return (
-    <div className="mx-auto max-w-3xl p-6">
+    <div className="mx-auto p-6">
       {/* Breadcrumb skeleton */}
       <div className="mb-2 h-3 w-1/4 animate-pulse bg-muted" />
       <div className="flex items-start gap-2">
@@ -12,7 +12,7 @@ export default function PageLoading() {
         <div className="h-8 w-8 animate-pulse bg-muted" />
       </div>
       <div className="mt-4 space-y-3">
-        {/* Editor content skeleton lines */}
+        {/* Content skeleton lines */}
         <div className="h-4 w-full animate-pulse bg-muted" />
         <div className="h-4 w-5/6 animate-pulse bg-muted" />
         <div className="h-4 w-4/6 animate-pulse bg-muted" />

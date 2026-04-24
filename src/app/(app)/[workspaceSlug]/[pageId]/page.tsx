@@ -13,7 +13,13 @@ import { PageBacklinks } from "@/components/page-backlinks";
 import { PageViewClient } from "@/components/page-view-client";
 import { RowPropertiesHeader } from "@/components/database/row-properties-header";
 import { DatabaseViewClient } from "@/components/database/database-view-client";
-import type { DatabaseProperty, RowValue } from "@/lib/types";
+import type {
+  DatabaseProperty,
+  DatabaseRow,
+  DatabaseView,
+  RowValue,
+} from "@/lib/types";
+import type { LoadDatabaseResult } from "@/lib/database";
 
 export async function generateMetadata({
   params,
@@ -183,6 +189,115 @@ export default async function PageView({
   const initialContent = page.content as SerializedEditorState | null;
   const isDatabase = page.is_database === true;
 
+  // Pre-fetch database data on the server so DatabaseViewClient can render
+  // immediately without a client-side loading skeleton (#682)
+  let initialDatabaseData: LoadDatabaseResult | null = null;
+  if (isDatabase) {
+    const [propertiesResult, viewsResult, rowsResult] = await Promise.all([
+      supabase
+        .from("database_properties")
+        .select("*")
+        .eq("database_id", page.id)
+        .order("position"),
+      supabase
+        .from("database_views")
+        .select("*")
+        .eq("database_id", page.id)
+        .order("position"),
+      supabase
+        .from("pages")
+        .select(
+          "id, title, icon, cover_url, created_at, updated_at, created_by",
+        )
+        .eq("parent_id", page.id)
+        .is("deleted_at", null)
+        .order("position"),
+    ]);
+
+    if (
+      !propertiesResult.error &&
+      !viewsResult.error &&
+      !rowsResult.error
+    ) {
+      const properties = propertiesResult.data as DatabaseProperty[];
+      const views = viewsResult.data as DatabaseView[];
+      const rowPages = rowsResult.data as {
+        id: string;
+        title: string;
+        icon: string | null;
+        cover_url: string | null;
+        created_at: string;
+        updated_at: string;
+        created_by: string;
+      }[];
+
+      // Load row values in a single query
+      const rowIds = rowPages.map((r) => r.id);
+      let allValues: RowValue[] = [];
+      if (rowIds.length > 0) {
+        const { data: valuesData, error: valuesError } = await supabase
+          .from("row_values")
+          .select("*")
+          .in("row_id", rowIds);
+        if (!valuesError && valuesData) {
+          allValues = valuesData as RowValue[];
+        }
+      }
+
+      // Group values by row_id, keyed by property_id
+      const valuesByRow = new Map<string, Record<string, RowValue>>();
+      for (const val of allValues) {
+        let rowMap = valuesByRow.get(val.row_id);
+        if (!rowMap) {
+          rowMap = {};
+          valuesByRow.set(val.row_id, rowMap);
+        }
+        rowMap[val.property_id] = val;
+      }
+
+      const rows: DatabaseRow[] = rowPages.map((rp) => ({
+        page: rp,
+        values: valuesByRow.get(rp.id) ?? {},
+      }));
+
+      // Enrich person/created_by properties with workspace members
+      const { data: membersData } = await supabase
+        .from("members")
+        .select(
+          "user_id, profiles!members_user_id_fkey(id, display_name, email, avatar_url)",
+        )
+        .eq("workspace_id", workspace.id);
+
+      const members = (membersData ?? []).map((m) => {
+        const profile = m.profiles as unknown as {
+          id: string;
+          display_name: string;
+          email: string;
+          avatar_url: string | null;
+        };
+        return {
+          id: m.user_id,
+          display_name: profile.display_name,
+          email: profile.email,
+          avatar_url: profile.avatar_url,
+        };
+      });
+
+      const enrichedProperties = properties.map((prop) => {
+        if (prop.type === "person" || prop.type === "created_by") {
+          return { ...prop, config: { ...prop.config, _members: members } };
+        }
+        return prop;
+      });
+
+      initialDatabaseData = {
+        properties: enrichedProperties,
+        views,
+        rows,
+      };
+    }
+  }
+
   return (
     <div className={`mx-auto p-6 ${isDatabase ? "" : "max-w-3xl"}`}>
       <div className="mb-2">
@@ -198,6 +313,7 @@ export default async function PageView({
           workspaceId={workspace.id}
           workspaceSlug={workspaceSlug}
           userId={user.id}
+          initialData={initialDatabaseData}
         />
       ) : (
         <>
