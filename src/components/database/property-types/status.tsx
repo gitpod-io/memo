@@ -14,6 +14,7 @@ import { SelectDropdown } from "./select-dropdown";
 export const DEFAULT_STATUS_OPTIONS: SelectOption[] = [
   { id: "status-not-started", name: "Not Started", color: "gray" },
   { id: "status-in-progress", name: "In Progress", color: "blue" },
+  { id: "status-in-review", name: "In Review", color: "yellow" },
   { id: "status-done", name: "Done", color: "green" },
 ];
 

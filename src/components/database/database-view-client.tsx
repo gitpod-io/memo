@@ -351,9 +351,9 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
       // Auto-detect a default config property for board and calendar views
       let config: DatabaseViewConfig = {};
       if (type === "board") {
-        const firstSelect = properties.find((p) => p.type === "select");
-        if (firstSelect) {
-          config = { group_by: firstSelect.id };
+        const firstGroupable = properties.find((p) => p.type === "select" || p.type === "status");
+        if (firstGroupable) {
+          config = { group_by: firstGroupable.id };
         }
       } else if (type === "calendar") {
         const firstDate = properties.find((p) => p.type === "date");
@@ -976,7 +976,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   <ViewConfigDropdown
                     label="Group by"
                     selectedId={activeView.config.group_by ?? null}
-                    options={properties.filter((p) => p.type === "select")}
+                    options={properties.filter((p) => p.type === "select" || p.type === "status")}
                     onSelect={(id) => handleViewConfigChange({ group_by: id })}
                   />
                 )}

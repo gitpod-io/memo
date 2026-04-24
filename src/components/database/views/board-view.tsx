@@ -5,6 +5,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { getPropertyTypeConfig } from "@/components/database/property-types/index";
 import { evaluateFormulaForRow } from "@/components/database/property-types/formula";
+import { DEFAULT_STATUS_OPTIONS } from "@/components/database/property-types/status";
 import type {
   DatabaseProperty,
   DatabaseRow,
@@ -55,8 +56,12 @@ interface DropTarget {
 // ---------------------------------------------------------------------------
 
 function getSelectOptions(property: DatabaseProperty): SelectOption[] {
-  if (Array.isArray(property.config.options)) {
+  if (Array.isArray(property.config.options) && property.config.options.length > 0) {
     return property.config.options as SelectOption[];
+  }
+  // Status properties fall back to default options when none are configured
+  if (property.type === "status") {
+    return DEFAULT_STATUS_OPTIONS;
   }
   return [];
 }
@@ -103,9 +108,9 @@ export const BoardView = memo(function BoardView({
     });
   }, [properties, viewConfig.visible_properties, groupByPropertyId]);
 
-  // Build columns from select options
+  // Build columns from select/status options
   const columns = useMemo(() => {
-    if (!groupByProperty || groupByProperty.type !== "select") return [];
+    if (!groupByProperty || (groupByProperty.type !== "select" && groupByProperty.type !== "status")) return [];
 
     const options = getSelectOptions(groupByProperty);
     const hideEmpty = viewConfig.hide_empty_groups ?? false;
@@ -235,10 +240,10 @@ export const BoardView = memo(function BoardView({
 
   // --- No group_by configured ---
 
-  if (!groupByProperty || groupByProperty.type !== "select") {
+  if (!groupByProperty || (groupByProperty.type !== "select" && groupByProperty.type !== "status")) {
     return (
       <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
-        Select a &quot;Group by&quot; property (select type) to use board view
+        Select a &quot;Group by&quot; property (select or status type) to use board view
       </div>
     );
   }
