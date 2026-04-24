@@ -55,6 +55,7 @@ import {
   isInsufficientPrivilegeError,
 } from "@/lib/sentry";
 import { PROPERTY_TYPE_LABEL } from "@/lib/property-icons";
+import { DEFAULT_STATUS_OPTIONS } from "@/components/database/property-types/status";
 import type {
   DatabaseProperty,
   DatabaseRow,
@@ -721,7 +722,9 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
           name = `${baseLabel} ${suffix}`;
           suffix++;
         }
-        const { data: newProp, error } = await addProperty(pageId, name, type);
+        const config: Record<string, unknown> =
+          type === "status" ? { options: DEFAULT_STATUS_OPTIONS } : {};
+        const { data: newProp, error } = await addProperty(pageId, name, type, config);
         if (error || !newProp) {
           toast.error("Failed to add column", { duration: 8000 });
           return;
