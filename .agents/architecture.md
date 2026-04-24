@@ -287,7 +287,8 @@ Database page (is_database = true)
 src/components/database/
   ├── database-view-client.tsx     # Main client component: loads data, manages view state
   ├── view-tabs.tsx                # Horizontal tab bar for switching views
-  ├── filter-bar.tsx               # Active filter pills + add filter UI
+  ├── filter-bar.tsx               # Active filter pills + add filter UI (composition only)
+  ├── filter-value-editor.tsx      # Type-specific filter value editors, property picker, operator picker
   ├── sort-menu.tsx                # Sort configuration dropdown
   ├── property-config.tsx          # Column header dropdown: rename, type change, delete
   ├── property-editor.tsx          # Inline cell editor (dispatches to type-specific editors)
@@ -441,7 +442,8 @@ src/
 │   ├── database/                # Database views system
 │   │   ├── database-view-client.tsx     # Main client component: loads data, manages view state
 │   │   ├── view-tabs.tsx                # Horizontal tab bar for switching views
-│   │   ├── filter-bar.tsx               # Active filter pills + add filter UI
+│   │   ├── filter-bar.tsx               # Active filter pills + add filter UI (composition only)
+│   │   ├── filter-value-editor.tsx      # Type-specific filter value editors, property picker, operator picker
 │   │   ├── sort-menu.tsx                # Sort configuration dropdown
 │   │   ├── property-config.tsx          # Column header dropdown: rename, type change, delete
 │   │   ├── property-editor.tsx          # Inline cell editor (dispatches to type-specific editors)
