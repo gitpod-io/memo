@@ -145,6 +145,7 @@ export function FilterBar({
 
   return (
     <div className="flex flex-wrap items-center gap-1.5"
+      data-testid="db-filter-bar"
       {...(filters.length > 0 ? { "data-has-filters": "true" } : {})}
     >
       {/* Active filter badges */}
@@ -175,6 +176,7 @@ export function FilterBar({
             key={`${filter.property_id}-${filter.operator}-${index}`}
             variant="secondary"
             className="gap-1 text-xs"
+            data-testid={`db-filter-pill-${index}`}
           >
             <span>{propName}</span>
             <span className="text-muted-foreground">{opLabel}</span>
@@ -197,6 +199,7 @@ export function FilterBar({
           variant="ghost"
           size="sm"
           className="h-6 gap-1 px-2 text-xs text-muted-foreground"
+          data-testid="db-filter-add"
           onClick={() =>
             setAddState((prev) =>
               prev.step === "closed"

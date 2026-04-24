@@ -306,7 +306,7 @@ export function ViewTabs({
 
   return (
     <>
-      <div className="flex items-center border-b border-overlay-border">
+      <div className="flex items-center border-b border-overlay-border" data-testid="db-view-tabs">
         <div className="flex items-center gap-0 overflow-x-auto">
           {views.map((view, index) => {
             const Icon = VIEW_TYPE_ICON[view.type];
@@ -338,6 +338,7 @@ export function ViewTabs({
                       onClick={() => handleTabClick(view.id)}
                       onDoubleClick={() => handleDoubleClick(view.id)}
                       onMouseEnter={() => VIEW_CHUNK_PRELOADERS[view.type]()}
+                      data-testid={`db-view-tab-${view.id}`}
                       className={cn(
                         "group/tab flex shrink-0 items-center gap-1.5 px-3 py-2 text-sm transition-colors",
                         isActive
@@ -432,6 +433,7 @@ export function ViewTabs({
             <DropdownMenuTrigger
               className="ml-1 flex shrink-0 items-center p-2 text-muted-foreground transition-colors hover:text-foreground outline-none"
               aria-label="Add view"
+              data-testid="db-view-add"
             >
               <Plus className="h-3.5 w-3.5" />
             </DropdownMenuTrigger>

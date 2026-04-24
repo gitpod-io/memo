@@ -238,7 +238,7 @@ export function RowPropertiesHeader({
   const hiddenCount = properties.length - COLLAPSED_LIMIT;
 
   return (
-    <div className="mb-4 border-b border-overlay-border pb-4">
+    <div className="mb-4 border-b border-overlay-border pb-4" data-testid="db-row-properties">
       <div className="space-y-1.5">
         {visibleProperties.map((property) => {
           // Build a minimal DatabaseRow for formula evaluation
@@ -255,11 +255,11 @@ export function RowPropertiesHeader({
             values,
           };
           return (
-            <div key={property.id} className="flex items-start gap-4">
-              <span className="w-32 shrink-0 text-right text-xs text-muted-foreground leading-6">
+            <div key={property.id} className="flex items-start gap-4" data-testid={`db-row-property-${property.id}`}>
+              <span className="w-32 shrink-0 text-right text-xs text-muted-foreground leading-6" data-testid={`db-row-property-name-${property.id}`}>
                 {property.name}
               </span>
-              <div className="min-w-0 flex-1 leading-6">
+              <div className="min-w-0 flex-1 leading-6" data-testid={`db-row-property-value-${property.id}`}>
                 <PropertyValueCell
                   pageId={pageId}
                   property={property}

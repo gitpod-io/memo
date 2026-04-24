@@ -62,7 +62,7 @@ async function createDatabaseFromSidebar(
 }
 
 async function addRow(page: import("@playwright/test").Page) {
-  const addRowBtn = page.locator("button", { hasText: "+ New" });
+  const addRowBtn = page.getByTestId("db-table-add-row");
   await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
   await addRowBtn.click();
   await expect(page.locator('[role="grid"]')).toBeVisible({ timeout: 10_000 });
@@ -97,12 +97,12 @@ test.describe("Type-specific database filter operators", () => {
     await addColumnOfType(page, "Checkbox");
 
     // Open filter flow
-    const addFilterBtn = page.locator("button", { hasText: "Add filter" });
+    const addFilterBtn = page.getByTestId("db-filter-add");
     await expect(addFilterBtn).toBeVisible({ timeout: 5_000 });
     await addFilterBtn.click();
 
     // Pick the Checkbox column
-    const filterDropdown = page.locator(".z-50").first();
+    const filterDropdown = page.getByTestId("db-filter-property-picker");
     await expect(filterDropdown).toBeVisible({ timeout: 5_000 });
     const checkboxOption = filterDropdown.locator("button", {
       hasText: "Checkbox",
@@ -111,7 +111,7 @@ test.describe("Type-specific database filter operators", () => {
     await checkboxOption.click();
 
     // Operator picker should show "is checked" and "is not checked"
-    const operatorDropdown = page.locator(".z-50").first();
+    const operatorDropdown = page.getByTestId("db-filter-operator-picker");
     await expect(operatorDropdown).toBeVisible({ timeout: 5_000 });
 
     const isCheckedOp = operatorDropdown.locator("button", {
@@ -127,10 +127,9 @@ test.describe("Type-specific database filter operators", () => {
     await isCheckedOp.click();
 
     // Filter badge should appear with "is checked" label
-    const badge = page.locator('[data-slot="badge"]', {
-      hasText: "is checked",
-    });
+    const badge = page.getByTestId("db-filter-pill-0");
     await expect(badge).toBeVisible({ timeout: 5_000 });
+    await expect(badge).toHaveText(/is checked/);
   });
 
   test("number filter shows numeric operators and number input", async ({
@@ -141,12 +140,12 @@ test.describe("Type-specific database filter operators", () => {
     await addColumnOfType(page, "Number");
 
     // Open filter flow
-    const addFilterBtn = page.locator("button", { hasText: "Add filter" });
+    const addFilterBtn = page.getByTestId("db-filter-add");
     await expect(addFilterBtn).toBeVisible({ timeout: 5_000 });
     await addFilterBtn.click();
 
     // Pick the Number column
-    const filterDropdown = page.locator(".z-50").first();
+    const filterDropdown = page.getByTestId("db-filter-property-picker");
     await expect(filterDropdown).toBeVisible({ timeout: 5_000 });
     const numberOption = filterDropdown.locator("button", {
       hasText: "Number",
@@ -155,7 +154,7 @@ test.describe("Type-specific database filter operators", () => {
     await numberOption.click();
 
     // Operator picker should show numeric operators
-    const operatorDropdown = page.locator(".z-50").first();
+    const operatorDropdown = page.getByTestId("db-filter-operator-picker");
     await expect(operatorDropdown).toBeVisible({ timeout: 5_000 });
 
     // Verify numeric operators are present
@@ -179,18 +178,19 @@ test.describe("Type-specific database filter operators", () => {
     await operatorDropdown.locator("button", { hasText: ">" }).click();
 
     // Value input should be a number input
-    const numberInput = page.locator('input[placeholder="Enter number…"]');
+    const numberInput = page.getByTestId("db-filter-value-input");
     await expect(numberInput).toBeVisible({ timeout: 5_000 });
     await expect(numberInput).toHaveAttribute("type", "number");
 
     // Fill and apply
     await numberInput.fill("10");
-    const applyBtn = page.locator(".z-50 button", { hasText: "Apply" });
+    const applyBtn = page.getByTestId("db-filter-value-editor").getByRole("button", { name: "Apply" });
     await applyBtn.click();
 
     // Filter badge should appear
-    const badge = page.locator('[data-slot="badge"]', { hasText: ">" });
+    const badge = page.getByTestId("db-filter-pill-0");
     await expect(badge).toBeVisible({ timeout: 5_000 });
+    await expect(badge).toHaveText(/>/);
   });
 
   test("date filter shows date operators and date input", async ({
@@ -201,19 +201,19 @@ test.describe("Type-specific database filter operators", () => {
     await addColumnOfType(page, "Date");
 
     // Open filter flow
-    const addFilterBtn = page.locator("button", { hasText: "Add filter" });
+    const addFilterBtn = page.getByTestId("db-filter-add");
     await expect(addFilterBtn).toBeVisible({ timeout: 5_000 });
     await addFilterBtn.click();
 
     // Pick the Date column
-    const filterDropdown = page.locator(".z-50").first();
+    const filterDropdown = page.getByTestId("db-filter-property-picker");
     await expect(filterDropdown).toBeVisible({ timeout: 5_000 });
     const dateOption = filterDropdown.locator("button", { hasText: "Date" });
     await expect(dateOption).toBeVisible({ timeout: 5_000 });
     await dateOption.click();
 
     // Operator picker should show date operators
-    const operatorDropdown = page.locator(".z-50").first();
+    const operatorDropdown = page.getByTestId("db-filter-operator-picker");
     await expect(operatorDropdown).toBeVisible({ timeout: 5_000 });
 
     await expect(
@@ -245,8 +245,9 @@ test.describe("Type-specific database filter operators", () => {
     await todayBtn.click();
 
     // Filter badge should appear
-    const badge = page.locator('[data-slot="badge"]', { hasText: "before" });
+    const badge = page.getByTestId("db-filter-pill-0");
     await expect(badge).toBeVisible({ timeout: 5_000 });
+    await expect(badge).toHaveText(/before/);
   });
 
   test("select filter shows option dropdown instead of text input", async ({
@@ -257,12 +258,12 @@ test.describe("Type-specific database filter operators", () => {
     await addColumnOfType(page, "Select");
 
     // Open filter flow
-    const addFilterBtn = page.locator("button", { hasText: "Add filter" });
+    const addFilterBtn = page.getByTestId("db-filter-add");
     await expect(addFilterBtn).toBeVisible({ timeout: 5_000 });
     await addFilterBtn.click();
 
     // Pick the Select column
-    const filterDropdown = page.locator(".z-50").first();
+    const filterDropdown = page.getByTestId("db-filter-property-picker");
     await expect(filterDropdown).toBeVisible({ timeout: 5_000 });
     const selectOption = filterDropdown.locator("button", {
       hasText: "Select",
@@ -271,7 +272,7 @@ test.describe("Type-specific database filter operators", () => {
     await selectOption.click();
 
     // Operator picker should show select operators (is, is empty, is not empty)
-    const operatorDropdown = page.locator(".z-50").first();
+    const operatorDropdown = page.getByTestId("db-filter-operator-picker");
     await expect(operatorDropdown).toBeVisible({ timeout: 5_000 });
 
     await expect(

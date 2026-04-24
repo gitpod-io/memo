@@ -72,7 +72,7 @@ async function createDatabaseFromSidebar(page: Page): Promise<string> {
  * Add a row to the current database.
  */
 async function addRowToDatabase(page: Page) {
-  const addRowBtn = page.locator("button", { hasText: "+ New" });
+  const addRowBtn = page.getByTestId("db-table-add-row");
   await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
   await addRowBtn.click();
   await expect(page.locator('[role="grid"]')).toBeVisible({

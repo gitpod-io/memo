@@ -70,7 +70,7 @@ async function createDatabaseWithRow(
   createdDatabaseIds.push(pageId);
 
   // Add a row
-  const addRowBtn = page.locator("button", { hasText: "+ New" });
+  const addRowBtn = page.getByTestId("db-table-add-row");
   await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
   await addRowBtn.click();
 

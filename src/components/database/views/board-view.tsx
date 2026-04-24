@@ -190,6 +190,7 @@ export const BoardView = memo(function BoardView({
       className="flex gap-3 overflow-x-auto pb-4"
       role="region"
       aria-label="Database board"
+      data-testid="db-board-container"
     >
       {columns.map((column) => (
         <BoardColumn
@@ -284,7 +285,7 @@ function BoardColumn({
       className="w-72 shrink-0 bg-muted/50 p-2"
       role="group"
       aria-label={column.label}
-      data-testid={`board-column-${column.id}`}
+      data-testid={`db-board-column-${column.id}`}
       data-column-label={column.label}
       onDragOver={handleColumnDragOver}
       onDragLeave={onDragLeave}
@@ -392,6 +393,7 @@ function BoardCard({
         draggable
         role="listitem"
         aria-label={title}
+        data-testid={`db-board-card-${row.page.id}`}
         onDragStart={(e) => onDragStart(e, row.page.id, columnId)}
         onDragEnd={onDragEnd}
         onDragOver={handleCardDragOver}

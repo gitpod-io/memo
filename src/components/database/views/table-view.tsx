@@ -189,6 +189,7 @@ export const TableView = memo(function TableView({
             type="button"
             onClick={() => onAddRow()}
             className="w-full border-t border-overlay-border p-2 text-left text-sm text-muted-foreground hover:bg-overlay-subtle"
+            data-testid="db-table-add-row"
           >
             + New
           </button>
@@ -206,7 +207,7 @@ export const TableView = memo(function TableView({
   // --- Main table ---
 
   return (
-    <div className="w-full overflow-x-auto">
+    <div className="w-full overflow-x-auto" data-testid="db-table-container">
       <div
         ref={gridRef}
         className="grid w-max min-w-full"
@@ -265,7 +266,7 @@ export const TableView = memo(function TableView({
           })}
 
           {/* Add column header button */}
-          <div className="sticky top-0 z-10 flex items-center border-b border-overlay-border bg-background px-2">
+          <div className="sticky top-0 z-10 flex items-center border-b border-overlay-border bg-background px-2" data-testid="db-table-add-column">
             {onAddColumn && <PropertyTypePicker onSelect={onAddColumn} />}
           </div>
         </div>
@@ -297,6 +298,7 @@ export const TableView = memo(function TableView({
           type="button"
           onClick={() => onAddRow()}
           className="w-full border-t border-overlay-border p-2 text-left text-sm text-muted-foreground hover:bg-overlay-subtle"
+          data-testid="db-table-add-row"
         >
           + New
         </button>

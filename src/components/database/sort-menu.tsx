@@ -92,6 +92,7 @@ export function SortMenu({
             ? "text-foreground"
             : "text-muted-foreground",
         )}
+        data-testid="db-sort-button"
         onClick={() => {
           setOpen((prev) => !prev);
           setPickingProperty(false);
@@ -107,7 +108,7 @@ export function SortMenu({
       </Button>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-64 border border-border bg-background shadow-md">
+        <div className="absolute left-0 top-full z-50 mt-1 w-64 border border-border bg-background shadow-md" data-testid="db-sort-menu">
           {/* Active sorts */}
           {sorts.length > 0 && (
             <div className="border-b border-border px-1 py-1">
@@ -120,6 +121,7 @@ export function SortMenu({
                   <div
                     key={`${sort.property_id}-${index}`}
                     className="flex items-center gap-1.5 px-2 py-1"
+                    data-testid={`db-sort-rule-${index}`}
                   >
                     <span className="flex-1 truncate text-xs">
                       {propName}
@@ -129,6 +131,7 @@ export function SortMenu({
                       onClick={() => toggleDirection(index)}
                       className="flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground"
                       aria-label={`Sort ${sort.direction === "asc" ? "ascending" : "descending"}`}
+                      data-testid={`db-sort-direction-${index}`}
                     >
                       {sort.direction === "asc" ? (
                         <ArrowUp className="h-3 w-3" />

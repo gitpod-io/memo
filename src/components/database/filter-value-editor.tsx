@@ -116,7 +116,7 @@ function TextInputFilterValueEditor({
   placeholder: string;
 }) {
   return (
-    <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-sm border border-border bg-background p-2 shadow-md">
+    <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-sm border border-border bg-background p-2 shadow-md" data-testid="db-filter-value-editor">
       <Input
         autoFocus
         value={valueInput}
@@ -128,6 +128,7 @@ function TextInputFilterValueEditor({
         placeholder={placeholder}
         className="h-7 text-xs"
         type={inputType}
+        data-testid="db-filter-value-input"
       />
       <Button
         size="sm"
@@ -229,7 +230,7 @@ export function PropertyPicker({
   onSelect: (propertyId: string) => void;
 }) {
   return (
-    <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-sm border border-border bg-background py-1 shadow-md">
+    <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-sm border border-border bg-background py-1 shadow-md" data-testid="db-filter-property-picker">
       {properties.map((prop) => {
         const Icon = PROPERTY_TYPE_ICON[prop.type];
         return (
@@ -262,7 +263,7 @@ export function OperatorPicker({
   const operators = getOperatorsForType(propertyType);
 
   return (
-    <div className="absolute left-0 top-full z-50 mt-1 w-48 rounded-sm border border-border bg-background py-1 shadow-md">
+    <div className="absolute left-0 top-full z-50 mt-1 w-48 rounded-sm border border-border bg-background py-1 shadow-md" data-testid="db-filter-operator-picker">
       {operators.map((op) => (
         <button
           key={op}
@@ -271,6 +272,7 @@ export function OperatorPicker({
           className={cn(
             "flex w-full items-center px-3 py-1.5 text-sm hover:bg-overlay-hover",
           )}
+          data-testid={`db-filter-operator-${op}`}
         >
           {getOperatorLabel(op)}
         </button>
