@@ -244,7 +244,11 @@ export const BoardView = memo(function BoardView({
   }
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-4">
+    <div
+      className="flex gap-3 overflow-x-auto pb-4"
+      role="region"
+      aria-label="Database board"
+    >
       {columns.map((column) => (
         <BoardColumn
           key={column.id}
@@ -347,6 +351,8 @@ function BoardColumn({
     <div
       ref={columnRef}
       className="w-72 shrink-0 bg-muted/50 p-2"
+      role="group"
+      aria-label={column.label}
       data-testid={`board-column-${column.id}`}
       data-column-label={column.label}
       onDragOver={handleColumnDragOver}
@@ -365,7 +371,7 @@ function BoardColumn({
       </div>
 
       {/* Cards */}
-      <div className="flex flex-col">
+      <div className="flex flex-col" role="list">
         {column.rows.map((row, index) => (
           <BoardCard
             key={row.page.id}
@@ -396,6 +402,7 @@ function BoardColumn({
         <button
           type="button"
           onClick={() => onAddCard(column.id)}
+          aria-label={`Add card to ${column.label}`}
           className="mt-1 w-full p-1.5 text-left text-xs text-muted-foreground hover:bg-overlay-hover"
         >
           + New
@@ -452,6 +459,8 @@ function BoardCard({
       <Link
         href={`/${workspaceSlug}/${row.page.id}`}
         draggable
+        role="listitem"
+        aria-label={title}
         onDragStart={(e) => onDragStart(e, row.page.id, columnId)}
         onDragEnd={onDragEnd}
         onDragOver={handleCardDragOver}

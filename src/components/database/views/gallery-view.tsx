@@ -101,7 +101,11 @@ export const GalleryView = memo(function GalleryView({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+    <div
+      className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4"
+      role="list"
+      aria-label="Database gallery"
+    >
       {rows.map((row) => (
         <GalleryCard
           key={row.page.id}
@@ -160,6 +164,8 @@ function GalleryCard({
   return (
     <Link
       href={`/${workspaceSlug}/${row.page.id}`}
+      role="listitem"
+      aria-label={title}
       className={cn(
         "group/card flex flex-col overflow-hidden border border-overlay-border bg-muted",
         cardSizeClass,
