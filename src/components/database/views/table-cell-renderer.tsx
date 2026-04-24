@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { cn } from "@/lib/utils";
 import type {
   DatabaseProperty,
@@ -51,7 +52,7 @@ export interface CellRendererProps {
   displayValue: string;
 }
 
-export function CellRenderer({ value, property, propertyType, displayValue }: CellRendererProps) {
+export const CellRenderer = memo(function CellRenderer({ value, property, propertyType, displayValue }: CellRendererProps) {
   switch (propertyType) {
     case "select":
     case "status": {
@@ -155,4 +156,4 @@ export function CellRenderer({ value, property, propertyType, displayValue }: Ce
         </span>
       );
   }
-}
+});

@@ -2,6 +2,7 @@
 
 import {
   Component,
+  memo,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -60,7 +61,7 @@ export interface TableCellProps {
   onFocus: (rowIndex: number, colIndex: number) => void;
 }
 
-export function TableCell({
+export const TableCell = memo(function TableCell({
   rowId,
   propertyId,
   property,
@@ -271,7 +272,7 @@ export function TableCell({
       />
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // CellEditorErrorBoundary — catches rendering errors in cell editors so a
