@@ -13,8 +13,11 @@ import type {
 import { $applyNodeReplacement, DecoratorNode } from "lexical";
 import { Maximize2, Table2 } from "lucide-react";
 import { getClient } from "@/lib/supabase/lazy-client";
-import { lazyCaptureException } from "@/lib/capture";
 import { VIEW_TYPE_ICON } from "@/components/database/view-tabs";
+import { BoardView } from "@/components/database/views/board-view";
+import { ListView } from "@/components/database/views/list-view";
+import { CalendarView } from "@/components/database/views/calendar-view";
+import { GalleryView } from "@/components/database/views/gallery-view";
 import type {
   DatabaseProperty,
   DatabaseRow,
@@ -236,12 +239,14 @@ function InlineDatabaseComponent({
     );
   }
 
-  // Compact table rendering (max 5 rows, no filter/sort bar)
+  // Visible properties for compact table fallback
   const visibleProperties = activeView?.config.visible_properties
     ? data.properties.filter((p) =>
         activeView.config.visible_properties!.includes(p.id),
       )
     : data.properties.slice(0, 4);
+
+  const workspaceSlug = params.workspaceSlug ?? "";
 
   return (
     <div className="mt-3 border border-overlay-border">
@@ -293,68 +298,160 @@ function InlineDatabaseComponent({
         </button>
       </div>
 
-      {/* Compact view — table rows only, no filter/sort */}
+      {/* View content — renders the correct view type */}
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-sm">
-          <thead>
-            <tr>
-              {/* Title column */}
-              <th className="bg-muted p-2 text-left text-xs font-medium uppercase tracking-widest text-muted-foreground border-b border-overlay-border">
-                Title
-              </th>
-              {visibleProperties.map((prop) => (
-                <th
-                  key={prop.id}
-                  className="bg-muted p-2 text-left text-xs font-medium uppercase tracking-widest text-muted-foreground border-b border-overlay-border"
-                >
-                  {prop.name}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data.rows.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={visibleProperties.length + 1}
-                  className="px-2 py-6 text-center text-xs text-muted-foreground"
-                >
-                  No rows yet
-                </td>
-              </tr>
-            ) : (
-              data.rows.map((row) => (
-                <tr
-                  key={row.page.id}
-                  className="hover:bg-overlay-subtle border-b border-overlay-border"
-                >
-                  <td className="p-2 text-sm truncate max-w-[200px]">
-                    {row.page.icon && (
-                      <span className="mr-1">{row.page.icon}</span>
-                    )}
-                    {row.page.title || "Untitled"}
-                  </td>
-                  {visibleProperties.map((prop) => {
-                    const rowValue = row.values[prop.id];
-                    const displayValue = rowValue?.value
-                      ? formatCellValue(prop.type, rowValue.value)
-                      : "";
-                    return (
-                      <td
-                        key={prop.id}
-                        className="p-2 text-sm text-muted-foreground truncate max-w-[150px]"
-                      >
-                        {displayValue}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        <InlineViewContent
+          viewType={activeView?.type ?? "table"}
+          viewConfig={activeView?.config ?? {}}
+          rows={data.rows}
+          properties={data.properties}
+          visibleProperties={visibleProperties}
+          workspaceSlug={workspaceSlug}
+        />
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// InlineViewContent — renders the correct view type for the embed
+// ---------------------------------------------------------------------------
+
+function InlineViewContent({
+  viewType,
+  viewConfig,
+  rows,
+  properties,
+  visibleProperties,
+  workspaceSlug,
+}: {
+  viewType: string;
+  viewConfig: DatabaseView["config"];
+  rows: DatabaseRow[];
+  properties: DatabaseProperty[];
+  visibleProperties: DatabaseProperty[];
+  workspaceSlug: string;
+}) {
+  switch (viewType) {
+    case "board":
+      return (
+        <div className="p-2">
+          <BoardView
+            rows={rows}
+            properties={properties}
+            viewConfig={viewConfig}
+            workspaceSlug={workspaceSlug}
+          />
+        </div>
+      );
+    case "list":
+      return (
+        <div className="p-2">
+          <ListView
+            rows={rows}
+            properties={properties}
+            viewConfig={viewConfig}
+            workspaceSlug={workspaceSlug}
+          />
+        </div>
+      );
+    case "calendar":
+      return (
+        <div className="p-2">
+          <CalendarView
+            rows={rows}
+            properties={properties}
+            viewConfig={viewConfig}
+            workspaceSlug={workspaceSlug}
+          />
+        </div>
+      );
+    case "gallery":
+      return (
+        <div className="p-2">
+          <GalleryView
+            rows={rows}
+            properties={properties}
+            viewConfig={viewConfig}
+            workspaceSlug={workspaceSlug}
+          />
+        </div>
+      );
+    case "table":
+    default:
+      return <CompactTableView rows={rows} visibleProperties={visibleProperties} />;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// CompactTableView — inline table rendering (max 5 rows, no filter/sort)
+// ---------------------------------------------------------------------------
+
+function CompactTableView({
+  rows,
+  visibleProperties,
+}: {
+  rows: DatabaseRow[];
+  visibleProperties: DatabaseProperty[];
+}) {
+  return (
+    <table className="w-full border-collapse text-sm">
+      <thead>
+        <tr>
+          <th className="bg-muted p-2 text-left text-xs font-medium uppercase tracking-widest text-muted-foreground border-b border-overlay-border">
+            Title
+          </th>
+          {visibleProperties.map((prop) => (
+            <th
+              key={prop.id}
+              className="bg-muted p-2 text-left text-xs font-medium uppercase tracking-widest text-muted-foreground border-b border-overlay-border"
+            >
+              {prop.name}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.length === 0 ? (
+          <tr>
+            <td
+              colSpan={visibleProperties.length + 1}
+              className="px-2 py-6 text-center text-xs text-muted-foreground"
+            >
+              No rows yet
+            </td>
+          </tr>
+        ) : (
+          rows.map((row) => (
+            <tr
+              key={row.page.id}
+              className="hover:bg-overlay-subtle border-b border-overlay-border"
+            >
+              <td className="p-2 text-sm truncate max-w-[200px]">
+                {row.page.icon && (
+                  <span className="mr-1">{row.page.icon}</span>
+                )}
+                {row.page.title || "Untitled"}
+              </td>
+              {visibleProperties.map((prop) => {
+                const rowValue = row.values[prop.id];
+                const displayValue = rowValue?.value
+                  ? formatCellValue(prop.type, rowValue.value)
+                  : "";
+                return (
+                  <td
+                    key={prop.id}
+                    className="p-2 text-sm text-muted-foreground truncate max-w-[150px]"
+                  >
+                    {displayValue}
+                  </td>
+                );
+              })}
+            </tr>
+          ))
+        )}
+      </tbody>
+    </table>
   );
 }
 
