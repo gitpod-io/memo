@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import Link from "next/link";
 import { FileText, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -32,7 +32,7 @@ export interface ListViewProps {
 // ListView
 // ---------------------------------------------------------------------------
 
-export function ListView({
+export const ListView = memo(function ListView({
   rows,
   properties,
   viewConfig,
@@ -100,7 +100,7 @@ export function ListView({
       )}
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // ListRow

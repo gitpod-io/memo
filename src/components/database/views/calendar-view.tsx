@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -162,7 +162,7 @@ export interface CalendarViewProps {
 // CalendarView
 // ---------------------------------------------------------------------------
 
-export function CalendarView({
+export const CalendarView = memo(function CalendarView({
   rows,
   properties,
   viewConfig,
@@ -366,7 +366,7 @@ export function CalendarView({
       </div>
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // CalendarDayCell

@@ -3,6 +3,13 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { captureSupabaseError } from "@/lib/sentry";
+import {
+  getDatabaseCache,
+  setDatabaseCache,
+  invalidateDatabase,
+  getMembersCache,
+  setMembersCache,
+} from "@/lib/database-cache";
 import type {
   DatabaseProperty,
   DatabaseRow,
@@ -205,6 +212,7 @@ export async function addProperty(
     captureSupabaseError(error, "database.addProperty");
     return { data: null, error };
   }
+  invalidateDatabase(databaseId);
   return { data: data as DatabaseProperty, error: null };
 }
 
@@ -214,6 +222,7 @@ export async function addProperty(
 export async function updateProperty(
   propertyId: string,
   updates: Partial<Pick<DatabaseProperty, "name" | "type" | "config">>,
+  databaseId?: string,
 ): Promise<{ data: DatabaseProperty | null; error: Error | null }> {
   const supabase = getClient();
   const { data, error } = await supabase
@@ -227,6 +236,7 @@ export async function updateProperty(
     captureSupabaseError(error, "database.updateProperty");
     return { data: null, error };
   }
+  if (databaseId) invalidateDatabase(databaseId);
   return { data: data as DatabaseProperty, error: null };
 }
 
@@ -235,6 +245,7 @@ export async function updateProperty(
  */
 export async function deleteProperty(
   propertyId: string,
+  databaseId?: string,
 ): Promise<{ error: Error | null }> {
   const supabase = getClient();
   const { error } = await supabase
@@ -244,6 +255,8 @@ export async function deleteProperty(
 
   if (error) {
     captureSupabaseError(error, "database.deleteProperty");
+  } else if (databaseId) {
+    invalidateDatabase(databaseId);
   }
   return { error };
 }
@@ -275,6 +288,7 @@ export async function reorderProperties(
     }
   }
 
+  invalidateDatabase(databaseId);
   return { error: null };
 }
 
@@ -355,6 +369,7 @@ export async function addRow(
     }
   }
 
+  invalidateDatabase(databaseId);
   return { data: rowPage as Page, error: null };
 }
 
@@ -365,6 +380,7 @@ export async function updateRowValue(
   rowId: string,
   propertyId: string,
   value: Record<string, unknown>,
+  databaseId?: string,
 ): Promise<{ data: RowValue | null; error: Error | null }> {
   const supabase = getClient();
   const { data, error } = await supabase
@@ -379,6 +395,7 @@ export async function updateRowValue(
   if (error) {
     return { data: null, error };
   }
+  if (databaseId) invalidateDatabase(databaseId);
   return { data: data as RowValue, error: null };
 }
 
@@ -418,6 +435,7 @@ export async function addView(
     captureSupabaseError(error, "database.addView");
     return { data: null, error };
   }
+  invalidateDatabase(databaseId);
   return { data: data as DatabaseView, error: null };
 }
 
@@ -427,6 +445,7 @@ export async function addView(
 export async function updateView(
   viewId: string,
   updates: Partial<Pick<DatabaseView, "name" | "type" | "config">>,
+  databaseId?: string,
 ): Promise<{ data: DatabaseView | null; error: Error | null }> {
   const supabase = getClient();
   const { data, error } = await supabase
@@ -440,6 +459,7 @@ export async function updateView(
     captureSupabaseError(error, "database.updateView");
     return { data: null, error };
   }
+  if (databaseId) invalidateDatabase(databaseId);
   return { data: data as DatabaseView, error: null };
 }
 
@@ -448,6 +468,7 @@ export async function updateView(
  */
 export async function deleteView(
   viewId: string,
+  databaseId?: string,
 ): Promise<{ error: Error | null }> {
   const supabase = getClient();
 
@@ -486,6 +507,8 @@ export async function deleteView(
 
   if (error) {
     captureSupabaseError(error, "database.deleteView");
+  } else {
+    invalidateDatabase(databaseId ?? view.database_id);
   }
   return { error };
 }
@@ -512,6 +535,7 @@ export async function reorderViews(
     }
   }
 
+  invalidateDatabase(databaseId);
   return { error: null };
 }
 
@@ -529,10 +553,16 @@ export interface WorkspaceMember {
 /**
  * Load workspace members with profile data. Used to populate _members config
  * on person and created_by properties so renderers can resolve user IDs.
+ * Results are cached in-memory for 30s.
  */
 export async function loadWorkspaceMembers(
   workspaceId: string,
 ): Promise<{ data: WorkspaceMember[] | null; error: Error | null }> {
+  const cached = getMembersCache<WorkspaceMember[]>(workspaceId);
+  if (cached) {
+    return { data: cached, error: null };
+  }
+
   const supabase = getClient();
   const { data, error } = await supabase
     .from("members")
@@ -561,6 +591,8 @@ export async function loadWorkspaceMembers(
     };
   });
 
+  setMembersCache(workspaceId, members);
+
   return { data: members, error: null };
 }
 
@@ -576,10 +608,16 @@ export interface LoadDatabaseResult {
 
 /**
  * Load a database: properties, views, and rows with their values in parallel.
+ * Results are cached in-memory for 30s to avoid re-fetching on back-navigation.
  */
 export async function loadDatabase(
   databaseId: string,
 ): Promise<{ data: LoadDatabaseResult | null; error: Error | null }> {
+  const cached = getDatabaseCache<LoadDatabaseResult>(databaseId);
+  if (cached) {
+    return { data: cached, error: null };
+  }
+
   const supabase = getClient();
 
   const [propertiesResult, viewsResult, rowsResult] = await Promise.all([
@@ -654,8 +692,11 @@ export async function loadDatabase(
     values: valuesByRow.get(page.id) ?? {},
   }));
 
+  const result: LoadDatabaseResult = { properties, views, rows };
+  setDatabaseCache(databaseId, result);
+
   return {
-    data: { properties, views, rows },
+    data: result,
     error: null,
   };
 }

@@ -151,6 +151,7 @@ export function FavoritesSection({ userId }: FavoritesSectionProps) {
                 ? "bg-overlay-active font-medium text-label-subtle"
                 : "text-muted-foreground hover:bg-overlay-hover"
             }`}
+            onMouseEnter={() => router.prefetch(`/${workspaceSlug}/${fav.page_id}`)}
           >
             <span className="flex h-4 w-4 shrink-0 items-center justify-center">
               {fav.pages.icon ? (

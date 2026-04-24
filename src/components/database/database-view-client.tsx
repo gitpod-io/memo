@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import type { SerializedEditorState } from "lexical";
@@ -64,7 +64,9 @@ import type {
   PropertyType,
 } from "@/lib/types";
 
-// Dynamically import view components to code-split database view types
+// Dynamically import view components to code-split database view types.
+// TableView uses createPortal(document.body) and useLayoutEffect, so it
+// needs { ssr: false }. The other views are pure data renderers.
 const TableView = dynamic(
   () =>
     import("@/components/database/views/table-view").then(
@@ -78,7 +80,6 @@ const BoardView = dynamic(
     import("@/components/database/views/board-view").then(
       (mod) => mod.BoardView,
     ),
-  { ssr: false },
 );
 
 const ListView = dynamic(
@@ -86,7 +87,6 @@ const ListView = dynamic(
     import("@/components/database/views/list-view").then(
       (mod) => mod.ListView,
     ),
-  { ssr: false },
 );
 
 const CalendarView = dynamic(
@@ -94,7 +94,6 @@ const CalendarView = dynamic(
     import("@/components/database/views/calendar-view").then(
       (mod) => mod.CalendarView,
     ),
-  { ssr: false },
 );
 
 const GalleryView = dynamic(
@@ -102,7 +101,6 @@ const GalleryView = dynamic(
     import("@/components/database/views/gallery-view").then(
       (mod) => mod.GalleryView,
     ),
-  { ssr: false },
 );
 
 // Dynamically import the editor only when the database page has content above the grid
@@ -238,7 +236,6 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     workspaceSlug,
     userId,
   } = props;
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   // Database data state
@@ -317,14 +314,14 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     };
   }, [pageId, workspaceId]);
 
-  // Handle view tab change — update URL ?view= param
+  // Handle view tab change — update URL ?view= param without server round-trip
   const handleViewChange = useCallback(
     (viewId: string) => {
       const params = new URLSearchParams(searchParams.toString());
       params.set("view", viewId);
-      router.replace(`?${params.toString()}`, { scroll: false });
+      window.history.replaceState(null, "", `?${params.toString()}`);
     },
-    [router, searchParams],
+    [searchParams],
   );
 
   // Create a new view with sensible defaults per type
@@ -355,9 +352,9 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
       // Switch to the new view
       const params = new URLSearchParams(searchParams.toString());
       params.set("view", newView.id);
-      router.replace(`?${params.toString()}`, { scroll: false });
+      window.history.replaceState(null, "", `?${params.toString()}`);
     },
-    [pageId, properties, router, searchParams],
+    [pageId, properties, searchParams],
   );
 
   // Update the active view's config (used by board/calendar config dropdowns)
@@ -373,7 +370,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
         ),
       );
 
-      const { error } = await updateView(activeView.id, { config: newConfig });
+      const { error } = await updateView(activeView.id, { config: newConfig }, pageId);
       if (error) {
         toast.error("Failed to update view configuration", { duration: 8000 });
         // Revert
@@ -384,7 +381,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
         );
       }
     },
-    [activeView],
+    [activeView, pageId],
   );
 
   // Rename a view
@@ -392,7 +389,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     async (viewId: string, newName: string) => {
       const { data: updated, error } = await updateView(viewId, {
         name: newName,
-      });
+      }, pageId);
       if (error || !updated) {
         toast.error("Failed to rename view", { duration: 8000 });
         return;
@@ -401,31 +398,32 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
         prev.map((v) => (v.id === viewId ? { ...v, name: newName } : v)),
       );
     },
-    [],
+    [pageId],
   );
 
   // Delete a view (with last-view protection handled by deleteView)
   const handleDeleteView = useCallback(
     async (viewId: string) => {
-      const { error } = await deleteView(viewId);
+      const { error } = await deleteView(viewId, pageId);
       if (error) {
         toast.error(error.message || "Failed to delete view", {
           duration: 8000,
         });
         return;
       }
-      setViews((prev) => {
-        const remaining = prev.filter((v) => v.id !== viewId);
-        // If the deleted view was active, switch to the first remaining view
-        if (viewId === activeViewId && remaining.length > 0) {
+      setViews((prev) => prev.filter((v) => v.id !== viewId));
+      // If the deleted view was active, switch to the first remaining view.
+      // Done outside setViews to avoid calling history.replaceState during render.
+      if (viewId === activeViewId) {
+        const remaining = views.filter((v) => v.id !== viewId);
+        if (remaining.length > 0) {
           const params = new URLSearchParams(searchParams.toString());
           params.set("view", remaining[0].id);
-          router.replace(`?${params.toString()}`, { scroll: false });
+          window.history.replaceState(null, "", `?${params.toString()}`);
         }
-        return remaining;
-      });
+      }
     },
-    [activeViewId, router, searchParams],
+    [activeViewId, pageId, searchParams, views],
   );
 
   // Duplicate a view — copy config and create with " (copy)" suffix
@@ -449,9 +447,9 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
       // Switch to the duplicated view
       const params = new URLSearchParams(searchParams.toString());
       params.set("view", newView.id);
-      router.replace(`?${params.toString()}`, { scroll: false });
+      window.history.replaceState(null, "", `?${params.toString()}`);
     },
-    [pageId, views, router, searchParams],
+    [pageId, views, searchParams],
   );
 
   // Reorder views by updating position values
@@ -515,12 +513,12 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
           v.id === activeView.id ? { ...v, config: newConfig } : v,
         ),
       );
-      const { error } = await updateView(activeView.id, { config: newConfig });
+      const { error } = await updateView(activeView.id, { config: newConfig }, pageId);
       if (error) {
         toast.error("Failed to update sort", { duration: 8000 });
       }
     },
-    [activeView],
+    [activeView, pageId],
   );
 
   const handleFiltersChange = useCallback(
@@ -533,12 +531,12 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
           v.id === activeView.id ? { ...v, config: newConfig } : v,
         ),
       );
-      const { error } = await updateView(activeView.id, { config: newConfig });
+      const { error } = await updateView(activeView.id, { config: newConfig }, pageId);
       if (error) {
         toast.error("Failed to update filter", { duration: 8000 });
       }
     },
-    [activeView],
+    [activeView, pageId],
   );
 
   // Column header sort toggle: cycles unsorted → asc → desc → unsorted
@@ -630,7 +628,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
         }),
       );
 
-      const { error } = await updateRowValue(rowId, propertyId, newValue);
+      const { error } = await updateRowValue(rowId, propertyId, newValue, pageId);
       if (error) {
         if (!isInsufficientPrivilegeError(error)) {
           captureSupabaseError(error, "database-view:move-card");
@@ -638,7 +636,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
         toast.error("Failed to move card", { duration: 8000 });
       }
     },
-    [],
+    [pageId],
   );
 
   const handleCellUpdate = useCallback(
@@ -690,7 +688,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
       if (newOptions) {
         const { error: configError } = await updateProperty(propertyId, {
           config: { options: newOptions },
-        });
+        }, pageId);
         if (configError) {
           if (!isInsufficientPrivilegeError(configError)) {
             captureSupabaseError(configError, "database-view:update-property-options");
@@ -699,7 +697,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
         }
       }
 
-      const { error } = await updateRowValue(rowId, propertyId, cleanValue);
+      const { error } = await updateRowValue(rowId, propertyId, cleanValue, pageId);
       if (error) {
         if (!isInsufficientPrivilegeError(error)) {
           captureSupabaseError(error, "database-view:update-cell");
@@ -707,7 +705,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
         toast.error("Failed to update cell", { duration: 8000 });
       }
     },
-    [],
+    [pageId],
   );
 
   const handleAddColumn = useCallback(
@@ -756,7 +754,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
         prev.map((p) => (p.id === propertyId ? { ...p, name: newName } : p)),
       );
 
-      const { error } = await updateProperty(propertyId, { name: newName });
+      const { error } = await updateProperty(propertyId, { name: newName }, pageId);
       if (error) {
         toast.error("Failed to rename property", { duration: 8000 });
         // Revert
@@ -765,7 +763,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
         );
       }
     },
-    [renamingProperty],
+    [renamingProperty, pageId],
   );
 
   const handleColumnReorder = useCallback(
@@ -836,7 +834,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
       }),
     );
 
-    const { error } = await deleteProperty(propertyId);
+    const { error } = await deleteProperty(propertyId, pageId);
     if (error) {
       toast.error("Failed to delete property", { duration: 8000 });
       // Revert
@@ -858,7 +856,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
             ...v.config,
             visible_properties: vp.filter((id: string) => id !== propertyId),
           },
-        });
+        }, pageId);
       }
     }
   }, [deletingProperty, properties, views, pageId]);

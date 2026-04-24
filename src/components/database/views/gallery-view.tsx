@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { ImageIcon, LayoutGrid, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -69,7 +69,7 @@ function getCoverUrl(
 // GalleryView
 // ---------------------------------------------------------------------------
 
-export function GalleryView({
+export const GalleryView = memo(function GalleryView({
   rows,
   viewConfig,
   workspaceSlug,
@@ -132,7 +132,7 @@ export function GalleryView({
       )}
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // GalleryCard

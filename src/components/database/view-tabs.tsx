@@ -76,6 +76,15 @@ const VIEW_TYPES: DatabaseViewType[] = [
   "gallery",
 ];
 
+// Preload map: trigger dynamic import() on hover to warm the browser module cache
+const VIEW_CHUNK_PRELOADERS: Record<DatabaseViewType, () => void> = {
+  table: () => void import("@/components/database/views/table-view"),
+  board: () => void import("@/components/database/views/board-view"),
+  list: () => void import("@/components/database/views/list-view"),
+  calendar: () => void import("@/components/database/views/calendar-view"),
+  gallery: () => void import("@/components/database/views/gallery-view"),
+};
+
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
@@ -328,6 +337,7 @@ export function ViewTabs({
                       type="button"
                       onClick={() => handleTabClick(view.id)}
                       onDoubleClick={() => handleDoubleClick(view.id)}
+                      onMouseEnter={() => VIEW_CHUNK_PRELOADERS[view.type]()}
                       className={cn(
                         "group/tab flex shrink-0 items-center gap-1.5 px-3 py-2 text-sm transition-colors",
                         isActive

@@ -3,6 +3,13 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["*.preview.devx.network", "*.preview.env.ona.dev"],
+  experimental: {
+    // Cache dynamic route RSC payloads for 30s on the client.
+    // Makes back/forward navigation instant instead of re-fetching.
+    staleTimes: {
+      dynamic: 30,
+    },
+  },
 };
 
 export default withSentryConfig(nextConfig, {

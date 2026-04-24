@@ -69,6 +69,9 @@ export interface Page {
   deleted_at: string | null;
 }
 
+/** Page without the content column — used by the sidebar tree to reduce payload. */
+export type SidebarPage = Omit<Page, "content">;
+
 export interface PageVisit {
   id: string;
   workspace_id: string;

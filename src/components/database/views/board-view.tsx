@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { getPropertyTypeConfig } from "@/components/database/property-types/index";
@@ -72,7 +72,7 @@ function getRowOptionId(row: DatabaseRow, propertyId: string): string | null {
 // BoardView
 // ---------------------------------------------------------------------------
 
-export function BoardView({
+export const BoardView = memo(function BoardView({
   rows,
   properties,
   viewConfig,
@@ -264,7 +264,7 @@ export function BoardView({
       ))}
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Column data type
