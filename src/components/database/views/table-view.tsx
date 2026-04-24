@@ -3,7 +3,6 @@
 import { memo, useMemo } from "react";
 import { FileText } from "lucide-react";
 import { PROPERTY_TYPE_ICON } from "@/lib/property-icons";
-import { lazyCaptureException } from "@/lib/capture";
 import { PropertyTypePicker } from "@/components/database/property-type-picker";
 import type { SortRule } from "@/lib/database-filters";
 import { cn } from "@/lib/utils";
