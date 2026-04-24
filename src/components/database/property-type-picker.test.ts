@@ -10,9 +10,9 @@ import { resolve } from "path";
  * accepts a PropertyType parameter and passes it through to addProperty.
  */
 
-function readViewClient(): string {
+function readPropertiesHook(): string {
   return readFileSync(
-    resolve(__dirname, "./database-view-client.tsx"),
+    resolve(__dirname, "./hooks/use-database-properties.ts"),
     "utf-8",
   );
 }
@@ -39,22 +39,23 @@ function readPropertyTypePicker(): string {
 }
 
 describe("property type selector regression (#538)", () => {
-  const viewClient = readViewClient();
+  // handleAddColumn was extracted to the useDatabaseProperties hook
+  const propertiesHook = readPropertiesHook();
 
   it("handleAddColumn accepts a type parameter", () => {
     // The callback must accept a PropertyType, not be a zero-arg function.
-    expect(viewClient).toMatch(/handleAddColumn[^]*?async\s*\(\s*type\s*:\s*PropertyType\s*\)/);
+    expect(propertiesHook).toMatch(/handleAddColumn[^]*?async\s*\(\s*type\s*:\s*PropertyType\s*\)/);
   });
 
   it("addProperty is called with the type parameter, not a hardcoded string", () => {
     // Must NOT contain addProperty(pageId, name, "text") — the type should be dynamic.
     const hardcodedCall = /addProperty\(\s*pageId\s*,\s*name\s*,\s*"text"\s*\)/;
-    expect(viewClient).not.toMatch(hardcodedCall);
+    expect(propertiesHook).not.toMatch(hardcodedCall);
   });
 
   it("addProperty is called with the dynamic type variable", () => {
     // Must contain addProperty(pageId, name, type, ...) — using the parameter.
-    expect(viewClient).toMatch(/addProperty\(\s*pageId\s*,\s*name\s*,\s*type\b/);
+    expect(propertiesHook).toMatch(/addProperty\(\s*pageId\s*,\s*name\s*,\s*type\b/);
   });
 
   it("table view uses PropertyTypePicker for add-column", () => {
@@ -76,27 +77,28 @@ describe("property type selector regression (#538)", () => {
  * These tests verify the view client uses the extracted helper.
  */
 describe("default column name matches property type (#563)", () => {
-  const viewClient = readViewClient();
+  // Column naming logic was extracted to the useDatabaseProperties hook
+  const propertiesHook = readPropertiesHook();
 
   it("imports generateColumnName from column-helpers", () => {
-    expect(viewClient).toContain("generateColumnName");
-    expect(viewClient).toMatch(
+    expect(propertiesHook).toContain("generateColumnName");
+    expect(propertiesHook).toMatch(
       /import\s*\{[^}]*generateColumnName[^}]*\}\s*from\s*["']@\/lib\/column-helpers["']/,
     );
   });
 
   it("does not use the generic 'Property N' naming pattern", () => {
     // The old pattern: `Property ${properties.length + 1}`
-    expect(viewClient).not.toMatch(/`Property \$\{properties\.length/);
+    expect(propertiesHook).not.toMatch(/`Property \$\{properties\.length/);
   });
 
   it("calls generateColumnName to derive the column name", () => {
-    expect(viewClient).toMatch(/generateColumnName\s*\(/);
+    expect(propertiesHook).toMatch(/generateColumnName\s*\(/);
   });
 
   it("calls getDefaultColumnConfig to derive the column config", () => {
-    expect(viewClient).toContain("getDefaultColumnConfig");
-    expect(viewClient).toMatch(/getDefaultColumnConfig\s*\(/);
+    expect(propertiesHook).toContain("getDefaultColumnConfig");
+    expect(propertiesHook).toMatch(/getDefaultColumnConfig\s*\(/);
   });
 });
 
