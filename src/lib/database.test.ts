@@ -86,10 +86,12 @@ import {
   loadDatabase,
   loadRow,
 } from "./database";
+import { clearAllCaches } from "./database-cache";
 
 beforeEach(() => {
   vi.clearAllMocks();
   tableMocks = {};
+  clearAllCaches();
 });
 
 // ---------------------------------------------------------------------------

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  memo,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -146,7 +147,7 @@ interface ColumnDropTarget {
 // TableView
 // ---------------------------------------------------------------------------
 
-export function TableView({
+export const TableView = memo(function TableView({
   rows,
   properties,
   viewConfig,
@@ -629,7 +630,7 @@ export function TableView({
       )}
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // TableRow (extracted for readability, not a separate file per conventions)

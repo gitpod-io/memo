@@ -1,17 +1,17 @@
 // Pure functions for page tree manipulation.
 // No React or Supabase dependencies — all computation is side-effect-free.
 
-import type { Page } from "@/lib/types";
+import type { SidebarPage } from "@/lib/types";
 
 export interface TreeNode {
-  page: Page;
+  page: SidebarPage;
   children: TreeNode[];
 }
 
 /** Build a nested tree from a flat list of pages. Orphans become roots.
  *  Database row pages (children of `is_database` pages) are excluded from the
  *  tree so they don't clutter the sidebar — they're accessed via the database view. */
-export function buildTree(pages: Page[]): TreeNode[] {
+export function buildTree(pages: SidebarPage[]): TreeNode[] {
   // Collect IDs of database pages so we can filter out their children (rows).
   const databaseIds = new Set(
     pages.filter((p) => p.is_database).map((p) => p.id),
@@ -68,7 +68,7 @@ export function findNode(nodes: TreeNode[], id: string): TreeNode | null {
 
 /** Get the next available position among siblings of a given parent. */
 export function getNextSiblingPosition(
-  pages: Page[],
+  pages: SidebarPage[],
   parentId: string | null,
 ): number {
   const siblings = pages.filter((p) => p.parent_id === parentId);
@@ -78,7 +78,7 @@ export function getNextSiblingPosition(
 }
 
 /** Get sorted siblings for a page (pages sharing the same parent_id). */
-export function getSortedSiblings(pages: Page[], parentId: string | null): Page[] {
+export function getSortedSiblings(pages: SidebarPage[], parentId: string | null): SidebarPage[] {
   return pages
     .filter((p) => p.parent_id === parentId)
     .sort((a, b) => a.position - b.position);
@@ -90,7 +90,7 @@ export function getSortedSiblings(pages: Page[], parentId: string | null): Page[
  * page updates needed (swap positions of the two adjacent pages).
  */
 export function computeSwapPositions(
-  pages: Page[],
+  pages: SidebarPage[],
   pageId: string,
   direction: "up" | "down",
 ): { updates: Array<{ id: string; position: number }> } | null {
@@ -126,7 +126,7 @@ export function computeSwapPositions(
  * Returns null if nesting is not possible (page is first among siblings).
  */
 export function computeNest(
-  pages: Page[],
+  pages: SidebarPage[],
   pageId: string,
 ): { parentId: string; position: number } | null {
   const page = pages.find((p) => p.id === pageId);
@@ -148,7 +148,7 @@ export function computeNest(
  * former parent, and existing siblings at that level are shifted down.
  */
 export function computeUnnest(
-  pages: Page[],
+  pages: SidebarPage[],
   pageId: string,
 ): {
   pageUpdate: { parentId: string | null; position: number };
@@ -183,7 +183,7 @@ export type DropPosition = "before" | "after" | "inside";
  * Returns null if the drop is invalid (same page, or dropping onto a descendant).
  */
 export function computeDrop(
-  pages: Page[],
+  pages: SidebarPage[],
   tree: TreeNode[],
   draggedId: string,
   targetId: string,

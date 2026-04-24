@@ -44,7 +44,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { createDatabase } from "@/lib/database";
-import type { Page } from "@/lib/types";
+import type { SidebarPage } from "@/lib/types";
 import {
   buildTree,
   computeDrop,
@@ -64,7 +64,7 @@ interface PageTreeProps {
 export function PageTree({ userId }: PageTreeProps) {
   const router = useRouter();
   const params = useParams<{ workspaceSlug?: string; pageId?: string }>();
-  const [pages, setPages] = useState<Page[]>([]);
+  const [pages, setPages] = useState<SidebarPage[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<TreeNode | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -121,7 +121,7 @@ export function PageTree({ userId }: PageTreeProps) {
         const supabase = await getClient();
         return supabase
           .from("pages")
-          .select("*")
+          .select("id, workspace_id, parent_id, title, icon, cover_url, is_database, position, created_by, created_at, updated_at, deleted_at")
           .eq("workspace_id", workspaceId)
           .is("deleted_at", null)
           .order("position", { ascending: true });
@@ -356,20 +356,27 @@ export function PageTree({ userId }: PageTreeProps) {
   }, [workspaceId, workspaceSlug, userId, router]);
 
   const handleDuplicate = useCallback(
-    async (page: Page) => {
+    async (page: SidebarPage) => {
       if (!workspaceId || !workspaceSlug) return;
 
       const nextPosition = getNextSiblingPosition(pages, page.parent_id);
       const duplicateTitle = (page.title || "Untitled") + " (copy)";
 
+      // Fetch content on-demand — the sidebar tree query excludes it to reduce payload
       const supabase = await getClient();
+      const { data: fullPage } = await supabase
+        .from("pages")
+        .select("content")
+        .eq("id", page.id)
+        .single();
+
       const { data: newPage, error } = await supabase
         .from("pages")
         .insert({
           workspace_id: workspaceId,
           parent_id: page.parent_id,
           title: duplicateTitle,
-          content: page.content ? JSON.parse(JSON.stringify(page.content)) : null,
+          content: fullPage?.content ? JSON.parse(JSON.stringify(fullPage.content)) : null,
           icon: page.icon,
           position: nextPosition,
           created_by: userId,
@@ -440,13 +447,13 @@ export function PageTree({ userId }: PageTreeProps) {
     setDeleteTarget(null);
   }
 
-  async function handleMoveUp(page: Page) {
+  async function handleMoveUp(page: SidebarPage) {
     const result = computeSwapPositions(pages, page.id, "up");
     if (!result) return;
     await applySwap(result.updates);
   }
 
-  async function handleMoveDown(page: Page) {
+  async function handleMoveDown(page: SidebarPage) {
     const result = computeSwapPositions(pages, page.id, "down");
     if (!result) return;
     await applySwap(result.updates);
@@ -479,7 +486,7 @@ export function PageTree({ userId }: PageTreeProps) {
     }
   }
 
-  async function handleNest(page: Page) {
+  async function handleNest(page: SidebarPage) {
     const result = computeNest(pages, page.id);
     if (!result) return;
 
@@ -507,7 +514,7 @@ export function PageTree({ userId }: PageTreeProps) {
     }
   }
 
-  async function handleUnnest(page: Page) {
+  async function handleUnnest(page: SidebarPage) {
     const result = computeUnnest(pages, page.id);
     if (!result) return;
 
@@ -686,6 +693,9 @@ export function PageTree({ userId }: PageTreeProps) {
               onNavigate={(pageId) =>
                 router.push(`/${workspaceSlug}/${pageId}`)
               }
+              onPrefetch={(pageId) =>
+                router.prefetch(`/${workspaceSlug}/${pageId}`)
+              }
               onCreate={handleCreate}
               onDuplicate={handleDuplicate}
               onDelete={setDeleteTarget}
@@ -766,13 +776,14 @@ interface PageTreeItemProps {
   selectedPageId: string | undefined;
   workspaceSlug: string;
   onNavigate: (pageId: string) => void;
+  onPrefetch: (pageId: string) => void;
   onCreate: (parentId: string | null) => void;
-  onDuplicate: (page: Page) => void;
+  onDuplicate: (page: SidebarPage) => void;
   onDelete: (node: TreeNode) => void;
-  onMoveUp: (page: Page) => void;
-  onMoveDown: (page: Page) => void;
-  onNest: (page: Page) => void;
-  onUnnest: (page: Page) => void;
+  onMoveUp: (page: SidebarPage) => void;
+  onMoveDown: (page: SidebarPage) => void;
+  onNest: (page: SidebarPage) => void;
+  onUnnest: (page: SidebarPage) => void;
   draggedId: string | null;
   dropTarget: { id: string; position: "before" | "after" | "inside" } | null;
   onDragStart: (e: React.DragEvent, pageId: string) => void;
@@ -780,7 +791,7 @@ interface PageTreeItemProps {
   onDragLeave: () => void;
   onDrop: (e: React.DragEvent) => void;
   onDragEnd: () => void;
-  pages: Page[];
+  pages: SidebarPage[];
   favoriteMap: Map<string, string>;
   onToggleFavorite: (pageId: string) => void;
 }
@@ -793,6 +804,7 @@ function PageTreeItem({
   selectedPageId,
   workspaceSlug,
   onNavigate,
+  onPrefetch,
   onCreate,
   onDuplicate,
   onDelete,
@@ -836,6 +848,7 @@ function PageTreeItem({
         } ${isDragged ? "opacity-50" : ""}`}
         style={{ paddingLeft: `${depth * 12 + 4}px` }}
         draggable
+        onMouseEnter={() => onPrefetch(page.id)}
         onDragStart={(e) => onDragStart(e, page.id)}
         onDragOver={(e) => onDragOver(e, page.id)}
         onDragLeave={onDragLeave}
@@ -990,6 +1003,7 @@ function PageTreeItem({
               selectedPageId={selectedPageId}
               workspaceSlug={workspaceSlug}
               onNavigate={onNavigate}
+              onPrefetch={onPrefetch}
               onCreate={onCreate}
               onDuplicate={onDuplicate}
               onDelete={onDelete}
