@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
 import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -48,7 +49,35 @@ export interface TableRowProps {
   onDeleteRow?: (rowId: string) => void;
 }
 
-export function TableRow({
+// editingCell and focusedCell change on every interaction but only affect the
+// row they target. Compare whether the state is relevant to *this* row so
+// unrelated rows skip re-rendering.
+function areTableRowPropsEqual(prev: TableRowProps, next: TableRowProps): boolean {
+  if (prev.row !== next.row) return false;
+  if (prev.rowIndex !== next.rowIndex) return false;
+  if (prev.visibleProperties !== next.visibleProperties) return false;
+  if (prev.allProperties !== next.allProperties) return false;
+  if (prev.rowHeightClass !== next.rowHeightClass) return false;
+  if (prev.workspaceSlug !== next.workspaceSlug) return false;
+  if (prev.onStartEditing !== next.onStartEditing) return false;
+  if (prev.onCellKeyDown !== next.onCellKeyDown) return false;
+  if (prev.onCellBlur !== next.onCellBlur) return false;
+  if (prev.onCellFocus !== next.onCellFocus) return false;
+  if (prev.onDeleteRow !== next.onDeleteRow) return false;
+
+  // Only re-render if editing/focus state targets this row
+  const prevEditing = prev.editingCell?.rowId === prev.row.page.id ? prev.editingCell : null;
+  const nextEditing = next.editingCell?.rowId === next.row.page.id ? next.editingCell : null;
+  if (prevEditing?.propertyId !== nextEditing?.propertyId) return false;
+
+  const prevFocused = prev.focusedCell?.rowIndex === prev.rowIndex ? prev.focusedCell : null;
+  const nextFocused = next.focusedCell?.rowIndex === next.rowIndex ? next.focusedCell : null;
+  if (prevFocused?.colIndex !== nextFocused?.colIndex) return false;
+
+  return true;
+}
+
+export const TableRow = memo(function TableRow({
   row,
   rowIndex,
   visibleProperties,
@@ -145,4 +174,4 @@ export function TableRow({
       />
     </>
   );
-}
+}, areTableRowPropsEqual);
