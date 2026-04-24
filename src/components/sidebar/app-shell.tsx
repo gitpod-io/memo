@@ -45,6 +45,12 @@ function AppShellInner({
 }: AppShellProps) {
   return (
     <div className="flex h-screen overflow-hidden">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-text-primary focus:shadow-md focus:ring-2 focus:ring-accent-primary focus:outline-none"
+      >
+        Skip to content
+      </a>
       <AppSidebar
         userId={userId}
         displayName={displayName}
@@ -54,7 +60,7 @@ function AppShellInner({
         <header className="flex h-10 shrink-0 items-center gap-2 border-b border-overlay-border px-4 md:hidden">
           <SidebarToggle />
         </header>
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto focus:outline-none">{children}</main>
       </div>
       <FocusModeHint />
     </div>
