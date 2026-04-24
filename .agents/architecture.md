@@ -285,7 +285,14 @@ Database page (is_database = true)
 
 ```
 src/components/database/
-  ├── database-view-client.tsx     # Main client component: loads data, manages view state
+  ├── database-view-client.tsx     # Main client component: loads data, composes hooks + JSX
+  ├── database-view-helpers.tsx    # ViewConfigDropdown, ComingSoonPlaceholder, DatabaseSkeleton
+  ├── delete-property-dialog.tsx   # Confirmation dialog for deleting a property
+  ├── hooks/
+  │   ├── use-database-views.ts    # View CRUD: add, rename, delete, duplicate, reorder, config
+  │   ├── use-database-rows.ts     # Row mutations: add, delete, cell update, card move
+  │   ├── use-database-properties.ts # Property CRUD: add, rename, delete, reorder + dialog state
+  │   └── use-database-filters.ts  # Sort/filter state and derived displayedRows
   ├── view-tabs.tsx                # Horizontal tab bar for switching views
   ├── filter-bar.tsx               # Active filter pills + add filter UI
   ├── sort-menu.tsx                # Sort configuration dropdown
@@ -433,7 +440,14 @@ src/
 │   │   ├── word-count-plugin.tsx    # Word count + reading time display below editor
 │   │   └── code-language-selector-plugin.tsx # Floating language picker for code blocks
 │   ├── database/                # Database views system
-│   │   ├── database-view-client.tsx     # Main client component: loads data, manages view state
+│   │   ├── database-view-client.tsx     # Main client component: loads data, composes hooks + JSX
+│   │   ├── database-view-helpers.tsx    # ViewConfigDropdown, ComingSoonPlaceholder, DatabaseSkeleton
+│   │   ├── delete-property-dialog.tsx   # Confirmation dialog for deleting a property
+│   │   ├── hooks/                       # Domain hooks extracted from database-view-client
+│   │   │   ├── use-database-views.ts    # View CRUD callbacks
+│   │   │   ├── use-database-rows.ts     # Row mutation callbacks
+│   │   │   ├── use-database-properties.ts # Property CRUD + dialog state
+│   │   │   └── use-database-filters.ts  # Sort/filter state + displayedRows
 │   │   ├── view-tabs.tsx                # Horizontal tab bar for switching views
 │   │   ├── filter-bar.tsx               # Active filter pills + add filter UI
 │   │   ├── sort-menu.tsx                # Sort configuration dropdown
