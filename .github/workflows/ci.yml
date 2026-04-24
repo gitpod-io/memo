@@ -35,3 +35,38 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+  visual-regression:
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Cache Storybook build
+        id: storybook-cache
+        uses: actions/cache@v4
+        with:
+          path: storybook-static
+          key: storybook-${{ hashFiles('src/components/**', '.storybook/**', 'src/lib/**/*.ts') }}
+      - name: Build Storybook
+        if: steps.storybook-cache.outputs.cache-hit != 'true'
+        run: pnpm build-storybook
+      - run: npx playwright install --with-deps chromium
+      - name: Serve Storybook and run visual regression tests
+        run: |
+          npx serve storybook-static -l 6099 --no-clipboard &
+          timeout 30 bash -c 'until curl -sf http://localhost:6099 > /dev/null; do sleep 1; done'
+          pnpm test:visual
+        env:
+          STORYBOOK_URL: http://localhost:6099
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-regression-report
+          path: playwright-report/
+          retention-days: 7
