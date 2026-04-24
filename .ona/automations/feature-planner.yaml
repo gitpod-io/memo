@@ -117,8 +117,16 @@ action:
 
                 4. Propose 1-3 concrete enhancement issues for the weakest areas. These must
                    be specific and implementable in a single PR — not vague "improve X".
-                   Label them: `enhancement`, `priority:3`, `needs-human`.
-                   Do NOT add `status:backlog` — human approval required.
+
+                   Classify each as LOW or HIGH risk using the same criteria as the
+                   Product Improver:
+                   - **LOW risk** (UI polish, accessibility, test gaps, performance tweaks
+                     that don't change behavior): label `enhancement`, `priority:3`,
+                     `status:backlog` — enters the automation queue directly.
+                   - **HIGH risk** (new features, schema changes, auth/security changes,
+                     scope expansion): label `enhancement`, `priority:3`, `needs-human`.
+                     Include an "Approval Required" section in the issue body explaining
+                     why it's high-risk. Comment "approved" to release it to the queue.
 
                 If the product is in good shape and no improvements are needed, skip this
                 step. Do not invent issues to fill a quota.
