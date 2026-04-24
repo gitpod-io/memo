@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { toast } from "sonner";
 import {
   addRow,
@@ -29,7 +29,7 @@ export interface UseDatabaseRowsReturn {
   handleAddRow: (initialValues?: Record<string, Record<string, unknown>>) => Promise<void>;
   handleCardMove: (rowId: string, propertyId: string, newOptionId: string | null) => Promise<void>;
   handleCellUpdate: (rowId: string, propertyId: string, value: Record<string, unknown>) => Promise<void>;
-  handleDeleteRow: (rowId: string) => Promise<void>;
+  handleDeleteRow: (rowId: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -204,24 +204,54 @@ export function useDatabaseRows({
     [pageId, setRows, setProperties],
   );
 
-  const handleDeleteRow = useCallback(
-    async (rowId: string) => {
-      // Optimistic removal
-      setRows((prev) => prev.filter((r) => r.page.id !== rowId));
+  // Track pending row deletion timers so undo can cancel them
+  const pendingRowDeletions = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
-      const supabase = createClient();
-      const { error } = await supabase.rpc("soft_delete_page", {
-        page_id: rowId,
+  const handleDeleteRow = useCallback(
+    (rowId: string) => {
+      // Snapshot the row for undo
+      let snapshot: DatabaseRow | undefined;
+      setRows((prev) => {
+        snapshot = prev.find((r) => r.page.id === rowId);
+        return prev.filter((r) => r.page.id !== rowId);
       });
-      if (error) {
-        if (!isInsufficientPrivilegeError(error)) {
-          captureSupabaseError(error, "database-view:delete-row");
+
+      // Cancel any existing pending deletion for this row (e.g. rapid re-delete)
+      const existing = pendingRowDeletions.current.get(rowId);
+      if (existing) clearTimeout(existing);
+
+      const timer = setTimeout(async () => {
+        pendingRowDeletions.current.delete(rowId);
+        const supabase = createClient();
+        const { error } = await supabase.rpc("soft_delete_page", {
+          page_id: rowId,
+        });
+        if (error) {
+          if (!isInsufficientPrivilegeError(error)) {
+            captureSupabaseError(error, "database-view:delete-row");
+          }
+          toast.error("Failed to delete row", { duration: 8000 });
+          // Reload to restore
+          const { data } = await loadDatabase(pageId);
+          if (data) setRows(data.rows);
         }
-        toast.error("Failed to delete row", { duration: 8000 });
-        // Reload to restore
-        const { data } = await loadDatabase(pageId);
-        if (data) setRows(data.rows);
-      }
+      }, 5500);
+
+      pendingRowDeletions.current.set(rowId, timer);
+
+      toast("Row deleted", {
+        duration: 5000,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            clearTimeout(timer);
+            pendingRowDeletions.current.delete(rowId);
+            if (snapshot) {
+              setRows((prev) => [...prev, snapshot!]);
+            }
+          },
+        },
+      });
     },
     [pageId, setRows],
   );

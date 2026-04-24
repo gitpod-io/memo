@@ -9,6 +9,10 @@ import {
   updateView,
 } from "@/lib/database";
 import {
+  captureSupabaseError,
+  isInsufficientPrivilegeError,
+} from "@/lib/sentry";
+import {
   generateColumnName,
   getDefaultColumnConfig,
 } from "@/lib/column-helpers";
@@ -41,16 +45,12 @@ export interface UseDatabasePropertiesReturn {
   renameDialogOpen: boolean;
   setRenameDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
   renamingProperty: { id: string; name: string } | null;
-  // Delete dialog state
-  deletingProperty: { id: string; name: string } | null;
   // Callbacks
   handleAddColumn: (type: PropertyType) => Promise<void>;
   handleColumnHeaderClick: (propertyId: string) => void;
   handlePropertyRename: (newName: string) => Promise<void>;
   handleColumnReorder: (orderedPropertyIds: string[]) => Promise<void>;
-  handleRequestDeleteColumn: (propertyId: string) => void;
-  handleConfirmDeleteColumn: () => Promise<void>;
-  handleCancelDeleteColumn: () => void;
+  handleDeleteColumn: (propertyId: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -72,14 +72,11 @@ export function useDatabaseProperties({
     name: string;
   } | null>(null);
 
-  // Delete property confirmation state
-  const [deletingProperty, setDeletingProperty] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
-
   // Guard against concurrent addProperty calls (e.g. rapid double-click)
   const isAddingColumn = useRef(false);
+
+  // Track pending column deletion timers so undo can cancel them
+  const pendingColumnDeletions = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const handleAddColumn = useCallback(
     async (type: PropertyType) => {
@@ -166,96 +163,108 @@ export function useDatabaseProperties({
     [pageId, properties, setProperties],
   );
 
-  // Open the delete-property confirmation dialog (called from column header menu)
-  const handleRequestDeleteColumn = useCallback(
+  // Deferred column deletion with undo toast — replaces the confirmation dialog
+  const handleDeleteColumn = useCallback(
     (propertyId: string) => {
       const prop = properties.find((p) => p.id === propertyId);
       if (!prop || prop.position === 0) return; // Title property cannot be deleted
-      setDeletingProperty({ id: prop.id, name: prop.name });
+
+      // Snapshot state for undo
+      const prevProperties = [...properties];
+      const prevViews = [...views];
+      let prevRows: DatabaseRow[] | null = null;
+
+      // Optimistic removal from properties
+      setProperties((prev) => prev.filter((p) => p.id !== propertyId));
+
+      // Optimistic removal from visible_properties in all views
+      setViews((prev) =>
+        prev.map((v) => {
+          const vp = v.config.visible_properties;
+          if (!vp || !vp.includes(propertyId)) return v;
+          return {
+            ...v,
+            config: {
+              ...v.config,
+              visible_properties: vp.filter((id: string) => id !== propertyId),
+            },
+          };
+        }),
+      );
+
+      // Optimistic removal from row values (capture snapshot first)
+      setRows((prev) => {
+        prevRows = prev;
+        return prev.map((r) => {
+          if (!(propertyId in r.values)) return r;
+          const { [propertyId]: _, ...rest } = r.values;
+          return { ...r, values: rest };
+        });
+      });
+
+      // Cancel any existing pending deletion for this column
+      const existing = pendingColumnDeletions.current.get(propertyId);
+      if (existing) clearTimeout(existing);
+
+      const timer = setTimeout(async () => {
+        pendingColumnDeletions.current.delete(propertyId);
+
+        const { error } = await deleteProperty(propertyId, pageId);
+        if (error) {
+          if (!isInsufficientPrivilegeError(error)) {
+            captureSupabaseError(error, "database-view:delete-column");
+          }
+          toast.error("Failed to delete column", { duration: 8000 });
+          // Revert all state
+          setProperties(prevProperties);
+          setViews(prevViews);
+          const { data } = await loadDatabase(pageId);
+          if (data) setRows(data.rows);
+          return;
+        }
+
+        // Persist visible_properties cleanup for each affected view
+        for (const v of views) {
+          const vp = v.config.visible_properties;
+          if (vp && vp.includes(propertyId)) {
+            void updateView(v.id, {
+              config: {
+                ...v.config,
+                visible_properties: vp.filter((id: string) => id !== propertyId),
+              },
+            }, pageId);
+          }
+        }
+      }, 5500);
+
+      pendingColumnDeletions.current.set(propertyId, timer);
+
+      toast(`Column "${prop.name}" deleted`, {
+        duration: 5000,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            clearTimeout(timer);
+            pendingColumnDeletions.current.delete(propertyId);
+            setProperties(prevProperties);
+            setViews(prevViews);
+            if (prevRows) setRows(prevRows);
+          },
+        },
+      });
     },
-    [properties],
+    [properties, views, pageId, setProperties, setViews, setRows],
   );
 
-  // Confirmed deletion — remove property, clean up view configs, and persist
-  const handleConfirmDeleteColumn = useCallback(async () => {
-    if (!deletingProperty) return;
-    const { id: propertyId } = deletingProperty;
-    setDeletingProperty(null);
-
-    // Optimistic removal from properties
-    const prevProperties = properties;
-    setProperties((prev) => prev.filter((p) => p.id !== propertyId));
-
-    // Optimistic removal from visible_properties in all views
-    const prevViews = views;
-    setViews((prev) =>
-      prev.map((v) => {
-        const vp = v.config.visible_properties;
-        if (!vp || !vp.includes(propertyId)) return v;
-        return {
-          ...v,
-          config: {
-            ...v.config,
-            visible_properties: vp.filter((id: string) => id !== propertyId),
-          },
-        };
-      }),
-    );
-
-    // Optimistic removal from row values
-    setRows((prev) =>
-      prev.map((r) => {
-        if (!(propertyId in r.values)) return r;
-        const { [propertyId]: _, ...rest } = r.values;
-        return { ...r, values: rest };
-      }),
-    );
-
-    const { error } = await deleteProperty(propertyId, pageId);
-    if (error) {
-      if (!isInsufficientPrivilegeError(error)) {
-        captureSupabaseError(error, "database-properties:delete");
-      }
-      toast.error("Failed to delete property", { duration: 8000 });
-      // Revert
-      setProperties(prevProperties);
-      setViews(prevViews);
-      const { data } = await loadDatabase(pageId);
-      if (data) {
-        setRows(data.rows);
-      }
-      return;
-    }
-
-    // Persist visible_properties cleanup for each affected view
-    for (const v of views) {
-      const vp = v.config.visible_properties;
-      if (vp && vp.includes(propertyId)) {
-        void updateView(v.id, {
-          config: {
-            ...v.config,
-            visible_properties: vp.filter((id: string) => id !== propertyId),
-          },
-        }, pageId);
-      }
-    }
-  }, [deletingProperty, properties, views, pageId, setProperties, setViews, setRows]);
-
-  const handleCancelDeleteColumn = useCallback(() => {
-    setDeletingProperty(null);
-  }, []);
 
   return {
     renameDialogOpen,
     setRenameDialogOpen,
     renamingProperty,
-    deletingProperty,
     handleAddColumn,
     handleColumnHeaderClick,
     handlePropertyRename,
     handleColumnReorder,
-    handleRequestDeleteColumn,
-    handleConfirmDeleteColumn,
-    handleCancelDeleteColumn,
+    handleDeleteColumn,
   };
 }
