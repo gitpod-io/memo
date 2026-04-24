@@ -198,6 +198,7 @@ describe("error handling conventions", () => {
       "src/components/page-title.tsx", // page update (owner-only)
       "src/components/sidebar/create-workspace-dialog.tsx", // RPC workspace creation
       "src/components/sidebar/page-search.tsx", // read-only search
+      "src/components/sidebar/page-tree.tsx", // read-only fetches (pages, favorites, workspace)
       "src/components/workspace-settings-form.tsx", // admin-only workspace settings
     ]);
 
