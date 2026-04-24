@@ -311,6 +311,78 @@ describe("addProperty", () => {
       "database.addProperty",
     );
   });
+
+  // Per-type tests: verify the correct payload is sent to Supabase for each type.
+  const PROPERTY_TYPES_WITH_CONFIG: Array<{
+    type: string;
+    name: string;
+    config?: Record<string, unknown>;
+    expectedConfig: Record<string, unknown>;
+  }> = [
+    { type: "text", name: "Notes", expectedConfig: {} },
+    { type: "number", name: "Amount", expectedConfig: {} },
+    { type: "select", name: "Priority", config: { options: [] }, expectedConfig: { options: [] } },
+    { type: "multi_select", name: "Tags", config: { options: [] }, expectedConfig: { options: [] } },
+    {
+      type: "status",
+      name: "Status",
+      config: {
+        options: [
+          { id: "s1", name: "Not Started", color: "gray" },
+          { id: "s2", name: "In Progress", color: "blue" },
+          { id: "s3", name: "Done", color: "green" },
+        ],
+      },
+      expectedConfig: {
+        options: [
+          { id: "s1", name: "Not Started", color: "gray" },
+          { id: "s2", name: "In Progress", color: "blue" },
+          { id: "s3", name: "Done", color: "green" },
+        ],
+      },
+    },
+    { type: "checkbox", name: "Done", expectedConfig: {} },
+    { type: "date", name: "Due Date", expectedConfig: {} },
+    { type: "url", name: "Link", expectedConfig: {} },
+    { type: "email", name: "Contact", expectedConfig: {} },
+    { type: "phone", name: "Phone", expectedConfig: {} },
+    { type: "person", name: "Assignee", expectedConfig: {} },
+    { type: "files", name: "Attachments", expectedConfig: {} },
+    { type: "relation", name: "Related", expectedConfig: {} },
+    { type: "formula", name: "Computed", expectedConfig: {} },
+    { type: "created_time", name: "Created", expectedConfig: {} },
+    { type: "updated_time", name: "Modified", expectedConfig: {} },
+    { type: "created_by", name: "Author", expectedConfig: {} },
+  ];
+
+  it.each(PROPERTY_TYPES_WITH_CONFIG)(
+    "sends correct payload for type '$type'",
+    async ({ type, name, config, expectedConfig }) => {
+      mockTable("database_properties", {
+        data: { ...FAKE_PROPERTY, id: `prop-${type}`, type, name, config: expectedConfig },
+        error: null,
+      });
+
+      const result = await addProperty(
+        "page-1",
+        name,
+        type as import("@/lib/types").PropertyType,
+        config,
+      );
+
+      expect(result.error).toBeNull();
+      expect(result.data).not.toBeNull();
+      expect(result.data!.type).toBe(type);
+
+      const insertCalls = tableMocks["database_properties"].calls["insert"];
+      expect(insertCalls).toBeDefined();
+      const insertedRow = insertCalls[0][0] as Record<string, unknown>;
+      expect(insertedRow.database_id).toBe("page-1");
+      expect(insertedRow.name).toBe(name);
+      expect(insertedRow.type).toBe(type);
+      expect(insertedRow.config).toEqual(expectedConfig);
+    },
+  );
 });
 
 // ---------------------------------------------------------------------------
