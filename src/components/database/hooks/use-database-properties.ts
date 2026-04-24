@@ -16,10 +16,6 @@ import {
   generateColumnName,
   getDefaultColumnConfig,
 } from "@/lib/column-helpers";
-import {
-  captureSupabaseError,
-  isInsufficientPrivilegeError,
-} from "@/lib/sentry";
 import type {
   DatabaseProperty,
   DatabaseRow,

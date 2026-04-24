@@ -304,7 +304,6 @@ test.describe("Database CRUD", () => {
     // Hover over the title cell to reveal the delete button
     const titleCell = page.locator('[role="gridcell"]').first();
     await titleCell.hover();
-    await page.waitForTimeout(500);
 
     // Click the delete button
     const deleteBtn = page.locator('button[aria-label="Delete row"]').first();
