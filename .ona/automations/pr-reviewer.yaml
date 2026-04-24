@@ -196,8 +196,8 @@ action:
                 2. Merge:
                    gh pr merge <number> --squash --delete-branch
 
-                3. Update the linked issue:
-                   gh issue edit N --remove-label "status:in-review" --add-label "status:done"
+                3. Update the linked issue (remove all prior status labels to avoid dual-label issues):
+                   gh issue edit N --remove-label "status:backlog" --remove-label "status:in-progress" --remove-label "status:in-review" --add-label "status:done"
 
                 ---
 

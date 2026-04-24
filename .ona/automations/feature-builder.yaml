@@ -180,8 +180,11 @@ action:
                 After implementation, before committing, check if the knowledge base needs updating.
                 Include these changes in the same commit.
 
-                - **`.agents/architecture.md`** — update if you added a new database table, API route,
-                  major component, or changed entity relationships.
+                - **`.agents/architecture.md`** — update the Component Map if you added, renamed, or
+                  removed any file in `src/components/`, `src/lib/`, `src/app/api/`, or
+                  `supabase/migrations/`. Also update if you changed entity relationships in the
+                  data model. Run `ls src/components/ src/lib/` and compare against the Component
+                  Map — if any file is missing from the map, add it.
                 - **`.agents/conventions.md`** — update if you established a new coding pattern,
                   created a reusable utility/hook/component pattern, or discovered a non-obvious
                   integration pattern that future features should follow.
