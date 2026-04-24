@@ -93,7 +93,7 @@ export const TableRow = memo(function TableRow({
   onDeleteRow,
 }: TableRowProps) {
   return (
-    <>
+    <div role="row" style={{ display: "contents" }}>
       {/* Title cell */}
       <div
         className={cn(
@@ -172,6 +172,6 @@ export const TableRow = memo(function TableRow({
         )}
         role="gridcell"
       />
-    </>
+    </div>
   );
 }, areTableRowPropsEqual);
