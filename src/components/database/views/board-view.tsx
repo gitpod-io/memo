@@ -5,20 +5,17 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { getPropertyTypeConfig } from "@/components/database/property-types/index";
 import { evaluateFormulaForRow } from "@/components/database/property-types/formula";
-import { DEFAULT_STATUS_OPTIONS } from "@/components/database/property-types/status";
 import type {
   DatabaseProperty,
   DatabaseRow,
   DatabaseViewConfig,
-  SelectOption,
 } from "@/lib/types";
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const UNCATEGORIZED_COLUMN_ID = "__uncategorized__";
-const UNCATEGORIZED_LABEL = "No value";
+import {
+  UNCATEGORIZED_COLUMN_ID,
+  groupRowsIntoColumns,
+  resolveDropOptionId,
+  type ColumnData,
+} from "./board-view-helpers";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -51,27 +48,7 @@ interface DropTarget {
   insertIndex: number;
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
-function getSelectOptions(property: DatabaseProperty): SelectOption[] {
-  if (Array.isArray(property.config.options) && property.config.options.length > 0) {
-    return property.config.options as SelectOption[];
-  }
-  // Status properties fall back to default options when none are configured
-  if (property.type === "status") {
-    return DEFAULT_STATUS_OPTIONS;
-  }
-  return [];
-}
-
-function getRowOptionId(row: DatabaseRow, propertyId: string): string | null {
-  const rv = row.values[propertyId];
-  if (!rv) return null;
-  const optionId = rv.value?.option_id;
-  return typeof optionId === "string" ? optionId : null;
-}
 
 // ---------------------------------------------------------------------------
 // BoardView
@@ -112,51 +89,11 @@ export const BoardView = memo(function BoardView({
   const columns = useMemo(() => {
     if (!groupByProperty || (groupByProperty.type !== "select" && groupByProperty.type !== "status")) return [];
 
-    const options = getSelectOptions(groupByProperty);
-    const hideEmpty = viewConfig.hide_empty_groups ?? false;
-
-    // Group rows by option_id
-    const rowsByOption = new Map<string, DatabaseRow[]>();
-    const uncategorized: DatabaseRow[] = [];
-
-    for (const row of rows) {
-      const optionId = getRowOptionId(row, groupByProperty.id);
-      if (!optionId) {
-        uncategorized.push(row);
-      } else {
-        const existing = rowsByOption.get(optionId);
-        if (existing) {
-          existing.push(row);
-        } else {
-          rowsByOption.set(optionId, [row]);
-        }
-      }
-    }
-
-    const cols: ColumnData[] = [];
-
-    for (const option of options) {
-      const columnRows = rowsByOption.get(option.id) ?? [];
-      if (hideEmpty && columnRows.length === 0) continue;
-      cols.push({
-        id: option.id,
-        label: option.name,
-        color: option.color,
-        rows: columnRows,
-      });
-    }
-
-    // Uncategorized column last
-    if (uncategorized.length > 0 || !hideEmpty) {
-      cols.push({
-        id: UNCATEGORIZED_COLUMN_ID,
-        label: UNCATEGORIZED_LABEL,
-        color: "gray",
-        rows: uncategorized,
-      });
-    }
-
-    return cols;
+    return groupRowsIntoColumns({
+      groupByProperty,
+      rows,
+      hideEmptyGroups: viewConfig.hide_empty_groups ?? false,
+    });
   }, [groupByProperty, rows, viewConfig.hide_empty_groups]);
 
   // --- Drag handlers ---
@@ -209,7 +146,7 @@ export const BoardView = memo(function BoardView({
       e.preventDefault();
       if (!dragState || !onCardMove || !groupByProperty) return;
 
-      const newOptionId = columnId === UNCATEGORIZED_COLUMN_ID ? null : columnId;
+      const newOptionId = resolveDropOptionId(columnId);
       onCardMove(dragState.rowId, groupByProperty.id, newOptionId);
 
       setDragState(null);
@@ -274,17 +211,6 @@ export const BoardView = memo(function BoardView({
     </div>
   );
 });
-
-// ---------------------------------------------------------------------------
-// Column data type
-// ---------------------------------------------------------------------------
-
-interface ColumnData {
-  id: string;
-  label: string;
-  color: string;
-  rows: DatabaseRow[];
-}
 
 // ---------------------------------------------------------------------------
 // BoardColumn
