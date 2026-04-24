@@ -215,10 +215,14 @@ export default async function PageView({
     ]);
 
     if (
-      !propertiesResult.error &&
-      !viewsResult.error &&
-      !rowsResult.error
+      propertiesResult.error ||
+      viewsResult.error ||
+      rowsResult.error
     ) {
+      if (propertiesResult.error) captureSupabaseError(propertiesResult.error, "page.prefetch:properties");
+      if (viewsResult.error) captureSupabaseError(viewsResult.error, "page.prefetch:views");
+      if (rowsResult.error) captureSupabaseError(rowsResult.error, "page.prefetch:rows");
+    } else {
       const properties = propertiesResult.data as DatabaseProperty[];
       const views = viewsResult.data as DatabaseView[];
       const rowPages = rowsResult.data as {
@@ -239,7 +243,9 @@ export default async function PageView({
           .from("row_values")
           .select("*")
           .in("row_id", rowIds);
-        if (!valuesError && valuesData) {
+        if (valuesError) {
+          captureSupabaseError(valuesError, "page.prefetch:values");
+        } else if (valuesData) {
           allValues = valuesData as RowValue[];
         }
       }

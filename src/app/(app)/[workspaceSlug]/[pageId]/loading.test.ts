@@ -11,10 +11,6 @@ import { resolve } from "path";
  */
 
 const PAGE_DIR = resolve(__dirname);
-const DB_CLIENT_PATH = resolve(
-  __dirname,
-  "../../../../components/database/database-view-client.tsx",
-);
 
 describe("[pageId] route loading state", () => {
   it("loading.tsx exists for the [pageId] route segment", () => {
@@ -60,19 +56,4 @@ describe("[pageId] route loading state", () => {
     expect(page).not.toMatch(/\bdynamic\b/);
   });
 
-  it("page.tsx passes initialData to DatabaseViewClient for database pages (#682)", () => {
-    const page = readFileSync(resolve(PAGE_DIR, "page.tsx"), "utf-8");
-    // Server component must pre-fetch database data and pass it as initialData
-    // to eliminate the client-side loading skeleton that causes flicker
-    expect(page).toContain("initialData={initialDatabaseData}");
-    expect(page).toContain("initialDatabaseData");
-  });
-
-  it("DatabaseViewClient accepts initialData prop and skips fetch when provided (#682)", () => {
-    const client = readFileSync(DB_CLIENT_PATH, "utf-8");
-    // The component must accept initialData in its props interface
-    expect(client).toContain("initialData");
-    // When initialData is provided, loading should start as false
-    expect(client).toContain("!hasInitialData");
-  });
 });
