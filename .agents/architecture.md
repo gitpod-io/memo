@@ -492,6 +492,7 @@ src/
 │       └── tooltip.tsx
 ├── lib/
 │   ├── capture.ts          # lazyCaptureException — dynamic import of Sentry to reduce bundle size
+│   ├── column-helpers.ts    # Pure helpers for column-add flow: name generation, config seeding, concurrency guard
 │   ├── database.ts         # Database CRUD: create/delete databases, property/row/view CRUD, data loading
 │   ├── database-filters.ts # Client-side filter engine for database views (text, number, date, select, etc.)
 │   ├── formula.ts          # Formula parser and evaluator for formula property type
