@@ -17,10 +17,12 @@ describe("[pageId] route loading state", () => {
     expect(existsSync(resolve(PAGE_DIR, "loading.tsx"))).toBe(true);
   });
 
-  it("loading skeleton uses the same layout container as page-view-client", () => {
+  it("loading skeleton uses a full-width container to avoid layout shift for database pages (#682)", () => {
     const loading = readFileSync(resolve(PAGE_DIR, "loading.tsx"), "utf-8");
-    // Must match the outer container from PageViewClient
-    expect(loading).toContain("mx-auto max-w-3xl p-6");
+    // Must use full-width (no max-w-3xl) so the skeleton doesn't shift when
+    // the server component renders a database page at full width
+    expect(loading).toContain("mx-auto p-6");
+    expect(loading).not.toContain("max-w-3xl");
   });
 
   it("loading skeleton includes animate-pulse elements", () => {
@@ -53,4 +55,5 @@ describe("[pageId] route loading state", () => {
     // loading.tsx, causing visible layout jank during navigation.
     expect(page).not.toMatch(/\bdynamic\b/);
   });
+
 });

@@ -125,6 +125,12 @@ export interface DatabaseViewClientProps {
   workspaceId: string;
   workspaceSlug: string;
   userId: string;
+  /** Server-prefetched database data to avoid a client-side loading skeleton */
+  initialData?: {
+    properties: DatabaseProperty[];
+    views: DatabaseView[];
+    rows: DatabaseRow[];
+  } | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -238,14 +244,20 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     workspaceId,
     workspaceSlug,
     userId,
+    initialData,
   } = props;
   const searchParams = useSearchParams();
 
-  // Database data state
-  const [properties, setProperties] = useState<DatabaseProperty[]>([]);
-  const [views, setViews] = useState<DatabaseView[]>([]);
-  const [rows, setRows] = useState<DatabaseRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Database data state — seed from server-prefetched data when available
+  const hasInitialData = initialData != null;
+  const [properties, setProperties] = useState<DatabaseProperty[]>(
+    initialData?.properties ?? [],
+  );
+  const [views, setViews] = useState<DatabaseView[]>(
+    initialData?.views ?? [],
+  );
+  const [rows, setRows] = useState<DatabaseRow[]>(initialData?.rows ?? []);
+  const [loading, setLoading] = useState(!hasInitialData);
 
   // Rename property dialog state
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
@@ -278,8 +290,12 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     [views, activeViewId],
   );
 
-  // Load database data and workspace members on mount
+  // Load database data and workspace members on mount (skipped when
+  // server-prefetched initialData is provided — eliminates the second
+  // skeleton flash during database page navigation, #682)
   useEffect(() => {
+    if (hasInitialData) return;
+
     let cancelled = false;
 
     async function load() {
@@ -315,7 +331,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     return () => {
       cancelled = true;
     };
-  }, [pageId, workspaceId]);
+  }, [pageId, workspaceId, hasInitialData]);
 
   // Handle view tab change — update URL ?view= param without server round-trip
   const handleViewChange = useCallback(
