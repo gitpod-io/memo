@@ -272,3 +272,19 @@ export const ReadOnlyNoActions: Story = {
     onCardMove: undefined,
   },
 };
+
+export const KeyboardNavigation: Story = {
+  args: {
+    rows: mockRows,
+    properties: mockProperties,
+    viewConfig: defaultConfig,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Tab to a card to focus it. Use ↑/↓ to move within a column, ←/→ to move between columns. Enter opens the card. Escape clears focus. Focused cards show a ring-2 ring-ring focus ring.",
+      },
+    },
+  },
+};

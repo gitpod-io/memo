@@ -331,10 +331,12 @@ src/components/database/
   │   ├── row-count-status-bar.tsx # RowCountStatusBar — "X rows" / "X of Y rows" below the table
   │   ├── board-view.tsx           # Kanban columns grouped by select property
   │   ├── board-view-helpers.ts    # Pure grouping/DnD logic extracted from board-view
+  │   ├── board-keyboard.ts        # useBoardKeyboardNavigation — arrow key nav for board cards
   │   ├── list-view.tsx            # Compact vertical list
   │   ├── calendar-view.tsx        # Month grid with date-positioned items
   │   ├── calendar-view-helpers.ts # Pure date/grid logic extracted from calendar-view
-  │   └── gallery-view.tsx         # Responsive card grid with cover + title
+  │   ├── gallery-view.tsx         # Responsive card grid with cover + title
+  │   └── gallery-keyboard.ts     # useGalleryKeyboardNavigation — arrow key nav for gallery cards
   ├── row-properties-header.tsx    # Properties displayed above editor when row opened as page
   └── new-database-dialog.tsx      # Dialog for creating a new database
 ```
@@ -485,10 +487,12 @@ src/
 │   │   │   ├── row-count-status-bar.tsx # RowCountStatusBar — "X rows" / "X of Y rows" below the table
 │   │   │   ├── board-view.tsx           # Kanban columns grouped by select property
 │   │   │   ├── board-view-helpers.ts    # Pure grouping/DnD logic extracted from board-view
+│   │   │   ├── board-keyboard.ts        # useBoardKeyboardNavigation — arrow key nav for board cards
 │   │   │   ├── list-view.tsx            # Compact vertical list
 │   │   │   ├── calendar-view.tsx        # Month grid with date-positioned items
 │   │   │   ├── calendar-view-helpers.ts # Pure date/grid logic extracted from calendar-view
-│   │   │   └── gallery-view.tsx         # Responsive card grid with cover + title
+│   │   │   ├── gallery-view.tsx         # Responsive card grid with cover + title
+│   │   │   └── gallery-keyboard.ts     # useGalleryKeyboardNavigation — arrow key nav for gallery cards
 │   │   ├── property-type-picker.tsx      # Dropdown menu for selecting property type when adding columns
 │   │   ├── rename-property-dialog.tsx   # Styled dialog replacing window.prompt for column rename
 │   │   ├── row-properties-header.tsx    # Properties displayed above editor when row opened as page
