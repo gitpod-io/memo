@@ -84,6 +84,21 @@ action:
                 2. Add label `needs-human`: `gh issue edit <N> --add-label "needs-human"`
                 3. Stop — do not attempt a code fix.
 
+                ## Recurring Bug Detection
+
+                Before starting a fix, check if this bug has been seen before:
+                  gh issue list --state closed --search "<key terms from issue title>" --json number,title --jq '.[0:5]'
+
+                If similar closed issues exist (same component, same symptom):
+                1. Read the closed issues and their linked PRs to understand what was already tried.
+                2. The previous fix likely addressed a symptom, not the root cause.
+                3. Trace the FULL async data flow from trigger to render before writing any code:
+                   - Identify every state mutation in the chain
+                   - Identify every async boundary (await, useEffect, callback)
+                   - Identify race conditions between concurrent operations
+                4. The fix must address the root cause. If you cannot identify it, escalate
+                   with `needs-human` rather than patching another symptom.
+
                 ## Fix (code bugs only)
 
                 1. Pull the latest main branch: `git checkout main && git pull origin main`
