@@ -1,0 +1,14 @@
+{
+  "date": "2026-04-24",
+  "day_number": 12,
+  "loc": { "total": 44958, "delta": 1098, "by_language": { "TypeScript": 43350, "SQL": 1345, "CSS": 263 } },
+  "files": { "total": 173, "delta": 5 },
+  "prs": { "total": 363, "delta": 2, "currently_open": 0 },
+  "commits": { "total": 385, "delta": 1 },
+  "test_coverage_pct": 19.27,
+  "ci_pass_rate_pct": 100,
+  "autonomous_pct": 86,
+  "issues": { "backlog": 0, "in_progress": 0, "in_review": 0, "done": 269 },
+  "human_minutes": null,
+  "agent_minutes": null
+}
