@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 // ---------------------------------------------------------------------------
 // useGalleryKeyboardNavigation — manages focused card state and keyboard
@@ -30,6 +31,7 @@ export function useGalleryKeyboardNavigation({
 }: UseGalleryKeyboardNavigationParams) {
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   // Compute the number of columns from the rendered grid.
   const getColumnCount = useCallback((): number => {
@@ -102,7 +104,7 @@ export function useGalleryKeyboardNavigation({
           e.preventDefault();
           const pageId = pageIds[focusedIndex];
           if (pageId) {
-            window.location.href = `/${workspaceSlug}/${pageId}`;
+            router.push(`/${workspaceSlug}/${pageId}`);
           }
           break;
         }
@@ -118,7 +120,7 @@ export function useGalleryKeyboardNavigation({
           break;
       }
     },
-    [focusedIndex, cardCount, getColumnCount, navigateToCard, pageIds, workspaceSlug],
+    [focusedIndex, cardCount, getColumnCount, navigateToCard, pageIds, workspaceSlug, router],
   );
 
   // When a card is clicked/focused via mouse, track it.

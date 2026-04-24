@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { ColumnData } from "./board-view-helpers";
 
 // ---------------------------------------------------------------------------
@@ -30,6 +31,7 @@ export function useBoardKeyboardNavigation({
 }: UseBoardKeyboardNavigationParams) {
   const [focusedCard, setFocusedCard] = useState<BoardFocusedCard | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   // Focus the DOM element for the currently focused card.
   const focusCardElement = useCallback(
@@ -116,8 +118,7 @@ export function useBoardKeyboardNavigation({
           const column = columns[columnIndex];
           const row = column?.rows[cardIndex];
           if (row) {
-            // Navigate to the row page using window.location for client-side nav
-            window.location.href = `/${workspaceSlug}/${row.page.id}`;
+            router.push(`/${workspaceSlug}/${row.page.id}`);
           }
           break;
         }
@@ -133,7 +134,7 @@ export function useBoardKeyboardNavigation({
           break;
       }
     },
-    [focusedCard, columns, navigateToCard, workspaceSlug],
+    [focusedCard, columns, navigateToCard, workspaceSlug, router],
   );
 
   // When a card is clicked/focused via mouse, track it.
