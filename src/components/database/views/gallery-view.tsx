@@ -9,6 +9,7 @@ import type {
   DatabaseRow,
   DatabaseViewConfig,
 } from "@/lib/types";
+import { useGalleryKeyboardNavigation } from "./gallery-keyboard";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -80,6 +81,15 @@ export const GalleryView = memo(function GalleryView({
   const cardSizeClass = CARD_SIZE_CLASS[cardSize];
   const coverPropertyId = viewConfig.cover_property ?? null;
 
+  const pageIds = useMemo(() => rows.map((r) => r.page.id), [rows]);
+
+  const { focusedIndex, containerRef, handleKeyDown, handleCardFocus } =
+    useGalleryKeyboardNavigation({
+      cardCount: rows.length,
+      workspaceSlug,
+      pageIds,
+    });
+
   const handleAddRow = useCallback(() => {
     onAddRow?.();
   }, [onAddRow]);
@@ -102,17 +112,23 @@ export const GalleryView = memo(function GalleryView({
 
   return (
     <div
+      ref={containerRef}
       className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4"
       role="list"
       aria-label="Database gallery"
+      data-testid="db-gallery-container"
+      onKeyDown={handleKeyDown}
     >
-      {rows.map((row) => (
+      {rows.map((row, index) => (
         <GalleryCard
           key={row.page.id}
           row={row}
+          index={index}
           coverPropertyId={coverPropertyId}
           cardSizeClass={cardSizeClass}
           workspaceSlug={workspaceSlug}
+          isFocused={focusedIndex === index}
+          onCardFocus={handleCardFocus}
         />
       ))}
       {onAddRow && (
@@ -144,16 +160,22 @@ export const GalleryView = memo(function GalleryView({
 
 interface GalleryCardProps {
   row: DatabaseRow;
+  index: number;
   coverPropertyId: string | null;
   cardSizeClass: string;
   workspaceSlug: string;
+  isFocused: boolean;
+  onCardFocus: (index: number) => void;
 }
 
 function GalleryCard({
   row,
+  index,
   coverPropertyId,
   cardSizeClass,
   workspaceSlug,
+  isFocused,
+  onCardFocus,
 }: GalleryCardProps) {
   const title = row.page.title || "Untitled";
   const coverUrl = useMemo(
@@ -161,13 +183,23 @@ function GalleryCard({
     [row, coverPropertyId],
   );
 
+  const handleFocus = useCallback(() => {
+    onCardFocus(index);
+  }, [onCardFocus, index]);
+
   return (
     <Link
       href={`/${workspaceSlug}/${row.page.id}`}
+      tabIndex={0}
       role="listitem"
       aria-label={title}
+      data-testid={`db-gallery-card-${row.page.id}`}
+      data-gallery-index={index}
+      onFocus={handleFocus}
       className={cn(
         "group/card flex flex-col overflow-hidden border border-overlay-border bg-muted",
+        "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+        isFocused && "ring-2 ring-ring ring-offset-2",
         cardSizeClass,
       )}
     >

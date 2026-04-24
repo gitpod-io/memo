@@ -263,3 +263,19 @@ export const ReadOnlyNoActions: Story = {
     onAddRow: undefined,
   },
 };
+
+export const KeyboardNavigation: Story = {
+  args: {
+    rows: mockRowsWithPageCovers,
+    properties: mockProperties,
+    viewConfig: defaultConfig,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Tab to a card to focus it. Use ←/→ to move between adjacent cards, ↑/↓ to jump rows in the grid. Enter opens the card. Escape clears focus. Focused cards show a ring-2 ring-ring focus ring.",
+      },
+    },
+  },
+};

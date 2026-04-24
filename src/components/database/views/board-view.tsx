@@ -16,6 +16,10 @@ import {
   resolveDropOptionId,
   type ColumnData,
 } from "./board-view-helpers";
+import {
+  useBoardKeyboardNavigation,
+  type BoardFocusedCard,
+} from "./board-keyboard";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -95,6 +99,11 @@ export const BoardView = memo(function BoardView({
       hideEmptyGroups: viewConfig.hide_empty_groups ?? false,
     });
   }, [groupByProperty, rows, viewConfig.hide_empty_groups]);
+
+  // --- Keyboard navigation ---
+
+  const { focusedCard, containerRef, handleKeyDown, handleCardFocus } =
+    useBoardKeyboardNavigation({ columns, workspaceSlug });
 
   // --- Drag handlers ---
 
@@ -187,26 +196,31 @@ export const BoardView = memo(function BoardView({
 
   return (
     <div
+      ref={containerRef}
       className="flex gap-3 overflow-x-auto pb-4"
       role="region"
       aria-label="Database board"
       data-testid="db-board-container"
+      onKeyDown={handleKeyDown}
     >
-      {columns.map((column) => (
+      {columns.map((column, columnIndex) => (
         <BoardColumn
           key={column.id}
           column={column}
+          columnIndex={columnIndex}
           visibleProperties={visibleProperties}
           allProperties={properties}
           workspaceSlug={workspaceSlug}
           dragState={dragState}
           dropTarget={dropTarget}
+          focusedCard={focusedCard}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onAddCard={onAddRow ? handleAddCard : undefined}
+          onCardFocus={handleCardFocus}
         />
       ))}
     </div>
@@ -219,17 +233,20 @@ export const BoardView = memo(function BoardView({
 
 interface BoardColumnProps {
   column: ColumnData;
+  columnIndex: number;
   visibleProperties: DatabaseProperty[];
   allProperties: DatabaseProperty[];
   workspaceSlug: string;
   dragState: DragState | null;
   dropTarget: DropTarget | null;
+  focusedCard: BoardFocusedCard | null;
   onDragStart: (e: React.DragEvent, rowId: string, columnId: string) => void;
   onDragEnd: (e: React.DragEvent) => void;
   onDragOver: (e: React.DragEvent, columnId: string, insertIndex: number) => void;
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, columnId: string) => void;
   onAddCard?: (columnId: string) => void;
+  onCardFocus: (columnIndex: number, cardIndex: number) => void;
 }
 
 const COLOR_DOT_STYLES: Record<string, string> = {
@@ -246,17 +263,20 @@ const COLOR_DOT_STYLES: Record<string, string> = {
 
 function BoardColumn({
   column,
+  columnIndex,
   visibleProperties,
   allProperties,
   workspaceSlug,
   dragState,
   dropTarget,
+  focusedCard,
   onDragStart,
   onDragEnd,
   onDragOver,
   onDragLeave,
   onDrop,
   onAddCard,
+  onCardFocus,
 }: BoardColumnProps) {
   const columnRef = useRef<HTMLDivElement>(null);
 
@@ -309,17 +329,23 @@ function BoardColumn({
             key={row.page.id}
             row={row}
             columnId={column.id}
+            columnIndex={columnIndex}
             index={index}
             visibleProperties={visibleProperties}
             allProperties={allProperties}
             workspaceSlug={workspaceSlug}
             isDragging={dragState?.rowId === row.page.id}
+            isFocused={
+              focusedCard?.columnIndex === columnIndex &&
+              focusedCard?.cardIndex === index
+            }
             showDropIndicatorBefore={
               isDropTargetColumn && dropTarget?.insertIndex === index
             }
             onDragStart={onDragStart}
             onDragEnd={onDragEnd}
             onDragOver={onDragOver}
+            onCardFocus={onCardFocus}
           />
         ))}
         {/* Drop indicator at end of column */}
@@ -351,29 +377,35 @@ function BoardColumn({
 interface BoardCardProps {
   row: DatabaseRow;
   columnId: string;
+  columnIndex: number;
   index: number;
   visibleProperties: DatabaseProperty[];
   allProperties: DatabaseProperty[];
   workspaceSlug: string;
   isDragging: boolean;
+  isFocused: boolean;
   showDropIndicatorBefore: boolean;
   onDragStart: (e: React.DragEvent, rowId: string, columnId: string) => void;
   onDragEnd: (e: React.DragEvent) => void;
   onDragOver: (e: React.DragEvent, columnId: string, insertIndex: number) => void;
+  onCardFocus: (columnIndex: number, cardIndex: number) => void;
 }
 
 function BoardCard({
   row,
   columnId,
+  columnIndex,
   index,
   visibleProperties,
   allProperties,
   workspaceSlug,
   isDragging,
+  isFocused,
   showDropIndicatorBefore,
   onDragStart,
   onDragEnd,
   onDragOver,
+  onCardFocus,
 }: BoardCardProps) {
   const title = row.page.title || "Untitled";
 
@@ -385,21 +417,31 @@ function BoardCard({
     [onDragOver, columnId, index],
   );
 
+  const handleFocus = useCallback(() => {
+    onCardFocus(columnIndex, index);
+  }, [onCardFocus, columnIndex, index]);
+
   return (
     <>
       {showDropIndicatorBefore && <div className="h-0.5 bg-accent" />}
       <Link
         href={`/${workspaceSlug}/${row.page.id}`}
         draggable
+        tabIndex={0}
         role="listitem"
         aria-label={title}
         data-testid={`db-board-card-${row.page.id}`}
+        data-board-col={columnIndex}
+        data-board-row={index}
         onDragStart={(e) => onDragStart(e, row.page.id, columnId)}
         onDragEnd={onDragEnd}
         onDragOver={handleCardDragOver}
+        onFocus={handleFocus}
         className={cn(
           "mb-1.5 block border border-overlay-border bg-muted p-3",
+          "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
           isDragging && "opacity-50 shadow-lg",
+          isFocused && "ring-2 ring-ring ring-offset-2",
         )}
       >
         {/* Card title */}
