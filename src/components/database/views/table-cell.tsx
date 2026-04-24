@@ -1,13 +1,17 @@
 "use client";
 
 import {
+  Component,
   useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
 } from "react";
+import type { ErrorInfo, ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 import { computePosition, flip, shift, offset } from "@floating-ui/react";
+import { lazyCaptureException } from "@/lib/capture";
 import { cn } from "@/lib/utils";
 import type {
   DatabaseProperty,
@@ -130,12 +134,28 @@ export function TableCell({
           className="h-full w-full bg-transparent px-2 text-sm text-foreground outline-none ring-2 ring-inset ring-accent"
           onKeyDown={(e) => onKeyDown(e, rowIndex, colIndex)}
           onBlur={(e) => {
-            const key = valueKeyForType(propertyType);
-            const raw = e.target.value;
-            const parsed = propertyType === "number"
-              ? (raw === "" ? null : Number(raw))
-              : raw;
-            onBlur(rowId, propertyId, { [key]: parsed });
+            try {
+              const key = valueKeyForType(propertyType);
+              const raw = e.target.value;
+              const parsed = propertyType === "number"
+                ? (raw === "" ? null : Number(raw))
+                : raw;
+              onBlur(rowId, propertyId, { [key]: parsed });
+            } catch (err) {
+              lazyCaptureException(
+                err instanceof Error ? err : new Error(String(err)),
+                {
+                  extra: {
+                    operation: "table-view:cell-edit-save",
+                    rowId,
+                    propertyId,
+                    propertyType,
+                  },
+                  level: "warning",
+                },
+              );
+              toast.error("Failed to save cell edit", { duration: 8000 });
+            }
           }}
         />
       </div>
@@ -161,7 +181,24 @@ export function TableCell({
       >
         <button
           type="button"
-          onClick={() => onBlur(rowId, propertyId, { checked: !checked })}
+          onClick={() => {
+            try {
+              onBlur(rowId, propertyId, { checked: !checked });
+            } catch (err) {
+              lazyCaptureException(
+                err instanceof Error ? err : new Error(String(err)),
+                {
+                  extra: {
+                    operation: "table-view:checkbox-toggle",
+                    rowId,
+                    propertyId,
+                  },
+                  level: "warning",
+                },
+              );
+              toast.error("Failed to save cell edit", { duration: 8000 });
+            }
+          }}
           className={cn(
             "flex h-4 w-4 items-center justify-center border",
             checked
@@ -237,6 +274,63 @@ export function TableCell({
 }
 
 // ---------------------------------------------------------------------------
+// CellEditorErrorBoundary — catches rendering errors in cell editors so a
+// single broken editor doesn't crash the entire table. Renders a fallback
+// message and reports the error to Sentry.
+// ---------------------------------------------------------------------------
+
+interface CellEditorErrorBoundaryProps {
+  children: ReactNode;
+  rowHeightClass: string;
+}
+
+interface CellEditorErrorBoundaryState {
+  hasError: boolean;
+}
+
+class CellEditorErrorBoundary extends Component<
+  CellEditorErrorBoundaryProps,
+  CellEditorErrorBoundaryState
+> {
+  constructor(props: CellEditorErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(): CellEditorErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo): void {
+    lazyCaptureException(error, {
+      extra: {
+        operation: "table-view:cell-editor-render",
+        componentStack: info.componentStack ?? "",
+      },
+      level: "warning",
+    });
+    toast.error("Cell editor failed to render", { duration: 8000 });
+  }
+
+  render(): ReactNode {
+    if (this.state.hasError) {
+      return (
+        <div
+          className={cn(
+            "flex items-center border-b border-overlay-border px-2 text-xs text-muted-foreground",
+            this.props.rowHeightClass,
+          )}
+          role="gridcell"
+        >
+          Error
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // RegistryEditorCell — wraps a registry Editor, tracks value changes via ref,
 // and commits the latest value on blur so onChange→onBlur sequences work.
 // For date/select/multi_select, renders the editor in a portal positioned
@@ -271,15 +365,47 @@ function RegistryEditorCell({
 
   const handleChange = useCallback(
     (newValue: Record<string, unknown>) => {
-      latestValue.current = newValue;
-      onBlur(rowId, propertyId, newValue);
+      try {
+        latestValue.current = newValue;
+        onBlur(rowId, propertyId, newValue);
+      } catch (err) {
+        lazyCaptureException(
+          err instanceof Error ? err : new Error(String(err)),
+          {
+            extra: {
+              operation: "table-view:registry-editor-change",
+              rowId,
+              propertyId,
+              propertyType,
+            },
+            level: "warning",
+          },
+        );
+        toast.error("Failed to save cell edit", { duration: 8000 });
+      }
     },
-    [rowId, propertyId, onBlur],
+    [rowId, propertyId, propertyType, onBlur],
   );
 
   const handleBlur = useCallback(() => {
-    onBlur(rowId, propertyId, latestValue.current);
-  }, [rowId, propertyId, onBlur]);
+    try {
+      onBlur(rowId, propertyId, latestValue.current);
+    } catch (err) {
+      lazyCaptureException(
+        err instanceof Error ? err : new Error(String(err)),
+        {
+          extra: {
+            operation: "table-view:registry-editor-blur",
+            rowId,
+            propertyId,
+            propertyType,
+          },
+          level: "warning",
+        },
+      );
+      toast.error("Failed to save cell edit", { duration: 8000 });
+    }
+  }, [rowId, propertyId, propertyType, onBlur]);
 
   // Position the portaled editor below the cell anchor
   useLayoutEffect(() => {
@@ -309,18 +435,20 @@ function RegistryEditorCell({
           role="gridcell"
         />
         {createPortal(
-          <div
-            ref={floatingRef}
-            className="absolute z-50"
-            style={{ left: 0, top: 0 }}
-          >
-            <Editor
-              value={value?.value ?? {}}
-              property={property}
-              onChange={handleChange}
-              onBlur={handleBlur}
-            />
-          </div>,
+          <CellEditorErrorBoundary rowHeightClass={rowHeightClass}>
+            <div
+              ref={floatingRef}
+              className="absolute z-50"
+              style={{ left: 0, top: 0 }}
+            >
+              <Editor
+                value={value?.value ?? {}}
+                property={property}
+                onChange={handleChange}
+                onBlur={handleBlur}
+              />
+            </div>
+          </CellEditorErrorBoundary>,
           document.body,
         )}
       </>
@@ -328,19 +456,21 @@ function RegistryEditorCell({
   }
 
   return (
-    <div
-      className={cn(
-        "relative border-b border-overlay-border",
-        rowHeightClass,
-      )}
-      role="gridcell"
-    >
-      <Editor
-        value={value?.value ?? {}}
-        property={property}
-        onChange={handleChange}
-        onBlur={handleBlur}
-      />
-    </div>
+    <CellEditorErrorBoundary rowHeightClass={rowHeightClass}>
+      <div
+        className={cn(
+          "relative border-b border-overlay-border",
+          rowHeightClass,
+        )}
+        role="gridcell"
+      >
+        <Editor
+          value={value?.value ?? {}}
+          property={property}
+          onChange={handleChange}
+          onBlur={handleBlur}
+        />
+      </div>
+    </CellEditorErrorBoundary>
   );
 }
