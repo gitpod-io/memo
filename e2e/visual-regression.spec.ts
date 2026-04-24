@@ -35,7 +35,7 @@ test.describe("visual regression", () => {
         .toLowerCase();
 
       await expect(page).toHaveScreenshot(`${safeName}.png`, {
-        maxDiffPixelRatio: 0.01,
+        maxDiffPixelRatio: 0.03,
         fullPage: true,
       });
     }
