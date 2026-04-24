@@ -221,10 +221,12 @@ test.describe("Database CRUD", () => {
     // Add a text property column via the type picker dropdown
     await addColumnViaTypePicker(page, "Text");
 
-    // Click on the property cell to start editing.
-    // Editable cells have tabindex="0" and cursor-text styling.
+    // Click on a property cell to start editing.
+    // Property cells use roving tabindex (focused cell gets tabindex=0,
+    // others get tabindex=-1). Click the first data cell with a data-col
+    // attribute (property cells, not the title cell).
     const editableCells = page.locator(
-      '[role="gridcell"][tabindex="0"]',
+      '[role="gridcell"][data-col]',
     );
     await expect(editableCells.first()).toBeVisible({ timeout: 5_000 });
     await editableCells.first().click();

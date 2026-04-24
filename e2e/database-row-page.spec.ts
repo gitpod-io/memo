@@ -337,7 +337,7 @@ test.describe("Database Row Page", () => {
     await addColumnViaTypePicker(page, "Text");
 
     // Click the first editable cell to start inline editing
-    const editableCells = page.locator('[role="gridcell"][tabindex="0"]');
+    const editableCells = page.locator('[role="gridcell"][data-col]');
     await expect(editableCells.first()).toBeVisible({ timeout: 5_000 });
     await editableCells.first().click();
 
