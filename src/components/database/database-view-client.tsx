@@ -10,7 +10,7 @@ import { ViewTabs } from "@/components/database/view-tabs";
 import { SortMenu } from "@/components/database/sort-menu";
 import { FilterBar } from "@/components/database/filter-bar";
 import { RenamePropertyDialog } from "@/components/database/rename-property-dialog";
-import { DeletePropertyDialog } from "@/components/database/delete-property-dialog";
+
 import {
   ViewConfigDropdown,
   ComingSoonPlaceholder,
@@ -190,14 +190,11 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     renameDialogOpen,
     setRenameDialogOpen,
     renamingProperty,
-    deletingProperty,
     handleAddColumn,
     handleColumnHeaderClick,
     handlePropertyRename,
     handleColumnReorder,
-    handleRequestDeleteColumn,
-    handleConfirmDeleteColumn,
-    handleCancelDeleteColumn,
+    handleDeleteColumn,
   } = useDatabaseProperties({
     pageId,
     properties,
@@ -327,7 +324,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   onAddColumn={handleAddColumn}
                   onColumnHeaderClick={handleColumnHeaderClick}
                   onColumnReorder={handleColumnReorder}
-                  onDeleteColumn={handleRequestDeleteColumn}
+                  onDeleteColumn={handleDeleteColumn}
                   onDeleteRow={handleDeleteRow}
                   sorts={activeSorts}
                   onSortToggle={handleSortToggle}
@@ -382,13 +379,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
         onRename={handlePropertyRename}
       />
 
-      {/* Delete property confirmation dialog */}
-      <DeletePropertyDialog
-        open={deletingProperty !== null}
-        propertyName={deletingProperty?.name ?? null}
-        onCancel={handleCancelDeleteColumn}
-        onConfirm={handleConfirmDeleteColumn}
-      />
+
     </>
   );
 }

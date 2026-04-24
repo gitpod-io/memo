@@ -1172,6 +1172,54 @@ toast.error("Something went wrong", { duration: 8000 });
 Per design spec: toasts use `rounded-sm`, position bottom-right. Only show toasts for
 errors, async completions, and destructive actions with undo — not for routine actions.
 
+### Deferred deletion with undo
+
+For destructive operations (deleting rows, columns, pages), use a deferred deletion
+pattern instead of a confirmation dialog. This reduces friction while preventing
+accidental data loss.
+
+```typescript
+import { toast } from "sonner";
+
+// 1. Snapshot state for undo
+const snapshot = currentItems.find((item) => item.id === targetId);
+
+// 2. Optimistically remove from local state
+setItems((prev) => prev.filter((item) => item.id !== targetId));
+
+// 3. Start a deferred timer to persist the deletion
+const timer = setTimeout(async () => {
+  pendingDeletions.current.delete(targetId);
+  const { error } = await deleteFromDatabase(targetId);
+  if (error) {
+    toast.error("Failed to delete", { duration: 8000 });
+    // Reload to restore consistent state
+  }
+}, 5500); // slightly longer than toast duration
+
+pendingDeletions.current.set(targetId, timer);
+
+// 4. Show toast with undo action
+toast("Item deleted", {
+  duration: 5000,
+  action: {
+    label: "Undo",
+    onClick: () => {
+      clearTimeout(timer);
+      pendingDeletions.current.delete(targetId);
+      if (snapshot) setItems((prev) => [...prev, snapshot]);
+    },
+  },
+});
+```
+
+Rules:
+- Use `useRef<Map<string, ReturnType<typeof setTimeout>>>` to track pending deletions.
+- Timer duration (5500ms) must exceed toast duration (5000ms) to prevent premature deletion.
+- Each deletion gets its own toast — multiple sequential deletions work independently.
+- On undo, restore the full snapshot (including related data like row values for columns).
+- On timer expiry, persist to the database and handle errors with a reload fallback.
+
 ## Supabase RPC (database functions)
 
 When a query requires features not available through the Supabase query builder

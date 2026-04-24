@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 
 // ---------------------------------------------------------------------------
@@ -11,6 +11,7 @@ const deletePropertyMock = vi.fn();
 const reorderPropertiesMock = vi.fn();
 const loadDatabaseMock = vi.fn();
 const updateViewMock = vi.fn();
+const toastMock = vi.fn();
 const toastErrorMock = vi.fn();
 const captureSupabaseErrorMock = vi.fn();
 const isInsufficientPrivilegeErrorMock = vi.fn((_error: unknown) => false);
@@ -34,9 +35,10 @@ vi.mock("@/lib/column-helpers", () => ({
 }));
 
 vi.mock("sonner", () => ({
-  toast: {
-    error: (...args: unknown[]) => toastErrorMock(...args),
-  },
+  toast: Object.assign(
+    (...args: unknown[]) => toastMock(...args),
+    { error: (...args: unknown[]) => toastErrorMock(...args) },
+  ),
 }));
 
 vi.mock("@/lib/sentry", () => ({
@@ -460,13 +462,19 @@ describe("useDatabaseProperties", () => {
   });
 
   // -------------------------------------------------------------------------
-  // handleRequestDeleteColumn / handleConfirmDeleteColumn
+  // handleDeleteColumn (deferred deletion with undo toast)
   // -------------------------------------------------------------------------
 
-  describe("handleConfirmDeleteColumn", () => {
-    it("deletes property, cleans up views and row values", async () => {
-      deletePropertyMock.mockResolvedValue({ error: null });
+  describe("handleDeleteColumn", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
 
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("optimistically removes property, view config, and row values", () => {
       const props = [
         makeProp("title-prop", "Title", 0),
         makeProp("prop-del", "To Delete", 1, "text"),
@@ -493,23 +501,11 @@ describe("useDatabaseProperties", () => {
         rows,
       });
 
-      // Request delete
       act(() => {
-        result.current.handleRequestDeleteColumn("prop-del");
-      });
-      expect(result.current.deletingProperty).toEqual({
-        id: "prop-del",
-        name: "To Delete",
+        result.current.handleDeleteColumn("prop-del");
       });
 
-      // Confirm delete
-      await act(async () => {
-        await result.current.handleConfirmDeleteColumn();
-      });
-
-      expect(deletePropertyMock).toHaveBeenCalledWith("prop-del", "db-1");
-
-      // Properties updated
+      // Properties updated — prop-del removed
       const propUpdater = setProperties.mock.calls[0][0];
       const updatedProps = propUpdater(props);
       expect(updatedProps).toHaveLength(1);
@@ -526,24 +522,112 @@ describe("useDatabaseProperties", () => {
       const rowUpdater = setRows.mock.calls[0][0];
       const updatedRows = rowUpdater(rows);
       expect(updatedRows[0].values).toEqual({});
+
+      // Toast shown with undo action
+      expect(toastMock).toHaveBeenCalledWith(
+        'Column "To Delete" deleted',
+        expect.objectContaining({
+          duration: 5000,
+          action: expect.objectContaining({ label: "Undo" }),
+        }),
+      );
+    });
+
+    it("persists deletion after the 5.5s timer", async () => {
+      deletePropertyMock.mockResolvedValue({ error: null });
+
+      const props = [
+        makeProp("title-prop", "Title", 0),
+        makeProp("prop-del", "Col", 1),
+      ];
+      const views = [makeView("view-1")];
+      const { result } = setup({ properties: props, views });
+
+      act(() => {
+        result.current.handleDeleteColumn("prop-del");
+      });
+
+      // Before timer fires, deleteProperty should not be called
+      expect(deletePropertyMock).not.toHaveBeenCalled();
+
+      // Advance past the 5.5s deferred timer
+      await act(async () => {
+        vi.advanceTimersByTime(5500);
+      });
+
+      expect(deletePropertyMock).toHaveBeenCalledWith("prop-del", "db-1");
+    });
+
+    it("undo restores all state and cancels the timer", async () => {
+      const props = [
+        makeProp("title-prop", "Title", 0),
+        makeProp("prop-del", "Col", 1),
+      ];
+      const views = [
+        makeView("view-1", { visible_properties: ["title-prop", "prop-del"] }),
+      ];
+      const rows = [makeRow("row-1", {
+        "prop-del": {
+          id: "rv-1",
+          row_id: "row-1",
+          property_id: "prop-del",
+          value: { text: "hello" },
+          created_at: "2025-01-01T00:00:00Z",
+          updated_at: "2025-01-01T00:00:00Z",
+        },
+      })];
+
+      const { result, setProperties, setViews, setRows } = setup({
+        properties: props,
+        views,
+        rows,
+      });
+
+      act(() => {
+        result.current.handleDeleteColumn("prop-del");
+      });
+
+      // Simulate clicking the Undo button from the toast
+      const toastCall = toastMock.mock.calls[0];
+      const undoAction = toastCall[1].action.onClick;
+      act(() => {
+        undoAction();
+      });
+
+      // Properties restored (last setProperties call is the undo)
+      const lastPropCall = setProperties.mock.calls[setProperties.mock.calls.length - 1][0];
+      expect(lastPropCall).toEqual(props);
+
+      // Views restored
+      const lastViewCall = setViews.mock.calls[setViews.mock.calls.length - 1][0];
+      expect(lastViewCall).toEqual(views);
+
+      // Rows restored
+      const lastRowCall = setRows.mock.calls[setRows.mock.calls.length - 1][0];
+      expect(lastRowCall).toEqual(rows);
+
+      // Timer should be cancelled — advancing should not trigger deleteProperty
+      await act(async () => {
+        vi.advanceTimersByTime(6000);
+      });
+      expect(deletePropertyMock).not.toHaveBeenCalled();
     });
 
     it("prevents deleting the title property (position 0)", () => {
       const props = [makeProp("title-prop", "Title", 0)];
-      const { result } = setup({ properties: props });
+      const { result, setProperties } = setup({ properties: props });
 
       act(() => {
-        result.current.handleRequestDeleteColumn("title-prop");
+        result.current.handleDeleteColumn("title-prop");
       });
 
-      expect(result.current.deletingProperty).toBeNull();
+      expect(setProperties).not.toHaveBeenCalled();
+      expect(toastMock).not.toHaveBeenCalled();
     });
 
-    it("reverts on delete failure and captures Sentry error", async () => {
+    it("reverts on persist failure and captures Sentry error", async () => {
       const error = new Error("delete failed");
-      deletePropertyMock.mockResolvedValue({
-        error,
-      });
+      deletePropertyMock.mockResolvedValue({ error });
       loadDatabaseMock.mockResolvedValue({
         data: { rows: [makeRow("row-1")] },
         error: null,
@@ -560,51 +644,35 @@ describe("useDatabaseProperties", () => {
       });
 
       act(() => {
-        result.current.handleRequestDeleteColumn("prop-del");
+        result.current.handleDeleteColumn("prop-del");
       });
 
+      // Advance past the deferred timer to trigger persist
       await act(async () => {
-        await result.current.handleConfirmDeleteColumn();
+        vi.advanceTimersByTime(5500);
       });
 
       expect(toastErrorMock).toHaveBeenCalledWith(
-        "Failed to delete property",
+        "Failed to delete column",
         { duration: 8000 },
       );
-      expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-properties:delete");
+      expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-view:delete-column");
       // Properties and views reverted
-      const revertProps = setProperties.mock.calls[1][0];
-      expect(revertProps).toEqual(props);
-      const revertViews = setViews.mock.calls[1][0];
-      expect(revertViews).toEqual(views);
+      const lastPropCall = setProperties.mock.calls[setProperties.mock.calls.length - 1][0];
+      expect(lastPropCall).toEqual(props);
+      const lastViewCall = setViews.mock.calls[setViews.mock.calls.length - 1][0];
+      expect(lastViewCall).toEqual(views);
     });
 
-    it("does nothing when no property is being deleted", async () => {
-      const { result } = setup();
-
-      await act(async () => {
-        await result.current.handleConfirmDeleteColumn();
-      });
-
-      expect(deletePropertyMock).not.toHaveBeenCalled();
-    });
-
-    it("handleCancelDeleteColumn clears deletingProperty", () => {
-      const props = [
-        makeProp("title-prop", "Title", 0),
-        makeProp("prop-1", "Col", 1),
-      ];
-      const { result } = setup({ properties: props });
+    it("does nothing for unknown property id", () => {
+      const { result, setProperties } = setup();
 
       act(() => {
-        result.current.handleRequestDeleteColumn("prop-1");
+        result.current.handleDeleteColumn("nonexistent");
       });
-      expect(result.current.deletingProperty).not.toBeNull();
 
-      act(() => {
-        result.current.handleCancelDeleteColumn();
-      });
-      expect(result.current.deletingProperty).toBeNull();
+      expect(setProperties).not.toHaveBeenCalled();
+      expect(toastMock).not.toHaveBeenCalled();
     });
   });
 });

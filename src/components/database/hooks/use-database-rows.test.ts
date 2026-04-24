@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 
 // ---------------------------------------------------------------------------
@@ -12,6 +12,7 @@ const loadDatabaseMock = vi.fn();
 const captureSupabaseErrorMock = vi.fn();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock needs flexible arity
 const isInsufficientPrivilegeErrorMock = vi.fn((..._args: any[]) => false);
+const toastMock = vi.fn();
 const toastErrorMock = vi.fn();
 const softDeletePageMock = vi.fn();
 
@@ -30,9 +31,10 @@ vi.mock("@/lib/sentry", () => ({
 }));
 
 vi.mock("sonner", () => ({
-  toast: {
-    error: (...args: unknown[]) => toastErrorMock(...args),
-  },
+  toast: Object.assign(
+    (...args: unknown[]) => toastMock(...args),
+    { error: (...args: unknown[]) => toastErrorMock(...args) },
+  ),
 }));
 
 vi.mock("@/lib/supabase/client", () => ({
@@ -472,11 +474,53 @@ describe("useDatabaseRows", () => {
   });
 
   // -------------------------------------------------------------------------
-  // handleDeleteRow
+  // handleDeleteRow (deferred deletion with undo toast)
   // -------------------------------------------------------------------------
 
   describe("handleDeleteRow", () => {
-    it("optimistically removes the row and calls soft_delete_page", async () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("optimistically removes the row and shows undo toast", () => {
+      const rows = [makeRow("row-1"), makeRow("row-2")];
+      const setRows = vi.fn((updater) => {
+        if (typeof updater === "function") {
+          return updater(rows);
+        }
+        return updater;
+      });
+
+      const { result } = setup({ rows, setRows });
+
+      act(() => {
+        result.current.handleDeleteRow("row-1");
+      });
+
+      // Optimistic removal
+      const updater = setRows.mock.calls[0][0];
+      const updated = updater(rows);
+      expect(updated).toHaveLength(1);
+      expect(updated[0].page.id).toBe("row-2");
+
+      // RPC should NOT be called yet (deferred)
+      expect(softDeletePageMock).not.toHaveBeenCalled();
+
+      // Toast shown with undo action
+      expect(toastMock).toHaveBeenCalledWith(
+        "Row deleted",
+        expect.objectContaining({
+          duration: 5000,
+          action: expect.objectContaining({ label: "Undo" }),
+        }),
+      );
+    });
+
+    it("persists deletion via soft_delete_page after 5.5s timer", async () => {
       softDeletePageMock.mockResolvedValue({ data: null, error: null });
 
       const rows = [makeRow("row-1"), makeRow("row-2")];
@@ -489,22 +533,58 @@ describe("useDatabaseRows", () => {
 
       const { result } = setup({ rows, setRows });
 
-      await act(async () => {
-        await result.current.handleDeleteRow("row-1");
+      act(() => {
+        result.current.handleDeleteRow("row-1");
       });
 
-      // Optimistic removal
-      const updater = setRows.mock.calls[0][0];
-      const updated = updater(rows);
-      expect(updated).toHaveLength(1);
-      expect(updated[0].page.id).toBe("row-2");
+      // Advance past the deferred timer
+      await act(async () => {
+        vi.advanceTimersByTime(5500);
+      });
 
       expect(softDeletePageMock).toHaveBeenCalledWith("soft_delete_page", {
         page_id: "row-1",
       });
     });
 
-    it("shows toast and reloads on failure", async () => {
+    it("undo restores the row and cancels the timer", async () => {
+      const rows = [makeRow("row-1"), makeRow("row-2")];
+      const setRows = vi.fn((updater) => {
+        if (typeof updater === "function") {
+          return updater(rows);
+        }
+        return updater;
+      });
+
+      const { result } = setup({ rows, setRows });
+
+      act(() => {
+        result.current.handleDeleteRow("row-1");
+      });
+
+      // Simulate clicking the Undo button from the toast
+      const toastCall = toastMock.mock.calls[0];
+      const undoAction = toastCall[1].action.onClick;
+      act(() => {
+        undoAction();
+      });
+
+      // Row should be restored — last setRows call appends the snapshot
+      const lastSetRowsCall = setRows.mock.calls[setRows.mock.calls.length - 1][0];
+      if (typeof lastSetRowsCall === "function") {
+        const restored = lastSetRowsCall([makeRow("row-2")]);
+        expect(restored).toHaveLength(2);
+        expect(restored.find((r: DatabaseRow) => r.page.id === "row-1")).toBeTruthy();
+      }
+
+      // Timer should be cancelled — advancing should not trigger RPC
+      await act(async () => {
+        vi.advanceTimersByTime(6000);
+      });
+      expect(softDeletePageMock).not.toHaveBeenCalled();
+    });
+
+    it("shows toast and reloads on persist failure", async () => {
       const dbError = new Error("delete failed");
       softDeletePageMock.mockResolvedValue({ data: null, error: dbError });
       loadDatabaseMock.mockResolvedValue({
@@ -514,8 +594,13 @@ describe("useDatabaseRows", () => {
 
       const { result, setRows } = setup();
 
+      act(() => {
+        result.current.handleDeleteRow("row-1");
+      });
+
+      // Advance past the deferred timer to trigger persist
       await act(async () => {
-        await result.current.handleDeleteRow("row-1");
+        vi.advanceTimersByTime(5500);
       });
 
       expect(toastErrorMock).toHaveBeenCalledWith("Failed to delete row", {
@@ -535,8 +620,13 @@ describe("useDatabaseRows", () => {
 
       const { result } = setup();
 
+      act(() => {
+        result.current.handleDeleteRow("row-1");
+      });
+
+      // Advance past the deferred timer
       await act(async () => {
-        await result.current.handleDeleteRow("row-1");
+        vi.advanceTimersByTime(5500);
       });
 
       expect(captureSupabaseErrorMock).not.toHaveBeenCalled();

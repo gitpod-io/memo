@@ -273,9 +273,60 @@ test.describe("Database CRUD", () => {
     await expect(deleteBtn).toBeVisible({ timeout: 5_000 });
     await deleteBtn.click();
 
-    // Wait for the row to be removed — "No rows yet" should appear
+    // Row is optimistically removed — "No rows yet" should appear
     await expect(page.locator(':text("No rows yet")')).toBeVisible({
       timeout: 10_000,
+    });
+
+    // An undo toast should appear
+    const undoToast = page.locator('[data-sonner-toast]', { hasText: "Row deleted" });
+    await expect(undoToast).toBeVisible({ timeout: 5_000 });
+
+    // Wait for the toast to dismiss and deletion to persist
+    await expect(undoToast).not.toBeVisible({ timeout: 12_000 });
+  });
+
+  test("user can undo row deletion via toast", async ({
+    authenticatedPage: page,
+  }) => {
+    await createDatabaseFromSidebar(page);
+
+    // Add a row first
+    const addRowBtn = page.locator("button", { hasText: "+ New" });
+    await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
+    await addRowBtn.click();
+
+    // Wait for the grid to appear
+    await expect(page.locator('[role="grid"]')).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Hover over the title cell to reveal the delete button
+    const titleCell = page.locator('[role="gridcell"]').first();
+    await titleCell.hover();
+
+    // Click the delete button
+    const deleteBtn = page.locator('button[aria-label="Delete row"]').first();
+    await expect(deleteBtn).toBeVisible({ timeout: 5_000 });
+    await deleteBtn.click();
+
+    // Row is optimistically removed
+    await expect(page.locator(':text("No rows yet")')).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Click the Undo button in the toast
+    const undoBtn = page.locator('[data-sonner-toast]', { hasText: "Row deleted" })
+      .getByRole("button", { name: "Undo" });
+    await expect(undoBtn).toBeVisible({ timeout: 5_000 });
+    await undoBtn.click();
+
+    // Row should be restored — grid should be visible with a row
+    await expect(page.locator('[role="grid"]')).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.locator(':text("No rows yet")')).not.toBeVisible({
+      timeout: 5_000,
     });
   });
 
@@ -325,6 +376,60 @@ test.describe("Database CRUD", () => {
     // Add a text column
     await addColumnViaTypePicker(page, "Text");
 
+    // Verify the column exists and its menu trigger is attached
+    const propertyHeader = page
+      .locator('[role="columnheader"]', { hasText: /^text$/i })
+      .first();
+    await expect(propertyHeader).toBeVisible({ timeout: 5_000 });
+    const menuTrigger = propertyHeader.locator('[aria-label$="column menu"]');
+    await expect(menuTrigger).toBeAttached({ timeout: 5_000 });
+
+    // Open the column header menu and click "Delete property"
+    await openColumnMenu(page, propertyHeader);
+    const deleteItem = page.getByRole("menuitem", { name: "Delete property" });
+    await expect(deleteItem).toBeVisible({ timeout: 5_000 });
+    await deleteItem.click();
+
+    // Column is optimistically removed — no confirmation dialog
+    const deletedHeader = page.locator('[role="columnheader"]', {
+      hasText: /^text$/i,
+    });
+    await expect(deletedHeader).not.toBeVisible({ timeout: 5_000 });
+
+    // An undo toast should appear
+    const undoToast = page.locator('[data-sonner-toast]', { hasText: /Column .* deleted/ });
+    await expect(undoToast).toBeVisible({ timeout: 5_000 });
+
+    // Wait for the toast to dismiss and deletion to persist
+    await expect(undoToast).not.toBeVisible({ timeout: 12_000 });
+
+    // Reload and verify the column is still gone (persisted)
+    await page.reload();
+    await expect(page.locator('[role="grid"]')).toBeVisible({
+      timeout: 15_000,
+    });
+    const deletedHeaderAfterReload = page.locator('[role="columnheader"]', {
+      hasText: /^text$/i,
+    });
+    await expect(deletedHeaderAfterReload).not.toBeVisible({ timeout: 5_000 });
+  });
+
+  test("user can undo column deletion via toast", async ({
+    authenticatedPage: page,
+  }) => {
+    await createDatabaseFromSidebar(page);
+
+    // Add a row to get the full grid, then add a column
+    const addRowBtn = page.locator("button", { hasText: "+ New" });
+    await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
+    await addRowBtn.click();
+    await expect(page.locator('[role="grid"]')).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Add a text column
+    await addColumnViaTypePicker(page, "Text");
+
     // Verify the column exists
     const propertyHeader = page
       .locator('[role="columnheader"]', { hasText: /^text$/i })
@@ -337,30 +442,22 @@ test.describe("Database CRUD", () => {
     await expect(deleteItem).toBeVisible({ timeout: 5_000 });
     await deleteItem.click();
 
-    // Confirm the deletion in the alert dialog
-    const alertDialog = page.getByRole("alertdialog");
-    await expect(alertDialog).toBeVisible({ timeout: 5_000 });
-    const confirmBtn = alertDialog.getByRole("button", { name: "Delete" });
-    await confirmBtn.click();
+    // Column is optimistically removed
+    await expect(
+      page.locator('[role="columnheader"]', { hasText: /^text$/i }),
+    ).not.toBeVisible({ timeout: 5_000 });
 
-    // Wait for the dialog to close and column to disappear
-    await expect(alertDialog).not.toBeVisible({ timeout: 5_000 });
+    // Click the Undo button in the toast
+    const undoBtn = page.locator('[data-sonner-toast]', { hasText: /Column .* deleted/ })
+      .getByRole("button", { name: "Undo" });
+    await expect(undoBtn).toBeVisible({ timeout: 5_000 });
+    await undoBtn.click();
 
-    // The "Text" column header should no longer be visible
-    const deletedHeader = page.locator('[role="columnheader"]', {
-      hasText: /^text$/i,
-    });
-    await expect(deletedHeader).not.toBeVisible({ timeout: 5_000 });
-
-    // Reload and verify the column is still gone (persisted)
-    await page.reload();
-    await expect(page.locator('[role="grid"]')).toBeVisible({
-      timeout: 15_000,
-    });
-    const deletedHeaderAfterReload = page.locator('[role="columnheader"]', {
-      hasText: /^text$/i,
-    });
-    await expect(deletedHeaderAfterReload).not.toBeVisible({ timeout: 5_000 });
+    // Column should be restored
+    const restoredHeader = page
+      .locator('[role="columnheader"]', { hasText: /^text$/i })
+      .first();
+    await expect(restoredHeader).toBeVisible({ timeout: 5_000 });
   });
 
   test("Title property (position 0) does not show delete option", async ({
