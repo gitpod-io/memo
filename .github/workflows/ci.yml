@@ -63,6 +63,7 @@ jobs:
           pnpm test:visual
         env:
           STORYBOOK_URL: http://localhost:6099
+          BASE_URL: http://localhost:6099
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v4
