@@ -12,6 +12,8 @@ const reorderPropertiesMock = vi.fn();
 const loadDatabaseMock = vi.fn();
 const updateViewMock = vi.fn();
 const toastErrorMock = vi.fn();
+const captureSupabaseErrorMock = vi.fn();
+const isInsufficientPrivilegeErrorMock = vi.fn((_error: unknown) => false);
 
 vi.mock("@/lib/database", () => ({
   addProperty: (...args: unknown[]) => addPropertyMock(...args),
@@ -35,6 +37,11 @@ vi.mock("sonner", () => ({
   toast: {
     error: (...args: unknown[]) => toastErrorMock(...args),
   },
+}));
+
+vi.mock("@/lib/sentry", () => ({
+  captureSupabaseError: (error: unknown, operation: unknown) => captureSupabaseErrorMock(error, operation),
+  isInsufficientPrivilegeError: (error: unknown) => isInsufficientPrivilegeErrorMock(error),
 }));
 
 // ---------------------------------------------------------------------------
@@ -203,10 +210,11 @@ describe("useDatabaseProperties", () => {
       );
     });
 
-    it("shows toast on error", async () => {
+    it("shows toast and captures Sentry error on failure", async () => {
+      const error = new Error("failed");
       addPropertyMock.mockResolvedValue({
         data: null,
-        error: new Error("failed"),
+        error,
       });
 
       const { result, setProperties } = setup();
@@ -218,7 +226,28 @@ describe("useDatabaseProperties", () => {
       expect(toastErrorMock).toHaveBeenCalledWith("Failed to add column", {
         duration: 8000,
       });
+      expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-properties:add");
       expect(setProperties).not.toHaveBeenCalled();
+    });
+
+    it("skips Sentry capture for insufficient privilege errors", async () => {
+      const error = new Error("violates row-level security policy");
+      isInsufficientPrivilegeErrorMock.mockReturnValueOnce(true);
+      addPropertyMock.mockResolvedValue({
+        data: null,
+        error,
+      });
+
+      const { result } = setup();
+
+      await act(async () => {
+        await result.current.handleAddColumn("text");
+      });
+
+      expect(toastErrorMock).toHaveBeenCalledWith("Failed to add column", {
+        duration: 8000,
+      });
+      expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
     });
 
     it("guards against concurrent calls", async () => {
@@ -293,10 +322,11 @@ describe("useDatabaseProperties", () => {
       );
     });
 
-    it("reverts on rename failure", async () => {
+    it("reverts on rename failure and captures Sentry error", async () => {
+      const error = new Error("rename failed");
       updatePropertyMock.mockResolvedValue({
         data: null,
-        error: new Error("rename failed"),
+        error,
       });
 
       const { result, setProperties } = setup();
@@ -313,6 +343,7 @@ describe("useDatabaseProperties", () => {
         "Failed to rename property",
         { duration: 8000 },
       );
+      expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-properties:rename");
       // Revert call: second setProperties call restores old name
       expect(setProperties).toHaveBeenCalledTimes(2);
       const revertUpdater = setProperties.mock.calls[1][0];
@@ -321,6 +352,27 @@ describe("useDatabaseProperties", () => {
         makeProp("prop-1", "New Name", 1, "select"),
       ]);
       expect(reverted[1].name).toBe("Status");
+    });
+
+    it("skips Sentry capture for insufficient privilege on rename", async () => {
+      isInsufficientPrivilegeErrorMock.mockReturnValueOnce(true);
+      updatePropertyMock.mockResolvedValue({
+        data: null,
+        error: new Error("42501"),
+      });
+
+      const { result } = setup();
+
+      act(() => {
+        result.current.handleColumnHeaderClick("prop-1");
+      });
+
+      await act(async () => {
+        await result.current.handlePropertyRename("New Name");
+      });
+
+      expect(toastErrorMock).toHaveBeenCalled();
+      expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
     });
 
     it("does nothing when no property is being renamed", async () => {
@@ -382,9 +434,10 @@ describe("useDatabaseProperties", () => {
       ]);
     });
 
-    it("reverts on reorder failure", async () => {
+    it("reverts on reorder failure and captures Sentry error", async () => {
+      const error = new Error("reorder failed");
       reorderPropertiesMock.mockResolvedValue({
-        error: new Error("reorder failed"),
+        error,
       });
 
       const props = [makeProp("p-a", "A", 0), makeProp("p-b", "B", 1)];
@@ -398,6 +451,7 @@ describe("useDatabaseProperties", () => {
         "Failed to reorder columns",
         { duration: 8000 },
       );
+      expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-properties:reorder");
       // Revert: second setProperties call restores original
       expect(setProperties).toHaveBeenCalledTimes(2);
       const revertValue = setProperties.mock.calls[1][0];
@@ -485,9 +539,10 @@ describe("useDatabaseProperties", () => {
       expect(result.current.deletingProperty).toBeNull();
     });
 
-    it("reverts on delete failure", async () => {
+    it("reverts on delete failure and captures Sentry error", async () => {
+      const error = new Error("delete failed");
       deletePropertyMock.mockResolvedValue({
-        error: new Error("delete failed"),
+        error,
       });
       loadDatabaseMock.mockResolvedValue({
         data: { rows: [makeRow("row-1")] },
@@ -516,6 +571,7 @@ describe("useDatabaseProperties", () => {
         "Failed to delete property",
         { duration: 8000 },
       );
+      expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-properties:delete");
       // Properties and views reverted
       const revertProps = setProperties.mock.calls[1][0];
       expect(revertProps).toEqual(props);

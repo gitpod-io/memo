@@ -12,6 +12,10 @@ import {
   generateColumnName,
   getDefaultColumnConfig,
 } from "@/lib/column-helpers";
+import {
+  captureSupabaseError,
+  isInsufficientPrivilegeError,
+} from "@/lib/sentry";
 import type {
   DatabaseProperty,
   DatabaseRow,
@@ -87,6 +91,9 @@ export function useDatabaseProperties({
         const config = getDefaultColumnConfig(type);
         const { data: newProp, error } = await addProperty(pageId, name, type, config);
         if (error || !newProp) {
+          if (error && !isInsufficientPrivilegeError(error)) {
+            captureSupabaseError(error, "database-properties:add");
+          }
           toast.error("Failed to add column", { duration: 8000 });
           return;
         }
@@ -120,6 +127,9 @@ export function useDatabaseProperties({
 
       const { error } = await updateProperty(propertyId, { name: newName }, pageId);
       if (error) {
+        if (!isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "database-properties:rename");
+        }
         toast.error("Failed to rename property", { duration: 8000 });
         // Revert
         setProperties((prev) =>
@@ -146,6 +156,9 @@ export function useDatabaseProperties({
 
       const { error } = await reorderProperties(pageId, orderedPropertyIds);
       if (error) {
+        if (!isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "database-properties:reorder");
+        }
         toast.error("Failed to reorder columns", { duration: 8000 });
         setProperties(prevProperties);
       }
@@ -200,6 +213,9 @@ export function useDatabaseProperties({
 
     const { error } = await deleteProperty(propertyId, pageId);
     if (error) {
+      if (!isInsufficientPrivilegeError(error)) {
+        captureSupabaseError(error, "database-properties:delete");
+      }
       toast.error("Failed to delete property", { duration: 8000 });
       // Revert
       setProperties(prevProperties);
