@@ -156,6 +156,39 @@ action:
                 Include the update in the same commit as the fix. Do NOT update speculatively —
                 only when the bug directly reveals a gap in the conventions.
 
+                ## Update Quality Test Counts
+
+                After all tests pass, update `.agents/quality.md` so test counts stay current.
+
+                1. **Count tests from runner output:**
+                   ```
+                   VITEST_TOTAL=$(pnpm test 2>&1 | grep -oP 'Tests\s+\K\d+(?=\s+passed)' | tail -1)
+                   VITEST_FILES=$(pnpm test 2>&1 | grep -oP 'Test Files\s+\K\d+(?=\s+passed)' | tail -1)
+                   E2E_TOTAL=$(pnpm test:e2e 2>&1 | grep -oP '\d+(?=\s+passed)' | tail -1)
+                   E2E_FILES=$(ls e2e/*.spec.ts | wc -l)
+                   ```
+                   If the counts differ from what is in quality.md, update them.
+
+                2. **Update the Test Coverage Summary table** in quality.md with the new totals:
+                   - Unit/Integration (Vitest): files and tests from Vitest output
+                   - E2E (Playwright): files and tests from Playwright output
+                   - Total: sum of both
+
+                3. **Update the affected domain's row** in the "Current Grades" table:
+                   - If you added new test files, update the test count in the domain's Notes column.
+                   - If existing test files grew (more tests added), update those counts too.
+                   - Only update the domain(s) your bug fix touched — do not rewrite the entire table.
+
+                4. **Update the "Test files by domain" section:**
+                   - If you added new test files, add them to the appropriate domain's bullet list.
+                   - If existing test files have new test counts, update the count in parentheses.
+                   - Only update entries for files you added or modified.
+
+                5. **Add a History entry** at the bottom of the History table:
+                   `| <today's date> | <brief description of what changed: new files added, counts updated> |`
+
+                Include these quality.md changes in the same commit as the fix.
+
                 ## PR Creation
 
                 1. Commit with conventional commit message: `fix: <description> (#<issue-number>)`
