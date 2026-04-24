@@ -206,7 +206,7 @@ test.describe("Select/Multi-select option persistence", () => {
     await navigateToDatabase(page);
 
     // Click the first editable cell (Priority select) to enter editing mode
-    const selectCell = page.locator('[role="gridcell"][tabindex="0"]').first();
+    const selectCell = page.locator('[role="gridcell"][data-col]').first();
     await expect(selectCell).toBeVisible({ timeout: 10_000 });
     await selectCell.click();
 
@@ -228,7 +228,7 @@ test.describe("Select/Multi-select option persistence", () => {
     await expect(page.locator('[role="grid"]')).toBeVisible({ timeout: 15_000 });
 
     // Click the select cell again to open the dropdown
-    const reloadedCell = page.locator('[role="gridcell"][tabindex="0"]').first();
+    const reloadedCell = page.locator('[role="gridcell"][data-col]').first();
     await expect(reloadedCell).toBeVisible({ timeout: 10_000 });
     await reloadedCell.click();
 
@@ -252,7 +252,7 @@ test.describe("Select/Multi-select option persistence", () => {
     await navigateToDatabase(page);
 
     // Click the second editable cell (Tags multi-select)
-    const multiSelectCell = page.locator('[role="gridcell"][tabindex="0"]').nth(1);
+    const multiSelectCell = page.locator('[role="gridcell"][data-col]').nth(1);
     await expect(multiSelectCell).toBeVisible({ timeout: 10_000 });
     await multiSelectCell.click();
 
@@ -268,7 +268,7 @@ test.describe("Select/Multi-select option persistence", () => {
     await page.waitForTimeout(1_500);
 
     // Re-click to create the second tag
-    const multiSelectCellAgain = page.locator('[role="gridcell"][tabindex="0"]').nth(1);
+    const multiSelectCellAgain = page.locator('[role="gridcell"][data-col]').nth(1);
     await expect(multiSelectCellAgain).toBeVisible({ timeout: 5_000 });
     await multiSelectCellAgain.click();
 
@@ -287,7 +287,7 @@ test.describe("Select/Multi-select option persistence", () => {
     await expect(page.locator('[role="grid"]')).toBeVisible({ timeout: 15_000 });
 
     // Click the multi-select cell to verify options persisted
-    const reloadedCell = page.locator('[role="gridcell"][tabindex="0"]').nth(1);
+    const reloadedCell = page.locator('[role="gridcell"][data-col]').nth(1);
     await expect(reloadedCell).toBeVisible({ timeout: 10_000 });
     await reloadedCell.click();
 
@@ -309,7 +309,7 @@ test.describe("Select/Multi-select option persistence", () => {
     await navigateToDatabase(page);
 
     // Create a new option in the select cell
-    const selectCell = page.locator('[role="gridcell"][tabindex="0"]').first();
+    const selectCell = page.locator('[role="gridcell"][data-col]').first();
     await expect(selectCell).toBeVisible({ timeout: 10_000 });
     await selectCell.click();
 
@@ -343,7 +343,7 @@ test.describe("Select/Multi-select option persistence", () => {
     await navigateToDatabase(page);
 
     // Click the select cell to open the dropdown
-    const selectCell = page.locator('[role="gridcell"][tabindex="0"]').first();
+    const selectCell = page.locator('[role="gridcell"][data-col]').first();
     await expect(selectCell).toBeVisible({ timeout: 10_000 });
     await selectCell.click();
 
@@ -376,7 +376,7 @@ test.describe("Select/Multi-select option persistence", () => {
     await navigateToDatabase(page);
 
     // Click the multi-select cell
-    const multiSelectCell = page.locator('[role="gridcell"][tabindex="0"]').nth(1);
+    const multiSelectCell = page.locator('[role="gridcell"][data-col]').nth(1);
     await expect(multiSelectCell).toBeVisible({ timeout: 10_000 });
     await multiSelectCell.click();
 
@@ -413,7 +413,7 @@ test.describe("Select/Multi-select option persistence", () => {
     await navigateToDatabase(page);
 
     // Click the select cell to open the dropdown
-    const selectCell = page.locator('[role="gridcell"][tabindex="0"]').first();
+    const selectCell = page.locator('[role="gridcell"][data-col]').first();
     await expect(selectCell).toBeVisible({ timeout: 10_000 });
     await selectCell.click();
 
@@ -428,7 +428,7 @@ test.describe("Select/Multi-select option persistence", () => {
 
     // Wait for persistence, then re-open the dropdown
     await page.waitForTimeout(1_500);
-    const selectCellAgain = page.locator('[role="gridcell"][tabindex="0"]').first();
+    const selectCellAgain = page.locator('[role="gridcell"][data-col]').first();
     await expect(selectCellAgain).toBeVisible({ timeout: 5_000 });
     await selectCellAgain.click();
 
@@ -457,7 +457,7 @@ test.describe("Select/Multi-select option persistence", () => {
     await expect(page.locator('[role="grid"]')).toBeVisible({ timeout: 15_000 });
 
     // Re-open the dropdown and check the option has a red color
-    const reloadedCell = page.locator('[role="gridcell"][tabindex="0"]').first();
+    const reloadedCell = page.locator('[role="gridcell"][data-col]').first();
     await expect(reloadedCell).toBeVisible({ timeout: 10_000 });
     await reloadedCell.click();
 

@@ -89,7 +89,7 @@ async function fillCell(
   cellIndex: number,
   value: string,
 ) {
-  const cell = page.locator('[role="gridcell"][tabindex="0"]').nth(cellIndex);
+  const cell = page.locator('[role="gridcell"][data-col]').nth(cellIndex);
   await cell.click();
   const cellInput = page.locator(
     '[role="gridcell"] input[type="text"], [role="gridcell"] input[type="number"]',
@@ -134,7 +134,7 @@ function prop2Cell(
   page: import("@playwright/test").Page,
   rowIndex: number,
 ) {
-  return page.locator('[role="gridcell"][tabindex="0"]').nth(rowIndex * 2 + 1);
+  return page.locator('[role="gridcell"][data-col]').nth(rowIndex * 2 + 1);
 }
 
 /**
