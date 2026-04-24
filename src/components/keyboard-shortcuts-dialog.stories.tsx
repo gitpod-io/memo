@@ -72,6 +72,16 @@ const macSections: ShortcutSection[] = [
       { keys: ["Shift", "Tab"], description: "Outdent list item" },
     ],
   },
+  {
+    title: "Database Table",
+    shortcuts: [
+      { keys: ["↑", "↓", "←", "→"], description: "Navigate between cells" },
+      { keys: ["Enter"], description: "Start editing the focused cell" },
+      { keys: ["Escape"], description: "Cancel editing / deselect cell" },
+      { keys: ["Tab"], description: "Move to next cell" },
+      { keys: ["Shift", "Tab"], description: "Move to previous cell" },
+    ],
+  },
 ];
 
 function ShortcutsContent({ sections }: { sections: ShortcutSection[] }) {

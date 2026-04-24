@@ -1,0 +1,219 @@
+import { useCallback } from "react";
+import { toast } from "sonner";
+import {
+  addRow,
+  loadDatabase,
+  updateProperty,
+  updateRowValue,
+} from "@/lib/database";
+import { createClient } from "@/lib/supabase/client";
+import {
+  captureSupabaseError,
+  isInsufficientPrivilegeError,
+} from "@/lib/sentry";
+import type { DatabaseProperty, DatabaseRow } from "@/lib/types";
+
+// ---------------------------------------------------------------------------
+// Hook params & return type
+// ---------------------------------------------------------------------------
+
+export interface UseDatabaseRowsParams {
+  pageId: string;
+  userId: string;
+  rows: DatabaseRow[];
+  setRows: React.Dispatch<React.SetStateAction<DatabaseRow[]>>;
+  setProperties: React.Dispatch<React.SetStateAction<DatabaseProperty[]>>;
+}
+
+export interface UseDatabaseRowsReturn {
+  handleAddRow: (initialValues?: Record<string, Record<string, unknown>>) => Promise<void>;
+  handleCardMove: (rowId: string, propertyId: string, newOptionId: string | null) => Promise<void>;
+  handleCellUpdate: (rowId: string, propertyId: string, value: Record<string, unknown>) => Promise<void>;
+  handleDeleteRow: (rowId: string) => Promise<void>;
+}
+
+// ---------------------------------------------------------------------------
+// Hook
+// ---------------------------------------------------------------------------
+
+export function useDatabaseRows({
+  pageId,
+  userId,
+  setRows,
+  setProperties,
+}: UseDatabaseRowsParams): UseDatabaseRowsReturn {
+  const handleAddRow = useCallback(
+    async (initialValues?: Record<string, Record<string, unknown>>) => {
+      const { data: rowPage, error } = await addRow(
+        pageId,
+        userId,
+        initialValues,
+      );
+      if (error || !rowPage) {
+        toast.error("Failed to add row", { duration: 8000 });
+        return;
+      }
+      // Build optimistic row_values from initialValues
+      const optimisticValues: DatabaseRow["values"] = {};
+      if (initialValues) {
+        for (const [propertyId, value] of Object.entries(initialValues)) {
+          optimisticValues[propertyId] = {
+            id: "",
+            row_id: rowPage.id,
+            property_id: propertyId,
+            value,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+        }
+      }
+      setRows((prev) => [
+        ...prev,
+        { page: rowPage as DatabaseRow["page"], values: optimisticValues },
+      ]);
+    },
+    [pageId, userId, setRows],
+  );
+
+  const handleCardMove = useCallback(
+    async (
+      rowId: string,
+      propertyId: string,
+      newOptionId: string | null,
+    ) => {
+      const newValue: Record<string, unknown> = {
+        option_id: newOptionId,
+      };
+      // Optimistic update
+      setRows((prev) =>
+        prev.map((r) => {
+          if (r.page.id !== rowId) return r;
+          return {
+            ...r,
+            values: {
+              ...r.values,
+              [propertyId]: {
+                ...(r.values[propertyId] ?? {
+                  id: "",
+                  row_id: rowId,
+                  property_id: propertyId,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                }),
+                value: newValue,
+                updated_at: new Date().toISOString(),
+              },
+            },
+          };
+        }),
+      );
+
+      const { error } = await updateRowValue(rowId, propertyId, newValue, pageId);
+      if (error) {
+        if (!isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "database-view:move-card");
+        }
+        toast.error("Failed to move card", { duration: 8000 });
+      }
+    },
+    [pageId, setRows],
+  );
+
+  const handleCellUpdate = useCallback(
+    async (rowId: string, propertyId: string, value: Record<string, unknown>) => {
+      // Extract _newOptions before persisting — select/multi-select editors
+      // pass newly created options here so we can save them to the property config.
+      const newOptions = value._newOptions as
+        | Array<{ id: string; name: string; color: string }>
+        | undefined;
+      const { _newOptions: _, ...cleanValue } = value;
+
+      // Optimistic updates — batch property config and row value together
+      // so React renders both in the same cycle (the renderer needs the
+      // updated options to display the newly created option badge).
+      if (newOptions) {
+        setProperties((prev) =>
+          prev.map((p) =>
+            p.id === propertyId
+              ? { ...p, config: { ...p.config, options: newOptions } }
+              : p,
+          ),
+        );
+      }
+
+      setRows((prev) =>
+        prev.map((r) => {
+          if (r.page.id !== rowId) return r;
+          return {
+            ...r,
+            values: {
+              ...r.values,
+              [propertyId]: {
+                ...(r.values[propertyId] ?? {
+                  id: "",
+                  row_id: rowId,
+                  property_id: propertyId,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                }),
+                value: cleanValue,
+                updated_at: new Date().toISOString(),
+              },
+            },
+          };
+        }),
+      );
+
+      // Persist to DB: update property config first, then row value
+      if (newOptions) {
+        const { error: configError } = await updateProperty(propertyId, {
+          config: { options: newOptions },
+        }, pageId);
+        if (configError) {
+          if (!isInsufficientPrivilegeError(configError)) {
+            captureSupabaseError(configError, "database-view:update-property-options");
+          }
+          toast.error("Failed to save new option", { duration: 8000 });
+        }
+      }
+
+      const { error } = await updateRowValue(rowId, propertyId, cleanValue, pageId);
+      if (error) {
+        if (!isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "database-view:update-cell");
+        }
+        toast.error("Failed to update cell", { duration: 8000 });
+      }
+    },
+    [pageId, setRows, setProperties],
+  );
+
+  const handleDeleteRow = useCallback(
+    async (rowId: string) => {
+      // Optimistic removal
+      setRows((prev) => prev.filter((r) => r.page.id !== rowId));
+
+      const supabase = createClient();
+      const { error } = await supabase.rpc("soft_delete_page", {
+        page_id: rowId,
+      });
+      if (error) {
+        if (!isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "database-view:delete-row");
+        }
+        toast.error("Failed to delete row", { duration: 8000 });
+        // Reload to restore
+        const { data } = await loadDatabase(pageId);
+        if (data) setRows(data.rows);
+      }
+    },
+    [pageId, setRows],
+  );
+
+  return {
+    handleAddRow,
+    handleCardMove,
+    handleCellUpdate,
+    handleDeleteRow,
+  };
+}

@@ -285,9 +285,17 @@ Database page (is_database = true)
 
 ```
 src/components/database/
-  ├── database-view-client.tsx     # Main client component: loads data, manages view state
+  ├── database-view-client.tsx     # Main client component: loads data, composes hooks + JSX
+  ├── database-view-helpers.tsx    # ViewConfigDropdown, ComingSoonPlaceholder, DatabaseSkeleton
+  ├── delete-property-dialog.tsx   # Confirmation dialog for deleting a property
+  ├── hooks/
+  │   ├── use-database-views.ts    # View CRUD: add, rename, delete, duplicate, reorder, config
+  │   ├── use-database-rows.ts     # Row mutations: add, delete, cell update, card move
+  │   ├── use-database-properties.ts # Property CRUD: add, rename, delete, reorder + dialog state
+  │   └── use-database-filters.ts  # Sort/filter state and derived displayedRows
   ├── view-tabs.tsx                # Horizontal tab bar for switching views
-  ├── filter-bar.tsx               # Active filter pills + add filter UI
+  ├── filter-bar.tsx               # Active filter pills + add filter UI (composition only)
+  ├── filter-value-editor.tsx      # Type-specific filter value editors, property picker, operator picker
   ├── sort-menu.tsx                # Sort configuration dropdown
   ├── property-config.tsx          # Column header dropdown: rename, type change, delete
   ├── property-editor.tsx          # Inline cell editor (dispatches to type-specific editors)
@@ -309,9 +317,15 @@ src/components/database/
   │   ├── formula.tsx
   │   └── computed.tsx             # created_time, updated_time, created_by (read-only)
   ├── views/
-  │   ├── table-view.tsx           # Spreadsheet grid with resizable columns
-  │   ├── table-cell-renderer.tsx  # CellRenderer + SelectBadge (extracted from table-view)
-  │   ├── table-keyboard.ts       # Keyboard navigation handler (extracted from table-view)
+  │   ├── table-view.tsx           # Composition root — wires sub-components together
+  │   ├── table-row.tsx            # TableRow — title cell + property cells for one row
+  │   ├── table-cell.tsx           # TableCell + RegistryEditorCell — display/edit modes, portal editors
+  │   ├── table-column-header.tsx  # TableColumnHeader — sort, menu, drag, resize handle
+  │   ├── table-skeleton.tsx       # TableSkeleton — loading placeholder
+  │   ├── table-navigation.ts     # useTableCellNavigation — editing/focus state, keyboard nav
+  │   ├── table-columns.ts        # useColumnResize + useColumnDragReorder hooks
+  │   ├── table-cell-renderer.tsx  # CellRenderer + SelectBadge — display-only value rendering
+  │   ├── table-keyboard.ts       # handleCellKeyDown — editing-mode key handler
   │   ├── table-defaults.ts       # Pure helpers: value keys, select options, display values, date formatting
   │   ├── board-view.tsx           # Kanban columns grouped by select property
   │   ├── list-view.tsx            # Compact vertical list
@@ -400,7 +414,10 @@ src/
 │   │   ├── create-workspace-dialog.tsx # Dialog for creating a new workspace
 │   │   ├── page-search.tsx      # Full-text search input + results dropdown (debounced, 300ms)
 │   │   ├── favorites-section.tsx # Per-user favorites list + useFavorite hook for toggle
-│   │   ├── page-tree.tsx        # Hierarchical page tree with CRUD, drag-and-drop, nest/unnest, favorites toggle (uses lib/page-tree.ts)
+│   │   ├── page-tree.tsx        # Orchestrator: data fetching, state, delete dialog (uses extracted sub-modules)
+│   │   ├── page-tree-item.tsx  # Single tree node rendering + context menu
+│   │   ├── page-tree-drag-layer.ts # usePageTreeDrag hook: drag-and-drop state + handlers
+│   │   ├── use-page-tree-actions.ts # usePageTreeActions hook: CRUD operations (create, delete, duplicate, move, nest, favorites)
 │   │   ├── trash-section.tsx    # Trash bin: lists soft-deleted pages, restore, permanent delete, empty trash
 │   │   └── user-menu.tsx        # User dropdown with settings link + sign-out
 │   ├── editor/                  # Lexical block editor
@@ -433,18 +450,32 @@ src/
 │   │   ├── word-count-plugin.tsx    # Word count + reading time display below editor
 │   │   └── code-language-selector-plugin.tsx # Floating language picker for code blocks
 │   ├── database/                # Database views system
-│   │   ├── database-view-client.tsx     # Main client component: loads data, manages view state
+│   │   ├── database-view-client.tsx     # Main client component: loads data, composes hooks + JSX
+│   │   ├── database-view-helpers.tsx    # ViewConfigDropdown, ComingSoonPlaceholder, DatabaseSkeleton
+│   │   ├── delete-property-dialog.tsx   # Confirmation dialog for deleting a property
+│   │   ├── hooks/                       # Domain hooks extracted from database-view-client
+│   │   │   ├── use-database-views.ts    # View CRUD callbacks
+│   │   │   ├── use-database-rows.ts     # Row mutation callbacks
+│   │   │   ├── use-database-properties.ts # Property CRUD + dialog state
+│   │   │   └── use-database-filters.ts  # Sort/filter state + displayedRows
 │   │   ├── view-tabs.tsx                # Horizontal tab bar for switching views
-│   │   ├── filter-bar.tsx               # Active filter pills + add filter UI
+│   │   ├── filter-bar.tsx               # Active filter pills + add filter UI (composition only)
+│   │   ├── filter-value-editor.tsx      # Type-specific filter value editors, property picker, operator picker
 │   │   ├── sort-menu.tsx                # Sort configuration dropdown
 │   │   ├── property-config.tsx          # Column header dropdown: rename, type change, delete
 │   │   ├── property-editor.tsx          # Inline cell editor (dispatches to type-specific editors)
 │   │   ├── property-renderer.tsx        # Cell renderer (dispatches to type-specific renderers)
 │   │   ├── property-types/              # Registry of type-specific renderers and editors
 │   │   ├── views/
-│   │   │   ├── table-view.tsx           # Spreadsheet grid with resizable columns
-│   │   │   ├── table-cell-renderer.tsx  # CellRenderer + SelectBadge (extracted from table-view)
-│   │   │   ├── table-keyboard.ts       # Keyboard navigation handler (extracted from table-view)
+│   │   │   ├── table-view.tsx           # Composition root — wires sub-components together
+│   │   │   ├── table-row.tsx            # TableRow — title cell + property cells for one row
+│   │   │   ├── table-cell.tsx           # TableCell + RegistryEditorCell — display/edit, portal editors
+│   │   │   ├── table-column-header.tsx  # TableColumnHeader — sort, menu, drag, resize handle
+│   │   │   ├── table-skeleton.tsx       # TableSkeleton — loading placeholder
+│   │   │   ├── table-navigation.ts     # useTableCellNavigation hook — editing/focus/keyboard nav
+│   │   │   ├── table-columns.ts        # useColumnResize + useColumnDragReorder hooks
+│   │   │   ├── table-cell-renderer.tsx  # CellRenderer + SelectBadge — display-only value rendering
+│   │   │   ├── table-keyboard.ts       # handleCellKeyDown — editing-mode key handler
 │   │   │   ├── table-defaults.ts       # Pure helpers: value keys, select options, display values
 │   │   │   ├── board-view.tsx           # Kanban columns grouped by select property
 │   │   │   ├── list-view.tsx            # Compact vertical list

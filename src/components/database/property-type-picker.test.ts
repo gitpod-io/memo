@@ -10,9 +10,9 @@ import { resolve } from "path";
  * accepts a PropertyType parameter and passes it through to addProperty.
  */
 
-function readViewClient(): string {
+function readPropertiesHook(): string {
   return readFileSync(
-    resolve(__dirname, "./database-view-client.tsx"),
+    resolve(__dirname, "./hooks/use-database-properties.ts"),
     "utf-8",
   );
 }
@@ -20,6 +20,13 @@ function readViewClient(): string {
 function readTableView(): string {
   return readFileSync(
     resolve(__dirname, "./views/table-view.tsx"),
+    "utf-8",
+  );
+}
+
+function readTableCell(): string {
+  return readFileSync(
+    resolve(__dirname, "./views/table-cell.tsx"),
     "utf-8",
   );
 }
@@ -32,22 +39,23 @@ function readPropertyTypePicker(): string {
 }
 
 describe("property type selector regression (#538)", () => {
-  const viewClient = readViewClient();
+  // handleAddColumn was extracted to the useDatabaseProperties hook
+  const propertiesHook = readPropertiesHook();
 
   it("handleAddColumn accepts a type parameter", () => {
     // The callback must accept a PropertyType, not be a zero-arg function.
-    expect(viewClient).toMatch(/handleAddColumn[^]*?async\s*\(\s*type\s*:\s*PropertyType\s*\)/);
+    expect(propertiesHook).toMatch(/handleAddColumn[^]*?async\s*\(\s*type\s*:\s*PropertyType\s*\)/);
   });
 
   it("addProperty is called with the type parameter, not a hardcoded string", () => {
     // Must NOT contain addProperty(pageId, name, "text") — the type should be dynamic.
     const hardcodedCall = /addProperty\(\s*pageId\s*,\s*name\s*,\s*"text"\s*\)/;
-    expect(viewClient).not.toMatch(hardcodedCall);
+    expect(propertiesHook).not.toMatch(hardcodedCall);
   });
 
   it("addProperty is called with the dynamic type variable", () => {
     // Must contain addProperty(pageId, name, type, ...) — using the parameter.
-    expect(viewClient).toMatch(/addProperty\(\s*pageId\s*,\s*name\s*,\s*type\b/);
+    expect(propertiesHook).toMatch(/addProperty\(\s*pageId\s*,\s*name\s*,\s*type\b/);
   });
 
   it("table view uses PropertyTypePicker for add-column", () => {
@@ -69,27 +77,28 @@ describe("property type selector regression (#538)", () => {
  * These tests verify the view client uses the extracted helper.
  */
 describe("default column name matches property type (#563)", () => {
-  const viewClient = readViewClient();
+  // Column naming logic was extracted to the useDatabaseProperties hook
+  const propertiesHook = readPropertiesHook();
 
   it("imports generateColumnName from column-helpers", () => {
-    expect(viewClient).toContain("generateColumnName");
-    expect(viewClient).toMatch(
+    expect(propertiesHook).toContain("generateColumnName");
+    expect(propertiesHook).toMatch(
       /import\s*\{[^}]*generateColumnName[^}]*\}\s*from\s*["']@\/lib\/column-helpers["']/,
     );
   });
 
   it("does not use the generic 'Property N' naming pattern", () => {
     // The old pattern: `Property ${properties.length + 1}`
-    expect(viewClient).not.toMatch(/`Property \$\{properties\.length/);
+    expect(propertiesHook).not.toMatch(/`Property \$\{properties\.length/);
   });
 
   it("calls generateColumnName to derive the column name", () => {
-    expect(viewClient).toMatch(/generateColumnName\s*\(/);
+    expect(propertiesHook).toMatch(/generateColumnName\s*\(/);
   });
 
   it("calls getDefaultColumnConfig to derive the column config", () => {
-    expect(viewClient).toContain("getDefaultColumnConfig");
-    expect(viewClient).toMatch(/getDefaultColumnConfig\s*\(/);
+    expect(propertiesHook).toContain("getDefaultColumnConfig");
+    expect(propertiesHook).toMatch(/getDefaultColumnConfig\s*\(/);
   });
 });
 
@@ -98,21 +107,21 @@ describe("default column name matches property type (#563)", () => {
  * DateEditor (calendar picker) instead of a plain text input.
  */
 describe("table view uses registry editors for specialized types (#563)", () => {
-  const tableView = readTableView();
+  // Cell editing logic was extracted from table-view.tsx to table-cell.tsx
+  const tableCell = readTableCell();
 
   it("uses getPropertyTypeConfig to look up editors in the editing path", () => {
-    // The editing branch must call getPropertyTypeConfig to get the Editor
-    expect(tableView).toMatch(/getPropertyTypeConfig\(propertyType\)/);
+    expect(tableCell).toMatch(/getPropertyTypeConfig\(propertyType\)/);
   });
 
   it("renders a RegistryEditorCell for non-text-input types", () => {
-    expect(tableView).toContain("RegistryEditorCell");
+    expect(tableCell).toContain("RegistryEditorCell");
   });
 
   it("does not use plain input for date type editing", () => {
     // The plain-input exclusion list only includes text, number, url, email, phone.
     // Date is NOT excluded, so it uses the registry editor (DateEditor / calendar picker).
-    const plainInputTypes = tableView.match(
+    const plainInputTypes = tableCell.match(
       /hasRegistryEditor\s*=[\s\S]+?;/,
     )?.[0];
     expect(plainInputTypes).toBeDefined();
@@ -121,10 +130,10 @@ describe("table view uses registry editors for specialized types (#563)", () => 
   });
 
   it("RegistryEditorCell passes value, property, onChange, and onBlur to Editor", () => {
-    expect(tableView).toMatch(/<Editor[\s\S]*?value=\{/);
-    expect(tableView).toMatch(/<Editor[\s\S]*?property=\{property\}/);
-    expect(tableView).toMatch(/<Editor[\s\S]*?onChange=\{/);
-    expect(tableView).toMatch(/<Editor[\s\S]*?onBlur=\{/);
+    expect(tableCell).toMatch(/<Editor[\s\S]*?value=\{/);
+    expect(tableCell).toMatch(/<Editor[\s\S]*?property=\{property\}/);
+    expect(tableCell).toMatch(/<Editor[\s\S]*?onChange=\{/);
+    expect(tableCell).toMatch(/<Editor[\s\S]*?onBlur=\{/);
   });
 });
 
