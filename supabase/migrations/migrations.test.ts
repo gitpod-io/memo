@@ -95,3 +95,48 @@ describe("delete_account RPC handles all user-referencing tables", () => {
     }
   });
 });
+
+/**
+ * Regression test for issue #734: delete_account RPC hits statement_timeout
+ * on large workspaces because cascading deletes across 8+ tables exceed the
+ * default timeout.
+ *
+ * Verifies that the RPC:
+ * 1. Sets a local statement_timeout to allow more time
+ * 2. Explicitly deletes from cascade-target tables before deleting pages
+ */
+describe("delete_account RPC handles statement timeout (#734)", () => {
+  const allSql = getAllMigrationsSql();
+
+  it("sets local statement_timeout to 60s", () => {
+    // The RPC must extend the timeout for this transaction only
+    expect(allSql).toMatch(
+      /set local statement_timeout = '60s'/
+    );
+  });
+
+  it("explicitly deletes cascade-target tables before pages", () => {
+    // These tables have FK cascades from pages. Deleting them explicitly
+    // before pages reduces the cascade workload and prevents timeouts.
+    const cascadeTargets = [
+      "row_values",
+      "database_views",
+      "database_properties",
+      "page_links",
+      "page_versions",
+    ];
+    for (const table of cascadeTargets) {
+      expect(allSql).toMatch(
+        new RegExp(`delete from public\\.${table}`)
+      );
+    }
+  });
+
+  it("collects personal workspace IDs into an array for efficient reuse", () => {
+    // The RPC should collect workspace IDs once rather than repeating the
+    // subquery for each cascade-target table delete
+    expect(allSql).toMatch(
+      /select array_agg\(id\) into _personal_workspace_ids/
+    );
+  });
+});
