@@ -121,9 +121,17 @@ action:
                 by theme in Step 3), create an enhancement issue:
                   gh issue create --title "feat: <description> (user feedback)" \
                     --label "enhancement" --label "priority:3" --label "needs-human" \
-                    --body "<body with Description, Evidence (N user requests), Acceptance Criteria>"
+                    --body "<body with Description, Evidence (N user requests), Acceptance Criteria,
+                    and an Approval Required section>"
 
-                Note: enhancement issues get `needs-human` (requires maintainer approval).
+                User feature requests are scope expansion, so they always get `needs-human`.
+                The issue body MUST include this section at the end:
+
+                  ## Approval Required
+                  This issue was auto-filed from N user feedback submissions requesting
+                  the same feature. To approve, comment "approved" and the automation
+                  will pick it up. To reject, close the issue.
+
                 Bug issues get `status:backlog` (enters automation queue directly).
 
                 Before creating any issue, check for duplicates:
