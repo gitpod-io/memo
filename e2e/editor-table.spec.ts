@@ -12,7 +12,6 @@ async function insertTable(page: Page): Promise<Locator> {
   const editor = page.locator('[contenteditable="true"]');
 
   await editor.click();
-  await page.waitForTimeout(200);
   await page.keyboard.press("End");
   await page.keyboard.press("Enter");
   await page.keyboard.type("/");
@@ -41,7 +40,6 @@ async function focusFirstCell(page: Page): Promise<void> {
   const box = await p.boundingBox();
   if (!box) throw new Error("Could not get bounding box");
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-  await page.waitForTimeout(500);
 
   const inCell = await page.evaluate(() => {
     const editorEl = document.querySelector('[contenteditable="true"]');
@@ -63,7 +61,6 @@ async function focusFirstCell(page: Page): Promise<void> {
 
   if (!inCell) {
     await page.locator("table th").first().click();
-    await page.waitForTimeout(500);
   }
 }
 
@@ -165,7 +162,6 @@ test.describe("Editor table blocks", () => {
 
     // Press Tab — cursor should move to the next cell
     await page.keyboard.press("Tab");
-    await page.waitForTimeout(300);
 
     // The table must still be in the DOM after pressing Tab
     await expect(editor.locator("table")).toBeVisible({ timeout: 3_000 });
@@ -178,7 +174,6 @@ test.describe("Editor table blocks", () => {
 
     // Press Tab again to move to the third header cell
     await page.keyboard.press("Tab");
-    await page.waitForTimeout(300);
     await page.keyboard.type("C1");
     await expect(table.locator("th").nth(2)).toContainText("C1", {
       timeout: 3_000,
@@ -186,7 +181,6 @@ test.describe("Editor table blocks", () => {
 
     // Press Tab once more to wrap to the first body row
     await page.keyboard.press("Tab");
-    await page.waitForTimeout(300);
     await page.keyboard.type("A2");
     await expect(table.locator("td").first()).toContainText("A2", {
       timeout: 3_000,
@@ -194,7 +188,6 @@ test.describe("Editor table blocks", () => {
 
     // Shift+Tab should move back to the previous cell (third header)
     await page.keyboard.press("Shift+Tab");
-    await page.waitForTimeout(300);
     await page.keyboard.type("-end");
     await expect(table.locator("th").nth(2)).toContainText("C1-end", {
       timeout: 3_000,
@@ -227,9 +220,10 @@ test.describe("Editor table blocks", () => {
     const saveResponse = waitForContentSave(page);
     await saveResponse;
 
-    // Wait briefly for any follow-up saves (the fix in #402 re-schedules
-    // saves when new changes arrive while a save is in-flight).
-    await page.waitForTimeout(1_500);
+    // Wait for any follow-up saves to settle (the fix in #402 re-schedules
+    // saves when new changes arrive while a save is in-flight). We wait for
+    // network idle which indicates no pending requests.
+    await page.waitForLoadState("networkidle");
 
     // Reload the page
     await page.reload({ waitUntil: "domcontentloaded" });
@@ -313,7 +307,6 @@ test.describe("Editor table blocks", () => {
     const firstTd = table.locator("td").first();
     await expect(firstTd).toBeVisible({ timeout: 3_000 });
     await firstTd.click();
-    await page.waitForTimeout(500);
 
     const trigger = page.locator('button[aria-label="Table cell actions"]');
     await expect(trigger).toBeVisible({ timeout: 5_000 });

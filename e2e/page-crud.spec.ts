@@ -117,7 +117,6 @@ test.describe("Page CRUD", () => {
     const testTitle = `E2E Test ${Date.now()}`;
     await page.keyboard.type(testTitle);
     await page.keyboard.press("Enter");
-    await page.waitForTimeout(1_000);
 
     // Title should be updated (could be an input or a contenteditable heading)
     const titleText = await titleInput.first().inputValue().catch(() => null)
@@ -156,7 +155,6 @@ test.describe("Page CRUD", () => {
     // Wait for the editor to appear
     const editor = page.locator('[contenteditable="true"]');
     await expect(editor).toBeVisible({ timeout: 10_000 });
-    await page.waitForTimeout(1_000);
 
     // Wait for the page tree to update with the new page
     const sidebarItems = page.locator('[role="treeitem"]');
@@ -168,20 +166,14 @@ test.describe("Page CRUD", () => {
     }
 
     await sidebarItems.first().hover();
-    await page.waitForTimeout(300);
 
     // Look for the "Page actions" more options button
     const moreBtn = sidebarItems.first().locator('[aria-label*="action" i]').or(
       sidebarItems.first().locator('[aria-label*="more" i]')
     );
-
-    if ((await moreBtn.count()) === 0) {
-      test.skip(true, "More options button not found");
-      return;
-    }
+    await expect(moreBtn.first()).toBeVisible({ timeout: 5_000 });
 
     await moreBtn.first().click();
-    await page.waitForTimeout(300);
 
     // Click delete
     const deleteBtn = page.getByRole("menuitem", { name: /delete/i });
@@ -196,9 +188,6 @@ test.describe("Page CRUD", () => {
     const confirmBtn = page.getByRole("button", { name: /move to trash/i });
     await expect(confirmBtn).toBeVisible({ timeout: 3_000 });
     await confirmBtn.click();
-
-    // Wait for the soft-delete to complete
-    await page.waitForTimeout(1_000);
 
     // Verify the page was moved to trash — the Trash section should appear in the sidebar
     const trashSection = sidebar.getByRole("button", { name: /trash/i });

@@ -10,7 +10,6 @@ test.describe("Responsive sidebar behavior", () => {
     await page.setViewportSize(MOBILE_VIEWPORT);
 
     // Wait for the app to settle after viewport change
-    await page.waitForTimeout(500);
 
     // Desktop aside should not be visible at mobile viewport
     const aside = page.locator("aside");
@@ -42,7 +41,6 @@ test.describe("Responsive sidebar behavior", () => {
     await page.setViewportSize(DESKTOP_VIEWPORT);
 
     // Wait for the app to settle after viewport change
-    await page.waitForTimeout(500);
 
     // Desktop aside should be visible
     const aside = page.locator("aside");
@@ -66,7 +64,6 @@ test.describe("Responsive sidebar behavior", () => {
     authenticatedPage: page,
   }) => {
     await page.setViewportSize(DESKTOP_VIEWPORT);
-    await page.waitForTimeout(500);
 
     // Sidebar should be open initially
     const aside = page.locator("aside");

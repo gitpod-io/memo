@@ -74,7 +74,8 @@ async function addColumnViaTypePicker(
   await expect(menuItem).toBeVisible({ timeout: 5_000 });
   await menuItem.click();
 
-  await page.waitForTimeout(1_500);
+  // Wait for the menu to close (column added)
+  await expect(menuItem).not.toBeVisible({ timeout: 5_000 });
 }
 
 /**
@@ -93,7 +94,9 @@ async function setupGridWith2x2(page: import("@playwright/test").Page) {
 
   // Add second row
   await addRowBtn.click();
-  await page.waitForTimeout(1_000);
+
+  // Wait for the second row to appear
+  await expect(page.locator('[role="row"]')).toHaveCount(3, { timeout: 10_000 });
 
   // Add Text column
   await addColumnViaTypePicker(page, "Text");

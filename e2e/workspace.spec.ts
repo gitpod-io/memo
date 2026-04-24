@@ -30,10 +30,10 @@ test.describe("Workspace switcher", () => {
     // The workspace switcher is typically the first interactive element in the sidebar
     const workspaceTrigger = sidebar.locator("button").first();
     await workspaceTrigger.click();
-    await page.waitForTimeout(500);
 
     // At minimum, the personal workspace should be listed
     const workspaceItems = page.locator('[role="menuitem"], [role="option"]');
+    await expect(workspaceItems.first()).toBeVisible({ timeout: 5_000 });
     if ((await workspaceItems.count()) > 0) {
       await expect(workspaceItems.first()).toBeVisible();
     }

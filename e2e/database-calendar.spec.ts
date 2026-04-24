@@ -366,7 +366,20 @@ test.describe("Database calendar view", () => {
     // appear as overflow cells from the adjacent month.
     const prevBtn = page.getByRole("button", { name: "Previous month" });
     await prevBtn.click();
-    await page.waitForTimeout(500);
+
+    // Wait for the first month change before clicking again
+    let oneBackMonth = MONTH - 1;
+    let oneBackYear = YEAR;
+    if (oneBackMonth < 0) {
+      oneBackMonth += 12;
+      oneBackYear -= 1;
+    }
+    await expect(
+      page.locator("h2", {
+        hasText: `${FULL_MONTHS[oneBackMonth]} ${oneBackYear}`,
+      }),
+    ).toBeVisible({ timeout: 5_000 });
+
     await prevBtn.click();
 
     // Compute expected month (2 months back)
@@ -393,7 +406,11 @@ test.describe("Database calendar view", () => {
     // Navigate forward to return to the current month
     const nextBtn = page.getByRole("button", { name: "Next month" });
     await nextBtn.click();
-    await page.waitForTimeout(500);
+    await expect(
+      page.locator("h2", {
+        hasText: `${FULL_MONTHS[oneBackMonth]} ${oneBackYear}`,
+      }),
+    ).toBeVisible({ timeout: 5_000 });
     await nextBtn.click();
 
     // Should be back to the current month — items should reappear
@@ -408,8 +425,18 @@ test.describe("Database calendar view", () => {
     ).toBeVisible({ timeout: 5_000 });
 
     // Navigate forward 2 months past the current month
+    let oneAheadMonth = MONTH + 1;
+    let oneAheadYear = YEAR;
+    if (oneAheadMonth > 11) {
+      oneAheadMonth -= 12;
+      oneAheadYear += 1;
+    }
     await nextBtn.click();
-    await page.waitForTimeout(500);
+    await expect(
+      page.locator("h2", {
+        hasText: `${FULL_MONTHS[oneAheadMonth]} ${oneAheadYear}`,
+      }),
+    ).toBeVisible({ timeout: 5_000 });
     await nextBtn.click();
 
     let twoAheadMonth = MONTH + 2;
@@ -457,9 +484,6 @@ test.describe("Database calendar view", () => {
     // Click the parent cell div (the cell background)
     const day20Cell = day20Span.locator("..");
     await day20Cell.click({ position: { x: 40, y: 60 } });
-
-    // Wait for the new row to be created
-    await page.waitForTimeout(3_000);
 
     // A new "Untitled" item should appear on day 20
     const untitledLinks = page.locator("a").filter({ hasText: "Untitled" });

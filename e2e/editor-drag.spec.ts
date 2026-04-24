@@ -68,7 +68,6 @@ test.describe("Editor drag-and-drop", () => {
     }
 
     await page.mouse.move(blockBox.x + blockBox.width / 2, blockBox.y + blockBox.height / 2);
-    await page.waitForTimeout(100);
 
     const dragHandle = page.locator(".memo-draggable-block-menu");
     await expect(dragHandle).toHaveCSS("opacity", "1", { timeout: 2_000 });
@@ -81,7 +80,6 @@ test.describe("Editor drag-and-drop", () => {
     }
 
     await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
-    await page.waitForTimeout(100);
 
     // Handle should still be visible
     await expect(dragHandle).toHaveCSS("opacity", "1");
@@ -103,13 +101,11 @@ test.describe("Editor drag-and-drop", () => {
     await page.keyboard.type(markerOne);
     await page.keyboard.press("Enter");
     await page.keyboard.type(markerTwo);
-    await page.waitForTimeout(300);
 
     // Hover the first typed block using unique text
     const blockOne = editor.locator("p").filter({ hasText: markerOne });
     await expect(blockOne).toBeVisible({ timeout: 3_000 });
     await blockOne.hover();
-    await page.waitForTimeout(200);
 
     const dragHandle = page.locator(".memo-draggable-block-menu");
     await expect(dragHandle).toHaveCSS("opacity", "1", { timeout: 2_000 });

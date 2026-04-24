@@ -20,7 +20,6 @@ test.describe("Editor auto-link detection", () => {
     await editor.pressSequentially("https://example.com");
     // Auto-link triggers when the user types a space after the URL
     await page.keyboard.press("Space");
-    await page.waitForTimeout(500);
 
     const link = editor.locator('a[href="https://example.com"]');
     await expect(link).toBeVisible({ timeout: 5_000 });
@@ -38,7 +37,6 @@ test.describe("Editor auto-link detection", () => {
     await page.keyboard.press("Enter");
     await editor.pressSequentially("www.example.com");
     await page.keyboard.press("Space");
-    await page.waitForTimeout(500);
 
     const link = editor.locator('a[href="https://www.example.com"]');
     await expect(link).toBeVisible({ timeout: 5_000 });
@@ -56,7 +54,6 @@ test.describe("Editor auto-link detection", () => {
     await page.keyboard.press("Enter");
     await editor.pressSequentially("user@example.com");
     await page.keyboard.press("Space");
-    await page.waitForTimeout(500);
 
     const link = editor.locator('a[href="mailto:user@example.com"]');
     await expect(link).toBeVisible({ timeout: 5_000 });
@@ -83,7 +80,6 @@ test.describe("Editor auto-link detection", () => {
     await page.keyboard.press(`${mod}+v`);
     // Trigger auto-link by pressing space after the pasted URL
     await page.keyboard.press("Space");
-    await page.waitForTimeout(500);
 
     const link = editor.locator('a[href="https://example.com/pasted"]');
     await expect(link).toBeVisible({ timeout: 5_000 });
@@ -104,7 +100,6 @@ test.describe("Editor auto-link detection", () => {
     await page.keyboard.press("Enter");
     await editor.pressSequentially("example");
     await page.keyboard.press("Space");
-    await page.waitForTimeout(500);
 
     // No new links should have been created
     const linksAfter = await editor.locator("a").count();

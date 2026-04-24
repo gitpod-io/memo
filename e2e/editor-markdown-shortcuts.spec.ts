@@ -107,10 +107,10 @@ test.describe("Editor markdown shortcuts", () => {
     await page.keyboard.press("Space");
 
     // Wait for the code block to appear
-    await page.waitForTimeout(500);
-
-    const codeCountAfter = await editor.locator("code").count();
-    expect(codeCountAfter).toBeGreaterThan(codeCountBefore);
+    await expect(async () => {
+      const codeCountAfter = await editor.locator("code").count();
+      expect(codeCountAfter).toBeGreaterThan(codeCountBefore);
+    }).toPass({ timeout: 5_000 });
 
     // The code block element should be visible
     const codeBlock = editor.locator("code").last();

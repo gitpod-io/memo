@@ -255,8 +255,7 @@ test.describe("Workspace member management", () => {
     await roleSelect.click();
     await page.getByRole("option", { name: "admin" }).click();
 
-    // Wait for the page to refresh and verify the role changed
-    await page.waitForTimeout(1_000);
+    // Navigate to members page to verify the role change persisted
     await goToMembersPage(page, workspaceSlug);
 
     // Verify the member now has admin role — the select should show "admin"

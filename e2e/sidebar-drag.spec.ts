@@ -17,7 +17,6 @@ test.describe("Sidebar page tree drag-and-drop", () => {
     }
 
     await pageItems.first().hover();
-    await page.waitForTimeout(300);
 
     // The sidebar drag handle should be visible (GripVertical icon)
     const gripIcon = page.locator("svg.lucide-grip-vertical").first();
@@ -44,7 +43,6 @@ test.describe("Sidebar page tree drag-and-drop", () => {
 
     // Hover first item to reveal drag handle
     await pageItems.first().hover();
-    await page.waitForTimeout(300);
 
     const gripIcon = page.locator("svg.lucide-grip-vertical").first();
     if ((await gripIcon.count()) === 0) {
@@ -69,7 +67,6 @@ test.describe("Sidebar page tree drag-and-drop", () => {
       { steps: 10 }
     );
     await page.mouse.up();
-    await page.waitForTimeout(500);
 
     // Verify order changed
     const updatedItems = page.locator('[role="treeitem"]');

@@ -57,8 +57,10 @@ async function createPage(page: import("@playwright/test").Page) {
     );
   }
 
-  // Allow the page to be saved to the database
-  await page.waitForTimeout(1_000);
+  // Wait for the page to be saved — the sidebar tree item appears once persisted
+  await expect(
+    page.getByRole("complementary").locator('[role="treeitem"][aria-selected="true"]'),
+  ).toBeVisible({ timeout: 10_000 });
 
   return page.url();
 }
@@ -82,17 +84,17 @@ async function softDeleteCurrentPage(
 
   // Hover to reveal the actions button
   await target.hover();
-  await page.waitForTimeout(300);
 
   // Click the "Page actions" more options button
   const moreBtn = target
     .locator('[aria-label*="action" i]')
     .or(target.locator('[aria-label*="more" i]'));
+  await expect(moreBtn.first()).toBeVisible({ timeout: 5_000 });
   await moreBtn.first().click();
-  await page.waitForTimeout(300);
 
   // Click Delete in the dropdown
   const deleteBtn = page.getByRole("menuitem", { name: /delete/i });
+  await expect(deleteBtn).toBeVisible({ timeout: 5_000 });
   await deleteBtn.click();
 
   // Confirm the soft-delete dialog
@@ -100,8 +102,8 @@ async function softDeleteCurrentPage(
   await expect(confirmBtn).toBeVisible({ timeout: 3_000 });
   await confirmBtn.click();
 
-  // Wait for the operation to complete
-  await page.waitForTimeout(1_500);
+  // Wait for the tree to update after deletion
+  await expect(confirmBtn).not.toBeVisible({ timeout: 5_000 });
 }
 
 test.describe("Trash and soft-delete operations", () => {
@@ -148,7 +150,6 @@ test.describe("Trash and soft-delete operations", () => {
 
     // Expand the trash section
     await trashToggle.click();
-    await page.waitForTimeout(500);
 
     // The trash section should contain at least one item (the deleted page)
     // Trash items show "Untitled" for pages without a title
@@ -177,7 +178,6 @@ test.describe("Trash and soft-delete operations", () => {
     const trashToggle = sidebar.getByRole("button", { name: /trash/i });
     await expect(trashToggle).toBeVisible({ timeout: 5_000 });
     await trashToggle.click();
-    await page.waitForTimeout(500);
 
     // Click the restore button on the first trashed page
     const restoreBtn = sidebar
@@ -186,8 +186,8 @@ test.describe("Trash and soft-delete operations", () => {
     await expect(restoreBtn).toBeVisible({ timeout: 5_000 });
     await restoreBtn.click();
 
-    // Wait for the restore to complete
-    await page.waitForTimeout(2_000);
+    // Wait for the restore to complete — the restore button disappears
+    await expect(restoreBtn).not.toBeVisible({ timeout: 10_000 });
 
     // Verify the page was restored: a success toast should appear,
     // and the page tree should have the page back. If there was no
@@ -215,7 +215,6 @@ test.describe("Trash and soft-delete operations", () => {
     const trashToggle = sidebar.getByRole("button", { name: /trash/i });
     await expect(trashToggle).toBeVisible({ timeout: 5_000 });
     await trashToggle.click();
-    await page.waitForTimeout(500);
 
     // Click the permanent delete button on the first trashed page
     const permanentDeleteBtn = sidebar
@@ -235,13 +234,8 @@ test.describe("Trash and soft-delete operations", () => {
     });
     await deleteForeverBtn.click();
 
-    // Wait for the operation to complete
-    await page.waitForTimeout(2_000);
-
-    // The trash section should disappear if that was the only trashed page,
-    // or the item count should decrease
-    // We verify the dialog closed successfully
-    await expect(dialog).not.toBeVisible({ timeout: 5_000 });
+    // Wait for the dialog to close (operation complete)
+    await expect(dialog).not.toBeVisible({ timeout: 10_000 });
   });
 
   test("user can empty all trash", async ({ authenticatedPage: page }) => {
@@ -256,13 +250,12 @@ test.describe("Trash and soft-delete operations", () => {
     const trashToggle = sidebar.getByRole("button", { name: /trash/i });
     await expect(trashToggle).toBeVisible({ timeout: 5_000 });
     await trashToggle.click();
-    await page.waitForTimeout(500);
 
     // Click "Empty trash" button
     const emptyTrashBtn = sidebar.getByRole("button", {
       name: /empty trash/i,
     });
-    await expect(emptyTrashBtn).toBeVisible({ timeout: 3_000 });
+    await expect(emptyTrashBtn).toBeVisible({ timeout: 5_000 });
     await emptyTrashBtn.click();
 
     // Confirmation dialog should appear
@@ -276,11 +269,8 @@ test.describe("Trash and soft-delete operations", () => {
     });
     await confirmEmptyBtn.click();
 
-    // Wait for the operation to complete
-    await page.waitForTimeout(2_000);
-
     // The trash section should disappear (hidden when empty)
-    await expect(trashToggle).not.toBeVisible({ timeout: 5_000 });
+    await expect(trashToggle).not.toBeVisible({ timeout: 10_000 });
   });
 
   test("soft-deleted page is not visible in the main page tree", async ({

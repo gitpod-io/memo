@@ -27,7 +27,16 @@ export const test = base.extend<{ authenticatedPage: Page }>({
     // causes the email value to be cleared.
     const emailInput = page.locator('input[type="email"]');
     await emailInput.waitFor({ state: "visible", timeout: 10_000 });
-    await page.waitForTimeout(500);
+
+    // Wait for hydration: the submit button becomes enabled once React hydrates
+    // the form. Poll until the input is interactive (accepts focus and value).
+    await page.waitForFunction(
+      () => {
+        const input = document.querySelector('input[type="email"]') as HTMLInputElement | null;
+        return input !== null && !input.disabled;
+      },
+      { timeout: 10_000 },
+    );
 
     await emailInput.fill(email);
     await page.fill('input[type="password"]', password);

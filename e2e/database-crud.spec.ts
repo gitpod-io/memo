@@ -94,8 +94,8 @@ async function addColumnViaTypePicker(
   await expect(menuItem).toBeVisible({ timeout: 5_000 });
   await menuItem.click();
 
-  // Wait for the new column header to appear
-  await page.waitForTimeout(1_500);
+  // Wait for the menu to close (column added)
+  await expect(menuItem).not.toBeVisible({ timeout: 5_000 });
 }
 
 /**
@@ -241,7 +241,6 @@ test.describe("Database CRUD", () => {
     await cellInput.fill("Test Value");
     // Click the page title area to blur the cell input
     await page.locator("h1, input[aria-label]").first().click();
-    await page.waitForTimeout(1_500);
 
     // The cell should now display the value
     const cellText = page.locator('[role="gridcell"]', {
@@ -268,7 +267,6 @@ test.describe("Database CRUD", () => {
     // Hover over the title cell to reveal the delete button
     const titleCell = page.locator('[role="gridcell"]').first();
     await titleCell.hover();
-    await page.waitForTimeout(500);
 
     // Click the delete button
     const deleteBtn = page.locator('button[aria-label="Delete row"]').first();
@@ -304,14 +302,11 @@ test.describe("Database CRUD", () => {
       .first();
     await renamePropertyViaDialog(page, propertyHeader, "Renamed Column");
 
-    // Wait for the rename to persist
-    await page.waitForTimeout(1_500);
-
     // The column header should now show the new name
     const renamedHeader = page.locator('[role="columnheader"]', {
       hasText: "Renamed Column",
     });
-    await expect(renamedHeader.first()).toBeVisible({ timeout: 5_000 });
+    await expect(renamedHeader.first()).toBeVisible({ timeout: 10_000 });
   });
 
   test("user can delete a property column via the column header menu", async ({
@@ -350,7 +345,6 @@ test.describe("Database CRUD", () => {
 
     // Wait for the dialog to close and column to disappear
     await expect(alertDialog).not.toBeVisible({ timeout: 5_000 });
-    await page.waitForTimeout(1_500);
 
     // The "Text" column header should no longer be visible
     const deletedHeader = page.locator('[role="columnheader"]', {
