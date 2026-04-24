@@ -1,14 +1,46 @@
 {
   "date": "2026-04-17",
   "day_number": 5,
-  "loc": { "total": 10410, "delta": 2562, "by_language": { "TypeScript": 10224, "CSS": 186 } },
-  "files": { "total": 76, "delta": 0 },
-  "prs": { "total": 132, "delta": 43, "currently_open": 0 },
-  "commits": { "total": 155, "delta": 43 },
+  "loc": {
+    "total": 10410,
+    "delta": 2562,
+    "by_language": {
+      "TypeScript": 10224,
+      "CSS": 186
+    }
+  },
+  "files": {
+    "total": 76,
+    "delta": 0
+  },
+  "prs": {
+    "total": 132,
+    "delta": 43,
+    "currently_open": 0
+  },
+  "commits": {
+    "total": 155,
+    "delta": 43
+  },
   "test_coverage_pct": null,
-  "ci_pass_rate_pct": 100,
   "autonomous_pct": 86,
-  "issues": { "backlog": 0, "in_progress": 0, "in_review": 0, "done": 30 },
+  "issues": {
+    "backlog": 0,
+    "in_progress": 0,
+    "in_review": 0,
+    "done": 30,
+    "opened_today": 34,
+    "closed_today": 39
+  },
   "human_minutes": null,
-  "agent_minutes": null
+  "agent_minutes": null,
+  "ci": {
+    "runs_total": 180,
+    "runs_passed": 176,
+    "pass_rate_pct": 97.8
+  },
+  "tests": {
+    "unit": 80,
+    "e2e": 20
+  }
 }
