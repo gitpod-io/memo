@@ -667,21 +667,27 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
         | undefined;
       const { _newOptions: _, ...cleanValue } = value;
 
+      // Snapshot previous state for rollback on save failure
+      let prevRows: DatabaseRow[] | null = null;
+      let prevProperties: DatabaseProperty[] | null = null;
+
       // Optimistic updates — batch property config and row value together
       // so React renders both in the same cycle (the renderer needs the
       // updated options to display the newly created option badge).
       if (newOptions) {
-        setProperties((prev) =>
-          prev.map((p) =>
+        setProperties((prev) => {
+          prevProperties = prev;
+          return prev.map((p) =>
             p.id === propertyId
               ? { ...p, config: { ...p.config, options: newOptions } }
               : p,
-          ),
-        );
+          );
+        });
       }
 
-      setRows((prev) =>
-        prev.map((r) => {
+      setRows((prev) => {
+        prevRows = prev;
+        return prev.map((r) => {
           if (r.page.id !== rowId) return r;
           return {
             ...r,
@@ -700,10 +706,12 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
               },
             },
           };
-        }),
-      );
+        });
+      });
 
       // Persist to DB: update property config first, then row value
+      let shouldRollback = false;
+
       if (newOptions) {
         const { error: configError } = await updateProperty(propertyId, {
           config: { options: newOptions },
@@ -713,6 +721,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
             captureSupabaseError(configError, "database-view:update-property-options");
           }
           toast.error("Failed to save new option", { duration: 8000 });
+          shouldRollback = true;
         }
       }
 
@@ -722,6 +731,13 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
           captureSupabaseError(error, "database-view:update-cell");
         }
         toast.error("Failed to update cell", { duration: 8000 });
+        shouldRollback = true;
+      }
+
+      // Revert optimistic updates so the cell shows the previous value
+      if (shouldRollback) {
+        if (prevRows) setRows(prevRows);
+        if (prevProperties) setProperties(prevProperties);
       }
     },
     [pageId],
