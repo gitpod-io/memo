@@ -9,6 +9,10 @@ import {
   reorderViews,
   updateView,
 } from "@/lib/database";
+import {
+  captureSupabaseError,
+  isInsufficientPrivilegeError,
+} from "@/lib/sentry";
 import type {
   DatabaseProperty,
   DatabaseView,
@@ -97,6 +101,9 @@ export function useDatabaseViews({
 
       const { data: newView, error } = await addView(pageId, name, type, config);
       if (error || !newView) {
+        if (error && !isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "database-views:create");
+        }
         toast.error("Failed to create view", { duration: 8000 });
         return;
       }
@@ -124,6 +131,9 @@ export function useDatabaseViews({
 
       const { error } = await updateView(activeView.id, { config: newConfig }, pageId);
       if (error) {
+        if (!isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "database-views:update-config");
+        }
         toast.error("Failed to update view configuration", { duration: 8000 });
         // Revert
         setViews((prev) =>
@@ -143,6 +153,9 @@ export function useDatabaseViews({
         name: newName,
       }, pageId);
       if (error || !updated) {
+        if (error && !isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "database-views:rename");
+        }
         toast.error("Failed to rename view", { duration: 8000 });
         return;
       }
@@ -158,6 +171,9 @@ export function useDatabaseViews({
     async (viewId: string) => {
       const { error } = await deleteView(viewId, pageId);
       if (error) {
+        if (!isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "database-views:delete");
+        }
         toast.error(error.message || "Failed to delete view", {
           duration: 8000,
         });
@@ -192,6 +208,9 @@ export function useDatabaseViews({
         { ...source.config },
       );
       if (error || !newView) {
+        if (error && !isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "database-views:duplicate");
+        }
         toast.error("Failed to duplicate view", { duration: 8000 });
         return;
       }
@@ -220,6 +239,9 @@ export function useDatabaseViews({
 
       const { error } = await reorderViews(pageId, orderedIds);
       if (error) {
+        if (!isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "database-views:reorder");
+        }
         toast.error("Failed to reorder views", { duration: 8000 });
         // Reload to restore correct order
         const { data } = await loadDatabase(pageId);

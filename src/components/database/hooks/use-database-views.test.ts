@@ -12,6 +12,8 @@ const reorderViewsMock = vi.fn();
 const loadDatabaseMock = vi.fn();
 const toastErrorMock = vi.fn();
 const replaceStateMock = vi.fn();
+const captureSupabaseErrorMock = vi.fn();
+const isInsufficientPrivilegeErrorMock = vi.fn((_error: unknown) => false);
 
 // Track the current search params value so the mock returns it
 let currentSearchParams = new URLSearchParams();
@@ -28,6 +30,11 @@ vi.mock("sonner", () => ({
   toast: {
     error: (...args: unknown[]) => toastErrorMock(...args),
   },
+}));
+
+vi.mock("@/lib/sentry", () => ({
+  captureSupabaseError: (error: unknown, operation: unknown) => captureSupabaseErrorMock(error, operation),
+  isInsufficientPrivilegeError: (error: unknown) => isInsufficientPrivilegeErrorMock(error),
 }));
 
 vi.mock("@/components/database/view-tabs", () => ({
@@ -296,10 +303,11 @@ describe("useDatabaseViews", () => {
       );
     });
 
-    it("shows toast on error", async () => {
+    it("shows toast and captures Sentry error on failure", async () => {
+      const error = new Error("failed");
       addViewMock.mockResolvedValue({
         data: null,
-        error: new Error("failed"),
+        error,
       });
 
       const { result, setViews } = setup();
@@ -311,7 +319,26 @@ describe("useDatabaseViews", () => {
       expect(toastErrorMock).toHaveBeenCalledWith("Failed to create view", {
         duration: 8000,
       });
+      expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-views:create");
       expect(setViews).not.toHaveBeenCalled();
+    });
+
+    it("skips Sentry capture for insufficient privilege on create", async () => {
+      const error = new Error("violates row-level security policy");
+      isInsufficientPrivilegeErrorMock.mockReturnValueOnce(true);
+      addViewMock.mockResolvedValue({
+        data: null,
+        error,
+      });
+
+      const { result } = setup();
+
+      await act(async () => {
+        await result.current.handleAddView("table");
+      });
+
+      expect(toastErrorMock).toHaveBeenCalled();
+      expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
     });
   });
 
@@ -348,10 +375,11 @@ describe("useDatabaseViews", () => {
       );
     });
 
-    it("reverts on failure", async () => {
+    it("reverts on failure and captures Sentry error", async () => {
+      const error = new Error("failed");
       updateViewMock.mockResolvedValue({
         data: null,
-        error: new Error("failed"),
+        error,
       });
 
       const views = [
@@ -369,6 +397,7 @@ describe("useDatabaseViews", () => {
         "Failed to update view configuration",
         { duration: 8000 },
       );
+      expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-views:update-config");
       // Revert: second setViews call restores original config
       expect(setViews).toHaveBeenCalledTimes(2);
       const revertUpdater = setViews.mock.calls[1][0];
@@ -414,10 +443,11 @@ describe("useDatabaseViews", () => {
       expect(updated[0].name).toBe("New Name");
     });
 
-    it("shows toast on failure", async () => {
+    it("shows toast and captures Sentry error on failure", async () => {
+      const error = new Error("rename failed");
       updateViewMock.mockResolvedValue({
         data: null,
-        error: new Error("rename failed"),
+        error,
       });
 
       const { result, setViews } = setup();
@@ -429,6 +459,7 @@ describe("useDatabaseViews", () => {
       expect(toastErrorMock).toHaveBeenCalledWith("Failed to rename view", {
         duration: 8000,
       });
+      expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-views:rename");
       expect(setViews).not.toHaveBeenCalled();
     });
   });
@@ -460,9 +491,10 @@ describe("useDatabaseViews", () => {
       expect(replaceStateMock).toHaveBeenCalled();
     });
 
-    it("shows toast with error message on failure", async () => {
+    it("shows toast with error message and captures Sentry error on failure", async () => {
+      const error = { message: "Cannot delete last view" };
       deleteViewMock.mockResolvedValue({
-        error: { message: "Cannot delete last view" },
+        error,
       });
 
       const { result, setViews } = setup();
@@ -475,6 +507,7 @@ describe("useDatabaseViews", () => {
         "Cannot delete last view",
         { duration: 8000 },
       );
+      expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-views:delete");
       expect(setViews).not.toHaveBeenCalled();
     });
 
@@ -549,10 +582,11 @@ describe("useDatabaseViews", () => {
       expect(addViewMock).not.toHaveBeenCalled();
     });
 
-    it("shows toast on failure", async () => {
+    it("shows toast and captures Sentry error on failure", async () => {
+      const error = new Error("failed");
       addViewMock.mockResolvedValue({
         data: null,
-        error: new Error("failed"),
+        error,
       });
 
       const { result, setViews } = setup();
@@ -565,6 +599,7 @@ describe("useDatabaseViews", () => {
         "Failed to duplicate view",
         { duration: 8000 },
       );
+      expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-views:duplicate");
       expect(setViews).not.toHaveBeenCalled();
     });
   });
@@ -606,9 +641,10 @@ describe("useDatabaseViews", () => {
       ]);
     });
 
-    it("reloads on reorder failure", async () => {
+    it("reloads on reorder failure and captures Sentry error", async () => {
+      const error = new Error("reorder failed");
       reorderViewsMock.mockResolvedValue({
-        error: new Error("reorder failed"),
+        error,
       });
       loadDatabaseMock.mockResolvedValue({
         data: {
@@ -634,6 +670,7 @@ describe("useDatabaseViews", () => {
         "Failed to reorder views",
         { duration: 8000 },
       );
+      expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-views:reorder");
       expect(loadDatabaseMock).toHaveBeenCalledWith("db-1");
       // setViews called with reloaded data
       const lastCall = setViews.mock.calls[setViews.mock.calls.length - 1][0];
