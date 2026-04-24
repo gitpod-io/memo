@@ -203,4 +203,53 @@ test.describe("Table editor portals", () => {
     await page.keyboard.press("Escape");
     await expect(dropdown).not.toBeVisible({ timeout: 3_000 });
   });
+
+  test("adding a status column succeeds and renders status badges (#662)", async ({
+    authenticatedPage: page,
+  }) => {
+    await createDatabaseFromSidebar(page);
+
+    // Add a row
+    const addRowBtn = page.locator("button", { hasText: "+ New" });
+    await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
+    await addRowBtn.click();
+    await expect(page.locator('[role="grid"]')).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Add a status column — this was failing before the fix (#662)
+    await addColumnViaTypePicker(page, "Status");
+
+    // Verify the status column header appears
+    const statusHeader = page.locator('[role="columnheader"]', {
+      hasText: /status/i,
+    });
+    await expect(statusHeader.first()).toBeVisible({ timeout: 5_000 });
+
+    // Click the status cell to open the editor
+    const dataCells = page.locator('[role="gridcell"]');
+    const cells = await dataCells.all();
+    // Status is the last property column — second-to-last cell
+    const statusCell = cells[cells.length - 2];
+    await statusCell.click();
+
+    // The status dropdown should be visible with default options
+    const dropdown = page.locator(
+      ".rounded-sm.border.border-border.bg-background",
+    );
+    await expect(dropdown).toBeVisible({ timeout: 5_000 });
+
+    // Verify default status options are present
+    await expect(dropdown.getByText("Not Started")).toBeVisible();
+    await expect(dropdown.getByText("In Progress")).toBeVisible();
+    await expect(dropdown.getByText("Done")).toBeVisible();
+
+    // Select "In Progress" and verify the badge renders
+    await dropdown.getByText("In Progress").click();
+    await page.waitForTimeout(500);
+
+    // The status badge should now be visible in the cell
+    const badge = page.locator('[role="grid"]').getByText("In Progress");
+    await expect(badge).toBeVisible({ timeout: 5_000 });
+  });
 });

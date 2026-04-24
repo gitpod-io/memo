@@ -46,8 +46,8 @@ describe("property type selector regression (#538)", () => {
   });
 
   it("addProperty is called with the dynamic type variable", () => {
-    // Must contain addProperty(pageId, name, type) — using the parameter.
-    expect(viewClient).toMatch(/addProperty\(\s*pageId\s*,\s*name\s*,\s*type\s*\)/);
+    // Must contain addProperty(pageId, name, type, ...) — using the parameter.
+    expect(viewClient).toMatch(/addProperty\(\s*pageId\s*,\s*name\s*,\s*type\b/);
   });
 
   it("table view uses PropertyTypePicker for add-column", () => {

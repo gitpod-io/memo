@@ -47,6 +47,22 @@ describe("database migrations", () => {
 });
 
 /**
+ * Regression test for issue #662: 'status' was missing from the
+ * database_properties.type CHECK constraint, causing status column
+ * creation to fail at the database level.
+ */
+describe("database_properties type CHECK includes status (#662)", () => {
+  const allSql = getAllMigrationsSql();
+
+  it("final schema allows 'status' in the type CHECK constraint", () => {
+    // The fix migration drops and re-adds the constraint with 'status' included.
+    expect(allSql).toMatch(
+      /database_properties_type_check[\s\S]*?'status'/
+    );
+  });
+});
+
+/**
  * Regression test for issue #595: page_versions.created_by FK lacked
  * ON DELETE SET NULL, causing delete_account RPC to fail with a FK violation.
  *

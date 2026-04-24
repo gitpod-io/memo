@@ -261,6 +261,44 @@ describe("addProperty", () => {
     expect(tableMocks["database_properties"].calls["insert"]).toBeDefined();
   });
 
+  it("passes config through to the insert call", async () => {
+    const statusConfig = {
+      options: [
+        { id: "s1", name: "Not Started", color: "gray" },
+        { id: "s2", name: "In Progress", color: "blue" },
+        { id: "s3", name: "Done", color: "green" },
+      ],
+    };
+    mockTable("database_properties", {
+      data: { ...FAKE_PROPERTY, id: "prop-status", type: "status", config: statusConfig },
+      error: null,
+    });
+
+    const result = await addProperty("page-1", "Status", "status", statusConfig);
+
+    expect(result.error).toBeNull();
+    expect(result.data).not.toBeNull();
+    const insertCalls = tableMocks["database_properties"].calls["insert"];
+    expect(insertCalls).toBeDefined();
+    const insertedRow = insertCalls[0][0] as Record<string, unknown>;
+    expect(insertedRow.config).toEqual(statusConfig);
+    expect(insertedRow.type).toBe("status");
+  });
+
+  it("defaults config to empty object when not provided", async () => {
+    mockTable("database_properties", {
+      data: { ...FAKE_PROPERTY, id: "prop-text" },
+      error: null,
+    });
+
+    const result = await addProperty("page-1", "Notes", "text");
+
+    expect(result.error).toBeNull();
+    const insertCalls = tableMocks["database_properties"].calls["insert"];
+    const insertedRow = insertCalls[0][0] as Record<string, unknown>;
+    expect(insertedRow.config).toEqual({});
+  });
+
   it("captures error on failure", async () => {
     const dbError = new Error("duplicate name");
     mockTable("database_properties", { data: null, error: dbError });
