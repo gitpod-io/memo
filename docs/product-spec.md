@@ -226,109 +226,109 @@ Each feature maps to one or more GitHub Issues. Phases map to priority labels:
 These criteria are used by the Feature Planner to create GitHub Issues and by the Feature Builder to verify implementation.
 
 ### Auth
-- [ ] User can sign up with email/password
-- [ ] User can sign in with email/password
-- [ ] User can sign out
-- [ ] Session persists across page reloads (proxy refreshes token)
-- [ ] GitHub and Google buttons are visible but show "coming soon" tooltip on hover/click
-- [ ] On sign-up: profile + personal workspace + owner membership created atomically (DB trigger/function)
-- [ ] After sign-up, user lands in their personal workspace (not a "create workspace" prompt)
-- [ ] Unauthenticated users are redirected to sign-in page
+- [x] User can sign up with email/password
+- [x] User can sign in with email/password
+- [x] User can sign out
+- [x] Session persists across page reloads (proxy refreshes token)
+- [x] GitHub and Google buttons are visible but show "coming soon" tooltip on hover/click
+- [x] On sign-up: profile + personal workspace + owner membership created atomically (DB trigger/function)
+- [x] After sign-up, user lands in their personal workspace (not a "create workspace" prompt)
+- [x] Unauthenticated users are redirected to sign-in page
 
 ### Workspaces
-- [ ] Personal workspace is auto-created on sign-up, named "{display_name}'s Workspace"
-- [ ] Personal workspace is always listed first in the workspace switcher
-- [ ] Personal workspace cannot be deleted (delete option hidden or disabled with explanation)
-- [ ] User can create up to 2 additional workspaces (3 total including personal)
-- [ ] When workspace limit is reached, "Create workspace" button is disabled with message showing limit
-- [ ] Workspace creation limit is enforced server-side (DB function rejects insert if count ≥ 3)
-- [ ] User can switch between workspaces via sidebar
-- [ ] Workspace settings page (name, slug)
-- [ ] Deleting a non-personal workspace cascades to all pages and members
-- [ ] Users invited to workspaces do not count those toward their creation limit
+- [x] Personal workspace is auto-created on sign-up, named "{display_name}'s Workspace"
+- [x] Personal workspace is always listed first in the workspace switcher
+- [x] Personal workspace cannot be deleted (delete option hidden or disabled with explanation)
+- [x] User can create up to 2 additional workspaces (3 total including personal)
+- [x] When workspace limit is reached, "Create workspace" button is disabled with message showing limit
+- [x] Workspace creation limit is enforced server-side (DB function rejects insert if count ≥ 3)
+- [x] User can switch between workspaces via sidebar
+- [x] Workspace settings page (name, slug)
+- [x] Deleting a non-personal workspace cascades to all pages and members
+- [x] Users invited to workspaces do not count those toward their creation limit
 
 ### Pages
-- [ ] User can create a new page (from sidebar)
-- [ ] Pages appear in sidebar tree with nesting
-- [ ] User can rename a page (inline title editing)
-- [ ] User can delete a page (with confirmation)
-- [ ] User can reorder pages in the sidebar (drag-and-drop or move-to)
-- [ ] User can nest/unnest pages (make sub-page, move to root)
-- [ ] Empty state when workspace has no pages
+- [x] User can create a new page (from sidebar)
+- [x] Pages appear in sidebar tree with nesting
+- [x] User can rename a page (inline title editing)
+- [x] User can delete a page (with confirmation)
+- [x] User can reorder pages in the sidebar (drag-and-drop or move-to)
+- [x] User can nest/unnest pages (make sub-page, move to root)
+- [x] Empty state when workspace has no pages
 
 ### Editor
-- [ ] Block types: paragraph, heading 1-3, bullet list, numbered list, todo list, code block, blockquote, divider, callout, image
-- [ ] Slash command menu triggered by `/` — filterable, keyboard navigable
-- [ ] Floating toolbar on text selection — bold, italic, underline, strikethrough, code, link
-- [ ] Drag-and-drop block reordering with visual indicator
-- [ ] Auto-save: content persists to Supabase on change (debounced)
-- [ ] Page loads with saved content restored
-- [ ] Placeholder text in empty blocks ("Type '/' for commands")
-- [ ] Code blocks have syntax highlighting
-- [ ] Images can be uploaded and displayed inline
-- [ ] Keyboard shortcuts: ⌘+B (bold), ⌘+I (italic), ⌘+U (underline), ⌘+K (link), ⌘+Z (undo), ⌘+Shift+Z (redo)
+- [x] Block types: paragraph, heading 1-3, bullet list, numbered list, todo list, code block, blockquote, divider, callout, image
+- [x] Slash command menu triggered by `/` — filterable, keyboard navigable
+- [x] Floating toolbar on text selection — bold, italic, underline, strikethrough, code, link
+- [x] Drag-and-drop block reordering with visual indicator
+- [x] Auto-save: content persists to Supabase on change (debounced)
+- [x] Page loads with saved content restored
+- [x] Placeholder text in empty blocks ("Type '/' for commands")
+- [x] Code blocks have syntax highlighting
+- [x] Images can be uploaded and displayed inline
+- [x] Keyboard shortcuts: ⌘+B (bold), ⌘+I (italic), ⌘+U (underline), ⌘+K (link), ⌘+Z (undo), ⌘+Shift+Z (redo)
 
 ### Search
-- [ ] Search input in sidebar
-- [ ] Results show matching page titles and content snippets
-- [ ] Clicking a result navigates to the page
-- [ ] Search is scoped to the current workspace
-- [ ] Empty state when no results found
+- [x] Search input in sidebar
+- [x] Results show matching page titles and content snippets
+- [x] Clicking a result navigates to the page
+- [x] Search is scoped to the current workspace
+- [x] Empty state when no results found
 
 ### Import/Export
-- [ ] User can export a page as Markdown (.md file download)
-- [ ] User can import a Markdown file to create a new page
-- [ ] Import preserves headings, lists, code blocks, links, images (as URLs)
+- [x] User can export a page as Markdown (.md file download)
+- [x] User can import a Markdown file to create a new page
+- [x] Import preserves headings, lists, code blocks, links, images (as URLs)
 
 ### Members
-- [ ] Workspace owner or admin can invite users by email
-- [ ] Only owner/admin roles can manage members (member role cannot invite or remove)
-- [ ] Invited user receives an invite (in-app notification or email link)
-- [ ] Invited user can accept and join the workspace (no limit on joined workspaces)
-- [ ] Roles: owner (full control), admin (manage members + pages), member (read/write pages)
-- [ ] Owner/admin can change member roles
-- [ ] Owner/admin can remove members
-- [ ] Member list visible in workspace settings
-- [ ] Personal workspace owner cannot be removed from their own personal workspace
+- [x] Workspace owner or admin can invite users by email
+- [x] Only owner/admin roles can manage members (member role cannot invite or remove)
+- [x] Invited user receives an invite (in-app notification or email link)
+- [x] Invited user can accept and join the workspace (no limit on joined workspaces)
+- [x] Roles: owner (full control), admin (manage members + pages), member (read/write pages)
+- [x] Owner/admin can change member roles
+- [x] Owner/admin can remove members
+- [x] Member list visible in workspace settings
+- [x] Personal workspace owner cannot be removed from their own personal workspace
 
 ### Database Views
-- [ ] User can create a database from the sidebar ("New Database" button)
-- [ ] Database pages show a grid icon in the sidebar page tree
-- [ ] User can define properties (columns) with name and type
-- [ ] User can add, edit, and delete rows in table view
-- [ ] Inline cell editing works for all basic property types
-- [ ] Select/multi-select properties support creating new options inline
-- [ ] Database page shows optional rich text content above the database grid
-- [ ] Clicking a row opens it as a full page with properties header + Lexical editor
-- [ ] Row page shows breadcrumb: workspace → database → row
-- [ ] Created time, Updated time, Created by properties auto-derive from page metadata
-- [ ] User can create multiple views per database (table, board, list, calendar, gallery)
-- [ ] View tabs appear above the database, active view highlighted
-- [ ] Each view stores independent configuration (visible properties, sort, filter)
-- [ ] Table view: resizable columns, column reorder, add row/column
-- [ ] Board view: Kanban grouped by select property, drag cards between columns
-- [ ] List view: compact rows with title + visible properties
-- [ ] Calendar view: month grid, items on date cells, prev/next month navigation
-- [ ] Gallery view: card grid with cover image + title
-- [ ] User can sort by any property (ascending/descending), multiple sort rules
-- [ ] User can filter by property value with type-appropriate operators
-- [ ] Active filters shown as pills in filter bar, persisted per-view
-- [ ] User can insert a database block via slash command (`/database`)
-- [ ] Inline database renders a compact view with expand-to-full-page button
-- [ ] Person property shows member avatars, picker searches workspace members
-- [ ] Files property supports upload and renders thumbnails
-- [ ] Relation property links to rows in another database, renders as pills
-- [ ] Formula property evaluates simple expressions referencing other properties
-- [ ] All database data respects workspace RLS policies
+- [x] User can create a database from the sidebar ("New Database" button)
+- [x] Database pages show a grid icon in the sidebar page tree
+- [x] User can define properties (columns) with name and type
+- [x] User can add, edit, and delete rows in table view
+- [x] Inline cell editing works for all basic property types
+- [x] Select/multi-select properties support creating new options inline
+- [x] Database page shows optional rich text content above the database grid
+- [x] Clicking a row opens it as a full page with properties header + Lexical editor
+- [x] Row page shows breadcrumb: workspace → database → row
+- [x] Created time, Updated time, Created by properties auto-derive from page metadata
+- [x] User can create multiple views per database (table, board, list, calendar, gallery)
+- [x] View tabs appear above the database, active view highlighted
+- [x] Each view stores independent configuration (visible properties, sort, filter)
+- [x] Table view: resizable columns, column reorder, add row/column
+- [x] Board view: Kanban grouped by select property, drag cards between columns
+- [x] List view: compact rows with title + visible properties
+- [x] Calendar view: month grid, items on date cells, prev/next month navigation
+- [x] Gallery view: card grid with cover image + title
+- [x] User can sort by any property (ascending/descending), multiple sort rules
+- [x] User can filter by property value with type-appropriate operators
+- [x] Active filters shown as pills in filter bar, persisted per-view
+- [x] User can insert a database block via slash command (`/database`)
+- [x] Inline database renders a compact view with expand-to-full-page button
+- [x] Person property shows member avatars, picker searches workspace members
+- [x] Files property supports upload and renders thumbnails
+- [x] Relation property links to rows in another database, renders as pills
+- [x] Formula property evaluates simple expressions referencing other properties
+- [x] All database data respects workspace RLS policies
 
 ### App Shell
-- [ ] Sidebar: workspace switcher, search, page tree, settings, user menu
-- [ ] Sidebar collapses on mobile (Sheet component)
-- [ ] Responsive: works on desktop (≥1024px), tablet (768-1023px), mobile (<768px)
-- [ ] Keyboard shortcut: ⌘+\ to toggle sidebar
+- [x] Sidebar: workspace switcher, search, page tree, settings, user menu
+- [x] Sidebar collapses on mobile (Sheet component)
+- [x] Responsive: works on desktop (≥1024px), tablet (768-1023px), mobile (<768px)
+- [x] Keyboard shortcut: ⌘+\ to toggle sidebar
 - [x] Light and dark mode with theme toggle and system preference detection
-- [ ] JetBrains Mono font throughout
-- [ ] Sharp corners on all components (per design spec)
+- [x] JetBrains Mono font throughout
+- [x] Sharp corners on all components (per design spec)
 
 ## URL Structure
 

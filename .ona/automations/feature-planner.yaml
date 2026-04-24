@@ -86,10 +86,44 @@ action:
                   >
                   > Once you've added this information, the automation will pick it back up.
 
-                ## Step 4 — Decompose Product Spec (if needed)
+                ## Step 4 — Decompose Product Spec or Propose Improvements
 
-                Check if there are unimplemented features in docs/product-spec.md that don't
-                have corresponding GitHub Issues. If so, create issues for them.
+                First, check if there are unimplemented features in docs/product-spec.md that
+                don't have corresponding GitHub Issues. If so, create issues for them.
+
+                ### Beyond-Spec Mode
+
+                If ALL of the following are true:
+                - No unimplemented spec items remain (all acceptance criteria in
+                  docs/product-spec.md are checked `[x]` or have corresponding closed issues)
+                - The backlog has fewer than 3 open issues with `status:backlog`
+                - Fewer than 5 open issues have `needs-human` label (don't pile on proposals)
+
+                Then switch to improvement mode:
+
+                1. Review closed issues from the past 7 days for patterns:
+                   ```
+                   gh issue list --state closed --json number,title,labels \
+                     --jq '[.[] | select(.labels | map(.name) | any(. == "bug"))] | length'
+                   ```
+                   Identify areas with high bug churn (3+ bugs in the same domain).
+
+                2. Read `.agents/quality.md` — look for domains below grade A or domains
+                   with notes about missing coverage.
+
+                3. Check the product spec acceptance criteria for items that are implemented
+                   at a minimum level but could be improved (e.g., "responsive" is checked
+                   but mobile experience has rough edges).
+
+                4. Propose 1-3 concrete enhancement issues for the weakest areas. These must
+                   be specific and implementable in a single PR — not vague "improve X".
+                   Label them: `enhancement`, `priority:3`, `needs-human`.
+                   Do NOT add `status:backlog` — human approval required.
+
+                If the product is in good shape and no improvements are needed, skip this
+                step. Do not invent issues to fill a quota.
+
+                ### Spec Decomposition (original behavior)
 
                 For each new feature, create a GitHub Issue. Each issue must be:
                 - Single-concern: one independently implementable feature, resulting in one PR

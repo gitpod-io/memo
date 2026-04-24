@@ -18,6 +18,7 @@ Mapping between YAML files in `.ona/automations/` and their registered Ona autom
 | tweet-drafter.yaml | Tweet Drafter | 019d8da2-46d3-7493-8bd5-7191a31f47ec |
 | ui-verifier.yaml | UI Verifier | 019d8d99-7474-725b-aa77-0310122b2c64 |
 | feedback-digest.yaml | Feedback Digest | 019db0ae-1ef0-722c-b83f-0fc9186c43c1 |
+| product-improver.yaml | Product Improver | 019dbeee-b269-7bb3-b527-2c5081573ca1 |
 | weekly-recap.yaml | Weekly Recap | 019d8d98-3e15-762d-a6e8-4ca0ea77acb5 |
 
 ## Keeping this file in sync
