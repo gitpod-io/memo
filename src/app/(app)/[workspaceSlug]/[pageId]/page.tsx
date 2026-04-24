@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { captureSupabaseError } from "@/lib/sentry";
@@ -11,82 +10,10 @@ import {
   type BreadcrumbItem,
 } from "@/components/page-breadcrumb";
 import { PageBacklinks } from "@/components/page-backlinks";
+import { PageViewClient } from "@/components/page-view-client";
+import { RowPropertiesHeader } from "@/components/database/row-properties-header";
+import { DatabaseViewClient } from "@/components/database/database-view-client";
 import type { DatabaseProperty, RowValue } from "@/lib/types";
-
-const PageViewClient = dynamic(
-  () =>
-    import("@/components/page-view-client").then((mod) => mod.PageViewClient),
-  {
-    loading: () => (
-      <>
-        <div className="flex items-start gap-2">
-          <div className="min-w-0 flex-1">
-            <div className="h-9 w-1/3 animate-pulse bg-muted" />
-          </div>
-          <div className="h-8 w-8 animate-pulse bg-muted" />
-        </div>
-        <div className="mt-4 space-y-3">
-          <div className="h-4 w-full animate-pulse bg-muted" />
-          <div className="h-4 w-5/6 animate-pulse bg-muted" />
-          <div className="h-4 w-4/6 animate-pulse bg-muted" />
-        </div>
-      </>
-    ),
-  },
-);
-
-const RowPropertiesHeader = dynamic(
-  () =>
-    import("@/components/database/row-properties-header").then(
-      (mod) => mod.RowPropertiesHeader,
-    ),
-  {
-    loading: () => (
-      <div className="mb-4 space-y-2">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-4">
-            <div className="h-4 w-32 animate-pulse bg-muted" />
-            <div className="h-4 w-48 animate-pulse bg-muted" />
-          </div>
-        ))}
-      </div>
-    ),
-  },
-);
-
-const DatabaseViewClient = dynamic(
-  () =>
-    import("@/components/database/database-view-client").then(
-      (mod) => mod.DatabaseViewClient,
-    ),
-  {
-    loading: () => (
-      <>
-        <div className="flex items-start gap-2">
-          <div className="min-w-0 flex-1">
-            <div className="h-9 w-1/3 animate-pulse bg-muted" />
-          </div>
-        </div>
-        <div className="mt-6 space-y-3">
-          <div className="flex items-center gap-2 border-b border-overlay-border pb-2">
-            <div className="h-5 w-20 animate-pulse bg-muted" />
-            <div className="h-5 w-20 animate-pulse bg-muted" />
-          </div>
-          <div className="space-y-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="flex gap-2">
-                <div className="h-10 w-1/4 animate-pulse bg-muted" />
-                <div className="h-10 w-1/4 animate-pulse bg-muted" />
-                <div className="h-10 w-1/4 animate-pulse bg-muted" />
-                <div className="h-10 w-1/4 animate-pulse bg-muted" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </>
-    ),
-  },
-);
 
 export async function generateMetadata({
   params,
