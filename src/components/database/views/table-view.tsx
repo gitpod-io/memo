@@ -205,56 +205,59 @@ export const TableView = memo(function TableView({
         aria-label="Database table"
         onKeyDown={handleFocusedCellKeyDown}
       >
-        {/* Title column header */}
-        <div
-          className="sticky top-0 z-10 border-b border-overlay-border bg-background p-2"
-          role="columnheader"
-        >
-          <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            Title
-          </span>
-        </div>
+        {/* Header row */}
+        <div role="row" style={{ display: "contents" }}>
+          {/* Title column header */}
+          <div
+            className="sticky top-0 z-10 border-b border-overlay-border bg-background p-2"
+            role="columnheader"
+          >
+            <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              Title
+            </span>
+          </div>
 
-        {/* Property column headers */}
-        {visibleProperties.map((prop, colIndex) => {
-          const sortRule = sorts.find((s) => s.property_id === prop.id);
-          const isDragging = columnDrag?.propertyId === prop.id;
-          const showDropBefore = !!(
-            columnDrag &&
-            columnDropTarget?.insertIndex === colIndex &&
-            columnDrag.propertyId !== prop.id
-          );
-          const showDropAfter = !!(
-            columnDrag &&
-            columnDropTarget?.insertIndex === colIndex + 1 &&
-            columnDrag.propertyId !== prop.id
-          );
-          return (
-            <TableColumnHeader
-              key={prop.id}
-              property={prop}
-              colIndex={colIndex}
-              sortRule={sortRule}
-              isDragging={isDragging}
-              showDropBefore={showDropBefore}
-              showDropAfter={showDropAfter}
-              resizingColumn={resizingColumn}
-              onColumnReorder={onColumnReorder}
-              onColumnHeaderClick={onColumnHeaderClick}
-              onDeleteColumn={onDeleteColumn}
-              onSortToggle={onSortToggle}
-              onDragStart={handleColumnDragStart}
-              onDragEnd={handleColumnDragEnd}
-              onDragOver={handleColumnDragOver}
-              onDrop={handleColumnDrop}
-              onResizeStart={handleResizeStart}
-            />
-          );
-        })}
+          {/* Property column headers */}
+          {visibleProperties.map((prop, colIndex) => {
+            const sortRule = sorts.find((s) => s.property_id === prop.id);
+            const isDragging = columnDrag?.propertyId === prop.id;
+            const showDropBefore = !!(
+              columnDrag &&
+              columnDropTarget?.insertIndex === colIndex &&
+              columnDrag.propertyId !== prop.id
+            );
+            const showDropAfter = !!(
+              columnDrag &&
+              columnDropTarget?.insertIndex === colIndex + 1 &&
+              columnDrag.propertyId !== prop.id
+            );
+            return (
+              <TableColumnHeader
+                key={prop.id}
+                property={prop}
+                colIndex={colIndex}
+                sortRule={sortRule}
+                isDragging={isDragging}
+                showDropBefore={showDropBefore}
+                showDropAfter={showDropAfter}
+                resizingColumn={resizingColumn}
+                onColumnReorder={onColumnReorder}
+                onColumnHeaderClick={onColumnHeaderClick}
+                onDeleteColumn={onDeleteColumn}
+                onSortToggle={onSortToggle}
+                onDragStart={handleColumnDragStart}
+                onDragEnd={handleColumnDragEnd}
+                onDragOver={handleColumnDragOver}
+                onDrop={handleColumnDrop}
+                onResizeStart={handleResizeStart}
+              />
+            );
+          })}
 
-        {/* Add column header button */}
-        <div className="sticky top-0 z-10 flex items-center border-b border-overlay-border bg-background px-2">
-          {onAddColumn && <PropertyTypePicker onSelect={onAddColumn} />}
+          {/* Add column header button */}
+          <div className="sticky top-0 z-10 flex items-center border-b border-overlay-border bg-background px-2">
+            {onAddColumn && <PropertyTypePicker onSelect={onAddColumn} />}
+          </div>
         </div>
 
         {/* Data rows */}
