@@ -104,7 +104,35 @@ action:
 
                 If usage data is empty or unavailable, skip this section and note it.
 
-                ## Step 5: Compose and post the digest
+                ## Step 5: Auto-file issues for high-confidence feedback
+
+                Before posting the digest, create GitHub Issues for feedback that meets
+                a quality threshold. This converts actionable feedback into trackable work.
+
+                **Bug reports with reproducible steps:**
+                If a feedback item describes a specific broken behavior with enough detail
+                to reproduce (page path, steps, expected vs actual), create a bug issue:
+                  gh issue create --title "bug: <description> (user feedback)" \
+                    --label "bug" --label "priority:2" --label "status:backlog" \
+                    --body "<body with Description, Acceptance Criteria, Technical Notes>"
+
+                **Feature requests with 2+ similar submissions:**
+                If multiple feedback items request the same feature or improvement (group
+                by theme in Step 3), create an enhancement issue:
+                  gh issue create --title "feat: <description> (user feedback)" \
+                    --label "enhancement" --label "priority:3" --label "needs-human" \
+                    --body "<body with Description, Evidence (N user requests), Acceptance Criteria>"
+
+                Note: enhancement issues get `needs-human` (requires maintainer approval).
+                Bug issues get `status:backlog` (enters automation queue directly).
+
+                Before creating any issue, check for duplicates:
+                  gh issue list --state open --search "<key terms>" --json number,title --jq '.[0:5]'
+                Skip if a similar issue already exists.
+
+                Track which issues were created — include them in the digest (Step 6).
+
+                ## Step 6: Compose and post the digest
 
                 Find the #memo-user-feedback channel:
                 ```
@@ -135,10 +163,14 @@ action:
                 - Least used: event_name (N)
                 - Notable: event_name has N feedback items but only M uses this week
 
-                ### Proposed Actions
+                ### Issues Auto-Filed
+                - #N — bug: "description" (from feedback item)
+                - #M — feat: "description" (N user requests, needs-human)
+                - Or: "No issues filed this cycle"
+
+                ### Proposed Actions (remaining items)
                 1. Investigate: "bug description"
-                2. File issue: "feature theme"
-                3. Dismiss: "noise item" — reason
+                2. Dismiss: "noise item" — reason
                 ```
 
                 Post the digest using:
@@ -146,7 +178,7 @@ action:
                 slack_send_message(channel_id="<channel_id>", message="<digest>")
                 ```
 
-                ## Step 6: Mark feedback as reviewed
+                ## Step 7: Mark feedback as reviewed
 
                 After successfully posting the digest, update all processed feedback rows
                 to `status = 'reviewed'`:
@@ -165,7 +197,9 @@ action:
 
                 ## Rules
 
-                - Do NOT auto-file GitHub issues. Only propose actions in the Slack digest.
+                - Auto-file GitHub issues ONLY for high-confidence bugs (reproducible steps)
+                  and feature requests with 2+ similar submissions. All other feedback is
+                  proposed in the Slack digest for human review.
                 - If no new feedback exists, stop silently. Do not post to Slack.
                 - If Supabase or Slack calls fail, report the error clearly — do not silently exit.
                 - Keep the digest concise. Summarize, do not dump raw data.
