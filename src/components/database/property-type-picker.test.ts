@@ -10,13 +10,6 @@ import { resolve } from "path";
  * accepts a PropertyType parameter and passes it through to addProperty.
  */
 
-function readViewClient(): string {
-  return readFileSync(
-    resolve(__dirname, "./database-view-client.tsx"),
-    "utf-8",
-  );
-}
-
 function readPropertiesHook(): string {
   return readFileSync(
     resolve(__dirname, "./hooks/use-database-properties.ts"),

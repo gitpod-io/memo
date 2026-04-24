@@ -84,9 +84,9 @@ export function useDatabaseViews({
       // Auto-detect a default config property for board and calendar views
       let config: DatabaseViewConfig = {};
       if (type === "board") {
-        const firstSelect = properties.find((p) => p.type === "select");
-        if (firstSelect) {
-          config = { group_by: firstSelect.id };
+        const firstGroupable = properties.find((p) => p.type === "select" || p.type === "status");
+        if (firstGroupable) {
+          config = { group_by: firstGroupable.id };
         }
       } else if (type === "calendar") {
         const firstDate = properties.find((p) => p.type === "date");
