@@ -89,7 +89,7 @@ test.describe("Table editor portals", () => {
     await createDatabaseFromSidebar(page);
 
     // Add a row so the grid renders
-    const addRowBtn = page.locator("button", { hasText: "+ New" });
+    const addRowBtn = page.getByTestId("db-table-add-row");
     await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
     await addRowBtn.click();
     await expect(page.locator('[role="grid"]')).toBeVisible({
@@ -155,7 +155,7 @@ test.describe("Table editor portals", () => {
     await createDatabaseFromSidebar(page);
 
     // Add a row
-    const addRowBtn = page.locator("button", { hasText: "+ New" });
+    const addRowBtn = page.getByTestId("db-table-add-row");
     await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
     await addRowBtn.click();
     await expect(page.locator('[role="grid"]')).toBeVisible({
@@ -211,7 +211,7 @@ test.describe("Table editor portals", () => {
     await createDatabaseFromSidebar(page);
 
     // Add a row
-    const addRowBtn = page.locator("button", { hasText: "+ New" });
+    const addRowBtn = page.getByTestId("db-table-add-row");
     await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
     await addRowBtn.click();
     await expect(page.locator('[role="grid"]')).toBeVisible({

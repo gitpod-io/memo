@@ -73,7 +73,7 @@ test.describe("Database CSV Export", () => {
     await createDatabaseFromSidebar(page);
 
     // Add a row so there's data to export
-    const addRowBtn = page.locator("button", { hasText: "+ New" });
+    const addRowBtn = page.getByTestId("db-table-add-row");
     await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
     await addRowBtn.click();
 
@@ -141,7 +141,7 @@ test.describe("Database CSV Export", () => {
     await createDatabaseFromSidebar(page);
 
     // Add a row to get the full toolbar
-    const addRowBtn = page.locator("button", { hasText: "+ New" });
+    const addRowBtn = page.getByTestId("db-table-add-row");
     await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
     await addRowBtn.click();
 

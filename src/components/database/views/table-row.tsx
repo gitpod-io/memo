@@ -93,7 +93,7 @@ export const TableRow = memo(function TableRow({
   onDeleteRow,
 }: TableRowProps) {
   return (
-    <div role="row" style={{ display: "contents" }}>
+    <div role="row" style={{ display: "contents" }} data-testid={`db-table-row-${rowIndex}`}>
       {/* Title cell */}
       <div
         className={cn(
@@ -101,6 +101,7 @@ export const TableRow = memo(function TableRow({
           rowHeightClass,
         )}
         role="gridcell"
+        data-testid={`db-table-cell-${rowIndex}-title`}
       >
         <Link
           href={`/${workspaceSlug}/${row.page.id}`}

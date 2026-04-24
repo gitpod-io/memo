@@ -63,7 +63,7 @@ async function createDatabaseFromSidebar(
 }
 
 async function addRow(page: import("@playwright/test").Page) {
-  const addRowBtn = page.locator("button", { hasText: "+ New" });
+  const addRowBtn = page.getByTestId("db-table-add-row");
   await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
   await addRowBtn.click();
   await expect(page.locator('[role="grid"]')).toBeVisible({ timeout: 10_000 });
@@ -120,7 +120,7 @@ async function setupDatabaseWithValues(
   await addColumn(page);
 
   for (let i = 1; i < values.length; i++) {
-    const addRowBtn = page.locator("button", { hasText: "+ New" });
+    const addRowBtn = page.getByTestId("db-table-add-row");
     await addRowBtn.click();
     // Wait for the new row to appear in the grid
     await expect(page.locator('[role="row"]')).toHaveCount(i + 2, { timeout: 10_000 });
@@ -147,7 +147,7 @@ function prop2Cell(
  * Leaves the sort menu open after adding.
  */
 async function addSortOnTextColumn(page: import("@playwright/test").Page) {
-  const sortButton = page.locator("button", { hasText: "Sort" }).first();
+  const sortButton = page.getByTestId("db-sort-button");
   await expect(sortButton).toBeVisible({ timeout: 5_000 });
   await sortButton.click();
 
@@ -155,18 +155,14 @@ async function addSortOnTextColumn(page: import("@playwright/test").Page) {
   await expect(addSortBtn).toBeVisible({ timeout: 5_000 });
   await addSortBtn.click();
 
-  // The property picker is inside the sort menu dropdown (a div with
-  // class max-h-48). Pick "Text" specifically.
-  const sortDropdown = page.locator(".max-h-48");
+  // Pick "Text" from the sort menu property picker.
+  const sortDropdown = page.getByTestId("db-sort-menu");
   await expect(sortDropdown).toBeVisible({ timeout: 5_000 });
   const textOption = sortDropdown.locator("button", {
     hasText: "Text",
   });
   await expect(textOption).toBeVisible({ timeout: 5_000 });
   await textOption.click();
-
-  // Wait for the sort property picker to close (sort applied)
-  await expect(sortDropdown).not.toBeVisible({ timeout: 5_000 });
 }
 
 /**
@@ -176,13 +172,12 @@ async function addFilterOnTextColumn(
   page: import("@playwright/test").Page,
   value: string,
 ) {
-  const addFilterBtn = page.locator("button", { hasText: "Add filter" });
+  const addFilterBtn = page.getByTestId("db-filter-add");
   await expect(addFilterBtn).toBeVisible({ timeout: 5_000 });
   await addFilterBtn.click();
 
-  // The filter property picker is an absolute-positioned dropdown (z-50).
-  // Pick "Text".
-  const filterDropdown = page.locator(".z-50").first();
+  // Pick "Text" from the filter property picker.
+  const filterDropdown = page.getByTestId("db-filter-property-picker");
   await expect(filterDropdown).toBeVisible({ timeout: 5_000 });
   const textOption = filterDropdown.locator("button", {
     hasText: "Text",
@@ -191,7 +186,7 @@ async function addFilterOnTextColumn(
   await textOption.click();
 
   // Pick "contains" operator
-  const operatorDropdown = page.locator(".z-50").first();
+  const operatorDropdown = page.getByTestId("db-filter-operator-picker");
   await expect(operatorDropdown).toBeVisible({ timeout: 5_000 });
   const containsOption = operatorDropdown.locator("button", {
     hasText: "contains",
@@ -200,11 +195,11 @@ async function addFilterOnTextColumn(
   await containsOption.click();
 
   // Enter value and apply
-  const filterInput = page.locator('input[placeholder="Enter value…"]');
+  const filterInput = page.getByTestId("db-filter-value-input");
   await expect(filterInput).toBeVisible({ timeout: 5_000 });
   await filterInput.fill(value);
 
-  const applyBtn = page.locator(".z-50 button", { hasText: "Apply" });
+  const applyBtn = page.getByTestId("db-filter-value-editor").getByRole("button", { name: "Apply" });
   await expect(applyBtn).toBeVisible({ timeout: 5_000 });
   await applyBtn.click();
 
@@ -422,8 +417,7 @@ test.describe("Database sort, filter, and multi-view management", () => {
     // The sort button should show no active sorts (no count badge)
     await expect(
       page
-        .locator("button", { hasText: "Sort" })
-        .first()
+        .getByTestId("db-sort-button")
         .locator("span", { hasText: "(1)" }),
     ).toBeHidden();
 

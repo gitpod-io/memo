@@ -173,7 +173,7 @@ test.describe("Database CRUD", () => {
     });
 
     // The "+ New" button should be visible (onAddRow is now wired up)
-    const addRowBtn = page.locator("button", { hasText: "+ New" });
+    const addRowBtn = page.getByTestId("db-table-add-row");
     await expect(addRowBtn).toBeVisible({ timeout: 5_000 });
   });
 
@@ -184,7 +184,7 @@ test.describe("Database CRUD", () => {
 
     // The empty state doesn't render the "Add column" button with
     // aria-label. Add a row first so the full grid renders.
-    const addRowBtn = page.locator("button", { hasText: "+ New" });
+    const addRowBtn = page.getByTestId("db-table-add-row");
     await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
     await addRowBtn.click();
 
@@ -209,7 +209,7 @@ test.describe("Database CRUD", () => {
     await createDatabaseFromSidebar(page);
 
     // Add a row to get the full grid
-    const addRowBtn = page.locator("button", { hasText: "+ New" });
+    const addRowBtn = page.getByTestId("db-table-add-row");
     await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
     await addRowBtn.click();
 
@@ -255,7 +255,7 @@ test.describe("Database CRUD", () => {
     await createDatabaseFromSidebar(page);
 
     // Add a row first
-    const addRowBtn = page.locator("button", { hasText: "+ New" });
+    const addRowBtn = page.getByTestId("db-table-add-row");
     await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
     await addRowBtn.click();
 
@@ -285,7 +285,7 @@ test.describe("Database CRUD", () => {
     await createDatabaseFromSidebar(page);
 
     // Add a row to get the full grid, then add a column
-    const addRowBtn = page.locator("button", { hasText: "+ New" });
+    const addRowBtn = page.getByTestId("db-table-add-row");
     await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
     await addRowBtn.click();
     await expect(page.locator('[role="grid"]')).toBeVisible({
@@ -315,7 +315,7 @@ test.describe("Database CRUD", () => {
     await createDatabaseFromSidebar(page);
 
     // Add a row to get the full grid, then add a column
-    const addRowBtn = page.locator("button", { hasText: "+ New" });
+    const addRowBtn = page.getByTestId("db-table-add-row");
     await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
     await addRowBtn.click();
     await expect(page.locator('[role="grid"]')).toBeVisible({
@@ -369,7 +369,7 @@ test.describe("Database CRUD", () => {
     await createDatabaseFromSidebar(page);
 
     // Add a row to get the full grid
-    const addRowBtn = page.locator("button", { hasText: "+ New" });
+    const addRowBtn = page.getByTestId("db-table-add-row");
     await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
     await addRowBtn.click();
     await expect(page.locator('[role="grid"]')).toBeVisible({

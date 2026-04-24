@@ -84,6 +84,7 @@ export function TableColumnHeader({
         isDragging && "opacity-50",
       )}
       role="columnheader"
+      data-testid={`db-table-column-header-${colIndex}`}
       draggable={!!onColumnReorder}
       onDragStart={(e) => onDragStart(e, property.id)}
       onDragEnd={onDragEnd}
