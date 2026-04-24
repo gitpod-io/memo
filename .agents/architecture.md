@@ -309,9 +309,15 @@ src/components/database/
   │   ├── formula.tsx
   │   └── computed.tsx             # created_time, updated_time, created_by (read-only)
   ├── views/
-  │   ├── table-view.tsx           # Spreadsheet grid with resizable columns
-  │   ├── table-cell-renderer.tsx  # CellRenderer + SelectBadge (extracted from table-view)
-  │   ├── table-keyboard.ts       # Keyboard navigation handler (extracted from table-view)
+  │   ├── table-view.tsx           # Composition root — wires sub-components together
+  │   ├── table-row.tsx            # TableRow — title cell + property cells for one row
+  │   ├── table-cell.tsx           # TableCell + RegistryEditorCell — display/edit modes, portal editors
+  │   ├── table-column-header.tsx  # TableColumnHeader — sort, menu, drag, resize handle
+  │   ├── table-skeleton.tsx       # TableSkeleton — loading placeholder
+  │   ├── table-navigation.ts     # useTableCellNavigation — editing/focus state, keyboard nav
+  │   ├── table-columns.ts        # useColumnResize + useColumnDragReorder hooks
+  │   ├── table-cell-renderer.tsx  # CellRenderer + SelectBadge — display-only value rendering
+  │   ├── table-keyboard.ts       # handleCellKeyDown — editing-mode key handler
   │   ├── table-defaults.ts       # Pure helpers: value keys, select options, display values, date formatting
   │   ├── board-view.tsx           # Kanban columns grouped by select property
   │   ├── list-view.tsx            # Compact vertical list
@@ -442,9 +448,15 @@ src/
 │   │   ├── property-renderer.tsx        # Cell renderer (dispatches to type-specific renderers)
 │   │   ├── property-types/              # Registry of type-specific renderers and editors
 │   │   ├── views/
-│   │   │   ├── table-view.tsx           # Spreadsheet grid with resizable columns
-│   │   │   ├── table-cell-renderer.tsx  # CellRenderer + SelectBadge (extracted from table-view)
-│   │   │   ├── table-keyboard.ts       # Keyboard navigation handler (extracted from table-view)
+│   │   │   ├── table-view.tsx           # Composition root — wires sub-components together
+│   │   │   ├── table-row.tsx            # TableRow — title cell + property cells for one row
+│   │   │   ├── table-cell.tsx           # TableCell + RegistryEditorCell — display/edit, portal editors
+│   │   │   ├── table-column-header.tsx  # TableColumnHeader — sort, menu, drag, resize handle
+│   │   │   ├── table-skeleton.tsx       # TableSkeleton — loading placeholder
+│   │   │   ├── table-navigation.ts     # useTableCellNavigation hook — editing/focus/keyboard nav
+│   │   │   ├── table-columns.ts        # useColumnResize + useColumnDragReorder hooks
+│   │   │   ├── table-cell-renderer.tsx  # CellRenderer + SelectBadge — display-only value rendering
+│   │   │   ├── table-keyboard.ts       # handleCellKeyDown — editing-mode key handler
 │   │   │   ├── table-defaults.ts       # Pure helpers: value keys, select options, display values
 │   │   │   ├── board-view.tsx           # Kanban columns grouped by select property
 │   │   │   ├── list-view.tsx            # Compact vertical list
