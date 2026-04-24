@@ -99,12 +99,17 @@ export interface TableViewProps {
 }
 
 // ---------------------------------------------------------------------------
-// Editing state
+// Editing / focus state
 // ---------------------------------------------------------------------------
 
 interface EditingCell {
   rowId: string;
   propertyId: string;
+}
+
+interface FocusedCell {
+  rowIndex: number;
+  colIndex: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -167,6 +172,10 @@ export const TableView = memo(function TableView({
 
   // Editing state
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
+
+  // Focused cell state (navigation without editing)
+  const [focusedCell, setFocusedCell] = useState<FocusedCell | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   // Resize state
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
@@ -313,12 +322,66 @@ export const TableView = memo(function TableView({
 
   const startEditing = useCallback((rowId: string, propertyId: string) => {
     setEditingCell({ rowId, propertyId });
+    setFocusedCell(null);
   }, []);
 
   const stopEditing = useCallback(() => {
     setEditingCell(null);
   }, []);
 
+  // Focus a cell in the DOM by its grid coordinates.
+  const focusCellElement = useCallback(
+    (rowIndex: number, colIndex: number) => {
+      if (!gridRef.current) return;
+      const selector = `[data-row="${rowIndex}"][data-col="${colIndex}"]`;
+      const el = gridRef.current.querySelector<HTMLElement>(selector);
+      if (el) {
+        el.focus();
+      }
+    },
+    [],
+  );
+
+  // Navigate to a specific cell. Clamps to grid boundaries.
+  const navigateToCell = useCallback(
+    (rowIndex: number, colIndex: number) => {
+      if (rows.length === 0 || visibleProperties.length === 0) return;
+      if (rowIndex < 0 || rowIndex >= rows.length) return;
+      if (colIndex < 0 || colIndex >= visibleProperties.length) return;
+      setFocusedCell({ rowIndex, colIndex });
+      setEditingCell(null);
+    },
+    [rows, visibleProperties],
+  );
+
+  // Move focus with horizontal wrapping across rows. Stays put at grid edges.
+  const moveFocus = useCallback(
+    (fromRow: number, fromCol: number, dRow: number, dCol: number) => {
+      const totalCols = visibleProperties.length;
+      let nextRow = fromRow + dRow;
+      let nextCol = fromCol + dCol;
+
+      // Horizontal wrapping
+      if (nextCol >= totalCols) {
+        nextCol = 0;
+        nextRow = nextRow + 1;
+      } else if (nextCol < 0) {
+        nextCol = totalCols - 1;
+        nextRow = nextRow - 1;
+      }
+
+      // At grid boundary — re-focus current cell to prevent focus drift
+      if (nextRow < 0 || nextRow >= rows.length || nextCol < 0 || nextCol >= totalCols) {
+        focusCellElement(fromRow, fromCol);
+        return;
+      }
+
+      navigateToCell(nextRow, nextCol);
+    },
+    [visibleProperties, rows, navigateToCell, focusCellElement],
+  );
+
+  // Keyboard handler for cells in editing mode
   const handleCellKeyDown = useCallback(
     (e: React.KeyboardEvent, rowIndex: number, colIndex: number) => {
       handleCellKeyDownAction({
@@ -330,9 +393,123 @@ export const TableView = memo(function TableView({
         startEditing,
         stopEditing,
       });
+      if (e.key === "Escape") {
+        // Exit edit mode, return to focused navigation mode
+        setEditingCell(null);
+        setFocusedCell({ rowIndex, colIndex });
+        return;
+      }
+
+      if (e.key === "Enter") {
+        // Commit edit and move focus down one row (spreadsheet convention)
+        stopEditing();
+        const nextRow = rowIndex + 1;
+        if (nextRow < rows.length) {
+          setFocusedCell({ rowIndex: nextRow, colIndex });
+        } else {
+          setFocusedCell({ rowIndex, colIndex });
+        }
+        return;
+      }
+
+      if (e.key === "Tab") {
+        e.preventDefault();
+        const direction = e.shiftKey ? -1 : 1;
+        let nextCol = colIndex + direction;
+        let nextRow = rowIndex;
+
+        if (nextCol >= visibleProperties.length) {
+          nextCol = 0;
+          nextRow = nextRow + 1;
+        } else if (nextCol < 0) {
+          nextCol = visibleProperties.length - 1;
+          nextRow = nextRow - 1;
+        }
+
+        if (nextRow >= 0 && nextRow < rows.length) {
+          startEditing(rows[nextRow].page.id, visibleProperties[nextCol].id);
+        } else {
+          stopEditing();
+        }
+      }
     },
     [visibleProperties, rows, startEditing, stopEditing],
   );
+
+  // Keyboard handler for cells in focused (non-editing) mode
+  const handleFocusedCellKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!focusedCell) return;
+      const { rowIndex, colIndex } = focusedCell;
+
+      switch (e.key) {
+        case "ArrowUp":
+          e.preventDefault();
+          if (rowIndex - 1 >= 0) {
+            navigateToCell(rowIndex - 1, colIndex);
+          } else {
+            focusCellElement(rowIndex, colIndex);
+          }
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          if (rowIndex + 1 < rows.length) {
+            navigateToCell(rowIndex + 1, colIndex);
+          } else {
+            focusCellElement(rowIndex, colIndex);
+          }
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          moveFocus(rowIndex, colIndex, 0, -1);
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          moveFocus(rowIndex, colIndex, 0, 1);
+          break;
+        case "Enter": {
+          e.preventDefault();
+          // Start editing the focused cell
+          const prop = visibleProperties[colIndex];
+          const row = rows[rowIndex];
+          if (prop && row) {
+            const isReadOnly =
+              prop.type === "formula" ||
+              prop.type === "created_time" ||
+              prop.type === "updated_time" ||
+              prop.type === "created_by";
+            if (!isReadOnly) {
+              startEditing(row.page.id, prop.id);
+            }
+          }
+          break;
+        }
+        case "Escape":
+          e.preventDefault();
+          setFocusedCell(null);
+          // Blur the active element so DOM focus leaves the grid
+          if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+          }
+          break;
+        case "Tab": {
+          e.preventDefault();
+          const direction = e.shiftKey ? -1 : 1;
+          moveFocus(rowIndex, colIndex, 0, direction);
+          break;
+        }
+        default:
+          break;
+      }
+    },
+    [focusedCell, visibleProperties, rows, navigateToCell, moveFocus, startEditing],
+  );
+
+  // Focus the DOM element when focusedCell changes
+  useEffect(() => {
+    if (!focusedCell) return;
+    focusCellElement(focusedCell.rowIndex, focusedCell.colIndex);
+  }, [focusedCell, focusCellElement]);
 
   const handleCellBlur = useCallback(
     (rowId: string, propertyId: string, newValue: Record<string, unknown>) => {
@@ -340,6 +517,14 @@ export const TableView = memo(function TableView({
       stopEditing();
     },
     [onCellUpdate, stopEditing],
+  );
+
+  // When a cell is clicked in non-editing mode, set it as focused
+  const handleCellFocus = useCallback(
+    (rowIndex: number, colIndex: number) => {
+      setFocusedCell({ rowIndex, colIndex });
+    },
+    [],
   );
 
   // --- Loading skeleton ---
@@ -426,10 +611,12 @@ export const TableView = memo(function TableView({
   return (
     <div className="w-full overflow-x-auto">
       <div
+        ref={gridRef}
         className="grid w-max min-w-full"
         style={{ gridTemplateColumns }}
         role="grid"
         aria-label="Database table"
+        onKeyDown={handleFocusedCellKeyDown}
       >
         {/* --- Header row --- */}
         <div
@@ -567,9 +754,11 @@ export const TableView = memo(function TableView({
             rowHeightClass={rowHeightClass}
             workspaceSlug={workspaceSlug}
             editingCell={editingCell}
+            focusedCell={focusedCell}
             onStartEditing={startEditing}
             onCellKeyDown={handleCellKeyDown}
             onCellBlur={handleCellBlur}
+            onCellFocus={handleCellFocus}
             onDeleteRow={onDeleteRow}
           />
         ))}
@@ -601,9 +790,11 @@ interface TableRowProps {
   rowHeightClass: string;
   workspaceSlug: string;
   editingCell: EditingCell | null;
+  focusedCell: FocusedCell | null;
   onStartEditing: (rowId: string, propertyId: string) => void;
   onCellKeyDown: (e: React.KeyboardEvent, rowIndex: number, colIndex: number) => void;
   onCellBlur: (rowId: string, propertyId: string, newValue: Record<string, unknown>) => void;
+  onCellFocus: (rowIndex: number, colIndex: number) => void;
   onDeleteRow?: (rowId: string) => void;
 }
 
@@ -615,9 +806,11 @@ function TableRow({
   rowHeightClass,
   workspaceSlug,
   editingCell,
+  focusedCell,
   onStartEditing,
   onCellKeyDown,
   onCellBlur,
+  onCellFocus,
   onDeleteRow,
 }: TableRowProps) {
   return (
@@ -654,6 +847,9 @@ function TableRow({
         const isEditing =
           editingCell?.rowId === row.page.id &&
           editingCell?.propertyId === prop.id;
+        const isFocused =
+          focusedCell?.rowIndex === rowIndex &&
+          focusedCell?.colIndex === colIndex;
 
         // Computed types derive values from page metadata, not row_values.
         // Formula types evaluate expressions against the row's property values.
@@ -677,12 +873,14 @@ function TableRow({
             value={cellValue}
             computedValue={computedValue}
             isEditing={isEditing}
+            isFocused={isFocused}
             rowHeightClass={rowHeightClass}
             rowIndex={rowIndex}
             colIndex={colIndex}
             onStartEditing={onStartEditing}
             onKeyDown={onCellKeyDown}
             onBlur={onCellBlur}
+            onFocus={onCellFocus}
           />
         );
       })}
@@ -712,12 +910,14 @@ interface TableCellProps {
   /** Synthetic value for computed types (created_time, updated_time, created_by). */
   computedValue?: Record<string, unknown>;
   isEditing: boolean;
+  isFocused: boolean;
   rowHeightClass: string;
   rowIndex: number;
   colIndex: number;
   onStartEditing: (rowId: string, propertyId: string) => void;
   onKeyDown: (e: React.KeyboardEvent, rowIndex: number, colIndex: number) => void;
   onBlur: (rowId: string, propertyId: string, newValue: Record<string, unknown>) => void;
+  onFocus: (rowIndex: number, colIndex: number) => void;
 }
 
 function TableCell({
@@ -728,12 +928,14 @@ function TableCell({
   value,
   computedValue,
   isEditing,
+  isFocused,
   rowHeightClass,
   rowIndex,
   colIndex,
   onStartEditing,
   onKeyDown,
   onBlur,
+  onFocus,
 }: TableCellProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const displayValue = extractDisplayValue(value, propertyType);
@@ -812,9 +1014,14 @@ function TableCell({
       <div
         className={cn(
           "flex items-center justify-center border-b border-overlay-border p-2 hover:bg-overlay-subtle",
+          isFocused && "ring-1 ring-inset ring-ring",
           rowHeightClass,
         )}
         role="gridcell"
+        data-row={rowIndex}
+        data-col={colIndex}
+        tabIndex={isFocused ? 0 : -1}
+        onFocus={() => onFocus(rowIndex, colIndex)}
       >
         <button
           type="button"
@@ -853,9 +1060,14 @@ function TableCell({
           className={cn(
             "flex items-center border-b border-overlay-border p-2",
             "cursor-default",
+            isFocused && "ring-1 ring-inset ring-ring",
             rowHeightClass,
           )}
           role="gridcell"
+          data-row={rowIndex}
+          data-col={colIndex}
+          tabIndex={isFocused ? 0 : -1}
+          onFocus={() => onFocus(rowIndex, colIndex)}
         >
           <Renderer value={computedValue} property={property} />
         </div>
@@ -868,21 +1080,15 @@ function TableCell({
       className={cn(
         "flex items-center border-b border-overlay-border p-2 hover:bg-overlay-subtle",
         isReadOnly ? "cursor-default" : "cursor-text",
+        isFocused && "ring-1 ring-inset ring-ring",
         rowHeightClass,
       )}
       role="gridcell"
+      data-row={rowIndex}
+      data-col={colIndex}
+      tabIndex={isFocused ? 0 : -1}
       onClick={isReadOnly ? undefined : () => onStartEditing(rowId, propertyId)}
-      onKeyDown={
-        isReadOnly
-          ? undefined
-          : (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onStartEditing(rowId, propertyId);
-              }
-            }
-      }
-      tabIndex={isReadOnly ? undefined : 0}
+      onFocus={() => onFocus(rowIndex, colIndex)}
     >
       <CellRenderer
         value={value}

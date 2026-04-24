@@ -64,14 +64,17 @@ describe("property type selector regression (#538)", () => {
 /**
  * Regression test for issue #563: default column name should match the selected
  * property type instead of using a generic "Property N" name.
+ *
+ * The naming logic was extracted to column-helpers.ts (generateColumnName).
+ * These tests verify the view client uses the extracted helper.
  */
 describe("default column name matches property type (#563)", () => {
   const viewClient = readViewClient();
 
-  it("imports PROPERTY_TYPE_LABEL from property-icons", () => {
-    expect(viewClient).toContain("PROPERTY_TYPE_LABEL");
+  it("imports generateColumnName from column-helpers", () => {
+    expect(viewClient).toContain("generateColumnName");
     expect(viewClient).toMatch(
-      /import\s*\{[^}]*PROPERTY_TYPE_LABEL[^}]*\}\s*from\s*["']@\/lib\/property-icons["']/,
+      /import\s*\{[^}]*generateColumnName[^}]*\}\s*from\s*["']@\/lib\/column-helpers["']/,
     );
   });
 
@@ -80,14 +83,13 @@ describe("default column name matches property type (#563)", () => {
     expect(viewClient).not.toMatch(/`Property \$\{properties\.length/);
   });
 
-  it("generates a name from PROPERTY_TYPE_LABEL[type]", () => {
-    expect(viewClient).toMatch(/PROPERTY_TYPE_LABEL\[type\]/);
+  it("calls generateColumnName to derive the column name", () => {
+    expect(viewClient).toMatch(/generateColumnName\s*\(/);
   });
 
-  it("handles name collisions by appending a number suffix", () => {
-    // Must check existing names and append a suffix when there's a collision
-    expect(viewClient).toMatch(/existingNames\.has\(name\)/);
-    expect(viewClient).toMatch(/`\$\{baseLabel\} \$\{suffix\}`/);
+  it("calls getDefaultColumnConfig to derive the column config", () => {
+    expect(viewClient).toContain("getDefaultColumnConfig");
+    expect(viewClient).toMatch(/getDefaultColumnConfig\s*\(/);
   });
 });
 

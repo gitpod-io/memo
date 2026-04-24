@@ -45,4 +45,12 @@ describe("[pageId] route loading state", () => {
     // The auth check and workspace lookup should run in parallel
     expect(page).toContain("Promise.all");
   });
+
+  it("page.tsx does not use dynamic() with loading fallbacks (#666)", () => {
+    const page = readFileSync(resolve(PAGE_DIR, "page.tsx"), "utf-8");
+    // Convention: view components must be imported directly, not via dynamic().
+    // dynamic() loading fallbacks create a second skeleton that shifts after
+    // loading.tsx, causing visible layout jank during navigation.
+    expect(page).not.toMatch(/\bdynamic\b/);
+  });
 });
