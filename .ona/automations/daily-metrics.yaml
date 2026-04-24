@@ -107,9 +107,11 @@ action:
 
                 **CI pass rate:**
                 ```
-                gh run list --limit 20 --json conclusion
+                TOTAL=$(gh run list --created "YYYY-MM-DD" --limit 500 --json conclusion --jq 'length')
+                SUCCESS=$(gh run list --created "YYYY-MM-DD" --limit 500 --json conclusion --jq '[.[] | select(.conclusion == "success")] | length')
                 ```
-                Calculate: `round((success_count / total_count) * 100)`.
+                Replace YYYY-MM-DD with today's date.
+                Calculate: `round((SUCCESS / TOTAL) * 100)`. If TOTAL is 0, set to 100.
 
                 **GitHub Issues:**
                 ```
