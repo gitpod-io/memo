@@ -342,10 +342,11 @@ export const CalendarView = memo(function CalendarView({
       </div>
 
       {/* Day headers */}
-      <div className="grid grid-cols-7">
+      <div className="grid grid-cols-7" role="row">
         {DAY_HEADERS.map((day) => (
           <div
             key={day}
+            role="columnheader"
             className="border border-overlay-border p-1 text-center text-xs uppercase tracking-widest text-muted-foreground"
           >
             {day}
@@ -354,7 +355,11 @@ export const CalendarView = memo(function CalendarView({
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7">
+      <div
+        className="grid grid-cols-7"
+        role="grid"
+        aria-label={`${FULL_MONTHS[viewMonth]} ${viewYear} calendar`}
+      >
         {cells.map((cell) => (
           <CalendarDayCell
             key={cell.date}
@@ -416,6 +421,8 @@ function CalendarDayCell({ cell, workspaceSlug, onClick }: CalendarDayCellProps)
 
   return (
     <div
+      role="gridcell"
+      aria-label={cell.date}
       className={cn(
         "relative min-h-24 border border-overlay-border p-1",
         cell.isToday && "bg-accent/10",
@@ -452,6 +459,7 @@ function CalendarDayCell({ cell, workspaceSlug, onClick }: CalendarDayCellProps)
                 e.stopPropagation();
                 setShowAll(true);
               }}
+              aria-label={`Show ${overflowCount} more items for ${cell.date}`}
               className="w-full px-1 py-0.5 text-left text-xs text-muted-foreground hover:text-foreground"
             >
               +{overflowCount} more
