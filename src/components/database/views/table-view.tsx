@@ -15,6 +15,7 @@ import type {
 import { TableSkeleton } from "@/components/database/views/table-skeleton";
 import { TableRow } from "@/components/database/views/table-row";
 import { TableColumnHeader } from "@/components/database/views/table-column-header";
+import { RowCountStatusBar } from "@/components/database/views/row-count-status-bar";
 import { useTableCellNavigation } from "@/components/database/views/table-navigation";
 import {
   useColumnResize,
@@ -46,6 +47,8 @@ export interface TableViewProps {
   onSortToggle?: (propertyId: string) => void;
   onDeleteRow?: (rowId: string) => void;
   loading?: boolean;
+  /** Total row count before filtering — used to show "X of Y rows" when filters are active */
+  totalRowCount?: number;
 }
 
 export const TableView = memo(function TableView({
@@ -64,6 +67,7 @@ export const TableView = memo(function TableView({
   sorts = [],
   onSortToggle,
   loading = false,
+  totalRowCount,
 }: TableViewProps) {
   const rowHeight = viewConfig.row_height ?? "default";
   const rowHeightClass = ROW_HEIGHT_CLASS[rowHeight];
@@ -189,6 +193,12 @@ export const TableView = memo(function TableView({
             + New
           </button>
         )}
+
+        {/* Row count status bar */}
+        <RowCountStatusBar
+          filteredCount={rows.length}
+          totalCount={totalRowCount ?? rows.length}
+        />
       </div>
     );
   }
@@ -288,6 +298,12 @@ export const TableView = memo(function TableView({
           + New
         </button>
       )}
+
+      {/* Row count status bar */}
+      <RowCountStatusBar
+        filteredCount={rows.length}
+        totalCount={totalRowCount ?? rows.length}
+      />
     </div>
   );
 });

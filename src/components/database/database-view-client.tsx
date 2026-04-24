@@ -321,6 +321,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   onDeleteRow={handleDeleteRow}
                   sorts={activeSorts}
                   onSortToggle={handleSortToggle}
+                  totalRowCount={rows.length}
                 />
               ) : activeView?.type === "board" ? (
                 <BoardView

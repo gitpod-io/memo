@@ -327,6 +327,7 @@ src/components/database/
   │   ├── table-cell-renderer.tsx  # CellRenderer + SelectBadge — display-only value rendering
   │   ├── table-keyboard.ts       # handleCellKeyDown — editing-mode key handler
   │   ├── table-defaults.ts       # Pure helpers: value keys, select options, display values, date formatting
+  │   ├── row-count-status-bar.tsx # RowCountStatusBar — "X rows" / "X of Y rows" below the table
   │   ├── board-view.tsx           # Kanban columns grouped by select property
   │   ├── board-view-helpers.ts    # Pure grouping/DnD logic extracted from board-view
   │   ├── list-view.tsx            # Compact vertical list
@@ -479,6 +480,7 @@ src/
 │   │   │   ├── table-cell-renderer.tsx  # CellRenderer + SelectBadge — display-only value rendering
 │   │   │   ├── table-keyboard.ts       # handleCellKeyDown — editing-mode key handler
 │   │   │   ├── table-defaults.ts       # Pure helpers: value keys, select options, display values
+│   │   │   ├── row-count-status-bar.tsx # RowCountStatusBar — "X rows" / "X of Y rows" below the table
 │   │   │   ├── board-view.tsx           # Kanban columns grouped by select property
 │   │   │   ├── board-view-helpers.ts    # Pure grouping/DnD logic extracted from board-view
 │   │   │   ├── list-view.tsx            # Compact vertical list
