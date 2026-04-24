@@ -224,7 +224,9 @@ export function useDatabaseProperties({
         }
 
         // Persist visible_properties cleanup for each affected view
-        for (const v of views) {
+        // Use prevViews (snapshot from deletion time) to avoid stale closure
+        // if views change during the 5.5s undo window
+        for (const v of prevViews) {
           const vp = v.config.visible_properties;
           if (vp && vp.includes(propertyId)) {
             void updateView(v.id, {

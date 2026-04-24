@@ -246,8 +246,9 @@ export function useDatabaseRows({
           onClick: () => {
             clearTimeout(timer);
             pendingRowDeletions.current.delete(rowId);
-            if (snapshot) {
-              setRows((prev) => [...prev, snapshot!]);
+            const restored = snapshot;
+            if (restored) {
+              setRows((prev) => [...prev, restored]);
             }
           },
         },
