@@ -310,6 +310,9 @@ src/components/database/
   │   └── computed.tsx             # created_time, updated_time, created_by (read-only)
   ├── views/
   │   ├── table-view.tsx           # Spreadsheet grid with resizable columns
+  │   ├── table-cell-renderer.tsx  # CellRenderer + SelectBadge (extracted from table-view)
+  │   ├── table-keyboard.ts       # Keyboard navigation handler (extracted from table-view)
+  │   ├── table-defaults.ts       # Pure helpers: value keys, select options, display values, date formatting
   │   ├── board-view.tsx           # Kanban columns grouped by select property
   │   ├── list-view.tsx            # Compact vertical list
   │   ├── calendar-view.tsx        # Month grid with date-positioned items
@@ -440,6 +443,9 @@ src/
 │   │   ├── property-types/              # Registry of type-specific renderers and editors
 │   │   ├── views/
 │   │   │   ├── table-view.tsx           # Spreadsheet grid with resizable columns
+│   │   │   ├── table-cell-renderer.tsx  # CellRenderer + SelectBadge (extracted from table-view)
+│   │   │   ├── table-keyboard.ts       # Keyboard navigation handler (extracted from table-view)
+│   │   │   ├── table-defaults.ts       # Pure helpers: value keys, select options, display values
 │   │   │   ├── board-view.tsx           # Kanban columns grouped by select property
 │   │   │   ├── list-view.tsx            # Compact vertical list
 │   │   │   ├── calendar-view.tsx        # Month grid with date-positioned items
