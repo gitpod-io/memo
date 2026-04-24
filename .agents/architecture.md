@@ -328,8 +328,10 @@ src/components/database/
   │   ├── table-keyboard.ts       # handleCellKeyDown — editing-mode key handler
   │   ├── table-defaults.ts       # Pure helpers: value keys, select options, display values, date formatting
   │   ├── board-view.tsx           # Kanban columns grouped by select property
+  │   ├── board-view-helpers.ts    # Pure grouping/DnD logic extracted from board-view
   │   ├── list-view.tsx            # Compact vertical list
   │   ├── calendar-view.tsx        # Month grid with date-positioned items
+  │   ├── calendar-view-helpers.ts # Pure date/grid logic extracted from calendar-view
   │   └── gallery-view.tsx         # Responsive card grid with cover + title
   ├── row-properties-header.tsx    # Properties displayed above editor when row opened as page
   └── new-database-dialog.tsx      # Dialog for creating a new database
@@ -478,8 +480,10 @@ src/
 │   │   │   ├── table-keyboard.ts       # handleCellKeyDown — editing-mode key handler
 │   │   │   ├── table-defaults.ts       # Pure helpers: value keys, select options, display values
 │   │   │   ├── board-view.tsx           # Kanban columns grouped by select property
+│   │   │   ├── board-view-helpers.ts    # Pure grouping/DnD logic extracted from board-view
 │   │   │   ├── list-view.tsx            # Compact vertical list
 │   │   │   ├── calendar-view.tsx        # Month grid with date-positioned items
+│   │   │   ├── calendar-view-helpers.ts # Pure date/grid logic extracted from calendar-view
 │   │   │   └── gallery-view.tsx         # Responsive card grid with cover + title
 │   │   ├── property-type-picker.tsx      # Dropdown menu for selecting property type when adding columns
 │   │   ├── rename-property-dialog.tsx   # Styled dialog replacing window.prompt for column rename

@@ -10,6 +10,11 @@ import type {
   DatabaseRow,
   DatabaseViewConfig,
 } from "@/lib/types";
+import {
+  buildCalendarGrid,
+  groupRowsByDate,
+  type CalendarCell,
+} from "./calendar-view-helpers";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -33,115 +38,6 @@ const FULL_MONTHS = [
   "November",
   "December",
 ];
-
-// ---------------------------------------------------------------------------
-// Date helpers
-// ---------------------------------------------------------------------------
-
-function toISODate(year: number, month: number, day: number): string {
-  const m = String(month + 1).padStart(2, "0");
-  const dd = String(day).padStart(2, "0");
-  return `${year}-${m}-${dd}`;
-}
-
-function getDaysInMonth(year: number, month: number): number {
-  return new Date(year, month + 1, 0).getDate();
-}
-
-function getFirstDayOfWeek(year: number, month: number): number {
-  return new Date(year, month, 1).getDay();
-}
-
-function todayISO(): string {
-  const d = new Date();
-  return toISODate(d.getFullYear(), d.getMonth(), d.getDate());
-}
-
-/** Extract the date string from a row's date property value. */
-function getRowDate(row: DatabaseRow, propertyId: string): string | null {
-  const rv = row.values[propertyId];
-  if (!rv) return null;
-  // Date values store { date: "YYYY-MM-DD" } or { value: "YYYY-MM-DD" }
-  const dateVal = rv.value?.date ?? rv.value?.value;
-  if (typeof dateVal === "string" && dateVal.length >= 10) {
-    return dateVal.slice(0, 10);
-  }
-  return null;
-}
-
-// ---------------------------------------------------------------------------
-// Calendar cell data
-// ---------------------------------------------------------------------------
-
-interface CalendarCell {
-  date: string; // ISO date YYYY-MM-DD
-  day: number;
-  isCurrentMonth: boolean;
-  isToday: boolean;
-  items: DatabaseRow[];
-}
-
-function buildCalendarGrid(
-  year: number,
-  month: number,
-  rowsByDate: Map<string, DatabaseRow[]>,
-): CalendarCell[] {
-  const today = todayISO();
-  const daysInMonth = getDaysInMonth(year, month);
-  const firstDay = getFirstDayOfWeek(year, month);
-
-  const cells: CalendarCell[] = [];
-
-  // Previous month overflow
-  if (firstDay > 0) {
-    const prevMonth = month === 0 ? 11 : month - 1;
-    const prevYear = month === 0 ? year - 1 : year;
-    const prevDays = getDaysInMonth(prevYear, prevMonth);
-    for (let i = firstDay - 1; i >= 0; i--) {
-      const day = prevDays - i;
-      const date = toISODate(prevYear, prevMonth, day);
-      cells.push({
-        date,
-        day,
-        isCurrentMonth: false,
-        isToday: date === today,
-        items: rowsByDate.get(date) ?? [],
-      });
-    }
-  }
-
-  // Current month
-  for (let d = 1; d <= daysInMonth; d++) {
-    const date = toISODate(year, month, d);
-    cells.push({
-      date,
-      day: d,
-      isCurrentMonth: true,
-      isToday: date === today,
-      items: rowsByDate.get(date) ?? [],
-    });
-  }
-
-  // Next month overflow to fill the grid (always complete the last week)
-  const remainder = cells.length % 7;
-  if (remainder > 0) {
-    const nextMonth = month === 11 ? 0 : month + 1;
-    const nextYear = month === 11 ? year + 1 : year;
-    const fill = 7 - remainder;
-    for (let d = 1; d <= fill; d++) {
-      const date = toISODate(nextYear, nextMonth, d);
-      cells.push({
-        date,
-        day: d,
-        isCurrentMonth: false,
-        isToday: date === today,
-        items: rowsByDate.get(date) ?? [],
-      });
-    }
-  }
-
-  return cells;
-}
 
 // ---------------------------------------------------------------------------
 // Props
@@ -190,20 +86,8 @@ export const CalendarView = memo(function CalendarView({
 
   // Group rows by date
   const rowsByDate = useMemo(() => {
-    const map = new Map<string, DatabaseRow[]>();
-    if (!datePropertyId) return map;
-
-    for (const row of rows) {
-      const date = getRowDate(row, datePropertyId);
-      if (!date) continue;
-      const existing = map.get(date);
-      if (existing) {
-        existing.push(row);
-      } else {
-        map.set(date, [row]);
-      }
-    }
-    return map;
+    if (!datePropertyId) return new Map<string, DatabaseRow[]>();
+    return groupRowsByDate(rows, datePropertyId);
   }, [rows, datePropertyId]);
 
   // Build the calendar grid
