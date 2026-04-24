@@ -16,6 +16,7 @@ import {
   ComingSoonPlaceholder,
   DatabaseSkeleton,
 } from "@/components/database/database-view-helpers";
+import { CSVExportButton } from "@/components/database/csv-export-button";
 import { loadDatabase, loadWorkspaceMembers } from "@/lib/database";
 import { useDatabaseViews } from "@/components/database/hooks/use-database-views";
 import { useDatabaseRows } from "@/components/database/hooks/use-database-rows";
@@ -302,6 +303,15 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                     onSelect={(id) => handleViewConfigChange({ date_property: id })}
                   />
                 )}
+                <div className="flex-1" />
+                <CSVExportButton
+                  rows={displayedRows}
+                  properties={properties}
+                  databaseTitle={pageTitle}
+                  userId={userId}
+                  workspaceId={workspaceId}
+                  pageId={pageId}
+                />
               </div>
             )}
 

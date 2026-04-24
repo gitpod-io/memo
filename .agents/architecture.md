@@ -287,6 +287,7 @@ Database page (is_database = true)
 src/components/database/
   ├── database-view-client.tsx     # Main client component: loads data, composes hooks + JSX
   ├── database-view-helpers.tsx    # ViewConfigDropdown, ComingSoonPlaceholder, DatabaseSkeleton
+  ├── csv-export-button.tsx        # Download CSV toolbar button with relation title resolution
   ├── delete-property-dialog.tsx   # Confirmation dialog for deleting a property
   ├── hooks/
   │   ├── use-database-views.ts    # View CRUD: add, rename, delete, duplicate, reorder, config
@@ -455,6 +456,7 @@ src/
 │   ├── database/                # Database views system
 │   │   ├── database-view-client.tsx     # Main client component: loads data, composes hooks + JSX
 │   │   ├── database-view-helpers.tsx    # ViewConfigDropdown, ComingSoonPlaceholder, DatabaseSkeleton
+│   │   ├── csv-export-button.tsx        # Download CSV toolbar button with relation title resolution
 │   │   ├── delete-property-dialog.tsx   # Confirmation dialog for deleting a property
 │   │   ├── hooks/                       # Domain hooks extracted from database-view-client
 │   │   │   ├── use-database-views.ts    # View CRUD callbacks
@@ -536,7 +538,9 @@ src/
 ├── lib/
 │   ├── capture.ts          # lazyCaptureException — dynamic import of Sentry to reduce bundle size
 │   ├── column-helpers.ts    # Pure helpers for column-add flow: name generation, config seeding, concurrency guard
+│   ├── csv-export.ts       # CSV serialization (RFC 4180) and download trigger for database export
 │   ├── database.ts         # Database CRUD: create/delete databases, property/row/view CRUD, data loading
+│   ├── database-cache.ts   # In-memory cache for database data and workspace members
 │   ├── database-filters.ts # Client-side filter engine for database views (text, number, date, select, etc.)
 │   ├── formula.ts          # Formula parser and evaluator for formula property type
 │   ├── page-tree.ts        # Pure functions: tree building, reorder, nest/unnest, drop computation
