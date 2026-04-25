@@ -386,6 +386,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   viewConfig={activeView.config}
                   workspaceSlug={workspaceSlug}
                   onAddRow={handleAddRow}
+                  onNavigate={router.push}
                 />
               ) : activeView?.type === "calendar" ? (
                 <CalendarView

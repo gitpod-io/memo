@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { FileText, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ import type {
   RowValue,
   SelectOption,
 } from "@/lib/types";
+import { useListKeyboardNavigation } from "./list-keyboard";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -24,6 +25,8 @@ export interface ListViewProps {
   workspaceSlug: string;
   /** Called when a new row should be added. */
   onAddRow?: () => void;
+  /** Called when keyboard Enter navigates to a row. Receives the URL path. */
+  onNavigate?: (path: string) => void;
   /** Loading state — shows skeleton. */
   loading?: boolean;
 }
@@ -38,6 +41,7 @@ export const ListView = memo(function ListView({
   viewConfig,
   workspaceSlug,
   onAddRow,
+  onNavigate,
   loading = false,
 }: ListViewProps) {
   // Visible properties configured for this view
@@ -48,6 +52,20 @@ export const ListView = memo(function ListView({
     }
     return properties;
   }, [properties, viewConfig.visible_properties]);
+
+  const pageIds = useMemo(() => rows.map((r) => r.page.id), [rows]);
+
+  const { focusedIndex, containerRef, handleKeyDown, handleRowFocus } =
+    useListKeyboardNavigation({
+      rowCount: rows.length,
+      workspaceSlug,
+      pageIds,
+      onNavigate,
+    });
+
+  const handleAddRow = useCallback(() => {
+    onAddRow?.();
+  }, [onAddRow]);
 
   if (loading) {
     return <ListSkeleton />;
@@ -66,7 +84,7 @@ export const ListView = memo(function ListView({
         {onAddRow && (
           <button
             type="button"
-            onClick={() => onAddRow()}
+            onClick={handleAddRow}
             className="flex w-full items-center gap-1.5 border-t border-overlay-border px-3 py-2 text-sm text-muted-foreground hover:bg-overlay-hover"
           >
             <Plus className="h-3.5 w-3.5" />
@@ -78,20 +96,29 @@ export const ListView = memo(function ListView({
   }
 
   return (
-    <div className="w-full" role="list" aria-label="Database list">
-      {rows.map((row) => (
+    <div
+      ref={containerRef}
+      className="w-full"
+      role="list"
+      aria-label="Database list"
+      onKeyDown={handleKeyDown}
+    >
+      {rows.map((row, index) => (
         <ListRow
           key={row.page.id}
           row={row}
+          index={index}
           visibleProperties={visibleProperties}
           workspaceSlug={workspaceSlug}
+          isFocused={focusedIndex === index}
+          onRowFocus={handleRowFocus}
         />
       ))}
 
       {onAddRow && (
         <button
           type="button"
-          onClick={() => onAddRow()}
+          onClick={handleAddRow}
           className="flex w-full items-center gap-1.5 border-t border-overlay-border px-3 py-2 text-sm text-muted-foreground hover:bg-overlay-hover"
         >
           <Plus className="h-3.5 w-3.5" />
@@ -108,16 +135,39 @@ export const ListView = memo(function ListView({
 
 interface ListRowProps {
   row: DatabaseRow;
+  index: number;
   visibleProperties: DatabaseProperty[];
   workspaceSlug: string;
+  isFocused: boolean;
+  onRowFocus: (index: number) => void;
 }
 
-function ListRow({ row, visibleProperties, workspaceSlug }: ListRowProps) {
+function ListRow({
+  row,
+  index,
+  visibleProperties,
+  workspaceSlug,
+  isFocused,
+  onRowFocus,
+}: ListRowProps) {
+  const handleFocus = useCallback(() => {
+    onRowFocus(index);
+  }, [onRowFocus, index]);
+
   return (
     <Link
       href={`/${workspaceSlug}/${row.page.id}`}
-      className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-overlay-hover"
+      className={cn(
+        "flex items-center gap-2 px-3 py-2 text-sm hover:bg-overlay-hover",
+        "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+        isFocused && "ring-2 ring-ring ring-offset-2",
+      )}
       role="listitem"
+      tabIndex={0}
+      aria-selected={isFocused}
+      data-testid="list-row"
+      data-list-index={index}
+      onFocus={handleFocus}
     >
       {/* Row icon */}
       <span className="flex h-4 w-4 shrink-0 items-center justify-center text-base">
