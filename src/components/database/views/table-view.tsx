@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { DatabaseEmptyState } from "@/components/database/views/database-empty-state";
 import { PROPERTY_TYPE_ICON } from "@/lib/property-icons";
 import { PropertyTypePicker } from "@/components/database/property-type-picker";
@@ -25,11 +25,44 @@ import {
 const TITLE_COLUMN_WIDTH = 260;
 const DEFAULT_COLUMN_WIDTH = 180;
 
+// On mobile, enforce minimum row height of 44px for touch targets
 const ROW_HEIGHT_CLASS: Record<NonNullable<DatabaseViewConfig["row_height"]>, string> = {
-  compact: "h-8",
-  default: "h-10",
+  compact: "h-8 md:h-8 min-h-[44px] md:min-h-0",
+  default: "h-10 md:h-10 min-h-[44px] md:min-h-0",
   tall: "h-14",
 };
+
+// ---------------------------------------------------------------------------
+// useScrollShadow — shows gradient shadows on scrollable edges
+// ---------------------------------------------------------------------------
+
+function useScrollShadow() {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const update = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 0);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", update);
+      ro.disconnect();
+    };
+  }, [update]);
+
+  return { scrollRef, canScrollLeft, canScrollRight };
+}
 
 export interface TableViewProps {
   rows: DatabaseRow[];
@@ -126,6 +159,9 @@ export const TableView = memo(function TableView({
     return cols.join(" ");
   }, [visibleProperties, columnWidths]);
 
+  // Scroll shadow for horizontal overflow (must be called before early returns)
+  const { scrollRef, canScrollLeft, canScrollRight } = useScrollShadow();
+
   // --- Loading skeleton ---
 
   if (loading) {
@@ -211,89 +247,108 @@ export const TableView = memo(function TableView({
   // --- Main table ---
 
   return (
-    <div className="w-full overflow-x-auto" data-testid="db-table-container">
+    <div className="relative w-full" data-testid="db-table-container">
+      {/* Left scroll shadow */}
       <div
-        ref={gridRef}
-        className="grid w-max min-w-full"
-        style={{ gridTemplateColumns }}
-        role="grid"
-        aria-label="Database table"
-        onKeyDown={handleFocusedCellKeyDown}
-      >
-        {/* Header row */}
-        <div role="row" style={{ display: "contents" }}>
-          {/* Title column header */}
-          <div
-            className="sticky top-0 z-10 border-b border-overlay-border bg-background p-2"
-            role="columnheader"
-          >
-            <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-              Title
-            </span>
+        className={cn(
+          "pointer-events-none absolute inset-y-0 left-0 z-20 w-4 bg-gradient-to-r from-background to-transparent transition-opacity",
+          canScrollLeft ? "opacity-100" : "opacity-0",
+        )}
+        aria-hidden="true"
+      />
+      {/* Right scroll shadow */}
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-y-0 right-0 z-20 w-4 bg-gradient-to-l from-background to-transparent transition-opacity",
+          canScrollRight ? "opacity-100" : "opacity-0",
+        )}
+        aria-hidden="true"
+      />
+
+      <div ref={scrollRef} className="w-full overflow-x-auto">
+        <div
+          ref={gridRef}
+          className="grid w-max min-w-full"
+          style={{ gridTemplateColumns }}
+          role="grid"
+          aria-label="Database table"
+          onKeyDown={handleFocusedCellKeyDown}
+        >
+          {/* Header row */}
+          <div role="row" style={{ display: "contents" }}>
+            {/* Title column header */}
+            <div
+              className="sticky top-0 z-10 border-b border-overlay-border bg-background p-2"
+              role="columnheader"
+            >
+              <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                Title
+              </span>
+            </div>
+
+            {/* Property column headers */}
+            {visibleProperties.map((prop, colIndex) => {
+              const sortRule = sorts.find((s) => s.property_id === prop.id);
+              const isDragging = columnDrag?.propertyId === prop.id;
+              const showDropBefore = !!(
+                columnDrag &&
+                columnDropTarget?.insertIndex === colIndex &&
+                columnDrag.propertyId !== prop.id
+              );
+              const showDropAfter = !!(
+                columnDrag &&
+                columnDropTarget?.insertIndex === colIndex + 1 &&
+                columnDrag.propertyId !== prop.id
+              );
+              return (
+                <TableColumnHeader
+                  key={prop.id}
+                  property={prop}
+                  colIndex={colIndex}
+                  sortRule={sortRule}
+                  isDragging={isDragging}
+                  showDropBefore={showDropBefore}
+                  showDropAfter={showDropAfter}
+                  resizingColumn={resizingColumn}
+                  onColumnReorder={onColumnReorder}
+                  onColumnHeaderClick={onColumnHeaderClick}
+                  onDeleteColumn={onDeleteColumn}
+                  onSortToggle={onSortToggle}
+                  onDragStart={handleColumnDragStart}
+                  onDragEnd={handleColumnDragEnd}
+                  onDragOver={handleColumnDragOver}
+                  onDrop={handleColumnDrop}
+                  onResizeStart={handleResizeStart}
+                />
+              );
+            })}
+
+            {/* Add column header button */}
+            <div className="sticky top-0 z-10 flex items-center border-b border-overlay-border bg-background px-2" data-testid="db-table-add-column">
+              {onAddColumn && <PropertyTypePicker onSelect={onAddColumn} />}
+            </div>
           </div>
 
-          {/* Property column headers */}
-          {visibleProperties.map((prop, colIndex) => {
-            const sortRule = sorts.find((s) => s.property_id === prop.id);
-            const isDragging = columnDrag?.propertyId === prop.id;
-            const showDropBefore = !!(
-              columnDrag &&
-              columnDropTarget?.insertIndex === colIndex &&
-              columnDrag.propertyId !== prop.id
-            );
-            const showDropAfter = !!(
-              columnDrag &&
-              columnDropTarget?.insertIndex === colIndex + 1 &&
-              columnDrag.propertyId !== prop.id
-            );
-            return (
-              <TableColumnHeader
-                key={prop.id}
-                property={prop}
-                colIndex={colIndex}
-                sortRule={sortRule}
-                isDragging={isDragging}
-                showDropBefore={showDropBefore}
-                showDropAfter={showDropAfter}
-                resizingColumn={resizingColumn}
-                onColumnReorder={onColumnReorder}
-                onColumnHeaderClick={onColumnHeaderClick}
-                onDeleteColumn={onDeleteColumn}
-                onSortToggle={onSortToggle}
-                onDragStart={handleColumnDragStart}
-                onDragEnd={handleColumnDragEnd}
-                onDragOver={handleColumnDragOver}
-                onDrop={handleColumnDrop}
-                onResizeStart={handleResizeStart}
-              />
-            );
-          })}
-
-          {/* Add column header button */}
-          <div className="sticky top-0 z-10 flex items-center border-b border-overlay-border bg-background px-2" data-testid="db-table-add-column">
-            {onAddColumn && <PropertyTypePicker onSelect={onAddColumn} />}
-          </div>
+          {/* Data rows */}
+          {rows.map((row, rowIndex) => (
+            <TableRow
+              key={row.page.id}
+              row={row}
+              rowIndex={rowIndex}
+              visibleProperties={visibleProperties}
+              allProperties={properties}
+              rowHeightClass={rowHeightClass}
+              workspaceSlug={workspaceSlug}
+              editingCell={editingCell}
+              focusedCell={focusedCell}
+              onStartEditing={startEditing}
+              onCellKeyDown={handleCellKeyDown}
+              onCellBlur={handleCellBlur}
+              onCellFocus={handleCellFocus}
+              onDeleteRow={onDeleteRow}
+            />
+          ))}
         </div>
-
-        {/* Data rows */}
-        {rows.map((row, rowIndex) => (
-          <TableRow
-            key={row.page.id}
-            row={row}
-            rowIndex={rowIndex}
-            visibleProperties={visibleProperties}
-            allProperties={properties}
-            rowHeightClass={rowHeightClass}
-            workspaceSlug={workspaceSlug}
-            editingCell={editingCell}
-            focusedCell={focusedCell}
-            onStartEditing={startEditing}
-            onCellKeyDown={handleCellKeyDown}
-            onCellBlur={handleCellBlur}
-            onCellFocus={handleCellFocus}
-            onDeleteRow={onDeleteRow}
-          />
-        ))}
       </div>
 
       {/* Add row button */}

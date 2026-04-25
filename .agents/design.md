@@ -558,7 +558,17 @@ When a database row is opened as a full page, properties display above the Lexic
 
 - Editor max-width stays `max-w-3xl` on all breakpoints.
 - Touch targets: minimum 44px on mobile.
-- No horizontal scroll on any breakpoint.
+- No horizontal scroll on any breakpoint (except database table view, which uses scroll shadows).
+
+### Database View Responsive Adaptations
+
+| View | Mobile (<768px) | Tablet (768–1023px) | Desktop (≥1024px) |
+|---|---|---|---|
+| Table | Horizontal scroll with gradient shadow indicators on edges; rows enforce `min-h-[44px]` for touch targets | Same as desktop | Default layout |
+| Board | Columns are `w-[85vw]` with `snap-x snap-mandatory` for swipe navigation; dot indicator + "N of M" label below | Default `w-72` columns | Default layout |
+| Calendar | Compact day list showing only days with items + today; no 7-column grid | Full month grid | Full month grid |
+| Gallery | Already responsive: `grid-cols-2 md:grid-cols-3 lg:grid-cols-4` | — | — |
+| List | Inherently mobile-friendly (single column) | — | — |
 
 ---
 
