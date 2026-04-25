@@ -3,6 +3,7 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { DatabaseEmptyState } from "@/components/database/views/database-empty-state";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type {
@@ -52,6 +53,10 @@ export interface CalendarViewProps {
   onAddRow?: (initialValues?: Record<string, Record<string, unknown>>) => void;
   /** Loading state — shows skeleton. */
   loading?: boolean;
+  /** Whether filters are currently active on the view */
+  hasActiveFilters?: boolean;
+  /** Callback to clear all active filters */
+  onClearFilters?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -65,6 +70,8 @@ export const CalendarView = memo(function CalendarView({
   workspaceSlug,
   onAddRow,
   loading = false,
+  hasActiveFilters = false,
+  onClearFilters,
 }: CalendarViewProps) {
   const now = new Date();
   const [viewYear, setViewYear] = useState(now.getFullYear());
@@ -169,6 +176,16 @@ export const CalendarView = memo(function CalendarView({
 
   if (loading) {
     return <CalendarSkeleton />;
+  }
+
+  // Filter-aware empty state — show when filters are active and no rows match
+  if (rows.length === 0 && hasActiveFilters) {
+    return (
+      <DatabaseEmptyState
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={onClearFilters}
+      />
+    );
   }
 
   // No date property configured — show prompt

@@ -369,6 +369,8 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   sorts={activeSorts}
                   onSortToggle={handleSortToggle}
                   totalRowCount={rows.length}
+                  hasActiveFilters={activeFilters.length > 0}
+                  onClearFilters={() => handleFiltersChange([])}
                 />
               ) : activeView?.type === "board" ? (
                 <BoardView
@@ -379,6 +381,8 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   onCardMove={handleCardMove}
                   onAddRow={handleAddRow}
                   onNavigate={router.push}
+                  hasActiveFilters={activeFilters.length > 0}
+                  onClearFilters={() => handleFiltersChange([])}
                 />
               ) : activeView?.type === "list" ? (
                 <ListView
@@ -388,6 +392,8 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   workspaceSlug={workspaceSlug}
                   onAddRow={handleAddRow}
                   onNavigate={router.push}
+                  hasActiveFilters={activeFilters.length > 0}
+                  onClearFilters={() => handleFiltersChange([])}
                 />
               ) : activeView?.type === "calendar" ? (
                 <CalendarView
@@ -396,6 +402,8 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   viewConfig={activeView.config}
                   workspaceSlug={workspaceSlug}
                   onAddRow={handleAddRow}
+                  hasActiveFilters={activeFilters.length > 0}
+                  onClearFilters={() => handleFiltersChange([])}
                 />
               ) : activeView?.type === "gallery" ? (
                 <GalleryView
@@ -405,6 +413,8 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   workspaceSlug={workspaceSlug}
                   onAddRow={handleAddRow}
                   onNavigate={router.push}
+                  hasActiveFilters={activeFilters.length > 0}
+                  onClearFilters={() => handleFiltersChange([])}
                 />
               ) : activeView ? (
                 <ComingSoonPlaceholder viewType={activeView.type} />

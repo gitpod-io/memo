@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useMemo } from "react";
-import { FileText } from "lucide-react";
+import { DatabaseEmptyState } from "@/components/database/views/database-empty-state";
 import { PROPERTY_TYPE_ICON } from "@/lib/property-icons";
 import { PropertyTypePicker } from "@/components/database/property-type-picker";
 import type { SortRule } from "@/lib/database-filters";
@@ -49,6 +49,10 @@ export interface TableViewProps {
   loading?: boolean;
   /** Total row count before filtering — used to show "X of Y rows" when filters are active */
   totalRowCount?: number;
+  /** Whether filters are currently active on the view */
+  hasActiveFilters?: boolean;
+  /** Callback to clear all active filters */
+  onClearFilters?: () => void;
 }
 
 export const TableView = memo(function TableView({
@@ -68,6 +72,8 @@ export const TableView = memo(function TableView({
   onSortToggle,
   loading = false,
   totalRowCount,
+  hasActiveFilters = false,
+  onClearFilters,
 }: TableViewProps) {
   const rowHeight = viewConfig.row_height ?? "default";
   const rowHeightClass = ROW_HEIGHT_CLASS[rowHeight];
@@ -177,13 +183,10 @@ export const TableView = memo(function TableView({
           })}
           <div className="border-b border-overlay-border p-2" />
         </div>
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <FileText className="mb-3 h-10 w-10 text-muted-foreground/30" />
-          <p className="text-sm text-muted-foreground">No rows yet</p>
-          <p className="mt-1 text-xs text-muted-foreground/60">
-            Click &quot;+ New&quot; below to add a row
-          </p>
-        </div>
+        <DatabaseEmptyState
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={onClearFilters}
+        />
         {onAddRow && (
           <button
             type="button"

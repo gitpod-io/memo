@@ -3,6 +3,7 @@
 import { memo, useCallback, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { DatabaseEmptyState } from "@/components/database/views/database-empty-state";
 import { getPropertyTypeConfig } from "@/components/database/property-types/index";
 import { evaluateFormulaForRow } from "@/components/database/property-types/formula";
 import type {
@@ -38,6 +39,10 @@ export interface BoardViewProps {
   onNavigate?: (path: string) => void;
   /** Loading state — shows skeleton. */
   loading?: boolean;
+  /** Whether filters are currently active on the view */
+  hasActiveFilters?: boolean;
+  /** Callback to clear all active filters */
+  onClearFilters?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -69,6 +74,8 @@ export const BoardView = memo(function BoardView({
   onAddRow,
   onNavigate,
   loading = false,
+  hasActiveFilters = false,
+  onClearFilters,
 }: BoardViewProps) {
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
@@ -194,6 +201,17 @@ export const BoardView = memo(function BoardView({
       <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
         Select a &quot;Group by&quot; property (select or status type) to use board view
       </div>
+    );
+  }
+
+  // --- Filter-aware empty state ---
+
+  if (rows.length === 0 && hasActiveFilters) {
+    return (
+      <DatabaseEmptyState
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={onClearFilters}
+      />
     );
   }
 

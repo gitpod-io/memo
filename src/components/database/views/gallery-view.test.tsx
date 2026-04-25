@@ -186,19 +186,15 @@ describe("GalleryView", () => {
   it("shows read-only empty state when no rows and no onAddRow", () => {
     render(<GalleryView {...defaultProps({ rows: [] })} />);
 
-    expect(screen.getByText("No pages yet")).toBeInTheDocument();
-    expect(
-      screen.getByText("This gallery doesn't have any pages."),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("db-empty-state-no-rows")).toBeInTheDocument();
+    expect(screen.getByText("No rows yet")).toBeInTheDocument();
   });
 
   it("shows editable empty state with add button when onAddRow is provided", () => {
     const onAddRow = vi.fn();
     render(<GalleryView {...defaultProps({ rows: [], onAddRow })} />);
 
-    expect(
-      screen.getByText(/No pages yet — click \+ to add one/),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("db-empty-state-no-rows")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Add new page" }),
     ).toBeInTheDocument();
