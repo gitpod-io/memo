@@ -69,13 +69,12 @@ export function FilterBar({
         e.target instanceof Node &&
         !dropdownRef.current.contains(e.target)
       ) {
-        setAddState({ step: "closed" });
-        setValueInput("");
+        closeDropdown();
       }
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [isDropdownOpen]);
+  }, [isDropdownOpen, closeDropdown]);
 
   // Close dropdown on Escape key
   useEffect(() => {
