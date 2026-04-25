@@ -5,6 +5,19 @@ import { lazyCaptureException } from "@/lib/capture";
 export { lazyCaptureException } from "@/lib/capture";
 
 /**
+ * Returns true when the current browser session is an E2E test run.
+ * Playwright's auth fixture sets `window.__SENTRY_DISABLED__` via
+ * `addInitScript` to prevent simulated errors from generating real
+ * Sentry events in production.
+ */
+export function isE2ETestSession(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    (window as unknown as Record<string, unknown>).__SENTRY_DISABLED__ === true
+  );
+}
+
+/**
  * Duck-type check for Supabase PostgrestError. Avoids importing the class
  * from `@supabase/supabase-js` which would pull the entire SDK (~59 kB)
  * into every page bundle.
