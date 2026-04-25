@@ -445,7 +445,16 @@ export function PageLinkPlugin(): JSX.Element | null {
           aria-label="Search pages"
         />
       </div>
-      <div className="max-h-[260px] overflow-y-auto p-1">
+      <div
+        className="max-h-[260px] overflow-y-auto p-1"
+        role="listbox"
+        aria-label="Page search results"
+        aria-activedescendant={
+          selectedIndex !== null && results[selectedIndex]
+            ? `page-link-option-${results[selectedIndex].id}`
+            : undefined
+        }
+      >
         {results.length === 0 && (
           <div className="px-2 py-3 text-center text-xs text-muted-foreground">
             {query.trim() ? "No pages found" : "No pages in workspace"}
@@ -454,6 +463,7 @@ export function PageLinkPlugin(): JSX.Element | null {
         {results.map((page, index) => (
           <button
             key={page.id}
+            id={`page-link-option-${page.id}`}
             className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm outline-none ${
               selectedIndex === index
                 ? "bg-overlay-active text-foreground"

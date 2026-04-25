@@ -334,10 +334,18 @@ export function SlashCommandPlugin(): JSX.Element | null {
           <div
             ref={menuRef}
             className="fixed z-50 max-h-[300px] w-64 overflow-y-auto rounded-sm border border-overlay-border bg-popover p-1 shadow-md"
+            role="listbox"
+            aria-label="Slash commands"
+            aria-activedescendant={
+              selectedIndex !== null && items[selectedIndex]
+                ? `slash-cmd-option-${items[selectedIndex].key}`
+                : undefined
+            }
           >
             {items.map((option, index) => (
               <button
                 key={option.key}
+                id={`slash-cmd-option-${option.key}`}
                 ref={(el) => option.setRefElement(el)}
                 className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm outline-none ${
                   selectedIndex === index
