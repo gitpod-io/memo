@@ -47,9 +47,9 @@ describe("gallery-view design spec compliance", () => {
   it("DatabaseEmptyState has icon, heading, and description", () => {
     // Design spec (.agents/design.md → Empty Database):
     // "Centered empty state within the database grid area."
-    // "Icon: ... 48px, text-muted-foreground."
-    // The empty state must render an icon (FileText for no-rows, FilterX for filtered)
-    expect(emptyStateSource).toMatch(/FileText\s+className="/);
+    // "Icon: Table2 from lucide-react, 48px, text-muted-foreground."
+    // The empty state must render an icon (Table2 for no-rows, FilterX for filtered)
+    expect(emptyStateSource).toMatch(/Table2\s+className="/);
     expect(emptyStateSource).toMatch(/FilterX\s+className="/);
 
     // Must have a description with text-sm text-muted-foreground

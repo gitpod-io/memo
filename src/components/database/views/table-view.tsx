@@ -186,6 +186,7 @@ export const TableView = memo(function TableView({
         <DatabaseEmptyState
           hasActiveFilters={hasActiveFilters}
           onClearFilters={onClearFilters}
+          onAddRow={onAddRow}
         />
         {onAddRow && (
           <button

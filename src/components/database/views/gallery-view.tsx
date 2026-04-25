@@ -165,6 +165,7 @@ export const GalleryView = memo(function GalleryView({
         <div className="col-span-full">
           <DatabaseEmptyState
             hasActiveFilters={false}
+            onAddRow={handleAddRow}
           />
         </div>
       )}

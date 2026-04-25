@@ -12,9 +12,25 @@ describe("DatabaseEmptyState", () => {
 
     expect(screen.getByText("No rows yet")).toBeInTheDocument();
     expect(
-      screen.getByText(/click .+\+ new.+ below to add a row/i),
+      screen.getByText("Add your first row to get started."),
     ).toBeInTheDocument();
     expect(screen.getByTestId("db-empty-state-no-rows")).toBeInTheDocument();
+  });
+
+  it("renders heading with correct design spec classes", () => {
+    const { container } = render(<DatabaseEmptyState hasActiveFilters={false} />);
+
+    const heading = container.querySelector("p.text-lg.font-medium");
+    expect(heading).toBeInTheDocument();
+    expect(heading).toHaveTextContent("No rows yet");
+  });
+
+  it("renders description with correct design spec classes", () => {
+    const { container } = render(<DatabaseEmptyState hasActiveFilters={false} />);
+
+    const description = container.querySelector("p.text-sm.text-muted-foreground");
+    expect(description).toBeInTheDocument();
+    expect(description).toHaveTextContent("Add your first row to get started.");
   });
 
   it("does not show 'Clear filters' button when hasActiveFilters is false", () => {
@@ -29,6 +45,31 @@ describe("DatabaseEmptyState", () => {
     expect(
       screen.queryByText("No rows match the active filters"),
     ).not.toBeInTheDocument();
+  });
+
+  // --- CTA button (Add a row) ---
+
+  it("renders 'Add a row' button when onAddRow is provided", () => {
+    render(<DatabaseEmptyState hasActiveFilters={false} onAddRow={vi.fn()} />);
+
+    expect(screen.getByTestId("db-empty-state-add-row")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /add a row/i })).toBeInTheDocument();
+  });
+
+  it("calls onAddRow when 'Add a row' button is clicked", async () => {
+    const user = userEvent.setup();
+    const onAddRow = vi.fn();
+
+    render(<DatabaseEmptyState hasActiveFilters={false} onAddRow={onAddRow} />);
+
+    await user.click(screen.getByTestId("db-empty-state-add-row"));
+    expect(onAddRow).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not render 'Add a row' button when onAddRow is undefined", () => {
+    render(<DatabaseEmptyState hasActiveFilters={false} />);
+
+    expect(screen.queryByTestId("db-empty-state-add-row")).not.toBeInTheDocument();
   });
 
   // --- Filters active (filtered empty) ---
@@ -81,5 +122,15 @@ describe("DatabaseEmptyState", () => {
     expect(
       screen.getByText("No rows match the active filters"),
     ).toBeInTheDocument();
+  });
+
+  it("renders filtered heading with correct design spec classes", () => {
+    const { container } = render(
+      <DatabaseEmptyState hasActiveFilters={true} onClearFilters={vi.fn()} />,
+    );
+
+    const heading = container.querySelector("p.text-lg.font-medium");
+    expect(heading).toBeInTheDocument();
+    expect(heading).toHaveTextContent("No rows match the active filters");
   });
 });
