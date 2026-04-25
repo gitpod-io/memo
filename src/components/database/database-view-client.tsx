@@ -19,6 +19,7 @@ import {
   DatabaseSkeleton,
 } from "@/components/database/database-view-helpers";
 import { CSVExportButton } from "@/components/database/csv-export-button";
+import { RowCountAnnouncer } from "@/components/database/views/row-count-announcer";
 import { Button } from "@/components/ui/button";
 import { loadDatabase, loadWorkspaceMembers } from "@/lib/database";
 import {
@@ -409,6 +410,12 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                 <ComingSoonPlaceholder viewType={activeView.type} />
               ) : null}
             </div>
+
+            {/* Screen-reader announcement for row count changes */}
+            <RowCountAnnouncer
+              filteredCount={displayedRows.length}
+              totalCount={rows.length}
+            />
           </>
         )}
       </div>
