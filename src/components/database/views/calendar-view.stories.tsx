@@ -222,3 +222,60 @@ export const ReadOnlyNoActions: Story = {
     onAddRow: undefined,
   },
 };
+
+export const Mobile: Story = {
+  name: "Mobile (375px)",
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-[375px] bg-background p-4">
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    rows: mockRows,
+    properties: mockProperties,
+    viewConfig: defaultConfig,
+  },
+};
+
+export const MobileWithOverflow: Story = {
+  name: "Mobile with Overflow (375px)",
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-[375px] bg-background p-4">
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    rows: overflowRows,
+    properties: mockProperties,
+    viewConfig: defaultConfig,
+  },
+};
+
+export const Tablet: Story = {
+  name: "Tablet (768px)",
+  parameters: {
+    viewport: { defaultViewport: "tablet" },
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-[768px] bg-background p-4">
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    rows: mockRows,
+    properties: mockProperties,
+    viewConfig: defaultConfig,
+  },
+};

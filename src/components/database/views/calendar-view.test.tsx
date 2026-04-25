@@ -48,6 +48,21 @@ vi.mock("@/components/ui/button", () => ({
   ),
 }));
 
+// Mock window.matchMedia for useMediaQuery (jsdom doesn't implement it)
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    onchange: null,
+    dispatchEvent: vi.fn(),
+  })),
+});
+
 // ---------------------------------------------------------------------------
 // Test data factories
 // ---------------------------------------------------------------------------

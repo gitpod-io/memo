@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { DatabaseEmptyState } from "@/components/database/views/database-empty-state";
@@ -216,34 +216,40 @@ export const BoardView = memo(function BoardView({
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="flex gap-3 overflow-x-auto pb-4"
-      role="region"
-      aria-label="Database board"
-      data-testid="db-board-container"
-      onKeyDown={handleKeyDown}
-    >
-      {columns.map((column, columnIndex) => (
-        <BoardColumn
-          key={column.id}
-          column={column}
-          columnIndex={columnIndex}
-          visibleProperties={visibleProperties}
-          allProperties={properties}
-          workspaceSlug={workspaceSlug}
-          dragState={dragState}
-          dropTarget={dropTarget}
-          focusedCard={focusedCard}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onAddCard={onAddRow ? handleAddCard : undefined}
-          onCardFocus={handleCardFocus}
-        />
-      ))}
+    <div>
+      <div
+        ref={containerRef}
+        className="flex gap-3 overflow-x-auto pb-4 md:snap-none snap-x snap-mandatory"
+        role="region"
+        aria-label="Database board"
+        data-testid="db-board-container"
+        onKeyDown={handleKeyDown}
+      >
+        {columns.map((column, columnIndex) => (
+          <BoardColumn
+            key={column.id}
+            column={column}
+            columnIndex={columnIndex}
+            totalColumns={columns.length}
+            visibleProperties={visibleProperties}
+            allProperties={properties}
+            workspaceSlug={workspaceSlug}
+            dragState={dragState}
+            dropTarget={dropTarget}
+            focusedCard={focusedCard}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onAddCard={onAddRow ? handleAddCard : undefined}
+            onCardFocus={handleCardFocus}
+          />
+        ))}
+      </div>
+
+      {/* Mobile column indicator */}
+      <BoardColumnIndicator containerRef={containerRef} totalColumns={columns.length} />
     </div>
   );
 });
@@ -255,6 +261,7 @@ export const BoardView = memo(function BoardView({
 interface BoardColumnProps {
   column: ColumnData;
   columnIndex: number;
+  totalColumns: number;
   visibleProperties: DatabaseProperty[];
   allProperties: DatabaseProperty[];
   workspaceSlug: string;
@@ -285,6 +292,7 @@ const COLOR_DOT_STYLES: Record<string, string> = {
 function BoardColumn({
   column,
   columnIndex,
+  totalColumns,
   visibleProperties,
   allProperties,
   workspaceSlug,
@@ -323,9 +331,9 @@ function BoardColumn({
   return (
     <div
       ref={columnRef}
-      className="w-72 shrink-0 bg-muted/50 p-2"
+      className="w-[85vw] shrink-0 snap-start bg-muted/50 p-2 md:w-72 md:snap-align-none"
       role="group"
-      aria-label={column.label}
+      aria-label={`${column.label}, column ${columnIndex + 1} of ${totalColumns}`}
       data-testid={`db-board-column-${column.id}`}
       data-column-label={column.label}
       onDragOver={handleColumnDragOver}
@@ -523,14 +531,78 @@ function CardPropertyValue({ property, value }: CardPropertyValueProps) {
 }
 
 // ---------------------------------------------------------------------------
+// BoardColumnIndicator — shows "N of M" on mobile when snap-scrolling
+// ---------------------------------------------------------------------------
+
+interface BoardColumnIndicatorProps {
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  totalColumns: number;
+}
+
+function BoardColumnIndicator({ containerRef, totalColumns }: BoardColumnIndicatorProps) {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || totalColumns <= 1) return;
+
+    function onScroll() {
+      if (!el) return;
+      const children = Array.from(el.children) as HTMLElement[];
+      if (children.length === 0) return;
+
+      // Find the column closest to the left edge of the scroll container
+      const scrollLeft = el.scrollLeft;
+      let closest = 0;
+      let closestDist = Infinity;
+      for (let i = 0; i < children.length; i++) {
+        const dist = Math.abs(children[i].offsetLeft - scrollLeft);
+        if (dist < closestDist) {
+          closestDist = dist;
+          closest = i;
+        }
+      }
+      setActiveIndex(closest);
+    }
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [containerRef, totalColumns]);
+
+  if (totalColumns <= 1) return null;
+
+  return (
+    <div
+      className="flex items-center justify-center gap-1 py-2 md:hidden"
+      aria-label={`Column ${activeIndex + 1} of ${totalColumns}`}
+      data-testid="db-board-column-indicator"
+    >
+      {Array.from({ length: totalColumns }).map((_, i) => (
+        <span
+          key={i}
+          className={cn(
+            "h-1.5 w-1.5 transition-colors",
+            i === activeIndex ? "bg-foreground" : "bg-muted-foreground/30",
+          )}
+        />
+      ))}
+      <span className="ml-1.5 text-xs text-muted-foreground">
+        {activeIndex + 1} of {totalColumns}
+      </span>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // BoardSkeleton
 // ---------------------------------------------------------------------------
 
 function BoardSkeleton() {
   return (
-    <div className="flex gap-3 overflow-x-auto pb-4">
+    <div className="flex gap-3 overflow-x-auto pb-4 md:snap-none snap-x snap-mandatory">
       {Array.from({ length: 4 }).map((_, colIdx) => (
-        <div key={colIdx} className="w-72 shrink-0 bg-muted/50 p-2">
+        <div key={colIdx} className="w-[85vw] shrink-0 snap-start bg-muted/50 p-2 md:w-72 md:snap-align-none">
           <div className="mb-2 flex items-center gap-1.5">
             <div className="h-2 w-2 animate-pulse bg-overlay-border" />
             <div className="h-3 w-16 animate-pulse bg-overlay-border" />

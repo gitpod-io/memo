@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DatabaseEmptyState } from "@/components/database/views/database-empty-state";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useMediaQuery } from "@/lib/use-media-query";
 import type {
   DatabaseProperty,
   DatabaseRow,
@@ -14,6 +15,8 @@ import type {
 import {
   buildCalendarGrid,
   groupRowsByDate,
+  getDaysInMonth,
+  toISODate,
   type CalendarCell,
 } from "./calendar-view-helpers";
 
@@ -77,6 +80,7 @@ export const CalendarView = memo(function CalendarView({
   const [viewYear, setViewYear] = useState(now.getFullYear());
   const [viewMonth, setViewMonth] = useState(now.getMonth());
   const containerRef = useRef<HTMLDivElement>(null);
+  const isMobile = useMediaQuery("(max-width: 767px)");
 
   // Resolve the date property
   const datePropertyId = viewConfig.date_property ?? null;
@@ -97,11 +101,37 @@ export const CalendarView = memo(function CalendarView({
     return groupRowsByDate(rows, datePropertyId);
   }, [rows, datePropertyId]);
 
-  // Build the calendar grid
+  // Build the calendar grid (used for desktop month view)
   const cells = useMemo(
     () => buildCalendarGrid(viewYear, viewMonth, rowsByDate),
     [viewYear, viewMonth, rowsByDate],
   );
+
+  // Build mobile day list — only days in the current month that have items, plus today
+  const mobileDays = useMemo(() => {
+    const daysInMonth = getDaysInMonth(viewYear, viewMonth);
+    const todayStr = toISODate(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
+    const result: CalendarCell[] = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = toISODate(viewYear, viewMonth, d);
+      const items = rowsByDate.get(date) ?? [];
+      const isToday = date === todayStr;
+      if (items.length > 0 || isToday) {
+        result.push({
+          date,
+          day: d,
+          isCurrentMonth: true,
+          isToday,
+          items,
+        });
+      }
+    }
+    return result;
+  }, [viewYear, viewMonth, rowsByDate, now]);
 
   // Navigation handlers
   function goToPrevMonth() {
@@ -242,34 +272,45 @@ export const CalendarView = memo(function CalendarView({
         </Button>
       </div>
 
-      {/* Day headers */}
-      <div className="grid grid-cols-7" role="row">
-        {DAY_HEADERS.map((day) => (
-          <div
-            key={day}
-            role="columnheader"
-            className="border border-overlay-border p-1 text-center text-xs uppercase tracking-widest text-muted-foreground"
-          >
-            {day}
+      {isMobile ? (
+        /* Mobile: compact day list */
+        <CalendarMobileList
+          days={mobileDays}
+          workspaceSlug={workspaceSlug}
+          onClick={onAddRow ? handleCellClick : undefined}
+        />
+      ) : (
+        <>
+          {/* Day headers */}
+          <div className="grid grid-cols-7" role="row">
+            {DAY_HEADERS.map((day) => (
+              <div
+                key={day}
+                role="columnheader"
+                className="border border-overlay-border p-1 text-center text-xs uppercase tracking-widest text-muted-foreground"
+              >
+                {day}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      {/* Calendar grid */}
-      <div
-        className="grid grid-cols-7"
-        role="grid"
-        aria-label={`${FULL_MONTHS[viewMonth]} ${viewYear} calendar`}
-      >
-        {cells.map((cell) => (
-          <CalendarDayCell
-            key={cell.date}
-            cell={cell}
-            workspaceSlug={workspaceSlug}
-            onClick={onAddRow ? handleCellClick : undefined}
-          />
-        ))}
-      </div>
+          {/* Calendar grid */}
+          <div
+            className="grid grid-cols-7"
+            role="grid"
+            aria-label={`${FULL_MONTHS[viewMonth]} ${viewYear} calendar`}
+          >
+            {cells.map((cell) => (
+              <CalendarDayCell
+                key={cell.date}
+                cell={cell}
+                workspaceSlug={workspaceSlug}
+                onClick={onAddRow ? handleCellClick : undefined}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 });
@@ -387,6 +428,83 @@ function CalendarDayCell({ cell, workspaceSlug, onClick }: CalendarDayCellProps)
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CalendarMobileList — compact day list for mobile viewports
+// ---------------------------------------------------------------------------
+
+const MOBILE_DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+interface CalendarMobileListProps {
+  days: CalendarCell[];
+  workspaceSlug: string;
+  onClick?: (date: string) => void;
+}
+
+function CalendarMobileList({ days, workspaceSlug, onClick }: CalendarMobileListProps) {
+  if (days.length === 0) {
+    return (
+      <div className="py-8 text-center text-sm text-muted-foreground">
+        No items this month
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="divide-y divide-overlay-border"
+      role="list"
+      aria-label="Calendar days"
+      data-testid="db-calendar-mobile-list"
+    >
+      {days.map((day) => {
+        const dateObj = new Date(day.date + "T00:00:00");
+        const dayName = MOBILE_DAY_NAMES[dateObj.getDay()];
+
+        return (
+          <div
+            key={day.date}
+            role="listitem"
+            className={cn(
+              "py-2",
+              day.isToday && "bg-accent/10",
+              onClick && "cursor-pointer",
+            )}
+            onClick={onClick ? () => onClick(day.date) : undefined}
+          >
+            {/* Day header */}
+            <div className="mb-1 flex items-center gap-2 px-1">
+              <span className="text-lg font-medium tabular-nums">{day.day}</span>
+              <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                {dayName}
+              </span>
+              {day.isToday && (
+                <span className="text-xs text-accent">Today</span>
+              )}
+            </div>
+
+            {/* Items */}
+            {day.items.length > 0 ? (
+              <div className="flex flex-col gap-0.5">
+                {day.items.map((row) => (
+                  <CalendarItem
+                    key={row.page.id}
+                    row={row}
+                    workspaceSlug={workspaceSlug}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="px-1 text-xs text-muted-foreground/50">
+                No items
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

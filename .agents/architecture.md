@@ -560,6 +560,7 @@ src/
 │   ├── track-event.ts      # Client-side usage event tracking (trackEventClient)
 │   ├── track-event-server.ts # Server-side usage event tracking (trackEvent)
 │   ├── types.ts            # Database entity types
+│   ├── use-media-query.ts  # Hook for reactive CSS media query matching (useSyncExternalStore)
 │   ├── use-persisted-expanded.ts # Hook for persisting sidebar tree expansion state to localStorage
 │   ├── use-screenshot.ts   # Hook for capturing screenshots via html2canvas (feedback form)
 │   ├── utils.ts            # cn() utility (clsx + tailwind-merge)
