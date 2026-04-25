@@ -176,6 +176,16 @@ export const EmptyReadOnly: Story = {
   },
 };
 
+export const FilteredEmpty: Story = {
+  args: {
+    rows: [],
+    properties: mockProperties,
+    viewConfig: defaultConfig,
+    hasActiveFilters: true,
+    onClearFilters: fn(),
+  },
+};
+
 export const Loading: Story = {
   args: {
     rows: [],

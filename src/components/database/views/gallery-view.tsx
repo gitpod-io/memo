@@ -2,7 +2,8 @@
 
 import { memo, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { ImageIcon, LayoutGrid, Plus } from "lucide-react";
+import { ImageIcon, Plus } from "lucide-react";
+import { DatabaseEmptyState } from "@/components/database/views/database-empty-state";
 import { cn } from "@/lib/utils";
 import type {
   DatabaseProperty,
@@ -36,6 +37,10 @@ export interface GalleryViewProps {
   onNavigate?: (path: string) => void;
   /** Loading state — shows skeleton. */
   loading?: boolean;
+  /** Whether filters are currently active on the view */
+  hasActiveFilters?: boolean;
+  /** Callback to clear all active filters */
+  onClearFilters?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -79,6 +84,8 @@ export const GalleryView = memo(function GalleryView({
   onAddRow,
   onNavigate,
   loading = false,
+  hasActiveFilters = false,
+  onClearFilters,
 }: GalleryViewProps) {
   const cardSize = viewConfig.card_size ?? "medium";
   const cardSizeClass = CARD_SIZE_CLASS[cardSize];
@@ -102,15 +109,20 @@ export const GalleryView = memo(function GalleryView({
     return <GallerySkeleton cardSizeClass={cardSizeClass} />;
   }
 
+  if (rows.length === 0 && hasActiveFilters) {
+    return (
+      <DatabaseEmptyState
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={onClearFilters}
+      />
+    );
+  }
+
   if (rows.length === 0 && !onAddRow) {
     return (
-      <div className="flex h-48 flex-col items-center justify-center gap-2">
-        <LayoutGrid className="h-12 w-12 text-muted-foreground" />
-        <p className="text-lg font-medium">No pages yet</p>
-        <p className="text-sm text-muted-foreground">
-          This gallery doesn&apos;t have any pages.
-        </p>
-      </div>
+      <DatabaseEmptyState
+        hasActiveFilters={false}
+      />
     );
   }
 
@@ -150,8 +162,10 @@ export const GalleryView = memo(function GalleryView({
         </button>
       )}
       {rows.length === 0 && onAddRow && (
-        <div className="col-span-full flex h-32 items-center justify-center text-sm text-muted-foreground">
-          No pages yet — click + to add one
+        <div className="col-span-full">
+          <DatabaseEmptyState
+            hasActiveFilters={false}
+          />
         </div>
       )}
     </div>

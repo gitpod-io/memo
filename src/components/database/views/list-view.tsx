@@ -3,6 +3,7 @@
 import { memo, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { FileText, Plus } from "lucide-react";
+import { DatabaseEmptyState } from "@/components/database/views/database-empty-state";
 import { cn } from "@/lib/utils";
 import type {
   DatabaseProperty,
@@ -29,6 +30,10 @@ export interface ListViewProps {
   onNavigate?: (path: string) => void;
   /** Loading state — shows skeleton. */
   loading?: boolean;
+  /** Whether filters are currently active on the view */
+  hasActiveFilters?: boolean;
+  /** Callback to clear all active filters */
+  onClearFilters?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -43,6 +48,8 @@ export const ListView = memo(function ListView({
   onAddRow,
   onNavigate,
   loading = false,
+  hasActiveFilters = false,
+  onClearFilters,
 }: ListViewProps) {
   // Visible properties configured for this view
   const visibleProperties = useMemo(() => {
@@ -74,13 +81,10 @@ export const ListView = memo(function ListView({
   if (rows.length === 0) {
     return (
       <div className="w-full">
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <FileText className="mb-3 h-10 w-10 text-muted-foreground/30" />
-          <p className="text-sm text-muted-foreground">No rows yet</p>
-          <p className="mt-1 text-xs text-muted-foreground/60">
-            Click &quot;+ New&quot; below to add a row
-          </p>
-        </div>
+        <DatabaseEmptyState
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={onClearFilters}
+        />
         {onAddRow && (
           <button
             type="button"

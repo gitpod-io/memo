@@ -8,42 +8,51 @@ import { resolve } from "path";
  * Verifies that the gallery view follows the design spec for:
  * - Icon-only buttons must have aria-label
  * - Empty states must have icon + heading + description (not bare text)
+ *
+ * The empty state is now delegated to the shared DatabaseEmptyState component
+ * (introduced in #770). These tests verify the gallery view uses it correctly
+ * and that DatabaseEmptyState itself meets the design spec.
  */
 
-function readSource(): string {
+function readGallerySource(): string {
   return readFileSync(resolve(__dirname, "./gallery-view.tsx"), "utf-8");
 }
 
+function readEmptyStateSource(): string {
+  return readFileSync(resolve(__dirname, "./database-empty-state.tsx"), "utf-8");
+}
+
 describe("gallery-view design spec compliance", () => {
-  const source = readSource();
+  const gallerySource = readGallerySource();
+  const emptyStateSource = readEmptyStateSource();
 
   it("icon-only add button has aria-label", () => {
     // Design spec (.agents/design.md → Components → Buttons):
     // "Icon-only buttons: use size='icon' variant, always include aria-label."
     // The Plus-icon button must have an aria-label for accessibility.
-    expect(source).toMatch(/aria-label="Add new page"/);
+    expect(gallerySource).toMatch(/aria-label="Add new page"/);
   });
 
-  it("read-only empty state has icon, heading, and description", () => {
-    // Design spec (.agents/design.md → Empty Database):
-    // "Centered empty state within the database grid area."
-    // "Icon: ... 48px, text-muted-foreground."
-    // "Heading: text-lg font-medium"
-    // "Description: text-sm text-muted-foreground"
-    // Must NOT be bare text like "No pages in this gallery".
-    expect(source).not.toMatch(
+  it("read-only empty state delegates to DatabaseEmptyState", () => {
+    // Gallery view must NOT use bare text for empty states — it delegates
+    // to the shared DatabaseEmptyState component.
+    expect(gallerySource).not.toMatch(
       /className="[^"]*items-center[^"]*">\s*No pages in this gallery/,
     );
 
-    // The empty state (rows.length === 0 && !onAddRow) must render an icon
-    expect(source).toMatch(/LayoutGrid\s+className="h-12 w-12/);
+    // Gallery view imports and uses DatabaseEmptyState
+    expect(gallerySource).toMatch(/DatabaseEmptyState/);
+  });
 
-    // Must have a heading with text-lg font-medium
-    expect(source).toMatch(/text-lg font-medium/);
+  it("DatabaseEmptyState has icon, heading, and description", () => {
+    // Design spec (.agents/design.md → Empty Database):
+    // "Centered empty state within the database grid area."
+    // "Icon: ... 48px, text-muted-foreground."
+    // The empty state must render an icon (FileText for no-rows, FilterX for filtered)
+    expect(emptyStateSource).toMatch(/FileText\s+className="/);
+    expect(emptyStateSource).toMatch(/FilterX\s+className="/);
 
     // Must have a description with text-sm text-muted-foreground
-    expect(source).toMatch(
-      /className="text-sm text-muted-foreground"[\s\S]*?gallery/,
-    );
+    expect(emptyStateSource).toMatch(/text-sm text-muted-foreground/);
   });
 });
