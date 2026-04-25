@@ -144,22 +144,56 @@ export const HorizontalRule: Story = {
 };
 
 export const Callouts: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Callout blocks use `role=\"note\"` and `aria-label` with the variant name " +
+          "(e.g. \"Info callout\") so screen readers can distinguish them from regular " +
+          "content. The emoji span has `aria-hidden=\"true\"` to avoid redundant output.",
+      },
+    },
+  },
   render: () => (
     <div className="mx-auto max-w-2xl space-y-2">
-      <div className="mt-3 flex gap-3 border-l-2 border-l-accent bg-muted p-4 text-sm">
-        <span className="shrink-0 text-lg">💡</span>
+      <div
+        className="mt-3 flex gap-3 border-l-2 border-l-accent bg-muted p-4 text-sm"
+        role="note"
+        aria-label="Info callout"
+      >
+        <span className="shrink-0 text-lg" aria-hidden="true">
+          💡
+        </span>
         <span>Info callout — useful tips and information.</span>
       </div>
-      <div className="mt-3 flex gap-3 border-l-2 border-l-code-type bg-muted p-4 text-sm">
-        <span className="shrink-0 text-lg">⚠️</span>
+      <div
+        className="mt-3 flex gap-3 border-l-2 border-l-code-type bg-muted p-4 text-sm"
+        role="note"
+        aria-label="Warning callout"
+      >
+        <span className="shrink-0 text-lg" aria-hidden="true">
+          ⚠️
+        </span>
         <span>Warning callout — proceed with caution.</span>
       </div>
-      <div className="mt-3 flex gap-3 border-l-2 border-l-code-string bg-muted p-4 text-sm">
-        <span className="shrink-0 text-lg">✅</span>
+      <div
+        className="mt-3 flex gap-3 border-l-2 border-l-code-string bg-muted p-4 text-sm"
+        role="note"
+        aria-label="Success callout"
+      >
+        <span className="shrink-0 text-lg" aria-hidden="true">
+          ✅
+        </span>
         <span>Success callout — operation completed.</span>
       </div>
-      <div className="mt-3 flex gap-3 border-l-2 border-l-destructive bg-muted p-4 text-sm">
-        <span className="shrink-0 text-lg">❌</span>
+      <div
+        className="mt-3 flex gap-3 border-l-2 border-l-destructive bg-muted p-4 text-sm"
+        role="note"
+        aria-label="Error callout"
+      >
+        <span className="shrink-0 text-lg" aria-hidden="true">
+          ❌
+        </span>
         <span>Error callout — something went wrong.</span>
       </div>
     </div>

@@ -31,6 +31,13 @@ const VARIANT_CLASSES: Record<CalloutVariant, string> = {
   error: "border-l-destructive bg-muted",
 };
 
+const VARIANT_LABELS: Record<CalloutVariant, string> = {
+  info: "Info callout",
+  warning: "Warning callout",
+  success: "Success callout",
+  error: "Error callout",
+};
+
 const BASE_CLASSES = "mt-3 flex gap-3 border-l-2 p-4 text-sm";
 
 export class CalloutNode extends ElementNode {
@@ -72,10 +79,13 @@ export class CalloutNode extends ElementNode {
   createDOM(): HTMLElement {
     const div = document.createElement("div");
     div.className = `${BASE_CLASSES} ${VARIANT_CLASSES[this.__variant]}`;
+    div.role = "note";
+    div.setAttribute("aria-label", VARIANT_LABELS[this.__variant]);
 
     const emojiSpan = document.createElement("span");
     emojiSpan.className = "callout-emoji select-none text-lg shrink-0";
     emojiSpan.contentEditable = "false";
+    emojiSpan.setAttribute("aria-hidden", "true");
     emojiSpan.textContent = this.__emoji;
     div.appendChild(emojiSpan);
 
@@ -85,6 +95,7 @@ export class CalloutNode extends ElementNode {
   updateDOM(prevNode: CalloutNode, dom: HTMLElement): boolean {
     if (prevNode.__variant !== this.__variant) {
       dom.className = `${BASE_CLASSES} ${VARIANT_CLASSES[this.__variant]}`;
+      dom.setAttribute("aria-label", VARIANT_LABELS[this.__variant]);
     }
     if (prevNode.__emoji !== this.__emoji) {
       const emojiSpan = dom.querySelector(".callout-emoji");
