@@ -229,8 +229,24 @@ captureSupabaseError(error, "editor:save");
 lazyCaptureException(error);
 ```
 
-Reserve `lazyCaptureException` for non-Supabase errors (e.g. Lexical editor
-framework errors, unexpected runtime exceptions).
+Reserve `lazyCaptureException` for errors that have no structured classification
+(e.g. Lexical editor framework errors, unexpected runtime exceptions).
+
+### Always use `captureApiError` for internal API fetch errors
+
+Non-Supabase fetch calls (e.g. `/api/pages/…/versions`) must use `captureApiError`
+from `@/lib/sentry`, not `lazyCaptureException`. This classifies transient network
+errors (`TypeError: Failed to fetch`, `Load failed`) at warning level.
+
+```typescript
+import { captureApiError } from "@/lib/sentry";
+
+// ✅ Correct — classifies transient network errors
+captureApiError(error, "versions:fetch");
+
+// ❌ Wrong — bypasses transient network classification
+lazyCaptureException(error);
+```
 
 ### Retrying transient network errors
 

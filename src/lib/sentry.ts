@@ -371,6 +371,28 @@ export function isTransientNetworkError(error: Error): boolean {
 }
 
 /**
+ * Report an internal API fetch error to Sentry with structured context.
+ *
+ * Use this for non-Supabase fetch calls (e.g. `/api/pages/…/versions`).
+ * Transient network errors are captured at `warning` level to reduce noise.
+ * All other errors are captured at `error` level.
+ */
+export function captureApiError(error: unknown, operation: string): void {
+  const extra: Record<string, string> = { operation };
+
+  if (error instanceof Error) {
+    extra.message = error.message;
+
+    if (isTransientNetworkError(error)) {
+      lazyCaptureException(error, { extra, level: "warning" });
+      return;
+    }
+  }
+
+  lazyCaptureException(error, { extra });
+}
+
+/**
  * Report a Supabase error to Sentry with structured context.
  *
  * Accepts both PostgrestError (from query/mutation results) and generic Error

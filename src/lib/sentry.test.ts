@@ -106,7 +106,8 @@ describe("error handling conventions", () => {
           // Check if Sentry capture exists anywhere in the same file
           const hasSentryCapture =
             content.includes("Sentry.captureException") ||
-            content.includes("captureSupabaseError");
+            content.includes("captureSupabaseError") ||
+            content.includes("captureApiError");
 
           if (!hasSentryCapture) {
             violations.push(`${rel}:${i + 1}`);
@@ -117,7 +118,7 @@ describe("error handling conventions", () => {
 
     expect(
       violations,
-      `console.error without Sentry capture found outside allowlist. Add Sentry.captureException or captureSupabaseError:\n${violations.join("\n")}`,
+      `console.error without Sentry capture found outside allowlist. Add Sentry.captureException, captureSupabaseError, or captureApiError:\n${violations.join("\n")}`,
     ).toEqual([]);
   });
 
