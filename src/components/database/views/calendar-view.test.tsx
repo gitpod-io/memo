@@ -249,6 +249,34 @@ describe("CalendarView", () => {
     });
   });
 
+  // --- Clicking day number span triggers onAddRow (#780) ---
+
+  it("clicking the day number span inside a cell triggers onAddRow", () => {
+    const onAddRow = vi.fn();
+    const dateProp = makeDateProperty();
+
+    render(
+      <CalendarView
+        {...defaultProps({
+          rows: [],
+          properties: [dateProp],
+          onAddRow,
+        })}
+      />,
+    );
+
+    // Click the day number span (a child of the cell div), not the cell itself.
+    // Before the fix for #780, this would not trigger onAddRow because the
+    // handler checked e.target === e.currentTarget.
+    const march5Cell = screen.getByRole("gridcell", { name: "2025-03-05" });
+    const daySpan = within(march5Cell).getByText("5");
+    fireEvent.click(daySpan);
+
+    expect(onAddRow).toHaveBeenCalledWith({
+      "prop-date": { date: "2025-03-05" },
+    });
+  });
+
   // --- No date property configured ---
 
   it("shows prompt when no date property is configured", () => {
