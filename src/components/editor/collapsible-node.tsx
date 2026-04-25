@@ -58,6 +58,7 @@ export class CollapsibleContainerNode extends ElementNode {
     const details = document.createElement("details");
     details.className =
       "mt-3 border border-overlay-border text-sm rounded-sm";
+    details.setAttribute("data-testid", "editor-collapsible");
     if (this.__open) {
       details.open = true;
     }
@@ -136,6 +137,7 @@ export class CollapsibleTitleNode extends ElementNode {
     chevron.className =
       "collapsible-toggle flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-overlay-active transition-transform duration-150";
     chevron.setAttribute("aria-label", "Toggle section");
+    chevron.setAttribute("data-testid", "editor-collapsible-toggle");
     chevron.innerHTML =
       '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
     summary.prepend(chevron);

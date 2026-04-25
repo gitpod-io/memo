@@ -63,7 +63,7 @@ test.describe("Editor auto-save", () => {
     await expect(editor).toBeVisible({ timeout: 10_000 });
 
     // The save status container is below the editor
-    const saveIndicator = page.locator("main .text-muted-foreground").last();
+    const saveIndicator = page.getByTestId("editor-save-status");
 
     // Type content to trigger auto-save
     await editor.click();

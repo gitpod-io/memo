@@ -81,11 +81,13 @@ export class CalloutNode extends ElementNode {
     div.className = `${BASE_CLASSES} ${VARIANT_CLASSES[this.__variant]}`;
     div.role = "note";
     div.setAttribute("aria-label", VARIANT_LABELS[this.__variant]);
+    div.setAttribute("data-testid", "editor-callout");
 
     const emojiSpan = document.createElement("span");
     emojiSpan.className = "callout-emoji select-none text-lg shrink-0";
     emojiSpan.contentEditable = "false";
     emojiSpan.setAttribute("aria-hidden", "true");
+    emojiSpan.setAttribute("data-testid", "editor-callout-emoji");
     emojiSpan.textContent = this.__emoji;
     div.appendChild(emojiSpan);
 

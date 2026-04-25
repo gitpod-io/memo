@@ -274,6 +274,7 @@ function ImageComponent({
     <figure
       className={`mt-3 flex flex-col ${ALIGNMENT_CLASSES[alignment]}`}
       data-image-node-key={nodeKey}
+      data-testid="editor-image"
     >
       <div className="relative inline-block">
         {/* eslint-disable-next-line @next/next/no-img-element -- Lexical DecoratorNode with user-uploaded dynamic URLs */}

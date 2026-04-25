@@ -437,6 +437,7 @@ export function DraggableBlockPlugin({
         aria-label="Drag to reorder block, click for block menu"
         role="button"
         tabIndex={0}
+        data-testid="editor-drag-handle"
       >
         <GripVertical className="h-5 w-5 text-muted-foreground hover:text-foreground" />
       </div>

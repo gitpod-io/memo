@@ -32,17 +32,17 @@ test.describe("Callout block", () => {
     await insertViaSlashCommand(page, "Callout");
 
     // The callout renders as a div with border-l-2 and an emoji span
-    const callout = editor.locator(".callout-emoji").first();
-    await expect(callout).toBeVisible({ timeout: 3_000 });
+    const calloutContainer = editor.getByTestId("editor-callout").first();
+    await expect(calloutContainer).toBeVisible({ timeout: 3_000 });
 
     // Verify the callout container has distinct styling (border-l-2 class)
     // that differentiates it from a code block
-    const calloutContainer = callout.locator("..");
     await expect(calloutContainer).toHaveClass(/border-l-2/);
     await expect(calloutContainer).toHaveClass(/bg-muted/);
 
     // The emoji should be the default 💡
-    await expect(callout).toHaveText("💡");
+    const calloutEmoji = calloutContainer.getByTestId("editor-callout-emoji");
+    await expect(calloutEmoji).toHaveText("💡");
 
     // Verify it does NOT look like a code block — code blocks use <code>
     // elements, callouts use a div with border-l styling
@@ -78,7 +78,7 @@ test.describe("Collapsible/Toggle block", () => {
     await expect(content).toBeVisible();
 
     // Click the chevron toggle button to collapse
-    const chevron = details.locator(".collapsible-toggle").first();
+    const chevron = details.getByTestId("editor-collapsible-toggle").first();
     await expect(chevron).toBeVisible();
     await chevron.click();
 
@@ -122,7 +122,7 @@ test.describe("Collapsible/Toggle block", () => {
     await expect(contentArea).toContainText("My custom toggle content");
 
     // Collapse and re-expand to verify content persists
-    const chevron = details.locator(".collapsible-toggle").first();
+    const chevron = details.getByTestId("editor-collapsible-toggle").first();
     await chevron.click();
     await expect(details).not.toHaveAttribute("open", "", { timeout: 2_000 });
 

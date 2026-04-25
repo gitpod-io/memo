@@ -37,7 +37,7 @@ async function openTurnIntoMenu(
   block: Locator,
 ): Promise<Locator> {
   await block.hover();
-  const dragHandle = page.locator(".memo-draggable-block-menu");
+  const dragHandle = page.getByTestId("editor-drag-handle");
   await expect(dragHandle).toHaveCSS("opacity", "1", { timeout: 2_000 });
   await dragHandle.click();
 
