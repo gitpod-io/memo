@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import type { SerializedEditorState } from "lexical";
+import { AlertCircle } from "lucide-react";
 import { PageTitle } from "@/components/page-title";
 import { PageIcon } from "@/components/page-icon";
 import { PageCover } from "@/components/page-cover";
@@ -18,7 +19,12 @@ import {
   DatabaseSkeleton,
 } from "@/components/database/database-view-helpers";
 import { CSVExportButton } from "@/components/database/csv-export-button";
+import { Button } from "@/components/ui/button";
 import { loadDatabase, loadWorkspaceMembers } from "@/lib/database";
+import {
+  captureSupabaseError,
+  isInsufficientPrivilegeError,
+} from "@/lib/sentry";
 import { useDatabaseViews } from "@/components/database/hooks/use-database-views";
 import { useDatabaseRows } from "@/components/database/hooks/use-database-rows";
 import { useDatabaseProperties } from "@/components/database/hooks/use-database-properties";
@@ -124,10 +130,15 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
   );
   const [rows, setRows] = useState<DatabaseRow[]>(initialData?.rows ?? []);
   const [loading, setLoading] = useState(!hasInitialData);
+  const [error, setError] = useState<string | null>(null);
+
+  // Incrementing this counter re-triggers the load effect (used by "Try again")
+  const [retryCount, setRetryCount] = useState(0);
 
   // Load database data and workspace members on mount (skipped when
   // server-prefetched initialData is provided — eliminates the second
-  // skeleton flash during database page navigation, #682)
+  // skeleton flash during database page navigation, #682).
+  // Bumping retryCount re-runs this effect for the "Try again" button.
   useEffect(() => {
     if (hasInitialData) return;
 
@@ -135,6 +146,8 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
 
     async function load() {
       setLoading(true);
+      setError(null);
+
       const [dbResult, membersResult] = await Promise.all([
         loadDatabase(pageId),
         loadWorkspaceMembers(workspaceId),
@@ -142,6 +155,12 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
       if (cancelled) return;
 
       if (dbResult.error || !dbResult.data) {
+        if (dbResult.error && !isInsufficientPrivilegeError(dbResult.error)) {
+          // loadDatabase already reports individual query errors to Sentry;
+          // this catches any error shape that slipped through without a report.
+          captureSupabaseError(dbResult.error, "database-view-client.load");
+        }
+        setError("Failed to load database. Please check your connection and try again.");
         setLoading(false);
         return;
       }
@@ -159,6 +178,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
       setProperties(enrichedProperties);
       setViews(dbResult.data.views);
       setRows(dbResult.data.rows);
+      setError(null);
       setLoading(false);
     }
 
@@ -166,7 +186,12 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     return () => {
       cancelled = true;
     };
-  }, [pageId, workspaceId, hasInitialData]);
+  }, [pageId, workspaceId, hasInitialData, retryCount]);
+
+  // Retry handler for the error state "Try again" button
+  const handleRetry = useCallback(() => {
+    setRetryCount((c) => c + 1);
+  }, []);
 
   // --- Hooks ---
 
@@ -259,6 +284,17 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
       <div className="mt-6">
         {loading ? (
           <DatabaseSkeleton />
+        ) : error ? (
+          <div className="flex min-h-[40vh] flex-col items-center justify-center p-6">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <AlertCircle className="h-12 w-12 text-muted-foreground" />
+              <h2 className="text-lg font-medium">Something went wrong</h2>
+              <p className="max-w-sm text-sm text-muted-foreground">
+                {error}
+              </p>
+              <Button onClick={handleRetry}>Try again</Button>
+            </div>
+          </div>
         ) : (
           <>
             {views.length > 0 && (

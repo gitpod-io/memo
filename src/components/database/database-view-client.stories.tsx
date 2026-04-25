@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
+import { AlertCircle } from "lucide-react";
 import { ViewTabs } from "./view-tabs";
+import { Button } from "@/components/ui/button";
 import type { DatabaseView } from "@/lib/types";
 
 // DatabaseViewClient depends on next/navigation, Supabase, and dynamic imports.
@@ -117,6 +119,29 @@ export const ComingSoonView: Story = {
         />
         <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
           Board view coming soon
+        </div>
+      </div>
+    </div>
+  ),
+};
+
+export const ErrorState: Story = {
+  render: () => (
+    <div className="mx-auto max-w-3xl space-y-4">
+      <div>
+        <span className="text-3xl">📊</span>
+        <h1 className="mt-1 text-3xl font-bold text-foreground">
+          Project Tracker
+        </h1>
+      </div>
+      <div className="flex min-h-[40vh] flex-col items-center justify-center p-6">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <AlertCircle className="h-12 w-12 text-muted-foreground" />
+          <h2 className="text-lg font-medium">Something went wrong</h2>
+          <p className="max-w-sm text-sm text-muted-foreground">
+            Failed to load database. Please check your connection and try again.
+          </p>
+          <Button onClick={fn()}>Try again</Button>
         </div>
       </div>
     </div>
