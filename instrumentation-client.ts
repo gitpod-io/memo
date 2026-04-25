@@ -9,6 +9,7 @@ import("@sentry/nextjs").then(async (Sentry) => {
   // The filter functions only inspect the event object — they have no
   // Sentry runtime dependency.
   const {
+    isE2ETestSession,
     isNextjsInternalNoise,
     isReactLexicalDomConflict,
     isSupabaseAuthLockContention,
@@ -31,6 +32,7 @@ import("@sentry/nextjs").then(async (Sentry) => {
     integrations: [Sentry.replayIntegration()],
 
     beforeSend(event) {
+      if (isE2ETestSession()) return null;
       if (isNextjsInternalNoise(event)) return null;
       if (isReactLexicalDomConflict(event)) return null;
       if (isSupabaseAuthLockContention(event)) return null;

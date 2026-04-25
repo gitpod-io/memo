@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { ErrorEvent } from "@sentry/nextjs";
 import { PostgrestError } from "@supabase/supabase-js";
 
@@ -24,6 +24,7 @@ import {
   captureApiError,
   isNextjsInternalNoise,
   isReactLexicalDomConflict,
+  isE2ETestSession,
 } from "./sentry";
 
 function makePostgrestError(
@@ -1149,5 +1150,32 @@ describe("captureApiError", () => {
     expect(captureExceptionMock).toHaveBeenCalledOnce();
     const [, opts] = captureExceptionMock.mock.calls[0];
     expect(opts.extra.operation).toBe("versions:select");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isE2ETestSession — prevents simulated E2E errors from reaching Sentry
+// ---------------------------------------------------------------------------
+
+describe("isE2ETestSession", () => {
+  const win = window as unknown as Record<string, unknown>;
+
+  afterEach(() => {
+    delete win.__SENTRY_DISABLED__;
+  });
+
+  it("returns true when __SENTRY_DISABLED__ is set on window", () => {
+    win.__SENTRY_DISABLED__ = true;
+    expect(isE2ETestSession()).toBe(true);
+  });
+
+  it("returns false when __SENTRY_DISABLED__ is not set", () => {
+    delete win.__SENTRY_DISABLED__;
+    expect(isE2ETestSession()).toBe(false);
+  });
+
+  it("returns false when __SENTRY_DISABLED__ is a non-true value", () => {
+    win.__SENTRY_DISABLED__ = "true";
+    expect(isE2ETestSession()).toBe(false);
   });
 });

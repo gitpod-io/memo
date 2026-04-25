@@ -19,6 +19,13 @@ export const test = base.extend<{ authenticatedPage: Page }>({
     const context = await browser.newContext();
     const page = await context.newPage();
 
+    // Disable Sentry in E2E sessions to prevent simulated errors from
+    // generating real Sentry events in production. The flag is checked
+    // by the beforeSend filter in instrumentation-client.ts.
+    await page.addInitScript(() => {
+      (window as unknown as Record<string, unknown>).__SENTRY_DISABLED__ = true;
+    });
+
     await page.goto("/sign-in");
 
     // Wait for React hydration to complete before filling controlled inputs.
