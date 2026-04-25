@@ -185,6 +185,9 @@ export function usePageTreeActions({
     const { data, error } = await createDatabase(workspaceId, userId);
 
     if (error || !data) {
+      if (error && !isInsufficientPrivilegeError(error)) {
+        captureSupabaseError(error, "page-tree:create-database");
+      }
       toast.error("Failed to create database", { duration: 8000 });
       return;
     }

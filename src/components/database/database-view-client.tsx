@@ -157,8 +157,6 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
 
       if (dbResult.error || !dbResult.data) {
         if (dbResult.error && !isInsufficientPrivilegeError(dbResult.error)) {
-          // loadDatabase already reports individual query errors to Sentry;
-          // this catches any error shape that slipped through without a report.
           captureSupabaseError(dbResult.error, "database-view-client.load");
         }
         setError("Failed to load database. Please check your connection and try again.");

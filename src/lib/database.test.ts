@@ -164,7 +164,7 @@ describe("createDatabase", () => {
     expect(result.data!.view.type).toBe("table");
   });
 
-  it("returns error and captures to Sentry when page insert fails", async () => {
+  it("returns error without capturing to Sentry when page insert fails", async () => {
     const dbError = new Error("RLS violation");
     mockTable("pages", { data: null, error: dbError });
 
@@ -172,10 +172,7 @@ describe("createDatabase", () => {
 
     expect(result.error).toBe(dbError);
     expect(result.data).toBeNull();
-    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
-      dbError,
-      "database.create:page",
-    );
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
   });
 
   it("cleans up page when property insert fails", async () => {
@@ -186,10 +183,7 @@ describe("createDatabase", () => {
     const result = await createDatabase("ws-1", "user-1");
 
     expect(result.error).toBe(propError);
-    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
-      propError,
-      "database.create:property",
-    );
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
     expect(tableMocks["pages"].calls["delete"]).toBeDefined();
   });
 
@@ -202,10 +196,7 @@ describe("createDatabase", () => {
     const result = await createDatabase("ws-1", "user-1");
 
     expect(result.error).toBe(viewError);
-    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
-      viewError,
-      "database.create:view",
-    );
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
     expect(tableMocks["pages"].calls["delete"]).toBeDefined();
   });
 });
@@ -227,17 +218,14 @@ describe("deleteDatabase", () => {
     expect(eqCalls).toContainEqual(["is_database", true]);
   });
 
-  it("captures error on failure", async () => {
+  it("returns error without capturing to Sentry on failure", async () => {
     const dbError = new Error("delete failed");
     mockTable("pages", { data: null, error: dbError });
 
     const result = await deleteDatabase("page-1");
 
     expect(result.error).toBe(dbError);
-    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
-      dbError,
-      "database.delete",
-    );
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
   });
 });
 
@@ -299,17 +287,14 @@ describe("addProperty", () => {
     expect(insertedRow.config).toEqual({});
   });
 
-  it("captures error on failure", async () => {
+  it("returns error without capturing to Sentry on failure", async () => {
     const dbError = new Error("duplicate name");
     mockTable("database_properties", { data: null, error: dbError });
 
     const result = await addProperty("page-1", "Title", "text");
 
     expect(result.error).toBe(dbError);
-    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
-      dbError,
-      "database.addProperty",
-    );
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
   });
 
   // Per-type tests: verify the correct payload is sent to Supabase for each type.
@@ -400,17 +385,14 @@ describe("updateProperty", () => {
     expect(result.data!.name).toBe("New Name");
   });
 
-  it("captures error on failure", async () => {
+  it("returns error without capturing to Sentry on failure", async () => {
     const dbError = new Error("update failed");
     mockTable("database_properties", { data: null, error: dbError });
 
     const result = await updateProperty("prop-1", { name: "X" });
 
     expect(result.error).toBe(dbError);
-    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
-      dbError,
-      "database.updateProperty",
-    );
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
   });
 });
 
@@ -428,17 +410,14 @@ describe("deleteProperty", () => {
     expect(tableMocks["database_properties"].calls["delete"]).toBeDefined();
   });
 
-  it("captures error on failure", async () => {
+  it("returns error without capturing to Sentry on failure", async () => {
     const dbError = new Error("delete failed");
     mockTable("database_properties", { data: null, error: dbError });
 
     const result = await deleteProperty("prop-1");
 
     expect(result.error).toBe(dbError);
-    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
-      dbError,
-      "database.deleteProperty",
-    );
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
   });
 });
 
@@ -460,17 +439,14 @@ describe("reorderProperties", () => {
     expect(tableMocks["database_properties"].calls["update"]).toHaveLength(3);
   });
 
-  it("stops and returns error on first failure", async () => {
+  it("stops and returns error on first failure without capturing to Sentry", async () => {
     const dbError = new Error("update failed");
     mockTable("database_properties", { data: null, error: dbError });
 
     const result = await reorderProperties("page-1", ["prop-a", "prop-b"]);
 
     expect(result.error).toBe(dbError);
-    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
-      dbError,
-      "database.reorderProperties",
-    );
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
   });
 });
 
@@ -518,17 +494,14 @@ describe("addRow", () => {
     expect(tableMocks["row_values"].calls["insert"]).toBeDefined();
   });
 
-  it("captures error when page lookup fails", async () => {
+  it("returns error without capturing to Sentry when page lookup fails", async () => {
     const dbError = new Error("not found");
     mockTable("pages", { data: null, error: dbError });
 
     const result = await addRow("page-1", "user-1");
 
     expect(result.error).toBe(dbError);
-    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
-      dbError,
-      "database.addRow:lookup",
-    );
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
   });
 
   it("ignores non-plain-object initialValues (e.g. MouseEvent leaked from onClick)", async () => {
@@ -615,17 +588,14 @@ describe("addView", () => {
     expect(tableMocks["database_views"].calls["insert"]).toBeDefined();
   });
 
-  it("captures error on failure", async () => {
+  it("returns error without capturing to Sentry on failure", async () => {
     const dbError = new Error("insert failed");
     mockTable("database_views", { data: null, error: dbError });
 
     const result = await addView("page-1", "Board", "board");
 
     expect(result.error).toBe(dbError);
-    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
-      dbError,
-      "database.addView",
-    );
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
   });
 });
 
@@ -644,17 +614,14 @@ describe("updateView", () => {
     expect(result.data!.name).toBe("My Table");
   });
 
-  it("captures error on failure", async () => {
+  it("returns error without capturing to Sentry on failure", async () => {
     const dbError = new Error("update failed");
     mockTable("database_views", { data: null, error: dbError });
 
     const result = await updateView("view-1", { name: "X" });
 
     expect(result.error).toBe(dbError);
-    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
-      dbError,
-      "database.updateView",
-    );
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
   });
 });
 
@@ -691,17 +658,14 @@ describe("deleteView", () => {
     expect(tableMocks["database_views"].calls["delete"]).toBeDefined();
   });
 
-  it("captures error when lookup fails", async () => {
+  it("returns error without capturing to Sentry when lookup fails", async () => {
     const dbError = new Error("not found");
     mockTable("database_views", { data: null, error: dbError });
 
     const result = await deleteView("view-1");
 
     expect(result.error).toBe(dbError);
-    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
-      dbError,
-      "database.deleteView:lookup",
-    );
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
   });
 });
 
@@ -782,7 +746,7 @@ describe("loadDatabase", () => {
     expect(result.data!.rows).toHaveLength(0);
   });
 
-  it("returns error when properties query fails", async () => {
+  it("returns error without capturing to Sentry when properties query fails", async () => {
     const dbError = new Error("properties failed");
     mockTable("database_properties", { data: null, error: dbError });
     mockTable("database_views", { data: [], error: null });
@@ -791,13 +755,10 @@ describe("loadDatabase", () => {
     const result = await loadDatabase("page-1");
 
     expect(result.error).toBe(dbError);
-    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
-      dbError,
-      "database.load:properties",
-    );
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
   });
 
-  it("returns error when views query fails", async () => {
+  it("returns error without capturing to Sentry when views query fails", async () => {
     const dbError = new Error("views failed");
     mockTable("database_properties", {
       data: [FAKE_PROPERTY],
@@ -809,13 +770,10 @@ describe("loadDatabase", () => {
     const result = await loadDatabase("page-1");
 
     expect(result.error).toBe(dbError);
-    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
-      dbError,
-      "database.load:views",
-    );
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
   });
 
-  it("returns error when rows query fails", async () => {
+  it("returns error without capturing to Sentry when rows query fails", async () => {
     const dbError = new Error("rows failed");
     mockTable("database_properties", {
       data: [FAKE_PROPERTY],
@@ -827,10 +785,7 @@ describe("loadDatabase", () => {
     const result = await loadDatabase("page-1");
 
     expect(result.error).toBe(dbError);
-    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
-      dbError,
-      "database.load:rows",
-    );
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
   });
 });
 
@@ -880,7 +835,7 @@ describe("loadRow", () => {
     expect(result.data!.values["prop-2"].value).toEqual({ number: 42 });
   });
 
-  it("returns error when page lookup fails", async () => {
+  it("returns error without capturing to Sentry when page lookup fails", async () => {
     const dbError = new Error("not found");
     mockTable("pages", { data: null, error: dbError });
     mockTable("row_values", { data: [], error: null });
@@ -888,10 +843,7 @@ describe("loadRow", () => {
     const result = await loadRow("row-1");
 
     expect(result.error).toBe(dbError);
-    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
-      dbError,
-      "database.loadRow:page",
-    );
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
   });
 
   it("returns error when values query fails", async () => {
@@ -913,9 +865,6 @@ describe("loadRow", () => {
     const result = await loadRow("row-1");
 
     expect(result.error).toBe(dbError);
-    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
-      dbError,
-      "database.loadRow:values",
-    );
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
   });
 });

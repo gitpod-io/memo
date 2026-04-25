@@ -213,6 +213,21 @@ export function isEmptyResultError(error: Error): boolean {
 }
 
 /**
+ * True when PostgREST returns PGRST500 — an internal server error from the
+ * PostgREST layer. This may indicate a real server problem, but classifying
+ * it explicitly ensures the error code appears in Sentry extra data for
+ * consistent grouping and filtering.
+ *
+ * Kept at error level (not downgraded to warning) since PGRST500 may signal
+ * genuine server issues that need investigation.
+ *
+ * See: Sentry MEMO-22
+ */
+export function isPostgrestServerError(error: Error): boolean {
+  return isPostgrestError(error) && error.code === "PGRST500";
+}
+
+/**
  * True when the error is a Supabase Storage API timeout. These are server-side
  * connection pool timeouts returned as HTTP 544 responses, not client-side
  * fetch failures. The `StorageApiError` from `@supabase/storage-js` has
