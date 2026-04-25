@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { History, RotateCcw } from "lucide-react";
 import type { SerializedEditorState } from "lexical";
 import { toast } from "@/lib/toast";
-import { lazyCaptureException } from "@/lib/capture";
+import { captureApiError } from "@/lib/sentry";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -54,7 +54,7 @@ export function VersionHistoryPanel({
       const data = (await res.json()) as { versions: VersionSummary[] };
       setVersions(data.versions);
     } catch (error) {
-      lazyCaptureException(error);
+      captureApiError(error, "versions:fetch");
       toast.error("Failed to load version history", { duration: 8000 });
     } finally {
       setLoading(false);
@@ -83,7 +83,7 @@ export function VersionHistoryPanel({
         };
         onPreview(data.version.content);
       } catch (error) {
-        lazyCaptureException(error);
+        captureApiError(error, "versions:select");
         toast.error("Failed to load version preview", { duration: 8000 });
         setSelectedId(null);
       }
@@ -114,7 +114,7 @@ export function VersionHistoryPanel({
       onOpenChange(false);
       toast.success("Version restored");
     } catch (error) {
-      lazyCaptureException(error);
+      captureApiError(error, "versions:restore");
       toast.error("Failed to restore version", { duration: 8000 });
     } finally {
       setRestoring(false);

@@ -21,6 +21,7 @@ import {
   isSupabaseAuthLockError,
   isSupabaseAuthLockContention,
   captureSupabaseError,
+  captureApiError,
   isNextjsInternalNoise,
   isReactLexicalDomConflict,
 } from "./sentry";
@@ -1073,5 +1074,80 @@ describe("isSupabaseAuthLockContention", () => {
   it("returns false when exception is missing", () => {
     const event = { type: undefined } as ErrorEvent;
     expect(isSupabaseAuthLockContention(event)).toBe(false);
+  });
+});
+
+describe("captureApiError", () => {
+  beforeEach(() => {
+    captureExceptionMock.mockClear();
+  });
+
+  const flush = () => new Promise((r) => setTimeout(r, 0));
+
+  it("captures transient network errors at warning level", async () => {
+    const error = new Error("TypeError: Failed to fetch");
+    captureApiError(error, "versions:fetch");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [, opts] = captureExceptionMock.mock.calls[0];
+    expect(opts.level).toBe("warning");
+    expect(opts.extra.operation).toBe("versions:fetch");
+    expect(opts.extra.message).toBe("TypeError: Failed to fetch");
+  });
+
+  it("captures 'Failed to fetch' at warning level", async () => {
+    const error = new Error("Failed to fetch");
+    captureApiError(error, "versions:select");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [, opts] = captureExceptionMock.mock.calls[0];
+    expect(opts.level).toBe("warning");
+    expect(opts.extra.operation).toBe("versions:select");
+  });
+
+  it("captures 'Load failed' (Safari) at warning level", async () => {
+    const error = new Error("Load failed");
+    captureApiError(error, "versions:restore");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [, opts] = captureExceptionMock.mock.calls[0];
+    expect(opts.level).toBe("warning");
+    expect(opts.extra.operation).toBe("versions:restore");
+  });
+
+  it("captures non-transient errors at error level (default)", async () => {
+    const error = new Error("Failed to restore version: 500");
+    captureApiError(error, "versions:restore");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [, opts] = captureExceptionMock.mock.calls[0];
+    expect(opts.level).toBeUndefined();
+    expect(opts.extra.operation).toBe("versions:restore");
+    expect(opts.extra.message).toBe("Failed to restore version: 500");
+  });
+
+  it("captures non-Error values at error level", async () => {
+    captureApiError("string error", "versions:fetch");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [err, opts] = captureExceptionMock.mock.calls[0];
+    expect(err).toBe("string error");
+    expect(opts.level).toBeUndefined();
+    expect(opts.extra.operation).toBe("versions:fetch");
+  });
+
+  it("includes operation in extra for all captures", async () => {
+    const error = new Error("some error");
+    captureApiError(error, "versions:select");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [, opts] = captureExceptionMock.mock.calls[0];
+    expect(opts.extra.operation).toBe("versions:select");
   });
 });
