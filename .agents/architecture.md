@@ -328,6 +328,7 @@ src/components/database/
   │   ├── table-keyboard.ts       # handleCellKeyDown — editing-mode key handler
   │   ├── table-defaults.ts       # Pure helpers: value keys, select options, display values, date formatting
   │   ├── row-count-status-bar.tsx # RowCountStatusBar — "X rows" / "X of Y rows" below the table
+  │   ├── row-count-announcer.tsx  # RowCountAnnouncer — sr-only aria-live region for row count changes
   │   ├── board-view.tsx           # Kanban columns grouped by select property
   │   ├── board-view-helpers.ts    # Pure grouping/DnD logic extracted from board-view
   │   ├── board-keyboard.ts        # useBoardKeyboardNavigation — arrow key nav for board cards
@@ -483,6 +484,7 @@ src/
 │   │   │   ├── table-keyboard.ts       # handleCellKeyDown — editing-mode key handler
 │   │   │   ├── table-defaults.ts       # Pure helpers: value keys, select options, display values
 │   │   │   ├── row-count-status-bar.tsx # RowCountStatusBar — "X rows" / "X of Y rows" below the table
+│   │   │   ├── row-count-announcer.tsx  # RowCountAnnouncer — sr-only aria-live region for row count changes
 │   │   │   ├── board-view.tsx           # Kanban columns grouped by select property
 │   │   │   ├── board-view-helpers.ts    # Pure grouping/DnD logic extracted from board-view
 │   │   │   ├── board-keyboard.ts        # useBoardKeyboardNavigation — arrow key nav for board cards
