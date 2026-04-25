@@ -157,6 +157,7 @@ const meta: Meta<typeof ListView> = {
   args: {
     workspaceSlug: "my-workspace",
     onAddRow: fn(),
+    onNavigate: fn(),
   },
 };
 
@@ -259,6 +260,22 @@ export const ManyRows: Story = {
     properties: mockProperties,
     viewConfig: {
       visible_properties: ["prop-status", "prop-priority", "prop-due"],
+    },
+  },
+};
+
+export const KeyboardNavigation: Story = {
+  args: {
+    rows: mockRows,
+    properties: mockProperties,
+    viewConfig: defaultConfig,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Tab to a row to focus it. Use ↑/↓ to move between rows. Home/End jump to first/last row. Enter opens the row. Escape clears focus. Focused rows show a ring-2 ring-ring focus ring.",
+      },
     },
   },
 };

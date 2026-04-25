@@ -332,6 +332,7 @@ src/components/database/
   │   ├── board-view-helpers.ts    # Pure grouping/DnD logic extracted from board-view
   │   ├── board-keyboard.ts        # useBoardKeyboardNavigation — arrow key nav for board cards
   │   ├── list-view.tsx            # Compact vertical list
+  │   ├── list-keyboard.ts         # useListKeyboardNavigation — arrow/Home/End key nav for list rows
   │   ├── calendar-view.tsx        # Month grid with date-positioned items
   │   ├── calendar-view-helpers.ts # Pure date/grid logic extracted from calendar-view
   │   ├── gallery-view.tsx         # Responsive card grid with cover + title
@@ -487,6 +488,7 @@ src/
 │   │   │   ├── board-view-helpers.ts    # Pure grouping/DnD logic extracted from board-view
 │   │   │   ├── board-keyboard.ts        # useBoardKeyboardNavigation — arrow key nav for board cards
 │   │   │   ├── list-view.tsx            # Compact vertical list
+│   │   │   ├── list-keyboard.ts         # useListKeyboardNavigation — arrow/Home/End key nav for list rows
 │   │   │   ├── calendar-view.tsx        # Month grid with date-positioned items
 │   │   │   ├── calendar-view-helpers.ts # Pure date/grid logic extracted from calendar-view
 │   │   │   ├── gallery-view.tsx         # Responsive card grid with cover + title
