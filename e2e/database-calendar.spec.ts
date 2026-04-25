@@ -466,28 +466,31 @@ test.describe("Database calendar view", () => {
     await navigateToDatabase(page);
     await switchToCalendarView(page);
 
-    // Pick a day that has no items (day 20)
-    // Find the cell with day number "20" in the current month.
-    // Calendar cells have a span with the day number and are direct children
-    // of the grid. We need to click the cell background (not an item).
+    // Pick a day that has no items (day 20).
+    // The cell contains a <span> with the day number and a <div> for items.
+    // Clicking anywhere on the cell (including child elements) should trigger
+    // onAddRow — interactive children (links, buttons) call stopPropagation.
 
-    // Count existing links before adding
+    // Count existing "Untitled" links before adding
     const linksBefore = await page.locator("a").filter({
       hasText: "Untitled",
     }).count();
 
-    // Find the cell for day 20 — it's a div containing a span with "20"
-    // We click the cell div itself (not the span) to trigger onAddRow.
+    // Find the cell for day 20 via its gridcell role and day number
     const day20Span = page.locator("span").filter({ hasText: /^20$/ }).first();
     await expect(day20Span).toBeVisible({ timeout: 5_000 });
 
-    // Click the parent cell div (the cell background)
+    // Click the cell — the click may land on a child element (span, div),
+    // which is fine since the handler no longer requires e.target === e.currentTarget.
     const day20Cell = day20Span.locator("..");
     await day20Cell.click({ position: { x: 40, y: 60 } });
 
-    // A new "Untitled" item should appear on day 20
+    // Wait for the async row creation to complete and the new "Untitled"
+    // link to appear in the DOM. The row is created via Supabase then
+    // optimistically added to state, so we need to poll.
     const untitledLinks = page.locator("a").filter({ hasText: "Untitled" });
-    const linksAfter = await untitledLinks.count();
-    expect(linksAfter).toBeGreaterThan(linksBefore);
+    await expect(untitledLinks).toHaveCount(linksBefore + 1, {
+      timeout: 10_000,
+    });
   });
 });

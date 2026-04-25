@@ -166,10 +166,10 @@ export const CalendarView = memo(function CalendarView({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Cell click handler — create a new row with the date pre-filled
-  function handleCellClick(date: string, e: React.MouseEvent) {
-    // Only trigger on clicks directly on the cell background, not on items
-    if (e.target !== e.currentTarget) return;
+  // Cell click handler — create a new row with the date pre-filled.
+  // Interactive children (CalendarItem links, overflow button) already call
+  // e.stopPropagation(), so clicks on them never reach this handler.
+  function handleCellClick(date: string) {
     if (!onAddRow || !datePropertyId) return;
     onAddRow({ [datePropertyId]: { date } });
   }
@@ -281,7 +281,7 @@ export const CalendarView = memo(function CalendarView({
 interface CalendarDayCellProps {
   cell: CalendarCell;
   workspaceSlug: string;
-  onClick?: (date: string, e: React.MouseEvent) => void;
+  onClick?: (date: string) => void;
 }
 
 function CalendarDayCell({ cell, workspaceSlug, onClick }: CalendarDayCellProps) {
@@ -329,7 +329,7 @@ function CalendarDayCell({ cell, workspaceSlug, onClick }: CalendarDayCellProps)
         cell.isToday && "bg-accent/10",
         onClick && "cursor-pointer",
       )}
-      onClick={onClick ? (e) => onClick(cell.date, e) : undefined}
+      onClick={onClick ? () => onClick(cell.date) : undefined}
     >
       {/* Day number */}
       <span
