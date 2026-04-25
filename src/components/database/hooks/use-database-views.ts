@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { VIEW_TYPE_LABELS } from "@/components/database/view-tabs";
@@ -53,6 +53,9 @@ export function useDatabaseViews({
   views,
   setViews,
 }: UseDatabaseViewsParams): UseDatabaseViewsReturn {
+  // Ref holds the latest handlers so retry closures always call the current version
+  const handlersRef = useRef<UseDatabaseViewsReturn>(null);
+
   const searchParams = useSearchParams();
 
   // Active view: from URL ?view= param, or first view by position
@@ -104,7 +107,13 @@ export function useDatabaseViews({
         if (error && !isInsufficientPrivilegeError(error)) {
           captureSupabaseError(error, "database-views:create");
         }
-        toast.error("Failed to create view", { duration: 8000 });
+        toast.error("Failed to create view", {
+          duration: 8000,
+          action: {
+            label: "Retry",
+            onClick: () => void handlersRef.current?.handleAddView(type),
+          },
+        });
         return;
       }
       setViews((prev) => [...prev, newView]);
@@ -134,7 +143,13 @@ export function useDatabaseViews({
         if (!isInsufficientPrivilegeError(error)) {
           captureSupabaseError(error, "database-views:update-config");
         }
-        toast.error("Failed to update view configuration", { duration: 8000 });
+        toast.error("Failed to update view configuration", {
+          duration: 8000,
+          action: {
+            label: "Retry",
+            onClick: () => void handlersRef.current?.handleViewConfigChange(configPatch),
+          },
+        });
         // Revert
         setViews((prev) =>
           prev.map((v) =>
@@ -156,7 +171,13 @@ export function useDatabaseViews({
         if (error && !isInsufficientPrivilegeError(error)) {
           captureSupabaseError(error, "database-views:rename");
         }
-        toast.error("Failed to rename view", { duration: 8000 });
+        toast.error("Failed to rename view", {
+          duration: 8000,
+          action: {
+            label: "Retry",
+            onClick: () => void handlersRef.current?.handleRenameView(viewId, newName),
+          },
+        });
         return;
       }
       setViews((prev) =>
@@ -176,6 +197,10 @@ export function useDatabaseViews({
         }
         toast.error(error.message || "Failed to delete view", {
           duration: 8000,
+          action: {
+            label: "Retry",
+            onClick: () => void handlersRef.current?.handleDeleteView(viewId),
+          },
         });
         return;
       }
@@ -211,7 +236,13 @@ export function useDatabaseViews({
         if (error && !isInsufficientPrivilegeError(error)) {
           captureSupabaseError(error, "database-views:duplicate");
         }
-        toast.error("Failed to duplicate view", { duration: 8000 });
+        toast.error("Failed to duplicate view", {
+          duration: 8000,
+          action: {
+            label: "Retry",
+            onClick: () => void handlersRef.current?.handleDuplicateView(viewId),
+          },
+        });
         return;
       }
       setViews((prev) => [...prev, newView]);
@@ -242,7 +273,13 @@ export function useDatabaseViews({
         if (!isInsufficientPrivilegeError(error)) {
           captureSupabaseError(error, "database-views:reorder");
         }
-        toast.error("Failed to reorder views", { duration: 8000 });
+        toast.error("Failed to reorder views", {
+          duration: 8000,
+          action: {
+            label: "Retry",
+            onClick: () => void handlersRef.current?.handleReorderViews(orderedIds),
+          },
+        });
         // Reload to restore correct order
         const { data } = await loadDatabase(pageId);
         if (data) setViews(data.views);
@@ -251,7 +288,7 @@ export function useDatabaseViews({
     [pageId, setViews],
   );
 
-  return {
+  const handlers: UseDatabaseViewsReturn = {
     activeViewId,
     activeView,
     handleViewChange,
@@ -262,4 +299,7 @@ export function useDatabaseViews({
     handleDuplicateView,
     handleReorderViews,
   };
+  useEffect(() => { handlersRef.current = handlers; });
+
+  return handlers;
 }

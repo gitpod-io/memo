@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import {
   addRow,
@@ -42,6 +42,9 @@ export function useDatabaseRows({
   setRows,
   setProperties,
 }: UseDatabaseRowsParams): UseDatabaseRowsReturn {
+  // Ref holds the latest handlers so retry closures always call the current version
+  const handlersRef = useRef<UseDatabaseRowsReturn>(null);
+
   const handleAddRow = useCallback(
     async (initialValues?: Record<string, Record<string, unknown>>) => {
       const { data: rowPage, error } = await addRow(
@@ -50,7 +53,13 @@ export function useDatabaseRows({
         initialValues,
       );
       if (error || !rowPage) {
-        toast.error("Failed to add row", { duration: 8000 });
+        toast.error("Failed to add row", {
+          duration: 8000,
+          action: {
+            label: "Retry",
+            onClick: () => void handlersRef.current?.handleAddRow(initialValues),
+          },
+        });
         return;
       }
       // Build optimistic row_values from initialValues
@@ -113,7 +122,13 @@ export function useDatabaseRows({
         if (!isInsufficientPrivilegeError(error)) {
           captureSupabaseError(error, "database-view:move-card");
         }
-        toast.error("Failed to move card", { duration: 8000 });
+        toast.error("Failed to move card", {
+          duration: 8000,
+          action: {
+            label: "Retry",
+            onClick: () => void handlersRef.current?.handleCardMove(rowId, propertyId, newOptionId),
+          },
+        });
       }
     },
     [pageId, setRows],
@@ -173,6 +188,12 @@ export function useDatabaseRows({
       // Persist to DB: update property config first, then row value
       let shouldRollback = false;
 
+      // Retry uses the original value (with _newOptions) so the full operation reruns
+      const retryAction = {
+        label: "Retry",
+        onClick: () => void handlersRef.current?.handleCellUpdate(rowId, propertyId, value),
+      };
+
       if (newOptions) {
         const { error: configError } = await updateProperty(propertyId, {
           config: { options: newOptions },
@@ -181,7 +202,10 @@ export function useDatabaseRows({
           if (!isInsufficientPrivilegeError(configError)) {
             captureSupabaseError(configError, "database-view:update-property-options");
           }
-          toast.error("Failed to save new option", { duration: 8000 });
+          toast.error("Failed to save new option", {
+            duration: 8000,
+            action: retryAction,
+          });
           shouldRollback = true;
         }
       }
@@ -191,7 +215,10 @@ export function useDatabaseRows({
         if (!isInsufficientPrivilegeError(error)) {
           captureSupabaseError(error, "database-view:update-cell");
         }
-        toast.error("Failed to update cell", { duration: 8000 });
+        toast.error("Failed to update cell", {
+          duration: 8000,
+          action: retryAction,
+        });
         shouldRollback = true;
       }
 
@@ -230,7 +257,13 @@ export function useDatabaseRows({
           if (!isInsufficientPrivilegeError(error)) {
             captureSupabaseError(error, "database-view:delete-row");
           }
-          toast.error("Failed to delete row", { duration: 8000 });
+          toast.error("Failed to delete row", {
+            duration: 8000,
+            action: {
+              label: "Retry",
+              onClick: () => handlersRef.current?.handleDeleteRow(rowId),
+            },
+          });
           // Reload to restore
           const { data } = await loadDatabase(pageId);
           if (data) setRows(data.rows);
@@ -257,10 +290,13 @@ export function useDatabaseRows({
     [pageId, setRows],
   );
 
-  return {
+  const handlers: UseDatabaseRowsReturn = {
     handleAddRow,
     handleCardMove,
     handleCellUpdate,
     handleDeleteRow,
   };
+  useEffect(() => { handlersRef.current = handlers; });
+
+  return handlers;
 }

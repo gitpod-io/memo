@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   addProperty,
@@ -61,6 +61,9 @@ export function useDatabaseProperties({
   setViews,
   setRows,
 }: UseDatabasePropertiesParams): UseDatabasePropertiesReturn {
+  // Ref holds the latest handlers so retry closures always call the current version
+  const handlersRef = useRef<UseDatabasePropertiesReturn>(null);
+
   // Rename property dialog state
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [renamingProperty, setRenamingProperty] = useState<{
@@ -87,7 +90,13 @@ export function useDatabaseProperties({
           if (error && !isInsufficientPrivilegeError(error)) {
             captureSupabaseError(error, "database-properties:add");
           }
-          toast.error("Failed to add column", { duration: 8000 });
+          toast.error("Failed to add column", {
+            duration: 8000,
+            action: {
+              label: "Retry",
+              onClick: () => void handlersRef.current?.handleAddColumn(type),
+            },
+          });
           return;
         }
         setProperties((prev) => [...prev, newProp]);
@@ -123,7 +132,13 @@ export function useDatabaseProperties({
         if (!isInsufficientPrivilegeError(error)) {
           captureSupabaseError(error, "database-properties:rename");
         }
-        toast.error("Failed to rename property", { duration: 8000 });
+        toast.error("Failed to rename property", {
+          duration: 8000,
+          action: {
+            label: "Retry",
+            onClick: () => void handlersRef.current?.handlePropertyRename(newName),
+          },
+        });
         // Revert
         setProperties((prev) =>
           prev.map((p) => (p.id === propertyId ? { ...p, name: oldName } : p)),
@@ -152,7 +167,13 @@ export function useDatabaseProperties({
         if (!isInsufficientPrivilegeError(error)) {
           captureSupabaseError(error, "database-properties:reorder");
         }
-        toast.error("Failed to reorder columns", { duration: 8000 });
+        toast.error("Failed to reorder columns", {
+          duration: 8000,
+          action: {
+            label: "Retry",
+            onClick: () => void handlersRef.current?.handleColumnReorder(orderedPropertyIds),
+          },
+        });
         setProperties(prevProperties);
       }
     },
@@ -210,7 +231,13 @@ export function useDatabaseProperties({
           if (!isInsufficientPrivilegeError(error)) {
             captureSupabaseError(error, "database-view:delete-column");
           }
-          toast.error("Failed to delete column", { duration: 8000 });
+          toast.error("Failed to delete column", {
+            duration: 8000,
+            action: {
+              label: "Retry",
+              onClick: () => handlersRef.current?.handleDeleteColumn(propertyId),
+            },
+          });
           // Revert all state
           setProperties(prevProperties);
           setViews(prevViews);
@@ -255,7 +282,7 @@ export function useDatabaseProperties({
   );
 
 
-  return {
+  const handlers: UseDatabasePropertiesReturn = {
     renameDialogOpen,
     setRenameDialogOpen,
     renamingProperty,
@@ -265,4 +292,7 @@ export function useDatabaseProperties({
     handleColumnReorder,
     handleDeleteColumn,
   };
+  useEffect(() => { handlersRef.current = handlers; });
+
+  return handlers;
 }
