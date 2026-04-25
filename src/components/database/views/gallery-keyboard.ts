@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 
 // ---------------------------------------------------------------------------
 // useGalleryKeyboardNavigation — manages focused card state and keyboard
@@ -14,6 +13,9 @@ import { useRouter } from "next/navigation";
 //
 // Follows the same container-level `onKeyDown` pattern as the table view
 // (useTableCellNavigation) — no global `document.addEventListener`.
+//
+// Navigation is delegated to an `onNavigate` callback so the hook stays
+// framework-agnostic and works in Storybook (no Next.js router required).
 // ---------------------------------------------------------------------------
 
 interface UseGalleryKeyboardNavigationParams {
@@ -22,16 +24,18 @@ interface UseGalleryKeyboardNavigationParams {
   workspaceSlug: string;
   /** Page IDs in display order, used for Enter navigation. */
   pageIds: string[];
+  /** Called when Enter is pressed on a focused card. Receives the target URL path. */
+  onNavigate?: (path: string) => void;
 }
 
 export function useGalleryKeyboardNavigation({
   cardCount,
   workspaceSlug,
   pageIds,
+  onNavigate,
 }: UseGalleryKeyboardNavigationParams) {
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
 
   // Compute the number of columns from the rendered grid.
   const getColumnCount = useCallback((): number => {
@@ -104,7 +108,7 @@ export function useGalleryKeyboardNavigation({
           e.preventDefault();
           const pageId = pageIds[focusedIndex];
           if (pageId) {
-            router.push(`/${workspaceSlug}/${pageId}`);
+            onNavigate?.(`/${workspaceSlug}/${pageId}`);
           }
           break;
         }
@@ -120,7 +124,7 @@ export function useGalleryKeyboardNavigation({
           break;
       }
     },
-    [focusedIndex, cardCount, getColumnCount, navigateToCard, pageIds, workspaceSlug, router],
+    [focusedIndex, cardCount, getColumnCount, navigateToCard, pageIds, workspaceSlug, onNavigate],
   );
 
   // When a card is clicked/focused via mouse, track it.

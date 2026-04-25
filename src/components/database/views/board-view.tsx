@@ -34,6 +34,8 @@ export interface BoardViewProps {
   onCardMove?: (rowId: string, propertyId: string, newOptionId: string | null) => void;
   /** Called when a new row should be added with a pre-filled select value. */
   onAddRow?: (initialValues?: Record<string, Record<string, unknown>>) => void;
+  /** Called when keyboard Enter navigates to a card. Receives the URL path. */
+  onNavigate?: (path: string) => void;
   /** Loading state — shows skeleton. */
   loading?: boolean;
 }
@@ -65,6 +67,7 @@ export const BoardView = memo(function BoardView({
   workspaceSlug,
   onCardMove,
   onAddRow,
+  onNavigate,
   loading = false,
 }: BoardViewProps) {
   const [dragState, setDragState] = useState<DragState | null>(null);
@@ -103,7 +106,7 @@ export const BoardView = memo(function BoardView({
   // --- Keyboard navigation ---
 
   const { focusedCard, containerRef, handleKeyDown, handleCardFocus } =
-    useBoardKeyboardNavigation({ columns, workspaceSlug });
+    useBoardKeyboardNavigation({ columns, workspaceSlug, onNavigate });
 
   // --- Drag handlers ---
 
