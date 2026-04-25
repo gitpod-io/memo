@@ -285,7 +285,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
         {loading ? (
           <DatabaseSkeleton />
         ) : error ? (
-          <div className="flex min-h-[40vh] flex-col items-center justify-center p-6">
+          <div className="flex min-h-[60vh] flex-col items-center justify-center p-6">
             <div className="flex flex-col items-center gap-4 text-center">
               <AlertCircle className="h-12 w-12 text-muted-foreground" />
               <h2 className="text-lg font-medium">Something went wrong</h2>
