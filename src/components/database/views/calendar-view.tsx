@@ -77,8 +77,11 @@ export const CalendarView = memo(function CalendarView({
   onClearFilters,
 }: CalendarViewProps) {
   const now = new Date();
-  const [viewYear, setViewYear] = useState(now.getFullYear());
-  const [viewMonth, setViewMonth] = useState(now.getMonth());
+  const todayYear = now.getFullYear();
+  const todayMonth = now.getMonth();
+  const todayDay = now.getDate();
+  const [viewYear, setViewYear] = useState(todayYear);
+  const [viewMonth, setViewMonth] = useState(todayMonth);
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useMediaQuery("(max-width: 767px)");
 
@@ -110,11 +113,7 @@ export const CalendarView = memo(function CalendarView({
   // Build mobile day list — only days in the current month that have items, plus today
   const mobileDays = useMemo(() => {
     const daysInMonth = getDaysInMonth(viewYear, viewMonth);
-    const todayStr = toISODate(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-    );
+    const todayStr = toISODate(todayYear, todayMonth, todayDay);
     const result: CalendarCell[] = [];
     for (let d = 1; d <= daysInMonth; d++) {
       const date = toISODate(viewYear, viewMonth, d);
@@ -131,7 +130,7 @@ export const CalendarView = memo(function CalendarView({
       }
     }
     return result;
-  }, [viewYear, viewMonth, rowsByDate, now]);
+  }, [viewYear, viewMonth, rowsByDate, todayYear, todayMonth, todayDay]);
 
   // Navigation handlers
   function goToPrevMonth() {
