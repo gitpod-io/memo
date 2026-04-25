@@ -1,0 +1,141 @@
+import type { Meta, StoryObj } from "@storybook/react";
+import type { ReactNode } from "react";
+import {
+  Bold,
+  Italic,
+  Underline,
+  Strikethrough,
+  Code,
+  Link,
+} from "lucide-react";
+
+// Static representation of the floating toolbar. The actual plugin requires
+// Lexical context and DOM selection — stories render the same visual output
+// with controlled state.
+
+function ToolbarButton({
+  active,
+  label,
+  children,
+}: {
+  active: boolean;
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      className={`flex h-11 w-11 sm:h-7 sm:w-7 items-center justify-center text-sm ${
+        active
+          ? "bg-overlay-active text-foreground"
+          : "text-muted-foreground hover:bg-overlay-hover hover:text-foreground"
+      }`}
+      aria-label={label}
+      aria-pressed={active}
+    >
+      {children}
+    </button>
+  );
+}
+
+function StaticFloatingToolbar({
+  isBold = false,
+  isItalic = false,
+  isUnderline = false,
+  isStrikethrough = false,
+  isCode = false,
+  isLink = false,
+}: {
+  isBold?: boolean;
+  isItalic?: boolean;
+  isUnderline?: boolean;
+  isStrikethrough?: boolean;
+  isCode?: boolean;
+  isLink?: boolean;
+}) {
+  return (
+    <div className="mx-auto max-w-md">
+      <div
+        className="inline-flex items-center gap-0.5 border border-overlay-border bg-popover p-1 shadow-md"
+        role="toolbar"
+        aria-label="Text formatting"
+      >
+        <ToolbarButton active={isBold} label="Bold (⌘+B)">
+          <Bold className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton active={isItalic} label="Italic (⌘+I)">
+          <Italic className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton active={isUnderline} label="Underline (⌘+U)">
+          <Underline className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton active={isStrikethrough} label="Strikethrough">
+          <Strikethrough className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton active={isCode} label="Inline code">
+          <Code className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton active={isLink} label="Link (⌘+K)">
+          <Link className="h-4 w-4" />
+        </ToolbarButton>
+      </div>
+    </div>
+  );
+}
+
+const meta: Meta = {
+  title: "Editor/FloatingToolbar",
+  parameters: {
+    layout: "padded",
+  },
+};
+
+export { meta as default };
+
+type Story = StoryObj;
+
+/** Default state — toolbar visible with no active formats. */
+export const Default: Story = {
+  render: () => <StaticFloatingToolbar />,
+};
+
+/** All format buttons active — bold, italic, underline, strikethrough, code, link. */
+export const AllFormatsActive: Story = {
+  render: () => (
+    <StaticFloatingToolbar
+      isBold
+      isItalic
+      isUnderline
+      isStrikethrough
+      isCode
+      isLink
+    />
+  ),
+};
+
+/** Bold and italic active — common formatting combination. */
+export const BoldItalicActive: Story = {
+  render: () => <StaticFloatingToolbar isBold isItalic />,
+};
+
+/** Link button active — cursor is inside a link node. */
+export const LinkActive: Story = {
+  render: () => <StaticFloatingToolbar isLink />,
+};
+
+/** Toolbar shown in context above a text selection. */
+export const InContext: Story = {
+  render: () => (
+    <div className="mx-auto max-w-2xl space-y-3">
+      <div className="flex justify-center">
+        <StaticFloatingToolbar isBold />
+      </div>
+      <p className="text-sm text-foreground">
+        The quick brown fox jumps over the{" "}
+        <span className="bg-accent/20 font-bold">lazy dog</span>. This
+        demonstrates the toolbar appearing above a text selection with bold
+        formatting active.
+      </p>
+    </div>
+  ),
+};
