@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { FileText, FilterX } from "lucide-react";
+import { FilterX, Table2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export interface DatabaseEmptyStateProps {
@@ -7,6 +7,8 @@ export interface DatabaseEmptyStateProps {
   hasActiveFilters: boolean;
   /** Callback to clear all active filters */
   onClearFilters?: () => void;
+  /** Callback to add a new row — renders the CTA button when provided */
+  onAddRow?: () => void;
 }
 
 /**
@@ -17,6 +19,7 @@ export interface DatabaseEmptyStateProps {
 export const DatabaseEmptyState = memo(function DatabaseEmptyState({
   hasActiveFilters,
   onClearFilters,
+  onAddRow,
 }: DatabaseEmptyStateProps) {
   if (hasActiveFilters) {
     return (
@@ -24,8 +27,8 @@ export const DatabaseEmptyState = memo(function DatabaseEmptyState({
         className="flex flex-col items-center justify-center py-12 text-center"
         data-testid="db-empty-state-filtered"
       >
-        <FilterX className="mb-3 h-10 w-10 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground">
+        <FilterX className="mb-3 h-12 w-12 text-muted-foreground" />
+        <p className="text-lg font-medium">
           No rows match the active filters
         </p>
         {onClearFilters && (
@@ -48,11 +51,20 @@ export const DatabaseEmptyState = memo(function DatabaseEmptyState({
       className="flex flex-col items-center justify-center py-12 text-center"
       data-testid="db-empty-state-no-rows"
     >
-      <FileText className="mb-3 h-10 w-10 text-muted-foreground/30" />
-      <p className="text-sm text-muted-foreground">No rows yet</p>
-      <p className="mt-1 text-xs text-muted-foreground/60">
-        Click &quot;+ New&quot; below to add a row
+      <Table2 className="mb-3 h-12 w-12 text-muted-foreground" />
+      <p className="text-lg font-medium">No rows yet</p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Add your first row to get started.
       </p>
+      {onAddRow && (
+        <Button
+          className="mt-3"
+          onClick={onAddRow}
+          data-testid="db-empty-state-add-row"
+        >
+          Add a row
+        </Button>
+      )}
     </div>
   );
 });

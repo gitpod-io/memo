@@ -29,10 +29,18 @@ type Story = StoryObj<typeof DatabaseEmptyState>;
 // Stories
 // ---------------------------------------------------------------------------
 
-/** Default empty state when the database has no rows and no filters are active */
+/** Default empty state when the database has no rows and no filters are active (read-only) */
 export const NoRows: Story = {
   args: {
     hasActiveFilters: false,
+  },
+};
+
+/** Empty state with CTA button to add a row */
+export const NoRowsWithCTA: Story = {
+  args: {
+    hasActiveFilters: false,
+    onAddRow: fn(),
   },
 };
 

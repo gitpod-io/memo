@@ -84,6 +84,7 @@ export const ListView = memo(function ListView({
         <DatabaseEmptyState
           hasActiveFilters={hasActiveFilters}
           onClearFilters={onClearFilters}
+          onAddRow={onAddRow ? handleAddRow : undefined}
         />
         {onAddRow && (
           <button
