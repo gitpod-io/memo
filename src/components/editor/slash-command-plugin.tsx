@@ -336,6 +336,7 @@ export function SlashCommandPlugin(): JSX.Element | null {
             className="fixed z-50 max-h-[300px] w-64 overflow-y-auto rounded-sm border border-overlay-border bg-popover p-1 shadow-md"
             role="listbox"
             aria-label="Slash commands"
+            data-testid="editor-slash-menu"
             aria-activedescendant={
               selectedIndex !== null && items[selectedIndex]
                 ? `slash-cmd-option-${items[selectedIndex].key}`
@@ -356,6 +357,7 @@ export function SlashCommandPlugin(): JSX.Element | null {
                 onMouseEnter={() => setHighlightedIndex(index)}
                 role="option"
                 aria-selected={selectedIndex === index}
+                data-testid={`editor-slash-item-${option.title.toLowerCase().replace(/\s+/g, "-")}`}
               >
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground">
                   {option.icon}

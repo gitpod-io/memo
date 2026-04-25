@@ -39,7 +39,7 @@ test.describe("Editor drag-and-drop", () => {
     await block.hover();
 
     // The drag handle should become visible
-    const dragHandle = page.locator(".memo-draggable-block-menu");
+    const dragHandle = page.getByTestId("editor-drag-handle");
     await expect(dragHandle).toHaveCSS("opacity", "1", { timeout: 2_000 });
   });
 
@@ -69,7 +69,7 @@ test.describe("Editor drag-and-drop", () => {
 
     await page.mouse.move(blockBox.x + blockBox.width / 2, blockBox.y + blockBox.height / 2);
 
-    const dragHandle = page.locator(".memo-draggable-block-menu");
+    const dragHandle = page.getByTestId("editor-drag-handle");
     await expect(dragHandle).toHaveCSS("opacity", "1", { timeout: 2_000 });
 
     // Move cursor left toward the drag handle
@@ -107,7 +107,7 @@ test.describe("Editor drag-and-drop", () => {
     await expect(blockOne).toBeVisible({ timeout: 3_000 });
     await blockOne.hover();
 
-    const dragHandle = page.locator(".memo-draggable-block-menu");
+    const dragHandle = page.getByTestId("editor-drag-handle");
     await expect(dragHandle).toHaveCSS("opacity", "1", { timeout: 2_000 });
 
     // Verify the drag handle has the draggable attribute
@@ -139,7 +139,7 @@ test.describe("Editor drag-and-drop", () => {
     await expect(block).toBeVisible({ timeout: 3_000 });
     await block.hover();
 
-    const dragHandle = page.locator(".memo-draggable-block-menu");
+    const dragHandle = page.getByTestId("editor-drag-handle");
     await expect(dragHandle).toHaveCSS("opacity", "1", { timeout: 2_000 });
 
     const handleBox = await dragHandle.boundingBox();

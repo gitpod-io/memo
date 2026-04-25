@@ -172,11 +172,13 @@ export function FloatingToolbarPlugin({
       className="fixed z-50 flex items-center gap-0.5 border border-overlay-border bg-popover p-1 shadow-md"
       role="toolbar"
       aria-label="Text formatting"
+      data-testid="editor-toolbar"
     >
       <ToolbarButton
         active={isBold}
         onClick={formatBold}
         label="Bold (⌘+B)"
+        testId="editor-toolbar-bold"
       >
         <Bold className="h-4 w-4" />
       </ToolbarButton>
@@ -184,6 +186,7 @@ export function FloatingToolbarPlugin({
         active={isItalic}
         onClick={formatItalic}
         label="Italic (⌘+I)"
+        testId="editor-toolbar-italic"
       >
         <Italic className="h-4 w-4" />
       </ToolbarButton>
@@ -191,6 +194,7 @@ export function FloatingToolbarPlugin({
         active={isUnderline}
         onClick={formatUnderline}
         label="Underline (⌘+U)"
+        testId="editor-toolbar-underline"
       >
         <Underline className="h-4 w-4" />
       </ToolbarButton>
@@ -198,6 +202,7 @@ export function FloatingToolbarPlugin({
         active={isStrikethrough}
         onClick={formatStrikethrough}
         label="Strikethrough"
+        testId="editor-toolbar-strikethrough"
       >
         <Strikethrough className="h-4 w-4" />
       </ToolbarButton>
@@ -205,6 +210,7 @@ export function FloatingToolbarPlugin({
         active={isCode}
         onClick={formatCode}
         label="Inline code"
+        testId="editor-toolbar-code"
       >
         <Code className="h-4 w-4" />
       </ToolbarButton>
@@ -212,6 +218,7 @@ export function FloatingToolbarPlugin({
         active={isLink}
         onClick={toggleLink}
         label="Link (⌘+K)"
+        testId="editor-toolbar-link"
       >
         <Link className="h-4 w-4" />
       </ToolbarButton>
@@ -224,11 +231,13 @@ function ToolbarButton({
   active,
   onClick,
   label,
+  testId,
   children,
 }: {
   active: boolean;
   onClick: () => void;
   label: string;
+  testId?: string;
   children: ReactNode;
 }) {
   return (
@@ -243,6 +252,7 @@ function ToolbarButton({
       onClick={onClick}
       aria-label={label}
       aria-pressed={active}
+      data-testid={testId}
     >
       {children}
     </button>

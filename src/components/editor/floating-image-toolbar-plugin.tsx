@@ -183,11 +183,13 @@ export function FloatingImageToolbarPlugin({
           role="toolbar"
           aria-label="Image tools"
           onMouseDown={(e) => e.preventDefault()}
+          data-testid="editor-image-toolbar"
         >
           <ToolbarButton
             active={selectedImageNode.alignment === "left"}
             onClick={() => setAlignment("left")}
             label="Align left"
+            testId="editor-image-align-left"
           >
             <AlignLeft className="h-4 w-4" />
           </ToolbarButton>
@@ -195,6 +197,7 @@ export function FloatingImageToolbarPlugin({
             active={selectedImageNode.alignment === "center"}
             onClick={() => setAlignment("center")}
             label="Align center"
+            testId="editor-image-align-center"
           >
             <AlignCenter className="h-4 w-4" />
           </ToolbarButton>
@@ -202,6 +205,7 @@ export function FloatingImageToolbarPlugin({
             active={selectedImageNode.alignment === "right"}
             onClick={() => setAlignment("right")}
             label="Align right"
+            testId="editor-image-align-right"
           >
             <AlignRight className="h-4 w-4" />
           </ToolbarButton>
@@ -210,6 +214,7 @@ export function FloatingImageToolbarPlugin({
             active={false}
             onClick={() => setCropOpen(true)}
             label="Crop image"
+            testId="editor-image-crop"
           >
             <Crop className="h-4 w-4" />
           </ToolbarButton>
@@ -217,6 +222,7 @@ export function FloatingImageToolbarPlugin({
             active={false}
             onClick={() => setExpandOpen(true)}
             label="Expand image"
+            testId="editor-image-expand"
           >
             <Maximize2 className="h-4 w-4" />
           </ToolbarButton>
@@ -224,6 +230,7 @@ export function FloatingImageToolbarPlugin({
             active={false}
             onClick={handleDownload}
             label="Download image"
+            testId="editor-image-download"
           >
             <Download className="h-4 w-4" />
           </ToolbarButton>
@@ -249,11 +256,13 @@ function ToolbarButton({
   active,
   onClick,
   label,
+  testId,
   children,
 }: {
   active: boolean;
   onClick: () => void;
   label: string;
+  testId?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -267,6 +276,7 @@ function ToolbarButton({
       onClick={onClick}
       aria-label={label}
       aria-pressed={active}
+      data-testid={testId}
     >
       {children}
     </button>
