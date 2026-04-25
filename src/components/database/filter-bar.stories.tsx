@@ -233,3 +233,41 @@ export const Interactive: Story = {
     );
   },
 };
+
+/**
+ * Demonstrates ARIA attributes for screen reader users.
+ * The toolbar has `role="toolbar"` with `aria-label="Database filters"`.
+ * Each filter pill has a descriptive `aria-label` (e.g. "Name contains design").
+ * The "Add filter" button has `aria-expanded` and `aria-haspopup`.
+ * Escape closes the dropdown and returns focus to the "Add filter" button.
+ */
+export const Accessible: Story = {
+  render: function AccessibleFilterBar() {
+    const [filters, setFilters] = useState<FilterRule[]>([
+      { property_id: "prop-name", operator: "contains", value: "design" },
+      { property_id: "prop-status", operator: "equals", value: "opt-done" },
+      { property_id: "prop-done", operator: "is_checked", value: null },
+    ]);
+
+    return (
+      <div className="space-y-4">
+        <FilterBar
+          properties={mockProperties}
+          filters={filters}
+          onFiltersChange={setFilters}
+        />
+        <div className="rounded border border-border p-3 text-xs text-muted-foreground">
+          <p className="mb-2 font-medium text-foreground">Screen reader output:</p>
+          <ul className="list-inside list-disc space-y-1">
+            <li>Toolbar: &quot;Database filters&quot;</li>
+            <li>Pill 1: &quot;Name contains design&quot; with &quot;Remove Name filter&quot; button</li>
+            <li>Pill 2: &quot;Status is Done&quot; with &quot;Remove Status filter&quot; button</li>
+            <li>Pill 3: &quot;Done is checked&quot; with &quot;Remove Done filter&quot; button</li>
+            <li>Button: &quot;Add filter&quot; (aria-expanded=false, aria-haspopup=true)</li>
+          </ul>
+          <p className="mt-2">Press Escape to close dropdown. Focus returns to &quot;Add filter&quot; button.</p>
+        </div>
+      </div>
+    );
+  },
+};
