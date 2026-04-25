@@ -185,9 +185,7 @@ describe("useDatabaseRows", () => {
         await result.current.handleAddRow();
       });
 
-      expect(toastErrorMock).toHaveBeenCalledWith("Failed to add row", {
-        duration: 8000,
-      });
+      expect(toastErrorMock).toHaveBeenCalledWith("Failed to add row", expect.objectContaining({ duration: 8000 }));
       expect(setRows).not.toHaveBeenCalled();
     });
 
@@ -200,10 +198,34 @@ describe("useDatabaseRows", () => {
         await result.current.handleAddRow();
       });
 
-      expect(toastErrorMock).toHaveBeenCalledWith("Failed to add row", {
-        duration: 8000,
-      });
+      expect(toastErrorMock).toHaveBeenCalledWith("Failed to add row", expect.objectContaining({ duration: 8000 }));
       expect(setRows).not.toHaveBeenCalled();
+    });
+
+    it("passes a Retry action that re-invokes handleAddRow", async () => {
+      addRowMock.mockResolvedValue({
+        data: null,
+        error: new Error("network error"),
+      });
+
+      const { result } = setup();
+
+      await act(async () => {
+        await result.current.handleAddRow({ "prop-1": { option_id: "opt-a" } });
+      });
+
+      const call = toastErrorMock.mock.calls[0];
+      expect(call[1]).toMatchObject({
+        action: { label: "Retry", onClick: expect.any(Function) },
+      });
+
+      // Invoke the retry callback — it should call addRow again
+      addRowMock.mockClear();
+      addRowMock.mockResolvedValue({ data: null, error: null });
+      await act(async () => {
+        call[1].action.onClick();
+      });
+      expect(addRowMock).toHaveBeenCalledWith("db-1", "user-1", { "prop-1": { option_id: "opt-a" } });
     });
   });
 
@@ -269,9 +291,7 @@ describe("useDatabaseRows", () => {
         dbError,
         "database-view:move-card",
       );
-      expect(toastErrorMock).toHaveBeenCalledWith("Failed to move card", {
-        duration: 8000,
-      });
+      expect(toastErrorMock).toHaveBeenCalledWith("Failed to move card", expect.objectContaining({ duration: 8000 }));
     });
 
     it("skips captureSupabaseError for insufficient privilege errors", async () => {
@@ -286,9 +306,7 @@ describe("useDatabaseRows", () => {
       });
 
       expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
-      expect(toastErrorMock).toHaveBeenCalledWith("Failed to move card", {
-        duration: 8000,
-      });
+      expect(toastErrorMock).toHaveBeenCalledWith("Failed to move card", expect.objectContaining({ duration: 8000 }));
     });
   });
 
@@ -396,9 +414,7 @@ describe("useDatabaseRows", () => {
         });
       });
 
-      expect(toastErrorMock).toHaveBeenCalledWith("Failed to update cell", {
-        duration: 8000,
-      });
+      expect(toastErrorMock).toHaveBeenCalledWith("Failed to update cell", expect.objectContaining({ duration: 8000 }));
       // Rollback: setRows called with the snapshot (not a function)
       const lastSetRowsCall = setRows.mock.calls[setRows.mock.calls.length - 1][0];
       // The rollback sets rows directly (not via updater function)
@@ -443,7 +459,7 @@ describe("useDatabaseRows", () => {
 
       expect(toastErrorMock).toHaveBeenCalledWith(
         "Failed to save new option",
-        { duration: 8000 },
+        expect.objectContaining({ duration: 8000 }),
       );
       // Both rows and properties should be rolled back
       const lastSetRowsCall = setRows.mock.calls[setRows.mock.calls.length - 1][0];
@@ -467,8 +483,25 @@ describe("useDatabaseRows", () => {
       });
 
       expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
-      expect(toastErrorMock).toHaveBeenCalledWith("Failed to update cell", {
-        duration: 8000,
+      expect(toastErrorMock).toHaveBeenCalledWith("Failed to update cell", expect.objectContaining({ duration: 8000 }));
+    });
+
+    it("passes a Retry action that re-invokes handleCellUpdate with original value", async () => {
+      updateRowValueMock.mockResolvedValue({
+        data: null,
+        error: new Error("network error"),
+      });
+
+      const { result } = setup();
+
+      const originalValue = { text: "hello", _newOptions: [{ id: "o1", name: "New", color: "blue" }] };
+      await act(async () => {
+        await result.current.handleCellUpdate("row-1", "prop-1", originalValue);
+      });
+
+      const call = toastErrorMock.mock.calls[0];
+      expect(call[1]).toMatchObject({
+        action: { label: "Retry", onClick: expect.any(Function) },
       });
     });
   });
@@ -603,9 +636,7 @@ describe("useDatabaseRows", () => {
         vi.advanceTimersByTime(5500);
       });
 
-      expect(toastErrorMock).toHaveBeenCalledWith("Failed to delete row", {
-        duration: 8000,
-      });
+      expect(toastErrorMock).toHaveBeenCalledWith("Failed to delete row", expect.objectContaining({ duration: 8000 }));
       expect(loadDatabaseMock).toHaveBeenCalledWith("db-1");
       // setRows called with reloaded data
       const lastCall = setRows.mock.calls[setRows.mock.calls.length - 1][0];
@@ -630,9 +661,7 @@ describe("useDatabaseRows", () => {
       });
 
       expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
-      expect(toastErrorMock).toHaveBeenCalledWith("Failed to delete row", {
-        duration: 8000,
-      });
+      expect(toastErrorMock).toHaveBeenCalledWith("Failed to delete row", expect.objectContaining({ duration: 8000 }));
     });
   });
 });

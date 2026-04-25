@@ -316,9 +316,7 @@ describe("useDatabaseViews", () => {
         await result.current.handleAddView("table");
       });
 
-      expect(toastErrorMock).toHaveBeenCalledWith("Failed to create view", {
-        duration: 8000,
-      });
+      expect(toastErrorMock).toHaveBeenCalledWith("Failed to create view", expect.objectContaining({ duration: 8000 }));
       expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-views:create");
       expect(setViews).not.toHaveBeenCalled();
     });
@@ -339,6 +337,35 @@ describe("useDatabaseViews", () => {
 
       expect(toastErrorMock).toHaveBeenCalled();
       expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
+    });
+
+    it("passes a Retry action that re-invokes handleAddView", async () => {
+      addViewMock.mockResolvedValue({
+        data: null,
+        error: new Error("network error"),
+      });
+
+      const { result } = setup();
+
+      await act(async () => {
+        await result.current.handleAddView("board");
+      });
+
+      const call = toastErrorMock.mock.calls[0];
+      expect(call[1]).toMatchObject({
+        action: { label: "Retry", onClick: expect.any(Function) },
+      });
+
+      // Invoke the retry callback — it should call addView again
+      addViewMock.mockClear();
+      addViewMock.mockResolvedValue({
+        data: makeView("view-new", { type: "board" }),
+        error: null,
+      });
+      await act(async () => {
+        call[1].action.onClick();
+      });
+      expect(addViewMock).toHaveBeenCalled();
     });
   });
 
@@ -395,7 +422,7 @@ describe("useDatabaseViews", () => {
 
       expect(toastErrorMock).toHaveBeenCalledWith(
         "Failed to update view configuration",
-        { duration: 8000 },
+        expect.objectContaining({ duration: 8000 }),
       );
       expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-views:update-config");
       // Revert: second setViews call restores original config
@@ -456,9 +483,7 @@ describe("useDatabaseViews", () => {
         await result.current.handleRenameView("view-1", "New Name");
       });
 
-      expect(toastErrorMock).toHaveBeenCalledWith("Failed to rename view", {
-        duration: 8000,
-      });
+      expect(toastErrorMock).toHaveBeenCalledWith("Failed to rename view", expect.objectContaining({ duration: 8000 }));
       expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-views:rename");
       expect(setViews).not.toHaveBeenCalled();
     });
@@ -505,7 +530,7 @@ describe("useDatabaseViews", () => {
 
       expect(toastErrorMock).toHaveBeenCalledWith(
         "Cannot delete last view",
-        { duration: 8000 },
+        expect.objectContaining({ duration: 8000 }),
       );
       expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-views:delete");
       expect(setViews).not.toHaveBeenCalled();
@@ -524,7 +549,7 @@ describe("useDatabaseViews", () => {
 
       expect(toastErrorMock).toHaveBeenCalledWith(
         "Failed to delete view",
-        { duration: 8000 },
+        expect.objectContaining({ duration: 8000 }),
       );
     });
   });
@@ -597,7 +622,7 @@ describe("useDatabaseViews", () => {
 
       expect(toastErrorMock).toHaveBeenCalledWith(
         "Failed to duplicate view",
-        { duration: 8000 },
+        expect.objectContaining({ duration: 8000 }),
       );
       expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-views:duplicate");
       expect(setViews).not.toHaveBeenCalled();
@@ -668,7 +693,7 @@ describe("useDatabaseViews", () => {
 
       expect(toastErrorMock).toHaveBeenCalledWith(
         "Failed to reorder views",
-        { duration: 8000 },
+        expect.objectContaining({ duration: 8000 }),
       );
       expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-views:reorder");
       expect(loadDatabaseMock).toHaveBeenCalledWith("db-1");

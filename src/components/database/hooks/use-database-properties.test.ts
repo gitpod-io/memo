@@ -225,9 +225,7 @@ describe("useDatabaseProperties", () => {
         await result.current.handleAddColumn("text");
       });
 
-      expect(toastErrorMock).toHaveBeenCalledWith("Failed to add column", {
-        duration: 8000,
-      });
+      expect(toastErrorMock).toHaveBeenCalledWith("Failed to add column", expect.objectContaining({ duration: 8000 }));
       expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-properties:add");
       expect(setProperties).not.toHaveBeenCalled();
     });
@@ -246,9 +244,7 @@ describe("useDatabaseProperties", () => {
         await result.current.handleAddColumn("text");
       });
 
-      expect(toastErrorMock).toHaveBeenCalledWith("Failed to add column", {
-        duration: 8000,
-      });
+      expect(toastErrorMock).toHaveBeenCalledWith("Failed to add column", expect.objectContaining({ duration: 8000 }));
       expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
     });
 
@@ -280,6 +276,35 @@ describe("useDatabaseProperties", () => {
 
       // Only one addProperty call should have been made
       expect(addPropertyMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("passes a Retry action that re-invokes handleAddColumn", async () => {
+      addPropertyMock.mockResolvedValue({
+        data: null,
+        error: new Error("network error"),
+      });
+
+      const { result } = setup();
+
+      await act(async () => {
+        await result.current.handleAddColumn("text");
+      });
+
+      const call = toastErrorMock.mock.calls[0];
+      expect(call[1]).toMatchObject({
+        action: { label: "Retry", onClick: expect.any(Function) },
+      });
+
+      // Invoke the retry callback — it should call addProperty again
+      addPropertyMock.mockClear();
+      addPropertyMock.mockResolvedValue({
+        data: makeProp("p-new", "Text", 2),
+        error: null,
+      });
+      await act(async () => {
+        call[1].action.onClick();
+      });
+      expect(addPropertyMock).toHaveBeenCalled();
     });
   });
 
@@ -343,7 +368,7 @@ describe("useDatabaseProperties", () => {
 
       expect(toastErrorMock).toHaveBeenCalledWith(
         "Failed to rename property",
-        { duration: 8000 },
+        expect.objectContaining({ duration: 8000 }),
       );
       expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-properties:rename");
       // Revert call: second setProperties call restores old name
@@ -451,7 +476,7 @@ describe("useDatabaseProperties", () => {
 
       expect(toastErrorMock).toHaveBeenCalledWith(
         "Failed to reorder columns",
-        { duration: 8000 },
+        expect.objectContaining({ duration: 8000 }),
       );
       expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-properties:reorder");
       // Revert: second setProperties call restores original
@@ -654,7 +679,7 @@ describe("useDatabaseProperties", () => {
 
       expect(toastErrorMock).toHaveBeenCalledWith(
         "Failed to delete column",
-        { duration: 8000 },
+        expect.objectContaining({ duration: 8000 }),
       );
       expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-view:delete-column");
       // Properties and views reverted
