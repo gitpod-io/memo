@@ -82,6 +82,41 @@ const macSections: ShortcutSection[] = [
       { keys: ["Shift", "Tab"], description: "Move to previous cell" },
     ],
   },
+  {
+    title: "Database Board",
+    shortcuts: [
+      { keys: ["↑", "↓"], description: "Navigate between cards in a column" },
+      { keys: ["←", "→"], description: "Navigate between columns" },
+      { keys: ["Enter"], description: "Open the focused card" },
+      { keys: ["Escape"], description: "Clear card focus" },
+    ],
+  },
+  {
+    title: "Database Gallery",
+    shortcuts: [
+      { keys: ["←", "→"], description: "Navigate between cards" },
+      { keys: ["↑", "↓"], description: "Navigate between rows" },
+      { keys: ["Enter"], description: "Open the focused card" },
+      { keys: ["Escape"], description: "Clear card focus" },
+    ],
+  },
+  {
+    title: "Database List",
+    shortcuts: [
+      { keys: ["↑", "↓"], description: "Navigate between rows" },
+      { keys: ["Enter"], description: "Open focused row" },
+      { keys: ["Home"], description: "Jump to first row" },
+      { keys: ["End"], description: "Jump to last row" },
+      { keys: ["Escape"], description: "Clear focus" },
+    ],
+  },
+  {
+    title: "Database Calendar",
+    shortcuts: [
+      { keys: ["←"], description: "Previous month" },
+      { keys: ["→"], description: "Next month" },
+    ],
+  },
 ];
 
 function ShortcutsContent({ sections }: { sections: ShortcutSection[] }) {

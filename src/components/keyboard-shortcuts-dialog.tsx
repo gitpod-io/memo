@@ -89,6 +89,23 @@ function getShortcutSections(isMac: boolean): ShortcutSection[] {
         { keys: ["Escape"], description: "Clear card focus" },
       ],
     },
+    {
+      title: "Database List",
+      shortcuts: [
+        { keys: ["↑", "↓"], description: "Navigate between rows" },
+        { keys: ["Enter"], description: "Open focused row" },
+        { keys: ["Home"], description: "Jump to first row" },
+        { keys: ["End"], description: "Jump to last row" },
+        { keys: ["Escape"], description: "Clear focus" },
+      ],
+    },
+    {
+      title: "Database Calendar",
+      shortcuts: [
+        { keys: ["←"], description: "Previous month" },
+        { keys: ["→"], description: "Next month" },
+      ],
+    },
   ];
 }
 
