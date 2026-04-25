@@ -17,6 +17,7 @@ import {
   isDuplicateKeyError,
   isStatementTimeoutError,
   isEmptyResultError,
+  isPostgrestServerError,
   isSupabaseAuthLockError,
   isSupabaseAuthLockContention,
   captureSupabaseError,
@@ -456,6 +457,29 @@ describe("isEmptyResultError", () => {
   });
 });
 
+describe("isPostgrestServerError", () => {
+  it("detects PGRST500 PostgREST internal server error (MEMO-22)", () => {
+    const error = makePostgrestError({
+      message: "simulated property creation error",
+      code: "PGRST500",
+    });
+    expect(isPostgrestServerError(error)).toBe(true);
+  });
+
+  it("returns false for other PostgREST errors", () => {
+    const error = makePostgrestError({
+      message: "some error",
+      code: "PGRST205",
+    });
+    expect(isPostgrestServerError(error)).toBe(false);
+  });
+
+  it("returns false for plain errors", () => {
+    const error = new Error("PGRST500");
+    expect(isPostgrestServerError(error)).toBe(false);
+  });
+});
+
 describe("isTransientStorageError", () => {
   it("detects StorageApiError database timeout (MEMO-1N)", () => {
     const error = new Error("The connection to the database timed out");
@@ -718,6 +742,21 @@ describe("captureSupabaseError", () => {
     const [, opts] = captureExceptionMock.mock.calls[0];
     expect(opts.level).toBe("warning");
     expect(opts.extra.operation).toBe("image-plugin:upload");
+  });
+
+  it("captures PGRST500 at error level with code in extra (MEMO-22)", async () => {
+    const error = makePostgrestError({
+      message: "simulated property creation error",
+      code: "PGRST500",
+    });
+    captureSupabaseError(error, "database.addProperty");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [, opts] = captureExceptionMock.mock.calls[0];
+    expect(opts.level).toBeUndefined();
+    expect(opts.extra.operation).toBe("database.addProperty");
+    expect(opts.extra.code).toBe("PGRST500");
   });
 
   it("includes PostgrestError fields in extra", async () => {

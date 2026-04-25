@@ -53,6 +53,9 @@ export function useDatabaseRows({
         initialValues,
       );
       if (error || !rowPage) {
+        if (error && !isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "database-rows:add");
+        }
         toast.error("Failed to add row", {
           duration: 8000,
           action: {

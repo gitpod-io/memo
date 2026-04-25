@@ -2,7 +2,6 @@
 // Uses the browser Supabase client for client-side mutations.
 
 import { createClient } from "@/lib/supabase/client";
-import { captureSupabaseError } from "@/lib/sentry";
 import {
   getDatabaseCache,
   setDatabaseCache,
@@ -102,7 +101,6 @@ export async function createDatabase(
     .single();
 
   if (pageError) {
-    captureSupabaseError(pageError, "database.create:page");
     return { data: null, error: pageError };
   }
 
@@ -120,7 +118,6 @@ export async function createDatabase(
     .single();
 
   if (propError) {
-    captureSupabaseError(propError, "database.create:property");
     // Clean up the page
     await supabase.from("pages").delete().eq("id", page.id);
     return { data: null, error: propError };
@@ -140,7 +137,6 @@ export async function createDatabase(
     .single();
 
   if (viewError) {
-    captureSupabaseError(viewError, "database.create:view");
     // Clean up the page (cascades to property)
     await supabase.from("pages").delete().eq("id", page.id);
     return { data: null, error: viewError };
@@ -170,9 +166,6 @@ export async function deleteDatabase(
     .eq("id", pageId)
     .eq("is_database", true);
 
-  if (error) {
-    captureSupabaseError(error, "database.delete");
-  }
   return { error };
 }
 
@@ -209,7 +202,6 @@ export async function addProperty(
     .single();
 
   if (error) {
-    captureSupabaseError(error, "database.addProperty");
     return { data: null, error };
   }
   invalidateDatabase(databaseId);
@@ -233,7 +225,6 @@ export async function updateProperty(
     .single();
 
   if (error) {
-    captureSupabaseError(error, "database.updateProperty");
     return { data: null, error };
   }
   if (databaseId) invalidateDatabase(databaseId);
@@ -253,9 +244,7 @@ export async function deleteProperty(
     .delete()
     .eq("id", propertyId);
 
-  if (error) {
-    captureSupabaseError(error, "database.deleteProperty");
-  } else if (databaseId) {
+  if (!error && databaseId) {
     invalidateDatabase(databaseId);
   }
   return { error };
@@ -283,7 +272,6 @@ export async function reorderProperties(
       .eq("database_id", databaseId);
 
     if (error) {
-      captureSupabaseError(error, "database.reorderProperties");
       return { error };
     }
   }
@@ -315,7 +303,6 @@ export async function addRow(
     .single();
 
   if (dbError) {
-    captureSupabaseError(dbError, "database.addRow:lookup");
     return { data: null, error: dbError };
   }
 
@@ -335,7 +322,6 @@ export async function addRow(
     .single();
 
   if (rowError) {
-    captureSupabaseError(rowError, "database.addRow:page");
     return { data: null, error: rowError };
   }
 
@@ -363,7 +349,6 @@ export async function addRow(
       .insert(rows);
 
     if (valError) {
-      captureSupabaseError(valError, "database.addRow:values");
       // Row page was created but values failed — don't roll back the page,
       // the user can still edit values later.
     }
@@ -432,7 +417,6 @@ export async function addView(
     .single();
 
   if (error) {
-    captureSupabaseError(error, "database.addView");
     return { data: null, error };
   }
   invalidateDatabase(databaseId);
@@ -456,7 +440,6 @@ export async function updateView(
     .single();
 
   if (error) {
-    captureSupabaseError(error, "database.updateView");
     return { data: null, error };
   }
   if (databaseId) invalidateDatabase(databaseId);
@@ -480,7 +463,6 @@ export async function deleteView(
     .single();
 
   if (lookupError) {
-    captureSupabaseError(lookupError, "database.deleteView:lookup");
     return { error: lookupError };
   }
 
@@ -491,7 +473,6 @@ export async function deleteView(
     .eq("database_id", view.database_id);
 
   if (countError) {
-    captureSupabaseError(countError, "database.deleteView:count");
     return { error: countError };
   }
 
@@ -505,9 +486,7 @@ export async function deleteView(
     .delete()
     .eq("id", viewId);
 
-  if (error) {
-    captureSupabaseError(error, "database.deleteView");
-  } else {
+  if (!error) {
     invalidateDatabase(databaseId ?? view.database_id);
   }
   return { error };
@@ -530,7 +509,6 @@ export async function reorderViews(
       .eq("database_id", databaseId);
 
     if (error) {
-      captureSupabaseError(error, "database.reorderViews");
       return { error };
     }
   }
@@ -572,7 +550,6 @@ export async function loadWorkspaceMembers(
     .eq("workspace_id", workspaceId);
 
   if (error) {
-    captureSupabaseError(error, "database.loadWorkspaceMembers");
     return { data: null, error };
   }
 
@@ -640,15 +617,12 @@ export async function loadDatabase(
   ]);
 
   if (propertiesResult.error) {
-    captureSupabaseError(propertiesResult.error, "database.load:properties");
     return { data: null, error: propertiesResult.error };
   }
   if (viewsResult.error) {
-    captureSupabaseError(viewsResult.error, "database.load:views");
     return { data: null, error: viewsResult.error };
   }
   if (rowsResult.error) {
-    captureSupabaseError(rowsResult.error, "database.load:rows");
     return { data: null, error: rowsResult.error };
   }
 
@@ -670,7 +644,6 @@ export async function loadDatabase(
       .in("row_id", rowIds);
 
     if (valuesError) {
-      captureSupabaseError(valuesError, "database.load:values");
       return { data: null, error: valuesError };
     }
     allValues = valuesData as RowValue[];
@@ -722,11 +695,9 @@ export async function loadRow(
   ]);
 
   if (pageResult.error) {
-    captureSupabaseError(pageResult.error, "database.loadRow:page");
     return { data: null, error: pageResult.error };
   }
   if (valuesResult.error) {
-    captureSupabaseError(valuesResult.error, "database.loadRow:values");
     return { data: null, error: valuesResult.error };
   }
 

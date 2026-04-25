@@ -7,6 +7,10 @@ import {
   type FilterRule,
 } from "@/lib/database-filters";
 import { updateView } from "@/lib/database";
+import {
+  captureSupabaseError,
+  isInsufficientPrivilegeError,
+} from "@/lib/sentry";
 import type {
   DatabaseProperty,
   DatabaseRow,
@@ -79,6 +83,9 @@ export function useDatabaseFilters({
       );
       const { error } = await updateView(activeView.id, { config: newConfig }, pageId);
       if (error) {
+        if (!isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "database-filters:update-sort");
+        }
         toast.error("Failed to update sort", { duration: 8000 });
       }
     },
@@ -97,6 +104,9 @@ export function useDatabaseFilters({
       );
       const { error } = await updateView(activeView.id, { config: newConfig }, pageId);
       if (error) {
+        if (!isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "database-filters:update-filter");
+        }
         toast.error("Failed to update filter", { duration: 8000 });
       }
     },
