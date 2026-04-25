@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import type { ColumnData } from "./board-view-helpers";
 
 // ---------------------------------------------------------------------------
@@ -13,6 +12,9 @@ import type { ColumnData } from "./board-view-helpers";
 //
 // Follows the same container-level `onKeyDown` pattern as the table view
 // (useTableCellNavigation) — no global `document.addEventListener`.
+//
+// Navigation is delegated to an `onNavigate` callback so the hook stays
+// framework-agnostic and works in Storybook (no Next.js router required).
 // ---------------------------------------------------------------------------
 
 export interface BoardFocusedCard {
@@ -23,15 +25,17 @@ export interface BoardFocusedCard {
 interface UseBoardKeyboardNavigationParams {
   columns: ColumnData[];
   workspaceSlug: string;
+  /** Called when Enter is pressed on a focused card. Receives the target URL path. */
+  onNavigate?: (path: string) => void;
 }
 
 export function useBoardKeyboardNavigation({
   columns,
   workspaceSlug,
+  onNavigate,
 }: UseBoardKeyboardNavigationParams) {
   const [focusedCard, setFocusedCard] = useState<BoardFocusedCard | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
 
   // Focus the DOM element for the currently focused card.
   const focusCardElement = useCallback(
@@ -118,7 +122,7 @@ export function useBoardKeyboardNavigation({
           const column = columns[columnIndex];
           const row = column?.rows[cardIndex];
           if (row) {
-            router.push(`/${workspaceSlug}/${row.page.id}`);
+            onNavigate?.(`/${workspaceSlug}/${row.page.id}`);
           }
           break;
         }
@@ -134,7 +138,7 @@ export function useBoardKeyboardNavigation({
           break;
       }
     },
-    [focusedCard, columns, navigateToCard, workspaceSlug, router],
+    [focusedCard, columns, navigateToCard, workspaceSlug, onNavigate],
   );
 
   // When a card is clicked/focused via mouse, track it.

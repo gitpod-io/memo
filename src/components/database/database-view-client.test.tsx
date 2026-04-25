@@ -29,6 +29,12 @@ vi.mock("@sentry/nextjs", () => ({
   captureException: vi.fn(),
 }));
 
+// Mock next/navigation — DatabaseViewClient calls useRouter() to pass
+// router.push as onNavigate to child views.
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+}));
+
 // Mock next/dynamic to render children synchronously
 vi.mock("next/dynamic", () => ({
   default: () => {

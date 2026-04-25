@@ -332,6 +332,8 @@ function InlineViewContent({
   visibleProperties: DatabaseProperty[];
   workspaceSlug: string;
 }) {
+  const router = useRouter();
+
   switch (viewType) {
     case "board":
       return (
@@ -341,6 +343,7 @@ function InlineViewContent({
             properties={properties}
             viewConfig={viewConfig}
             workspaceSlug={workspaceSlug}
+            onNavigate={router.push}
           />
         </div>
       );
@@ -374,6 +377,7 @@ function InlineViewContent({
             properties={properties}
             viewConfig={viewConfig}
             workspaceSlug={workspaceSlug}
+            onNavigate={router.push}
           />
         </div>
       );

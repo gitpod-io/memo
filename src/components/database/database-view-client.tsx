@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import type { SerializedEditorState } from "lexical";
 import { AlertCircle } from "lucide-react";
 import { PageTitle } from "@/components/page-title";
@@ -116,6 +117,8 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     userId,
     initialData,
   } = props;
+
+  const router = useRouter();
 
   // Database data state — seed from server-prefetched data when available
   const hasInitialData = initialData != null;
@@ -374,6 +377,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   workspaceSlug={workspaceSlug}
                   onCardMove={handleCardMove}
                   onAddRow={handleAddRow}
+                  onNavigate={router.push}
                 />
               ) : activeView?.type === "list" ? (
                 <ListView
@@ -398,6 +402,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   viewConfig={activeView.config}
                   workspaceSlug={workspaceSlug}
                   onAddRow={handleAddRow}
+                  onNavigate={router.push}
                 />
               ) : activeView ? (
                 <ComingSoonPlaceholder viewType={activeView.type} />

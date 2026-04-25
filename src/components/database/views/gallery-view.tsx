@@ -32,6 +32,8 @@ export interface GalleryViewProps {
   workspaceSlug: string;
   /** Called when a new row should be added. */
   onAddRow?: () => void;
+  /** Called when keyboard Enter navigates to a card. Receives the URL path. */
+  onNavigate?: (path: string) => void;
   /** Loading state — shows skeleton. */
   loading?: boolean;
 }
@@ -75,6 +77,7 @@ export const GalleryView = memo(function GalleryView({
   viewConfig,
   workspaceSlug,
   onAddRow,
+  onNavigate,
   loading = false,
 }: GalleryViewProps) {
   const cardSize = viewConfig.card_size ?? "medium";
@@ -88,6 +91,7 @@ export const GalleryView = memo(function GalleryView({
       cardCount: rows.length,
       workspaceSlug,
       pageIds,
+      onNavigate,
     });
 
   const handleAddRow = useCallback(() => {
