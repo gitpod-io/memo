@@ -46,10 +46,22 @@ export function FilterBar({
   const [addState, setAddState] = useState<AddFilterStep>({ step: "closed" });
   const [valueInput, setValueInput] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const addButtonRef = useRef<HTMLButtonElement>(null);
+
+  const isDropdownOpen = addState.step !== "closed";
+
+  // Close dropdown and return focus to the "Add filter" button
+  const closeDropdown = useCallback(() => {
+    setAddState({ step: "closed" });
+    setValueInput("");
+    requestAnimationFrame(() => {
+      addButtonRef.current?.focus();
+    });
+  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
-    if (addState.step === "closed") return;
+    if (!isDropdownOpen) return;
 
     function handleClick(e: MouseEvent) {
       if (
@@ -63,7 +75,22 @@ export function FilterBar({
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [addState.step]);
+  }, [isDropdownOpen]);
+
+  // Close dropdown on Escape key
+  useEffect(() => {
+    if (!isDropdownOpen) return;
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        closeDropdown();
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isDropdownOpen, closeDropdown]);
 
   const removeFilter = useCallback(
     (index: number) => {
@@ -90,7 +117,7 @@ export function FilterBar({
             value: null,
           },
         ]);
-        setAddState({ step: "closed" });
+        closeDropdown();
         return;
       }
 
@@ -101,7 +128,7 @@ export function FilterBar({
       });
       setValueInput("");
     },
-    [addState, filters, onFiltersChange],
+    [addState, filters, onFiltersChange, closeDropdown],
   );
 
   const commitFilter = useCallback(
@@ -115,10 +142,9 @@ export function FilterBar({
           value,
         },
       ]);
-      setAddState({ step: "closed" });
-      setValueInput("");
+      closeDropdown();
     },
-    [addState, filters, onFiltersChange],
+    [addState, filters, onFiltersChange, closeDropdown],
   );
 
   const handleValueSubmit = useCallback(() => {
@@ -143,8 +169,21 @@ export function FilterBar({
       ? properties.find((p) => p.id === addState.propertyId)
       : undefined;
 
+  // Build descriptive aria-label for the current dropdown step
+  const dropdownStepLabel =
+    addState.step === "pick-property"
+      ? "Choose a property to filter by"
+      : addState.step === "pick-operator"
+        ? `Choose an operator for ${properties.find((p) => p.id === addState.propertyId)?.name ?? "property"}`
+        : addState.step === "pick-value"
+          ? `Enter a value for ${properties.find((p) => p.id === addState.propertyId)?.name ?? "property"} filter`
+          : undefined;
+
   return (
-    <div className="flex flex-wrap items-center gap-1.5"
+    <div
+      className="flex flex-wrap items-center gap-1.5"
+      role="toolbar"
+      aria-label="Database filters"
       data-testid="db-filter-bar"
       {...(filters.length > 0 ? { "data-has-filters": "true" } : {})}
     >
@@ -171,12 +210,17 @@ export function FilterBar({
           }
         }
 
+        const pillDescription = valueLabel
+          ? `${propName} ${opLabel}${valueLabel}`
+          : `${propName} ${opLabel}`;
+
         return (
           <Badge
             key={`${filter.property_id}-${filter.operator}-${index}`}
             variant="secondary"
             className="gap-1 text-xs"
             data-testid={`db-filter-pill-${index}`}
+            aria-label={pillDescription}
           >
             <span>{propName}</span>
             <span className="text-muted-foreground">{opLabel}</span>
@@ -196,10 +240,13 @@ export function FilterBar({
       {/* Add filter button + dropdown */}
       <div className="relative" ref={dropdownRef}>
         <Button
+          ref={addButtonRef}
           variant="ghost"
           size="sm"
           className="h-6 gap-1 px-2 text-xs text-muted-foreground"
           data-testid="db-filter-add"
+          aria-expanded={isDropdownOpen}
+          aria-haspopup="true"
           onClick={() =>
             setAddState((prev) =>
               prev.step === "closed"
@@ -217,6 +264,7 @@ export function FilterBar({
           <PropertyPicker
             properties={properties}
             onSelect={handlePropertySelect}
+            aria-label={dropdownStepLabel}
           />
         )}
 
@@ -228,6 +276,7 @@ export function FilterBar({
               "text"
             }
             onSelect={handleOperatorSelect}
+            aria-label={dropdownStepLabel}
           />
         )}
 
@@ -239,10 +288,8 @@ export function FilterBar({
             onValueInputChange={setValueInput}
             onSubmit={handleValueSubmit}
             onSelectValue={commitFilter}
-            onClose={() => {
-              setAddState({ step: "closed" });
-              setValueInput("");
-            }}
+            onClose={closeDropdown}
+            aria-label={dropdownStepLabel}
           />
         )}
       </div>

@@ -38,6 +38,7 @@ export interface FilterValueEditorProps {
   onSubmit: () => void;
   onSelectValue: (value: unknown) => void;
   onClose: () => void;
+  "aria-label"?: string;
 }
 
 export function FilterValueEditor({
@@ -47,6 +48,7 @@ export function FilterValueEditor({
   onSubmit,
   onSelectValue,
   onClose,
+  "aria-label": ariaLabel,
 }: FilterValueEditorProps) {
   switch (property.type) {
     case "select":
@@ -57,6 +59,7 @@ export function FilterValueEditor({
           property={property}
           onSelectValue={onSelectValue}
           onClose={onClose}
+          aria-label={ariaLabel}
         />
       );
 
@@ -67,6 +70,7 @@ export function FilterValueEditor({
         <DateFilterValueEditor
           onSelectValue={onSelectValue}
           onClose={onClose}
+          aria-label={ariaLabel}
         />
       );
 
@@ -79,6 +83,7 @@ export function FilterValueEditor({
           onClose={onClose}
           inputType="number"
           placeholder="Enter number…"
+          aria-label={ariaLabel}
         />
       );
 
@@ -91,6 +96,7 @@ export function FilterValueEditor({
           onClose={onClose}
           inputType="text"
           placeholder="Enter value…"
+          aria-label={ariaLabel}
         />
       );
   }
@@ -107,6 +113,7 @@ function TextInputFilterValueEditor({
   onClose,
   inputType,
   placeholder,
+  "aria-label": ariaLabel,
 }: {
   valueInput: string;
   onValueInputChange: (v: string) => void;
@@ -114,9 +121,10 @@ function TextInputFilterValueEditor({
   onClose: () => void;
   inputType: "text" | "number";
   placeholder: string;
+  "aria-label"?: string;
 }) {
   return (
-    <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-sm border border-border bg-background p-2 shadow-md" data-testid="db-filter-value-editor">
+    <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-sm border border-border bg-background p-2 shadow-md" data-testid="db-filter-value-editor" aria-label={ariaLabel}>
       <Input
         autoFocus
         value={valueInput}
@@ -149,10 +157,12 @@ function SelectFilterValueEditor({
   property,
   onSelectValue,
   onClose,
+  "aria-label": ariaLabel,
 }: {
   property: DatabaseProperty;
   onSelectValue: (value: unknown) => void;
   onClose: () => void;
+  "aria-label"?: string;
 }) {
   const [query, setQuery] = useState("");
   const options = getSelectOptions(property.config);
@@ -162,7 +172,7 @@ function SelectFilterValueEditor({
   );
 
   return (
-    <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-sm border border-border bg-background shadow-md">
+    <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-sm border border-border bg-background shadow-md" aria-label={ariaLabel}>
       <div className="p-1.5">
         <Input
           autoFocus
@@ -175,11 +185,13 @@ function SelectFilterValueEditor({
           className="h-7 text-xs"
         />
       </div>
-      <div className="max-h-48 overflow-y-auto px-1 pb-1">
+      <div className="max-h-48 overflow-y-auto px-1 pb-1" role="listbox" aria-label="Filter options">
         {filtered.map((opt) => (
           <button
             key={opt.id}
             type="button"
+            role="option"
+            aria-selected={false}
             onClick={() => onSelectValue(opt.id)}
             className="flex w-full items-center gap-2 px-2 py-1 text-sm hover:bg-overlay-hover"
           >
@@ -203,12 +215,14 @@ function SelectFilterValueEditor({
 function DateFilterValueEditor({
   onSelectValue,
   onClose,
+  "aria-label": ariaLabel,
 }: {
   onSelectValue: (value: unknown) => void;
   onClose: () => void;
+  "aria-label"?: string;
 }) {
   return (
-    <div className="absolute left-0 top-full z-50 mt-1">
+    <div className="absolute left-0 top-full z-50 mt-1" aria-label={ariaLabel}>
       <DatePicker
         selectedDate={null}
         onSelect={(iso) => onSelectValue(iso)}
@@ -225,18 +239,27 @@ function DateFilterValueEditor({
 export function PropertyPicker({
   properties,
   onSelect,
+  "aria-label": ariaLabel,
 }: {
   properties: DatabaseProperty[];
   onSelect: (propertyId: string) => void;
+  "aria-label"?: string;
 }) {
   return (
-    <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-sm border border-border bg-background py-1 shadow-md" data-testid="db-filter-property-picker">
+    <div
+      className="absolute left-0 top-full z-50 mt-1 w-56 rounded-sm border border-border bg-background py-1 shadow-md"
+      role="listbox"
+      aria-label={ariaLabel ?? "Choose a property to filter by"}
+      data-testid="db-filter-property-picker"
+    >
       {properties.map((prop) => {
         const Icon = PROPERTY_TYPE_ICON[prop.type];
         return (
           <button
             key={prop.id}
             type="button"
+            role="option"
+            aria-selected={false}
             onClick={() => onSelect(prop.id)}
             className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-overlay-hover"
           >
@@ -256,18 +279,27 @@ export function PropertyPicker({
 export function OperatorPicker({
   propertyType,
   onSelect,
+  "aria-label": ariaLabel,
 }: {
   propertyType: DatabaseProperty["type"];
   onSelect: (operator: FilterOperator) => void;
+  "aria-label"?: string;
 }) {
   const operators = getOperatorsForType(propertyType);
 
   return (
-    <div className="absolute left-0 top-full z-50 mt-1 w-48 rounded-sm border border-border bg-background py-1 shadow-md" data-testid="db-filter-operator-picker">
+    <div
+      className="absolute left-0 top-full z-50 mt-1 w-48 rounded-sm border border-border bg-background py-1 shadow-md"
+      role="listbox"
+      aria-label={ariaLabel ?? "Choose a filter operator"}
+      data-testid="db-filter-operator-picker"
+    >
       {operators.map((op) => (
         <button
           key={op}
           type="button"
+          role="option"
+          aria-selected={false}
           onClick={() => onSelect(op)}
           className={cn(
             "flex w-full items-center px-3 py-1.5 text-sm hover:bg-overlay-hover",
