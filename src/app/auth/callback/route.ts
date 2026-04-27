@@ -2,15 +2,18 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Handles auth redirects from Supabase: email confirmation and OAuth callbacks.
+ * Handles auth redirects from Supabase: email confirmation, OAuth callbacks,
+ * and password recovery.
  *
  * Email confirmation: exchanges code → signs out → redirects to /sign-in?confirmed=true
  * OAuth sign-in: exchanges code → keeps session → redirects to user's workspace
+ * Password recovery: exchanges code → keeps session → redirects to /reset-password
  * Errors: redirects to /sign-in with error description as query param
  */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
+  const type = searchParams.get("type");
 
   // OAuth providers may redirect with error params on denied permission or failure
   const errorParam = searchParams.get("error_description") || searchParams.get("error");
@@ -31,6 +34,11 @@ export async function GET(request: NextRequest) {
     const url = new URL("/sign-in", origin);
     url.searchParams.set("error", error.message);
     return NextResponse.redirect(url);
+  }
+
+  // Password recovery: keep the session active so the user can call updateUser
+  if (type === "recovery") {
+    return NextResponse.redirect(`${origin}/reset-password`);
   }
 
   // Determine if this is an OAuth sign-in or email confirmation.

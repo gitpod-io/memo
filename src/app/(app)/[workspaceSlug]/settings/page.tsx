@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { WorkspaceSettingsForm } from "@/components/workspace-settings-form";
+import { ChangePasswordSection } from "@/components/change-password-section";
 import { DeleteAccountSection } from "@/components/delete-account-section";
 import { Separator } from "@/components/ui/separator";
 
@@ -73,6 +74,10 @@ export default async function WorkspaceSettingsPage({
       </div>
       {workspace.is_personal && (
         <>
+          <Separator className="mt-8 bg-overlay-border" />
+          <div className="mt-8">
+            <ChangePasswordSection />
+          </div>
           <Separator className="mt-8 bg-overlay-border" />
           <div className="mt-8">
             <DeleteAccountSection userEmail={userEmail} />
