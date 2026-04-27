@@ -159,7 +159,7 @@ Sign-up flow (atomic, via DB trigger):
 |---|---|---|
 | Editor library | **Lexical** (Meta, MIT) | Full control, MIT license, Meta-backed. Build from lexical-playground reference, adapt to Tailwind + shadcn/ui. |
 | Content storage | Lexical JSON in PostgreSQL `jsonb` | `editorState.toJSON()` stored in `pages.content`. No separate blocks table. |
-| Auth | Supabase Auth — email/password + OAuth | GitHub and Google OAuth via `signInWithOAuth`. Callback at `/auth/callback` handles both email confirmation and OAuth code exchange. |
+| Auth | Supabase Auth — email/password + OAuth | GitHub and Google OAuth via `signInWithOAuth`. Callback at `/auth/callback` handles email confirmation, OAuth code exchange, and password recovery. Password reset via `resetPasswordForEmail` + `updateUser`. |
 | Workspace model | Personal + team workspaces | Auto-created personal workspace on sign-up (non-deletable). Max 3 created workspaces per user. Unlimited joined via invite. |
 | Realtime | Deferred to post-MVP | Yjs + Supabase Realtime adds complexity. Ship single-user editing first. |
 | Styling | Tailwind v4 + shadcn/ui | No custom CSS, consistent design system |
@@ -377,15 +377,21 @@ src/
 │   ├── not-found.tsx       # Root 404 page
 │   ├── globals.css         # Tailwind v4 theme — dark-only oklch tokens, --radius: 0
 │   ├── auth/
-│   │   └── callback/route.ts # Auth callback: email confirmation (sign out → /sign-in?confirmed) + OAuth (keep session → workspace redirect)
+│   │   └── callback/route.ts # Auth callback: email confirmation, OAuth, and password recovery redirect
 │   ├── (auth)/             # Unauthenticated route group
 │   │   ├── layout.tsx      # Centered card layout for auth pages
 │   │   ├── sign-in/
 │   │   │   ├── page.tsx        # /sign-in — server page
-│   │   │   └── sign-in-form.tsx # Client form: email/password, redirect, ?confirmed banner
+│   │   │   └── sign-in-form.tsx # Client form: email/password, redirect, ?confirmed banner, forgot password link
 │   │   ├── sign-up/
 │   │   │   ├── page.tsx        # /sign-up — server page
 │   │   │   └── sign-up-form.tsx # Client form: display name + email/password, email confirmation screen
+│   │   ├── forgot-password/
+│   │   │   ├── page.tsx               # /forgot-password — server page
+│   │   │   └── forgot-password-form.tsx # Client form: email input, calls resetPasswordForEmail
+│   │   ├── reset-password/
+│   │   │   ├── page.tsx               # /reset-password — server page (landing from email link)
+│   │   │   └── reset-password-form.tsx # Client form: new password + confirm, calls updateUser
 │   │   └── invite/[token]/page.tsx # /invite/[token] — invite accept flow
 │   ├── (app)/              # Authenticated route group
 │   │   ├── layout.tsx      # Auth guard, fetches profile, renders AppShell
@@ -506,6 +512,7 @@ src/
 │   │   └── feedback-form.tsx        # User feedback form with type selector, screenshot capture, and submission
 │   ├── keyboard-shortcuts-dialog.tsx # ⌘+? keyboard shortcuts reference dialog
 │   ├── providers.tsx                # Client-side providers wrapper (ThemeProvider, Toaster, TooltipProvider)
+│   ├── change-password-section.tsx # Password change form (new + confirm, calls updateUser)
 │   ├── delete-account-section.tsx # Account deletion danger zone with double-confirm dialog
 │   ├── emoji-picker.tsx         # Floating emoji grid with search, used by page icon picker
 │   ├── page-cover.tsx           # Page cover image: upload, display, change, remove (saves to pages.cover_url)

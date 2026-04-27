@@ -66,6 +66,30 @@ describe("GET /auth/callback", () => {
     });
   });
 
+  describe("password recovery", () => {
+    it("exchanges code and redirects to /reset-password when type=recovery", async () => {
+      mockExchangeCodeForSession.mockResolvedValue({
+        data: {
+          user: { id: "u1", app_metadata: { provider: "email" } },
+          session: {},
+        },
+        error: null,
+      });
+
+      const request = new NextRequest(
+        "http://localhost:3000/auth/callback?code=recovery-code&type=recovery",
+      );
+      const response = await GET(request);
+
+      expect(mockExchangeCodeForSession).toHaveBeenCalledWith("recovery-code");
+      expect(mockSignOut).not.toHaveBeenCalled();
+      expect(response.status).toBe(307);
+      expect(response.headers.get("location")).toBe(
+        "http://localhost:3000/reset-password",
+      );
+    });
+  });
+
   describe("OAuth sign-in", () => {
     it("exchanges code and redirects to user workspace", async () => {
       mockExchangeCodeForSession.mockResolvedValue({

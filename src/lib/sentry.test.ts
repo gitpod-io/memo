@@ -187,7 +187,10 @@ describe("error handling conventions", () => {
      * allowlisted — they won't encounter RLS 42501 violations.
      */
     const RLS_GUARD_ALLOWLIST = new Set([
+      "src/app/(auth)/forgot-password/forgot-password-form.tsx", // auth resetPasswordForEmail, not a table mutation
+      "src/app/(auth)/reset-password/reset-password-form.tsx", // auth updateUser (password reset), not a table mutation
       "src/components/auth/oauth-buttons.tsx", // auth sign-in, not a table mutation
+      "src/components/change-password-section.tsx", // auth updateUser (password change), not a table mutation
       "src/components/delete-account-section.tsx", // account deletion via RPC
       "src/components/editor/image-plugin.tsx", // storage upload, not table RLS
       "src/components/members/invite-accept.tsx", // RPC call, returns app-level error

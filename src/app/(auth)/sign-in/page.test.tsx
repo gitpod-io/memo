@@ -227,4 +227,10 @@ describe("SignInPage", () => {
       screen.queryByText(/email confirmed/i),
     ).not.toBeInTheDocument();
   });
+
+  it("has a forgot password link", () => {
+    render(<SignInPage />);
+    const link = screen.getByRole("link", { name: /forgot password/i });
+    expect(link).toHaveAttribute("href", "/forgot-password");
+  });
 });
