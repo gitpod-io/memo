@@ -513,6 +513,7 @@ src/
 │   ├── page-title.tsx           # Inline-editable page title (saves on blur/Enter)
 │   ├── page-breadcrumb.tsx       # Server component: breadcrumb nav (workspace → ancestors → current page)
 │   ├── page-backlinks.tsx        # Server component: backlinks section (queries page_links, shows linking pages)
+│   ├── page-content-client.tsx   # Client wrapper: lazy-loads DatabaseViewClient, RowPropertiesHeader, PageViewClient via next/dynamic
 │   ├── page-view-client.tsx     # Client wrapper for page view (holds editor ref, renders icon + title + menu + editor)
 │   ├── page-menu.tsx            # Page "..." dropdown: favorites, duplicate, version history, export/import markdown
 │   ├── version-history-panel.tsx # Sheet panel: lists page versions, preview, restore

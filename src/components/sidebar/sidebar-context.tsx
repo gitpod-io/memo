@@ -10,7 +10,15 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import { KeyboardShortcutsDialog } from "@/components/keyboard-shortcuts-dialog";
+import dynamic from "next/dynamic";
+
+const KeyboardShortcutsDialog = dynamic(
+  () =>
+    import("@/components/keyboard-shortcuts-dialog").then(
+      (mod) => mod.KeyboardShortcutsDialog,
+    ),
+  { ssr: false },
+);
 
 interface SidebarContextValue {
   open: boolean;

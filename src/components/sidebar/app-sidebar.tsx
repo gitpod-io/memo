@@ -15,7 +15,14 @@ import { FavoritesSection } from "@/components/sidebar/favorites-section";
 import { PageTree } from "@/components/sidebar/page-tree";
 import { TrashSection } from "@/components/sidebar/trash-section";
 import { UserMenu } from "@/components/sidebar/user-menu";
-import { FeedbackForm } from "@/components/feedback/feedback-form";
+import dynamic from "next/dynamic";
+
+const FeedbackForm = dynamic(
+  () =>
+    import("@/components/feedback/feedback-form").then(
+      (mod) => mod.FeedbackForm,
+    ),
+);
 
 interface AppSidebarProps {
   userId: string;
