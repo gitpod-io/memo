@@ -422,6 +422,7 @@ src/
 │   │   ├── create-workspace-dialog.tsx # Dialog for creating a new workspace
 │   │   ├── page-search.tsx      # Full-text search input + results dropdown (debounced, 300ms)
 │   │   ├── favorites-section.tsx # Per-user favorites list + useFavorite hook for toggle
+│   │   ├── focus-mode-hint.tsx  # Floating hint shown when sidebar is hidden in focus mode
 │   │   ├── page-tree.tsx        # Orchestrator: data fetching, state, delete dialog (uses extracted sub-modules)
 │   │   ├── page-tree-item.tsx  # Single tree node rendering + context menu
 │   │   ├── page-tree-drag-layer.ts # usePageTreeDrag hook: drag-and-drop state + handlers
@@ -560,6 +561,7 @@ src/
 │   ├── track-event.ts      # Client-side usage event tracking (trackEventClient)
 │   ├── track-event-server.ts # Server-side usage event tracking (trackEvent)
 │   ├── types.ts            # Database entity types
+│   ├── usage-tracking-guard.ts # isUsageTrackingDisabled — suppresses usage events in CI/test
 │   ├── use-media-query.ts  # Hook for reactive CSS media query matching (useSyncExternalStore)
 │   ├── use-persisted-expanded.ts # Hook for persisting sidebar tree expansion state to localStorage
 │   ├── use-screenshot.ts   # Hook for capturing screenshots via html2canvas (feedback form)

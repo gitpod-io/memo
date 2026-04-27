@@ -1748,6 +1748,22 @@ const safeValues =
     : undefined;
 ```
 
+## data-testid Naming Convention
+
+Use `data-testid` attributes on interactive elements that E2E tests need to target.
+Prefix with the domain to avoid collisions:
+
+| Domain | Prefix | Example |
+|---|---|---|
+| Database | `db-` | `db-sort-button`, `db-filter-bar`, `db-row-{id}` |
+| Editor | `editor-` | `editor-toolbar`, `editor-slash-menu`, `editor-image` |
+| Sidebar | `sidebar-` | `sidebar-tree`, `sidebar-search` |
+
+For parameterized IDs, use kebab-case: `db-sort-rule-{index}`, `editor-slash-item-{name}`.
+
+Do not add `data-testid` to every element — only to elements that E2E tests select
+and that lack a stable accessible role/label selector.
+
 ## This file evolves
 
 When you discover a new pattern that should be replicated, or an anti-pattern that

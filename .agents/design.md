@@ -581,6 +581,13 @@ When a database row is opened as a full page, properties display above the Lexic
 - Icon-only buttons: always have `aria-label`.
 - Page tree: uses `role="tree"` and `role="treeitem"` with `aria-expanded`.
 - Editor: uses `role="textbox"` with `aria-multiline="true"`.
+- Skip-to-content: `<a>` link in `app-shell.tsx`, visible on focus, jumps to `#main-content`.
+- Typeahead menus (slash commands, page-link dropdown, code language selector): `role="listbox"` on container, `role="option"` on items, `aria-activedescendant` for highlight tracking.
+- Database table: `role="grid"` on table, `role="row"` on rows, `role="columnheader"` / `role="gridcell"` on cells. Arrow-key navigation between cells.
+- Database board/gallery/list: arrow-key navigation with `tabIndex` management. `aria-label` on each card/row describing the item.
+- Filter bar: `aria-label` on filter pills, keyboard-navigable dropdowns.
+- Live regions: `RowCountAnnouncer` uses `aria-live="polite"` to announce filter/sort result count changes to screen readers.
+- Callout blocks: `role="note"` with `aria-label` describing the callout variant.
 
 ---
 
