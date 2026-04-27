@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures/auth";
-import { navigateToEditorPage } from "./fixtures/editor-helpers";
+import { navigateToEditorPage, waitForEditor } from "./fixtures/editor-helpers";
 
 /**
  * Wait for a successful Supabase PATCH to /rest/v1/pages (content auto-save).
@@ -103,8 +103,7 @@ test.describe("Version history", () => {
   }) => {
     await navigateToEditorPage(page);
 
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 10_000 });
+    await waitForEditor(page);
 
     await openVersionHistory(page);
 
@@ -119,8 +118,7 @@ test.describe("Version history", () => {
   }) => {
     await navigateToEditorPage(page);
 
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 10_000 });
+    const editor = await waitForEditor(page);
 
     // Type content and wait for auto-save so the page has content
     const savePromise = waitForContentSave(page);
@@ -160,8 +158,7 @@ test.describe("Version history", () => {
   }) => {
     await navigateToEditorPage(page);
 
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 10_000 });
+    const editor = await waitForEditor(page);
 
     // Type initial content and save
     const savePromise = waitForContentSave(page);
@@ -216,8 +213,7 @@ test.describe("Version history", () => {
   }) => {
     await navigateToEditorPage(page);
 
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 10_000 });
+    const editor = await waitForEditor(page);
 
     // Type initial content and save
     const savePromise = waitForContentSave(page);
@@ -265,16 +261,16 @@ test.describe("Version history", () => {
       timeout: 5_000,
     });
 
-    // The editor returns to editable mode after restore
-    const restoredEditor = page.locator('[contenteditable="true"]');
-    await expect(restoredEditor).toBeVisible({ timeout: 10_000 });
+    // The editor returns to editable mode after restore — wait for Lexical
+    // to fully re-initialize behind the lazy-load boundary
+    const restoredEditor = await waitForEditor(page);
+    await expect(restoredEditor).toBeVisible();
 
     // Reload to verify the restored content was persisted to the database.
     // The restore API updates the DB, but the client-side editor may
     // re-initialize with stale initialContent from the server component.
     await page.reload({ waitUntil: "domcontentloaded" });
-    const reloadedEditor = page.locator('[contenteditable="true"]');
-    await expect(reloadedEditor).toBeVisible({ timeout: 10_000 });
+    const reloadedEditor = await waitForEditor(page);
     await expect(reloadedEditor).toContainText("restored-version-content", {
       timeout: 10_000,
     });
@@ -285,8 +281,7 @@ test.describe("Version history", () => {
   }) => {
     await navigateToEditorPage(page);
 
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 10_000 });
+    await waitForEditor(page);
 
     // Open version history
     await openVersionHistory(page);

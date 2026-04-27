@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures/auth";
-import { navigateToEditorPage } from "./fixtures/editor-helpers";
+import { navigateToEditorPage, waitForEditor } from "./fixtures/editor-helpers";
 
 test.describe("Page Duplication", () => {
   /**
@@ -32,9 +32,9 @@ test.describe("Page Duplication", () => {
       timeout: 15_000,
     });
 
-    // Wait for the new page to fully render
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 10_000 });
+    // Wait for the Lexical editor to fully initialize behind the lazy-load
+    // boundary — contenteditable alone is not sufficient after next/dynamic
+    await waitForEditor(page);
   }
 
   test("user can duplicate a page from the sidebar context menu", async ({
@@ -89,13 +89,19 @@ test.describe("Page Duplication", () => {
     // in-memory state.
     await navigateToEditorPage(page);
 
-    const editor = page.locator('[contenteditable="true"]');
+    const editor = await waitForEditor(page);
     await editor.click();
     const content = "Unique content for duplication test";
     await page.keyboard.type(content);
 
-    // Wait for auto-save to persist content to the database
-    await page.waitForLoadState("networkidle");
+    // Wait for auto-save to persist content to the database — the editor
+    // shows "Saved" after a successful PATCH. networkidle alone is not
+    // reliable because the save is debounced (500ms) and the lazy-load
+    // boundary adds latency to the initial render.
+    await expect(page.getByTestId("editor-save-status")).toContainText(
+      "Saved",
+      { timeout: 10_000 },
+    );
 
     const originalUrl = page.url();
 
@@ -116,9 +122,9 @@ test.describe("Page Duplication", () => {
       timeout: 15_000,
     });
 
-    // Verify the duplicated page has the same content
-    const newEditor = page.locator('[contenteditable="true"]');
-    await expect(newEditor).toBeVisible({ timeout: 10_000 });
+    // Wait for the Lexical editor to fully initialize behind the lazy-load
+    // boundary on the new page
+    const newEditor = await waitForEditor(page);
     await expect(newEditor).toContainText(content, { timeout: 10_000 });
   });
 

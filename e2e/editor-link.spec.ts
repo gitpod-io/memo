@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures/auth";
-import { navigateToEditorPage, modifierKey } from "./fixtures/editor-helpers";
+import { navigateToEditorPage, modifierKey, waitForEditor } from "./fixtures/editor-helpers";
 
 const mod = modifierKey();
 
@@ -11,8 +11,7 @@ test.describe("Editor floating link editor", () => {
   test("link button in toolbar creates a link", async ({
     authenticatedPage: page,
   }) => {
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 10_000 });
+    const editor = await waitForEditor(page);
 
     // Count existing links before we create one
     const linksBefore = await editor.locator("a").count();
@@ -42,8 +41,7 @@ test.describe("Editor floating link editor", () => {
   test("link editor appears when cursor is in a link", async ({
     authenticatedPage: page,
   }) => {
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 10_000 });
+    const editor = await waitForEditor(page);
 
     // Create a link first
     await editor.click();
@@ -55,12 +53,17 @@ test.describe("Editor floating link editor", () => {
     await page.keyboard.press("Home");
     await page.keyboard.up("Shift");
 
-    // Use Cmd/Ctrl+K to create link
+    // Use Cmd/Ctrl+K to create link — the shortcut handler is registered
+    // via useEffect in FloatingLinkEditorPlugin which may not have fired
+    // yet after the lazy-load boundary resolves. Wait for the toolbar to
+    // confirm floating plugins are mounted before sending the shortcut.
+    const toolbar = page.locator('[role="toolbar"][aria-label="Text formatting"]');
+    await expect(toolbar).toBeVisible({ timeout: 5_000 });
     await page.keyboard.press(`${mod}+k`);
 
     // The link editor popover should appear with a URL input
     const linkEditor = page.locator('input[type="url"]');
-    await expect(linkEditor).toBeVisible({ timeout: 3_000 });
+    await expect(linkEditor).toBeVisible({ timeout: 5_000 });
 
     // Type a URL and save
     await linkEditor.fill("https://example.com");
@@ -74,8 +77,7 @@ test.describe("Editor floating link editor", () => {
   test("link can be removed via link editor", async ({
     authenticatedPage: page,
   }) => {
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 10_000 });
+    const editor = await waitForEditor(page);
 
     // Count existing links before we create one
     const linksBefore = await editor.locator("a").count();
@@ -90,10 +92,13 @@ test.describe("Editor floating link editor", () => {
     await page.keyboard.press("Home");
     await page.keyboard.up("Shift");
 
+    // Wait for the floating toolbar to confirm plugins are mounted
+    const toolbar = page.locator('[role="toolbar"][aria-label="Text formatting"]');
+    await expect(toolbar).toBeVisible({ timeout: 5_000 });
     await page.keyboard.press(`${mod}+k`);
 
     const linkInput = page.locator('input[type="url"]');
-    await expect(linkInput).toBeVisible({ timeout: 3_000 });
+    await expect(linkInput).toBeVisible({ timeout: 5_000 });
     await linkInput.fill("https://example.com");
     await page.keyboard.press("Enter");
 

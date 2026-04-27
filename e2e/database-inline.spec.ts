@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures/auth";
+import { waitForEditor } from "./fixtures/editor-helpers";
 import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
 
@@ -90,7 +91,9 @@ async function navigateToNewPage(page: Page): Promise<string> {
   await expect(newPageBtn).toBeVisible({ timeout: 5_000 });
   await newPageBtn.click();
 
-  const editor = page.locator('[contenteditable="true"]');
+  // Wait for the Lexical editor to fully initialize behind the lazy-load
+  // boundary. Uses data-lexical-editor which Lexical sets after init.
+  const editor = page.locator('[data-lexical-editor="true"]');
   const maxRetries = 2;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const visible = await editor
@@ -126,8 +129,7 @@ async function navigateToNewPage(page: Page): Promise<string> {
  * Open the slash command menu and select the "Database" option.
  */
 async function openDatabaseSlashCommand(page: Page) {
-  const editor = page.locator('[contenteditable="true"]');
-  await expect(editor).toBeVisible({ timeout: 10_000 });
+  const editor = await waitForEditor(page);
 
   await editor.click();
   await page.keyboard.press("End");
@@ -277,13 +279,18 @@ test.describe("Inline DatabaseNode", () => {
 
     await insertInlineDatabaseBlock(page, uniqueDbName);
 
-    // Wait for auto-save to complete
-    await page.waitForLoadState("networkidle");
+    // Wait for auto-save to persist the database block — the editor shows
+    // "Saved" after a successful PATCH. networkidle alone is not reliable
+    // because the save is debounced and the lazy-load boundary adds latency.
+    await expect(page.getByTestId("editor-save-status")).toContainText(
+      "Saved",
+      { timeout: 10_000 },
+    );
 
     await page.reload({ waitUntil: "domcontentloaded" });
 
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 15_000 });
+    // Wait for the Lexical editor to fully initialize after reload
+    await waitForEditor(page);
 
     // The inline database block should persist
     const inlineDbAfterReload = page.locator(".editor-database");
