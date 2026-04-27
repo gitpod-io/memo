@@ -232,6 +232,28 @@ lazyCaptureException(error);
 Reserve `lazyCaptureException` for errors that have no structured classification
 (e.g. Lexical editor framework errors, unexpected runtime exceptions).
 
+### Supabase errors may be plain objects, not Error instances
+
+The Supabase PostgREST client (v2.103.0+) returns **plain objects**
+`{ message, details, hint, code }` — not `PostgrestError` class instances — when
+`fetch` throws a network error in the default (non-`throwOnError`) mode. The
+`PostgrestError` class is only instantiated when `shouldThrowOnError` is true.
+
+Do NOT use `instanceof Error` to check for Supabase errors. Use duck-type checks:
+
+```typescript
+// ✅ Correct — works for both PostgrestError instances and plain objects
+if (error && typeof error === "object" && "code" in error && "details" in error) { ... }
+
+// ❌ Wrong — fails for plain objects from network errors
+if (error instanceof Error && "code" in error) { ... }
+```
+
+`captureSupabaseError` handles this automatically — it wraps plain objects in a
+proper `Error` before sending to Sentry so they get proper stack traces and
+grouping. The `isPostgrestError` duck-type check in `src/lib/sentry.ts` also
+handles both shapes.
+
 ### Always use `captureApiError` for internal API fetch errors
 
 Non-Supabase fetch calls (e.g. `/api/pages/…/versions`) must use `captureApiError`

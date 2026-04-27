@@ -18,15 +18,22 @@ export function isE2ETestSession(): boolean {
 }
 
 /**
- * Duck-type check for Supabase PostgrestError. Avoids importing the class
- * from `@supabase/supabase-js` which would pull the entire SDK (~59 kB)
- * into every page bundle.
+ * Duck-type check for Supabase PostgrestError shape. Matches both:
+ * 1. `PostgrestError` class instances (from `throwOnError()` path) — extend `Error`
+ * 2. Plain objects `{ message, details, hint, code }` returned by the Supabase
+ *    PostgREST client in the default `{ data, error }` pattern when `fetch` throws
+ *    a network error (the client catches the fetch error and returns a plain object
+ *    literal, not a `PostgrestError` instance)
+ *
+ * Does NOT use `instanceof Error` — the Supabase client returns plain objects for
+ * network-level failures (see postgrest-js `executeWithRetry` catch handler).
  */
 function isPostgrestError(
   error: unknown,
 ): error is { message: string; code: string; details: string; hint: string } {
+  if (error == null || typeof error !== "object") return false;
   return (
-    error instanceof Error &&
+    "message" in error &&
     "code" in error &&
     "details" in error &&
     "hint" in error
@@ -295,6 +302,73 @@ export function isSupabaseAuthLockError(error: Error): boolean {
 }
 
 /**
+ * Returns true when the Sentry event is a transient network error from a
+ * Supabase operation. These are "TypeError: Failed to fetch" or "fetch failed"
+ * errors that occur when the browser loses connectivity or the Supabase
+ * endpoint is temporarily unreachable. They are not actionable and should
+ * be dropped from Sentry entirely to reduce noise.
+ *
+ * Matches two shapes:
+ * 1. Events where the exception value contains "Failed to fetch" or
+ *    "fetch failed" — the wrapped Error from `captureSupabaseError`
+ * 2. Events reported as "Object captured as exception with keys: code,
+ *    details, hint, message" where the extra data contains a transient
+ *    network error message — plain objects that bypassed `ensureError`
+ */
+export function isTransientSupabaseNetworkEvent(event: ErrorEvent): boolean {
+  const values = event.exception?.values;
+  if (!values || values.length === 0) return false;
+
+  const hasTransientException = values.some((ex) => {
+    const val = ex.value ?? "";
+    return (
+      val.includes("Failed to fetch") ||
+      val.includes("fetch failed") ||
+      val.includes("Load failed") ||
+      val.includes("NetworkError when attempting to fetch resource") ||
+      val.includes("The Internet connection appears to be offline") ||
+      val.includes("Network request failed")
+    );
+  });
+
+  if (hasTransientException) return true;
+
+  // Check for plain-object errors that Sentry serialized as
+  // "Object captured as exception with keys: code, details, hint, message"
+  const hasObjectException = values.some(
+    (ex) =>
+      typeof ex.value === "string" &&
+      ex.value.includes("Object captured as exception with keys:") &&
+      ex.value.includes("code") &&
+      ex.value.includes("details") &&
+      ex.value.includes("message"),
+  );
+
+  if (!hasObjectException) return false;
+
+  // Verify the extra data contains a transient network error message
+  const extra = event.extra;
+  if (!extra) return false;
+  const msg =
+    typeof extra.message === "string" ? extra.message : "";
+  const serialized = extra.__serialized__;
+  const serializedMsg =
+    serialized &&
+    typeof serialized === "object" &&
+    "message" in serialized &&
+    typeof (serialized as Record<string, unknown>).message === "string"
+      ? (serialized as Record<string, string>).message
+      : "";
+
+  return (
+    msg.includes("Failed to fetch") ||
+    msg.includes("fetch failed") ||
+    serializedMsg.includes("Failed to fetch") ||
+    serializedMsg.includes("fetch failed")
+  );
+}
+
+/**
  * Returns true when the Sentry event is a Supabase auth lock contention
  * error. These are unhandled promise rejections from the Supabase client's
  * internal `_acquireLock` when concurrent requests steal each other's
@@ -406,11 +480,33 @@ export function captureApiError(error: unknown, operation: string): void {
 }
 
 /**
+ * Ensure the value passed to `lazyCaptureException` is a proper `Error`
+ * instance. The Supabase PostgREST client returns plain objects
+ * `{ message, details, hint, code }` for network-level fetch failures
+ * (see postgrest-js `executeWithRetry` catch handler). Sentry cannot
+ * extract a stack trace from plain objects and reports them as
+ * "Object captured as exception with keys: …", creating ungrouped noise.
+ */
+function ensureError(error: Error | { message: string }): Error {
+  if (error instanceof Error) return error;
+  const wrapped = new Error(error.message);
+  wrapped.name = "SupabaseError";
+  // Preserve the original object so Sentry extra data still has access
+  wrapped.cause = error;
+  return wrapped;
+}
+
+/**
  * Report a Supabase error to Sentry with structured context.
  *
- * Accepts both PostgrestError (from query/mutation results) and generic Error
- * (from catch blocks). The `operation` tag makes it easy to filter in Sentry
- * by the database operation that failed.
+ * Accepts `PostgrestError` class instances (from `throwOnError()` path),
+ * plain objects `{ message, details, hint, code }` (from the default
+ * `{ data, error }` pattern when fetch fails), and generic `Error` objects
+ * (from catch blocks).
+ *
+ * Plain objects are wrapped in a proper `Error` before sending to Sentry
+ * so they get proper stack traces and grouping instead of appearing as
+ * "Object captured as exception with keys: code, details, hint, message".
  *
  * Transient network errors (e.g. `TypeError: Failed to fetch`) are captured at
  * `warning` level to reduce noise — they are not application bugs.
@@ -430,6 +526,9 @@ export function captureSupabaseError(
     extra.hint = error.hint;
   }
 
+  // Wrap plain objects in a proper Error for Sentry grouping
+  const reportable = ensureError(error);
+
   if (
     isTransientNetworkError(error) ||
     isTransientStorageError(error) ||
@@ -441,9 +540,9 @@ export function captureSupabaseError(
     isStatementTimeoutError(error) ||
     isEmptyResultError(error)
   ) {
-    lazyCaptureException(error, { extra, level: "warning" });
+    lazyCaptureException(reportable, { extra, level: "warning" });
     return;
   }
 
-  lazyCaptureException(error, { extra });
+  lazyCaptureException(reportable, { extra });
 }

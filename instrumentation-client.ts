@@ -13,6 +13,7 @@ import("@sentry/nextjs").then(async (Sentry) => {
     isNextjsInternalNoise,
     isReactLexicalDomConflict,
     isSupabaseAuthLockContention,
+    isTransientSupabaseNetworkEvent,
   } = await import("@/lib/sentry");
 
   Sentry.init({
@@ -36,6 +37,7 @@ import("@sentry/nextjs").then(async (Sentry) => {
       if (isNextjsInternalNoise(event)) return null;
       if (isReactLexicalDomConflict(event)) return null;
       if (isSupabaseAuthLockContention(event)) return null;
+      if (isTransientSupabaseNetworkEvent(event)) return null;
       return event;
     },
   });

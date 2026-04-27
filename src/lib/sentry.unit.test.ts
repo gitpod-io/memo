@@ -20,6 +20,7 @@ import {
   isPostgrestServerError,
   isSupabaseAuthLockError,
   isSupabaseAuthLockContention,
+  isTransientSupabaseNetworkEvent,
   captureSupabaseError,
   captureApiError,
   isNextjsInternalNoise,
@@ -37,6 +38,25 @@ function makePostgrestError(
     code: overrides.code ?? "PGRST000",
   });
   return err;
+}
+
+/**
+ * Create a plain object matching the shape returned by the Supabase PostgREST
+ * client when `fetch` throws a network error in the default (non-throwOnError)
+ * mode. These are NOT `PostgrestError` instances — they are plain object
+ * literals `{ message, details, hint, code }`.
+ *
+ * See: postgrest-js `executeWithRetry` catch handler.
+ */
+function makePlainSupabaseError(
+  overrides: { message?: string; details?: string; hint?: string; code?: string } = {},
+): { message: string; code: string; details: string; hint: string } {
+  return {
+    message: overrides.message ?? "TypeError: Failed to fetch",
+    details: overrides.details ?? "",
+    hint: overrides.hint ?? "",
+    code: overrides.code ?? "",
+  };
 }
 
 describe("isTransientNetworkError", () => {
@@ -198,6 +218,29 @@ describe("isTransientNetworkError", () => {
   it("returns false for a generic application error", () => {
     const error = new Error("Something went wrong");
     expect(isTransientNetworkError(error)).toBe(false);
+  });
+
+  // --- Plain object regression tests (MEMO-E / MEMO-C / #828) ---
+  // The Supabase PostgREST client returns plain objects (not PostgrestError
+  // instances) when fetch throws a network error in the default mode.
+
+  it("detects 'TypeError: Failed to fetch' from plain Supabase error object (#828 MEMO-E)", () => {
+    const error = makePlainSupabaseError({
+      message: "TypeError: Failed to fetch (yoipusltrtbvneuywzkj.supabase.co)",
+      details:
+        "TypeError: Failed to fetch\n    at https://memo.software-factory.dev/_next/static/chunks/0vf8__som4qot.js:20:1653",
+    });
+    expect(isTransientNetworkError(error as unknown as Error)).toBe(true);
+  });
+
+  it("detects 'TypeError: Failed to fetch' from plain object with empty code (#828 MEMO-C)", () => {
+    const error = makePlainSupabaseError({
+      message: "TypeError: Failed to fetch (yoipusltrtbvneuywzkj.supabase.co)",
+      details:
+        "TypeError: Failed to fetch\n    at http://localhost:3000/_next/static/chunks/0.rz_@sentry_core.js:6673:34",
+      code: "",
+    });
+    expect(isTransientNetworkError(error as unknown as Error)).toBe(true);
   });
 });
 
@@ -775,6 +818,81 @@ describe("captureSupabaseError", () => {
     expect(opts.extra.code).toBe("23505");
     expect(opts.extra.details).toBe("Key (id)=(abc) already exists.");
   });
+
+  // --- Plain object regression tests (MEMO-E / MEMO-C / #828) ---
+  // The Supabase PostgREST client returns plain objects (not PostgrestError
+  // instances) when fetch throws a network error in the default mode.
+
+  it("wraps plain Supabase error objects in Error before sending to Sentry (#828 MEMO-E)", async () => {
+    const plainError = makePlainSupabaseError({
+      message: "TypeError: Failed to fetch (yoipusltrtbvneuywzkj.supabase.co)",
+      details:
+        "TypeError: Failed to fetch\n    at https://memo.software-factory.dev/_next/static/chunks/0vf8__som4qot.js:20:1653",
+    });
+    captureSupabaseError(plainError as unknown as Error, "editor:save");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [captured, opts] = captureExceptionMock.mock.calls[0];
+    // Must be a proper Error instance, not a plain object
+    expect(captured).toBeInstanceOf(Error);
+    expect(captured.name).toBe("SupabaseError");
+    expect(captured.message).toBe(
+      "TypeError: Failed to fetch (yoipusltrtbvneuywzkj.supabase.co)",
+    );
+    // Transient network error → warning level
+    expect(opts.level).toBe("warning");
+    expect(opts.extra.operation).toBe("editor:save");
+  });
+
+  it("extracts code/details/hint from plain Supabase error objects (#828 MEMO-C)", async () => {
+    const plainError = makePlainSupabaseError({
+      message: "TypeError: Failed to fetch (yoipusltrtbvneuywzkj.supabase.co)",
+      details:
+        "TypeError: Failed to fetch\n    at http://localhost:3000/_next/static/chunks/0.rz_@sentry_core.js:6673:34",
+      code: "",
+      hint: "",
+    });
+    captureSupabaseError(plainError as unknown as Error, "database-properties:reorder");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [captured, opts] = captureExceptionMock.mock.calls[0];
+    expect(captured).toBeInstanceOf(Error);
+    expect(opts.level).toBe("warning");
+    expect(opts.extra.code).toBe("");
+    expect(opts.extra.details).toContain("TypeError: Failed to fetch");
+    expect(opts.extra.operation).toBe("database-properties:reorder");
+  });
+
+  it("passes Error instances through without wrapping", async () => {
+    const error = new Error("Failed to fetch");
+    captureSupabaseError(error, "page-tree:fetch-pages");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [captured] = captureExceptionMock.mock.calls[0];
+    // Should be the original Error, not wrapped
+    expect(captured).toBe(error);
+  });
+
+  it("wraps plain non-network Supabase errors in Error at error level (#828)", async () => {
+    const plainError = makePlainSupabaseError({
+      message: "unexpected server error",
+      code: "PGRST500",
+      details: "internal error",
+    });
+    captureSupabaseError(plainError as unknown as Error, "database.addProperty");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [captured, opts] = captureExceptionMock.mock.calls[0];
+    expect(captured).toBeInstanceOf(Error);
+    expect(captured.name).toBe("SupabaseError");
+    // Non-transient → error level (no level override)
+    expect(opts.level).toBeUndefined();
+    expect(opts.extra.code).toBe("PGRST500");
+  });
 });
 
 function makeSentryEvent(
@@ -1075,6 +1193,148 @@ describe("isSupabaseAuthLockContention", () => {
   it("returns false when exception is missing", () => {
     const event = { type: undefined } as ErrorEvent;
     expect(isSupabaseAuthLockContention(event)).toBe(false);
+  });
+});
+
+describe("isTransientSupabaseNetworkEvent", () => {
+  it("detects 'Failed to fetch' in exception value (#828 MEMO-E)", () => {
+    const event = makeSentryEvent([
+      {
+        type: "SupabaseError",
+        value: "TypeError: Failed to fetch (yoipusltrtbvneuywzkj.supabase.co)",
+      },
+    ]);
+    expect(isTransientSupabaseNetworkEvent(event)).toBe(true);
+  });
+
+  it("detects 'fetch failed' in exception value (Node.js)", () => {
+    const event = makeSentryEvent([
+      { type: "Error", value: "TypeError: fetch failed" },
+    ]);
+    expect(isTransientSupabaseNetworkEvent(event)).toBe(true);
+  });
+
+  it("detects 'Load failed' (Safari) in exception value", () => {
+    const event = makeSentryEvent([
+      { type: "Error", value: "Load failed" },
+    ]);
+    expect(isTransientSupabaseNetworkEvent(event)).toBe(true);
+  });
+
+  it("detects 'NetworkError when attempting to fetch resource' (Firefox)", () => {
+    const event = makeSentryEvent([
+      {
+        type: "Error",
+        value: "NetworkError when attempting to fetch resource.",
+      },
+    ]);
+    expect(isTransientSupabaseNetworkEvent(event)).toBe(true);
+  });
+
+  it("detects 'The Internet connection appears to be offline'", () => {
+    const event = makeSentryEvent([
+      {
+        type: "Error",
+        value: "The Internet connection appears to be offline.",
+      },
+    ]);
+    expect(isTransientSupabaseNetworkEvent(event)).toBe(true);
+  });
+
+  it("detects 'Network request failed'", () => {
+    const event = makeSentryEvent([
+      { type: "Error", value: "Network request failed" },
+    ]);
+    expect(isTransientSupabaseNetworkEvent(event)).toBe(true);
+  });
+
+  it("detects plain-object Sentry error with transient network message in extra (#828)", () => {
+    const event = {
+      type: undefined,
+      exception: {
+        values: [
+          {
+            type: "Error",
+            value:
+              "Object captured as exception with keys: code, details, hint, message",
+          },
+        ],
+      },
+      extra: {
+        message: "TypeError: Failed to fetch (yoipusltrtbvneuywzkj.supabase.co)",
+        operation: "editor:save",
+      },
+    } as unknown as ErrorEvent;
+    expect(isTransientSupabaseNetworkEvent(event)).toBe(true);
+  });
+
+  it("detects plain-object Sentry error with __serialized__ extra (#828)", () => {
+    const event = {
+      type: undefined,
+      exception: {
+        values: [
+          {
+            type: "Error",
+            value:
+              "Object captured as exception with keys: code, details, hint, message",
+          },
+        ],
+      },
+      extra: {
+        __serialized__: {
+          message: "TypeError: Failed to fetch (yoipusltrtbvneuywzkj.supabase.co)",
+          code: "",
+          details: "TypeError: Failed to fetch",
+          hint: "",
+        },
+      },
+    } as unknown as ErrorEvent;
+    expect(isTransientSupabaseNetworkEvent(event)).toBe(true);
+  });
+
+  it("returns false for non-network errors", () => {
+    const event = makeSentryEvent([
+      { type: "Error", value: "Cannot read properties of undefined" },
+    ]);
+    expect(isTransientSupabaseNetworkEvent(event)).toBe(false);
+  });
+
+  it("returns false for plain-object error without transient network message", () => {
+    const event = {
+      type: undefined,
+      exception: {
+        values: [
+          {
+            type: "Error",
+            value:
+              "Object captured as exception with keys: code, details, hint, message",
+          },
+        ],
+      },
+      extra: {
+        message: "new row violates row-level security policy",
+        operation: "page-tree:create-page",
+      },
+    } as unknown as ErrorEvent;
+    expect(isTransientSupabaseNetworkEvent(event)).toBe(false);
+  });
+
+  it("returns false when exception values are empty", () => {
+    const event = makeSentryEvent([]);
+    expect(isTransientSupabaseNetworkEvent(event)).toBe(false);
+  });
+
+  it("returns false when exception is missing", () => {
+    const event = { type: undefined } as ErrorEvent;
+    expect(isTransientSupabaseNetworkEvent(event)).toBe(false);
+  });
+
+  it("detects transient error in chained exceptions", () => {
+    const event = makeSentryEvent([
+      { type: "Error", value: "Some wrapper error" },
+      { type: "TypeError", value: "Failed to fetch" },
+    ]);
+    expect(isTransientSupabaseNetworkEvent(event)).toBe(true);
   });
 });
 
