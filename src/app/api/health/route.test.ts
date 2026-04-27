@@ -1,81 +1,81 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-// Mock next/headers cookies before importing the route
-vi.mock("next/headers", () => ({
-  cookies: vi.fn().mockResolvedValue({
-    getAll: () => [],
-    set: vi.fn(),
-  }),
+// Mock @supabase/supabase-js
+const mockRpc = vi.fn();
+const mockMaybeSingle = vi.fn();
+const mockLimit = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
+const mockSelect = vi.fn().mockReturnValue({ limit: mockLimit });
+const mockFrom = vi.fn().mockReturnValue({ select: mockSelect });
+
+vi.mock("@supabase/supabase-js", () => ({
+  createClient: vi.fn(() => ({
+    rpc: mockRpc,
+    from: mockFrom,
+  })),
 }));
 
-// Mock the Supabase server client
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: vi.fn(),
-}));
+// Must import after mocks are set up
+const { GET } = await import("./route");
 
-import { GET } from "./route";
-import { createClient } from "@/lib/supabase/server";
-
-const mockedCreateClient = vi.mocked(createClient);
+let savedUrl: string | undefined;
+let savedKey: string | undefined;
 
 beforeEach(() => {
-  vi.restoreAllMocks();
+  savedUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  savedKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  vi.clearAllMocks();
+});
+
+afterEach(() => {
+  if (savedUrl !== undefined) {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = savedUrl;
+  } else {
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+  }
+  if (savedKey !== undefined) {
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = savedKey;
+  } else {
+    delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  }
 });
 
 describe("GET /api/health", () => {
   it("returns not-configured when NEXT_PUBLIC_SUPABASE_URL is missing", async () => {
-    const original = process.env.NEXT_PUBLIC_SUPABASE_URL;
     delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-    const response = await GET();
+    // Reset modules to clear the singleton, then re-import
+    vi.resetModules();
+    const mod = await import("./route");
+
+    const response = await mod.GET();
     const body = await response.json();
 
     expect(body.status).toBe("ok");
     expect(body.db.connected).toBe(false);
     expect(body.db.reason).toBe("not_configured");
-    expect(mockedCreateClient).not.toHaveBeenCalled();
-
-    // Restore
-    if (original !== undefined) process.env.NEXT_PUBLIC_SUPABASE_URL = original;
   });
 
   it("returns not-configured when NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is missing", async () => {
-    const originalUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const originalKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
     delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-    const response = await GET();
+    vi.resetModules();
+    const mod = await import("./route");
+
+    const response = await mod.GET();
     const body = await response.json();
 
     expect(body.status).toBe("ok");
     expect(body.db.connected).toBe(false);
     expect(body.db.reason).toBe("not_configured");
-    expect(mockedCreateClient).not.toHaveBeenCalled();
-
-    // Restore
-    if (originalUrl !== undefined) {
-      process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl;
-    } else {
-      delete process.env.NEXT_PUBLIC_SUPABASE_URL;
-    }
-    if (originalKey !== undefined) {
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = originalKey;
-    }
   });
 
-  it("returns ok when Supabase query succeeds", async () => {
+  it("returns ok when health_check RPC succeeds", async () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "test-key";
 
-    const mockMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
-    const mockLimit = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
-    const mockSelect = vi.fn().mockReturnValue({ limit: mockLimit });
-    const mockFrom = vi.fn().mockReturnValue({ select: mockSelect });
-
-    mockedCreateClient.mockResolvedValue({ from: mockFrom } as unknown as Awaited<
-      ReturnType<typeof createClient>
-    >);
+    mockRpc.mockResolvedValue({ data: 1, error: null });
 
     const response = await GET();
     const body = await response.json();
@@ -83,23 +83,35 @@ describe("GET /api/health", () => {
     expect(body.status).toBe("ok");
     expect(body.db.connected).toBe(true);
     expect(body.db.latency_ms).toBeGreaterThanOrEqual(0);
+    expect(mockRpc).toHaveBeenCalledWith("health_check");
   });
 
-  it("returns ok with connected when table does not exist", async () => {
+  it("falls back to table probe when RPC does not exist", async () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "test-key";
 
-    const mockMaybeSingle = vi.fn().mockResolvedValue({
+    mockRpc.mockResolvedValue({
       data: null,
-      error: { message: 'relation "_health_check" does not exist' },
+      error: { message: "function health_check does not exist", code: "PGRST202" },
     });
-    const mockLimit = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
-    const mockSelect = vi.fn().mockReturnValue({ limit: mockLimit });
-    const mockFrom = vi.fn().mockReturnValue({ select: mockSelect });
+    mockMaybeSingle.mockResolvedValue({ data: null, error: null });
 
-    mockedCreateClient.mockResolvedValue({ from: mockFrom } as unknown as Awaited<
-      ReturnType<typeof createClient>
-    >);
+    const response = await GET();
+    const body = await response.json();
+
+    expect(body.status).toBe("ok");
+    expect(body.db.connected).toBe(true);
+    expect(mockFrom).toHaveBeenCalledWith("pages");
+  });
+
+  it("returns degraded for non-connection RPC errors", async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "test-key";
+
+    mockRpc.mockResolvedValue({
+      data: null,
+      error: { message: "permission denied", code: "42501" },
+    });
 
     const response = await GET();
     const body = await response.json();
@@ -108,11 +120,11 @@ describe("GET /api/health", () => {
     expect(body.db.connected).toBe(true);
   });
 
-  it("returns down when Supabase client throws", async () => {
+  it("returns down when client throws", async () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "test-key";
 
-    mockedCreateClient.mockRejectedValue(new Error("Connection refused"));
+    mockRpc.mockRejectedValue(new Error("Connection refused"));
 
     const response = await GET();
     const body = await response.json();
@@ -121,21 +133,18 @@ describe("GET /api/health", () => {
     expect(body.db.connected).toBe(false);
   });
 
-  it("returns degraded for non-connection Supabase errors", async () => {
+  it("returns degraded when fallback table probe fails", async () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "test-key";
 
-    const mockMaybeSingle = vi.fn().mockResolvedValue({
+    mockRpc.mockResolvedValue({
       data: null,
-      error: { message: "permission denied for table _health_check" },
+      error: { message: "function health_check does not exist", code: "PGRST202" },
     });
-    const mockLimit = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
-    const mockSelect = vi.fn().mockReturnValue({ limit: mockLimit });
-    const mockFrom = vi.fn().mockReturnValue({ select: mockSelect });
-
-    mockedCreateClient.mockResolvedValue({ from: mockFrom } as unknown as Awaited<
-      ReturnType<typeof createClient>
-    >);
+    mockMaybeSingle.mockResolvedValue({
+      data: null,
+      error: { message: "permission denied for table pages" },
+    });
 
     const response = await GET();
     const body = await response.json();
