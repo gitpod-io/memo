@@ -10,9 +10,7 @@ import {
   type BreadcrumbItem,
 } from "@/components/page-breadcrumb";
 import { PageBacklinks } from "@/components/page-backlinks";
-import { PageViewClient } from "@/components/page-view-client";
-import { RowPropertiesHeader } from "@/components/database/row-properties-header";
-import { DatabaseViewClient } from "@/components/database/database-view-client";
+import { PageContentClient } from "@/components/page-content-client";
 import type {
   DatabaseProperty,
   DatabaseRow,
@@ -309,42 +307,24 @@ export default async function PageView({
       <div className="mb-2">
         <PageBreadcrumb items={breadcrumbItems} />
       </div>
-      {isDatabase ? (
-        <DatabaseViewClient
-          pageId={page.id}
-          pageTitle={page.title}
-          pageIcon={page.icon ?? null}
-          pageCoverUrl={page.cover_url ?? null}
-          initialContent={initialContent}
-          workspaceId={workspace.id}
-          workspaceSlug={workspaceSlug}
-          userId={user.id}
-          initialData={initialDatabaseData}
-        />
-      ) : (
-        <>
-          {isRowPage && rowProperties.length > 0 && (
-            <RowPropertiesHeader
-              pageId={page.id}
-              properties={rowProperties}
-              values={rowValues}
-              pageCreatedAt={page.created_at}
-              pageUpdatedAt={page.updated_at}
-              pageCreatedBy={page.created_by}
-            />
-          )}
-          <PageViewClient
-            pageId={page.id}
-            pageTitle={page.title}
-            pageIcon={page.icon ?? null}
-            pageCoverUrl={page.cover_url ?? null}
-            initialContent={initialContent}
-            workspaceId={workspace.id}
-            workspaceSlug={workspaceSlug}
-            userId={user.id}
-          />
-        </>
-      )}
+      <PageContentClient
+        pageId={page.id}
+        pageTitle={page.title}
+        pageIcon={page.icon ?? null}
+        pageCoverUrl={page.cover_url ?? null}
+        initialContent={initialContent}
+        workspaceId={workspace.id}
+        workspaceSlug={workspaceSlug}
+        userId={user.id}
+        isDatabase={isDatabase}
+        isRowPage={isRowPage}
+        rowProperties={rowProperties}
+        rowValues={rowValues}
+        pageCreatedAt={page.created_at}
+        pageUpdatedAt={page.updated_at}
+        pageCreatedBy={page.created_by}
+        initialDatabaseData={initialDatabaseData}
+      />
       <Suspense fallback={null}>
         <PageBacklinks
           pageId={page.id}

@@ -1,10 +1,15 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import dynamic from "next/dynamic";
 import { SmilePlus } from "lucide-react";
 import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError } from "@/lib/sentry";
-import { EmojiPicker } from "@/components/emoji-picker";
+
+const EmojiPicker = dynamic(
+  () => import("@/components/emoji-picker").then((mod) => mod.EmojiPicker),
+  { ssr: false },
+);
 
 interface PageIconProps {
   pageId: string;

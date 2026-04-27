@@ -6,7 +6,14 @@ import type { LexicalEditor, SerializedEditorState } from "lexical";
 import { PageTitle } from "@/components/page-title";
 import { PageIcon } from "@/components/page-icon";
 import { PageCover } from "@/components/page-cover";
-import { VersionHistoryPanel } from "@/components/version-history-panel";
+
+const VersionHistoryPanel = dynamic(
+  () =>
+    import("@/components/version-history-panel").then(
+      (mod) => mod.VersionHistoryPanel,
+    ),
+  { ssr: false },
+);
 
 
 const Editor = dynamic(
