@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures/auth";
-import { navigateToEditorPage, modifierKey } from "./fixtures/editor-helpers";
+import { navigateToEditorPage, modifierKey, waitForEditor } from "./fixtures/editor-helpers";
 
 const mod = modifierKey();
 
@@ -11,8 +11,7 @@ test.describe("Editor floating toolbar", () => {
   test("toolbar appears on text selection", async ({
     authenticatedPage: page,
   }) => {
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 10_000 });
+    const editor = await waitForEditor(page);
 
     // Type some text
     await editor.click();
@@ -33,8 +32,7 @@ test.describe("Editor floating toolbar", () => {
   test("bold button toggles bold formatting", async ({
     authenticatedPage: page,
   }) => {
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 10_000 });
+    const editor = await waitForEditor(page);
 
     // Use unique text to avoid matching leftover bold content from previous runs
     const uid = Date.now().toString();
@@ -67,8 +65,7 @@ test.describe("Editor floating toolbar", () => {
   test("toolbar disappears when selection is collapsed", async ({
     authenticatedPage: page,
   }) => {
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 10_000 });
+    const editor = await waitForEditor(page);
 
     await editor.click();
     await page.keyboard.press("End");
@@ -93,8 +90,7 @@ test.describe("Editor floating toolbar", () => {
   test("keyboard shortcut Cmd+B applies bold", async ({
     authenticatedPage: page,
   }) => {
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 10_000 });
+    const editor = await waitForEditor(page);
 
     // Use unique text to avoid matching leftover bold content from previous runs
     const uid = Date.now().toString();
@@ -102,18 +98,27 @@ test.describe("Editor floating toolbar", () => {
     await editor.click();
     await page.keyboard.press("End");
     await page.keyboard.press("Enter");
-    await page.keyboard.type(marker);
+    await editor.pressSequentially(marker);
 
-    // Select text
+    // Wait for the typed text to appear in the editor before selecting —
+    // the lazy-load boundary can cause the editor to lag behind keystrokes
+    await expect(editor).toContainText(marker, { timeout: 5_000 });
+
+    // Select text using Shift+Home (cursor is at end after typing)
     await page.keyboard.down("Shift");
     await page.keyboard.press("Home");
     await page.keyboard.up("Shift");
+
+    // Confirm the toolbar appeared (proves text is selected and floating
+    // plugins are mounted — required before sending keyboard shortcuts)
+    const toolbar = page.locator('[role="toolbar"][aria-label="Text formatting"]');
+    await expect(toolbar).toBeVisible({ timeout: 5_000 });
 
     // Apply bold via keyboard shortcut
     await page.keyboard.press(`${mod}+b`);
 
     // Filter by our unique text to avoid matching pre-existing bold elements
     const boldText = editor.locator("strong").filter({ hasText: marker });
-    await expect(boldText).toBeVisible({ timeout: 2_000 });
+    await expect(boldText).toBeVisible({ timeout: 5_000 });
   });
 });

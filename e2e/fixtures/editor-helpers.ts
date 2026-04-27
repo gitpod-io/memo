@@ -1,5 +1,23 @@
-import type { Page } from "@playwright/test";
+import type { Page, Locator } from "@playwright/test";
 import { expect } from "@playwright/test";
+
+/**
+ * Wait for the Lexical editor to be fully initialized after a lazy-load
+ * boundary. Waits for `[data-lexical-editor="true"]` which Lexical sets
+ * after the editor instance is mounted and all plugins are ready. This is
+ * more reliable than `[contenteditable="true"]` alone because the
+ * contenteditable attribute can appear before Lexical finishes initializing.
+ *
+ * Returns the editor locator for chaining.
+ */
+export async function waitForEditor(
+  page: Page,
+  { timeout = 15_000 }: { timeout?: number } = {},
+): Promise<Locator> {
+  const editor = page.locator('[data-lexical-editor="true"]');
+  await expect(editor).toBeVisible({ timeout });
+  return editor;
+}
 
 /**
  * Navigate to a page that has an editor. Always creates a fresh page via the
@@ -10,7 +28,8 @@ import { expect } from "@playwright/test";
  * If the new page returns a 404 (e.g. due to Supabase replication lag), the
  * function reloads the page and retries up to 2 times before failing.
  *
- * Returns once `[contenteditable="true"]` is visible.
+ * Returns once the Lexical editor is fully initialized
+ * (`[data-lexical-editor="true"]` is visible).
  */
 export async function navigateToEditorPage(page: Page): Promise<void> {
   const sidebar = page.getByRole("complementary");
@@ -30,14 +49,17 @@ export async function navigateToEditorPage(page: Page): Promise<void> {
   const newPageBtn = sidebar.getByRole("button", { name: /new page/i });
   await newPageBtn.click();
 
-  // Wait for the editor to appear. If the server returns a 404 (e.g.
-  // Supabase replication lag between the client-side insert and the
-  // server-side read), reload and retry.
-  const editor = page.locator('[contenteditable="true"]');
+  // Wait for the Lexical editor to be fully initialized. The editor is
+  // behind a next/dynamic lazy-load boundary (ssr: false), so it takes
+  // longer to appear than a regular server-rendered component. We wait
+  // for `data-lexical-editor` which Lexical sets after full initialization.
+  // If the server returns a 404 (e.g. Supabase replication lag between
+  // the client-side insert and the server-side read), reload and retry.
+  const editor = page.locator('[data-lexical-editor="true"]');
   const maxRetries = 2;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const visible = await editor
-      .waitFor({ state: "visible", timeout: 10_000 })
+      .waitFor({ state: "visible", timeout: 15_000 })
       .then(() => true)
       .catch(() => false);
 

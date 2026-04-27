@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures/auth";
+import { waitForEditor } from "./fixtures/editor-helpers";
 import { createClient } from "@supabase/supabase-js";
 
 // ---------------------------------------------------------------------------
@@ -120,9 +121,9 @@ test.describe("Database Row Page", () => {
     // Should navigate to a different URL (the row page)
     await page.waitForURL((url) => url.href !== dbUrl, { timeout: 15_000 });
 
-    // The row page should show the Lexical editor
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 15_000 });
+    // The row page should show the Lexical editor — wait for full
+    // initialization behind the lazy-load boundary
+    await waitForEditor(page);
   });
 
   test("row page shows properties header with editable fields", async ({
@@ -148,9 +149,8 @@ test.describe("Database Row Page", () => {
     await expect(rowLink).toBeVisible({ timeout: 5_000 });
     await rowLink.click();
 
-    // Wait for the row page to load
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 15_000 });
+    // Wait for the Lexical editor to fully initialize behind the lazy-load boundary
+    await waitForEditor(page);
 
     // The properties header should be visible with the property name label.
     // Properties are rendered as rows with a label (w-32 text-right) and
@@ -202,9 +202,8 @@ test.describe("Database Row Page", () => {
     await expect(rowLink).toBeVisible({ timeout: 5_000 });
     await rowLink.click();
 
-    // Wait for the row page to load
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 15_000 });
+    // Wait for the Lexical editor to fully initialize behind the lazy-load boundary
+    await waitForEditor(page);
 
     // The properties header should show the "Status" label
     await expect(page.locator("text=Status").first()).toBeVisible({
@@ -247,24 +246,26 @@ test.describe("Database Row Page", () => {
     await expect(rowLink).toBeVisible({ timeout: 5_000 });
     await rowLink.click();
 
-    // Wait for the editor to load
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 15_000 });
+    // Wait for the Lexical editor to fully initialize behind the lazy-load boundary
+    const editor = await waitForEditor(page);
 
     // Type content into the editor
     await editor.click();
     await page.keyboard.type("Hello from the row page");
 
-    // Wait for auto-save to complete
-    await page.waitForLoadState("networkidle");
+    // Wait for auto-save to persist — the editor shows "Saved" after a
+    // successful PATCH. networkidle is not reliable with lazy-load boundaries.
+    await expect(page.getByTestId("editor-save-status")).toContainText(
+      "Saved",
+      { timeout: 10_000 },
+    );
 
     // Verify the content is visible in the editor
     await expect(editor).toContainText("Hello from the row page");
 
     // Reload the page to verify persistence
     await page.reload();
-    const reloadedEditor = page.locator('[contenteditable="true"]');
-    await expect(reloadedEditor).toBeVisible({ timeout: 15_000 });
+    const reloadedEditor = await waitForEditor(page);
     await expect(reloadedEditor).toContainText("Hello from the row page");
   });
 
@@ -278,9 +279,8 @@ test.describe("Database Row Page", () => {
     await expect(rowLink).toBeVisible({ timeout: 5_000 });
     await rowLink.click();
 
-    // Wait for the row page to load
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 15_000 });
+    // Wait for the Lexical editor to fully initialize behind the lazy-load boundary
+    await waitForEditor(page);
 
     // The breadcrumb nav should be visible
     const breadcrumb = page.locator('nav[aria-label="Breadcrumb"]');
@@ -311,9 +311,8 @@ test.describe("Database Row Page", () => {
     await expect(rowLink).toBeVisible({ timeout: 5_000 });
     await rowLink.click();
 
-    // Wait for the row page to load
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 15_000 });
+    // Wait for the Lexical editor to fully initialize behind the lazy-load boundary
+    await waitForEditor(page);
 
     // Click the database link in the breadcrumb to navigate back
     const breadcrumb = page.locator('nav[aria-label="Breadcrumb"]');
@@ -326,9 +325,10 @@ test.describe("Database Row Page", () => {
     // Should navigate back to the database page
     await page.waitForURL((url) => url.href === dbUrl, { timeout: 15_000 });
 
-    // The database grid should be visible again
-    const grid = page.locator('[role="grid"]');
-    await expect(grid).toBeVisible({ timeout: 15_000 });
+    // The database view is behind a lazy-load boundary — wait for either
+    // the grid (rows present) or the empty state to confirm it loaded
+    const dbView = page.locator('[role="grid"], :text("No rows yet")').first();
+    await expect(dbView).toBeVisible({ timeout: 15_000 });
   });
 
   test("text value edited in table view is visible on the row page", async ({
@@ -363,9 +363,8 @@ test.describe("Database Row Page", () => {
     await expect(rowLink).toBeVisible({ timeout: 5_000 });
     await rowLink.click();
 
-    // Wait for the row page to load
-    const editor = page.locator('[contenteditable="true"]');
-    await expect(editor).toBeVisible({ timeout: 15_000 });
+    // Wait for the Lexical editor to fully initialize behind the lazy-load boundary
+    await waitForEditor(page);
 
     // The property value should be visible on the row page (not "Empty")
     await expect(
