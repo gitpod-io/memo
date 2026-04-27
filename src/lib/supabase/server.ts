@@ -9,7 +9,17 @@ export async function createClient() {
     {
       cookies: {
         getAll() {
-          return cookieStore.getAll();
+          // Ensure every cookie value is a string. During session teardown
+          // (e.g. account deletion), the cookie store may return null values
+          // for auth chunks. @supabase/ssr's combineChunks passes these to
+          // startsWith() without a typeof guard, causing a TypeError.
+          // See: https://github.com/supabase/ssr/issues — client-side
+          // getItem (line ~146) lacks the typeof guard that the server-side
+          // path (line ~253) has.
+          return cookieStore.getAll().map(({ name, value }) => ({
+            name,
+            value: value ?? "",
+          }));
         },
         setAll(cookiesToSet) {
           try {

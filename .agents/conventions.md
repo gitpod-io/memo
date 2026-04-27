@@ -383,6 +383,22 @@ These files have intentional bare `catch {}` blocks with documented reasons:
 
 All other catch blocks must capture the error variable and report to Sentry.
 
+### E2E test noise filtering in Sentry
+
+E2E tests (Playwright with HeadlessChrome) can trigger server-side errors that
+are not application bugs. Both client-side and server-side Sentry configs must
+filter these out:
+
+- **Client-side** — Playwright's auth fixture sets `window.__SENTRY_DISABLED__`
+  via `addInitScript`. The `beforeSend` filter checks `isE2ETestSession()`.
+- **Server-side** — `sentry.server.config.ts` and `sentry.edge.config.ts` use
+  `isE2ETestRequest(event)` which checks the request user-agent for
+  `HeadlessChrome/`. This catches errors from API routes and server components
+  that the client-side flag cannot reach.
+
+When adding new Sentry config files or `beforeSend` filters, always include
+both `isNextjsInternalNoise` and `isE2ETestRequest` checks.
+
 ## Environment Variable Guards
 
 Route handlers and server utilities that use Supabase must guard against missing

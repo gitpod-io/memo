@@ -26,6 +26,7 @@ import {
   isNextjsInternalNoise,
   isReactLexicalDomConflict,
   isE2ETestSession,
+  isE2ETestRequest,
 } from "./sentry";
 
 function makePostgrestError(
@@ -1437,5 +1438,49 @@ describe("isE2ETestSession", () => {
   it("returns false when __SENTRY_DISABLED__ is a non-true value", () => {
     win.__SENTRY_DISABLED__ = "true";
     expect(isE2ETestSession()).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isE2ETestRequest — drops server-side Sentry events from E2E test sessions
+// ---------------------------------------------------------------------------
+
+describe("isE2ETestRequest", () => {
+  function makeRequestEvent(headers: Record<string, string>): ErrorEvent {
+    return { type: undefined, request: { headers } } as unknown as ErrorEvent;
+  }
+
+  it("returns true when User-Agent contains HeadlessChrome/", () => {
+    const event = makeRequestEvent({
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/147.0.0.0 Safari/537.36",
+    });
+    expect(isE2ETestRequest(event)).toBe(true);
+  });
+
+  it("returns true when user-agent header is lowercase", () => {
+    const event = makeRequestEvent({
+      "user-agent":
+        "Mozilla/5.0 HeadlessChrome/147.0.0.0 Safari/537.36",
+    });
+    expect(isE2ETestRequest(event)).toBe(true);
+  });
+
+  it("returns false for a normal Chrome user-agent", () => {
+    const event = makeRequestEvent({
+      "User-Agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/147.0.0.0 Safari/537.36",
+    });
+    expect(isE2ETestRequest(event)).toBe(false);
+  });
+
+  it("returns false when request has no headers", () => {
+    const event = { type: undefined, request: {} } as unknown as ErrorEvent;
+    expect(isE2ETestRequest(event)).toBe(false);
+  });
+
+  it("returns false when event has no request", () => {
+    const event = { type: undefined } as ErrorEvent;
+    expect(isE2ETestRequest(event)).toBe(false);
   });
 });
