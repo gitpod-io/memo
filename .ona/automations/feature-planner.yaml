@@ -51,7 +51,17 @@ action:
                 gh label create "needs-human" --color D93F0B --force
                 gh label create "ona-user" --color 7057FF --force
 
-                ## Step 3 — Triage Unlabeled Issues
+                ## Step 3 — Resolve Maintainers
+
+                Fetch the list of repository maintainers (admin or maintain role):
+                ```
+                gh api repos/gitpod-io/memo/collaborators?affiliation=all --paginate \
+                  --jq '[.[] | select(.role_name == "admin" or .role_name == "maintain") | .login]'
+                ```
+                Store this list for use in triage decisions below. Users in this list are
+                **maintainers** — their input carries implicit product authority.
+
+                ## Step 4 — Triage Unlabeled Issues
 
                 Find open issues that have NO status label (`status:backlog`, `status:in-progress`,
                 `status:in-review`, `status:done`) and NO `needs-human` label. These are
@@ -74,7 +84,13 @@ action:
                 - Add exactly 3 labels: `status:backlog` + appropriate `priority:*` + type label
                 - The issue is now in the automation queue
 
-                **If insufficient:**
+                **Maintainer override:** If the issue author is a maintainer (from Step 3)
+                and the issue has sufficient detail, label it `status:backlog` directly — even
+                if it deviates from the design spec or product spec. A maintainer creating a
+                well-specified issue is an implicit product decision. Do NOT add `needs-human`
+                for maintainer-authored issues that have clear acceptance criteria.
+
+                **If insufficient (non-maintainer authors only, or genuinely ambiguous even from a maintainer):**
                 - Add the `needs-human` label
                 - Post a comment asking specific questions:
 
@@ -86,7 +102,27 @@ action:
                   >
                   > Once you've added this information, the automation will pick it back up.
 
-                ## Step 4 — Decompose Product Spec or Propose Improvements
+                ## Step 4b — Re-triage needs-human Issues with Maintainer Approval
+
+                Check open issues with the `needs-human` label:
+                ```
+                gh issue list --state open --label "needs-human" --json number,title,comments --limit 50
+                ```
+
+                For each, check if a maintainer (from Step 3) has commented since the
+                `needs-human` label was added. A maintainer comment that provides the
+                requested detail or explicitly approves the issue (e.g., "approved",
+                "let's do it", "go ahead", or substantive answers to the questions)
+                counts as approval.
+
+                If a maintainer has approved:
+                1. Remove `needs-human`: `gh issue edit <N> --remove-label "needs-human"`
+                2. Add appropriate labels: `status:backlog` + `priority:*` + type label
+                3. Enrich the issue body if needed (add/update Acceptance Criteria based
+                   on the maintainer's input)
+                4. Comment: `> Maintainer input received. Issue is now in the automation queue.`
+
+                ## Step 5 — Decompose Product Spec or Propose Improvements
 
                 First, check if there are unimplemented features in docs/product-spec.md that
                 don't have corresponding GitHub Issues. If so, create issues for them.
@@ -170,7 +206,7 @@ action:
                 - priority:2 = core features — the product's value (editor, search, realtime)
                 - priority:3 = polish and stretch goals (dark mode, responsive, import/export)
 
-                ## Step 5 — Finalize
+                ## Step 6 — Finalize
 
                 Log a summary (do NOT wait for user input — this runs unattended):
 
