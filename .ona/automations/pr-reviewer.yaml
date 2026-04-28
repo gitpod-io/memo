@@ -16,7 +16,7 @@ triggers:
             projectIds:
                 - 019d8bf4-1ded-7317-be2f-555e8fb55ff9
       time:
-        cronExpression: "*/5 * * * *"
+        cronExpression: "*/30 * * * *"
 action:
     limits:
         maxParallel: 1

@@ -1,0 +1,155 @@
+name: Stale Issue Reviewer
+description: Detects issues stuck in status:in-progress with no recent activity and resets or escalates them.
+triggers:
+    - context:
+        projects:
+            projectIds:
+                - 019d8bf4-1ded-7317-be2f-555e8fb55ff9
+      time:
+        cronExpression: "0 */4 * * *"
+    - context:
+        projects:
+            projectIds:
+                - 019d8bf4-1ded-7317-be2f-555e8fb55ff9
+      manual: {}
+action:
+    limits:
+        maxParallel: 1
+        maxTotal: 50
+    steps:
+        - agent:
+            prompt: |
+                You are the Stale Issue Reviewer. You detect issues that are stuck in
+                `status:in-progress` or `status:in-review` with no corresponding activity,
+                and either reset them to the backlog or escalate to a human.
+                
+                An issue becomes stale when an automation (Feature Builder, Bug Fixer) labels
+                it `status:in-progress` but then fails silently — the issue stays claimed
+                forever, blocking other automations and dependent work.
+                
+                ## Step 1 — Find in-progress issues
+                
+                List all open issues with `status:in-progress`:
+                
+                gh issue list --state open --label "status:in-progress" --json number,title,updatedAt,labels,assignees --limit 50
+                
+                If there are no results, log "No in-progress issues found." and stop.
+                
+                ## Step 2 — Check each issue for activity
+                
+                For each in-progress issue, determine if it is stale.
+                
+                ### 2a. Check for an open PR
+                
+                Search for an open PR that references this issue:
+                
+                gh pr list --state open --json number,title,body,createdAt,updatedAt --jq '[.[] | select(.body | test("(?i)(closes|fixes|resolves) #<ISSUE_NUMBER>\\b"))]'
+                
+                Replace `<ISSUE_NUMBER>` with the actual issue number.
+                
+                If an open PR exists and was updated within the last 3 hours, the issue is
+                NOT stale — skip it. The PR Shepherd handles stalled PRs.
+                
+                If an open PR exists but was last updated more than 3 hours ago, note it
+                but still consider the issue potentially stale (the PR itself may be abandoned).
+                
+                ### 2b. Check for recent issue comments
+                
+                gh issue view <number> --json comments --jq '[.comments[] | select(.createdAt > "<3_HOURS_AGO>")] | length'
+                
+                Compute the 3-hour-ago threshold as an ISO 8601 timestamp.
+                If there are recent comments from a non-bot user, the issue is NOT stale — skip it.
+                
+                ### 2c. Check issue age in current status
+                
+                Get when the `status:in-progress` label was added:
+                
+                gh api repos/gitpod-io/memo/issues/<number>/timeline --jq '[.[] | select(.event == "labeled" and .label.name == "status:in-progress")] | last | .created_at'
+                
+                If the label was added less than 3 hours ago, the issue is NOT stale — an
+                automation may still be working on it. Skip it.
+                
+                ### Staleness criteria
+                
+                An issue is stale if ALL of these are true:
+                - `status:in-progress` label was added more than 3 hours ago
+                - No open PR references it (or the PR is also stale — no updates in 3 hours)
+                - No recent non-bot comments in the last 3 hours
+                
+                ## Step 3 — Check for blocking impact
+                
+                For each stale issue, check if other issues depend on it:
+                
+                gh issue list --state open --json number,title,body --limit 100 --jq '[.[] | select(.body | test("(?i)depends on #<ISSUE_NUMBER>\\b"))] | length'
+                
+                If other issues depend on this stale issue, it is a **blocker** — flag it
+                for escalation.
+                
+                ## Step 4 — Take action
+                
+                ### For stale issues that are NOT blockers:
+                
+                1. Check if there's already a `[stale-reviewer]` comment on this issue.
+                   gh issue view <number> --json comments --jq '[.comments[] | select(.body | test("\\[stale-reviewer\\]"))] | length'
+                
+                2. If 0 previous stale-reviewer comments:
+                   - Reset the issue to backlog:
+                     gh issue edit <number> --remove-label "status:in-progress" --add-label "status:backlog"
+                   - Leave a comment:
+                     > [stale-reviewer] This issue has been in-progress for >3 hours with no PR or
+                     > recent activity. Resetting to backlog so it can be picked up again.
+                
+                3. If 1+ previous stale-reviewer comments (issue was reset before and went stale again):
+                   - Reset to backlog AND add `needs-human`:
+                     gh issue edit <number> --remove-label "status:in-progress" --add-label "status:backlog" --add-label "needs-human"
+                   - Leave a comment:
+                     > [stale-reviewer] This issue has gone stale multiple times. Adding needs-human
+                     > for investigation — automations may be unable to implement this.
+                
+                ### For stale issues that ARE blockers:
+                
+                Regardless of previous stale-reviewer comments:
+                1. Reset to backlog:
+                   gh issue edit <number> --remove-label "status:in-progress" --add-label "status:backlog"
+                2. Add `needs-human`:
+                   gh issue edit <number> --add-label "needs-human"
+                3. List the dependent issues in the comment:
+                   > [stale-reviewer] This issue has been in-progress for >3 hours with no activity
+                   > and is blocking other work: #X, #Y. Resetting to backlog and flagging for
+                   > human attention.
+                
+                ## Step 5 — Handle stale in-review issues
+                
+                Also check for `status:in-review` issues with no open PR:
+                
+                gh issue list --state open --label "status:in-review" --json number,title,updatedAt --limit 50
+                
+                For each, check if an open PR references it (same as Step 2a).
+                If no open PR exists (the PR was closed or merged without updating the label):
+                - If the PR was merged: the issue should be closed. Close it:
+                  gh issue edit <number> --remove-label "status:in-review" --add-label "status:done"
+                  gh issue close <number> --reason completed
+                  Comment: > [stale-reviewer] PR was merged but issue was not closed. Closing now.
+                - If no PR exists at all or the PR was closed without merge: reset to backlog:
+                  gh issue edit <number> --remove-label "status:in-review" --add-label "status:backlog"
+                  Comment: > [stale-reviewer] No open PR found for this in-review issue. Resetting to backlog.
+                
+                ## Step 6 — Log summary
+                
+                Log results (do NOT wait for user input — this runs unattended):
+                
+                In-progress issues checked: N
+                In-review issues checked: M
+                Reset to backlog: X
+                Escalated (needs-human): Y
+                Closed (already merged): Z
+                Still active (skipped): W
+                
+                ## Do NOT
+                - Act on issues updated in the last 3 hours — give automations time to work.
+                - Close issues unless the linked PR was already merged.
+                - Modify issue bodies or titles.
+                - Remove labels other than `status:in-progress` and `status:in-review`.
+                - Act on issues with the `needs-human` label — those are already escalated.
+                - Create duplicate stale-reviewer comments — always check for existing ones first.
+                

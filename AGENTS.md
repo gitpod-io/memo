@@ -138,20 +138,28 @@ Label lifecycle: `status:backlog` → `status:in-progress` → `status:in-review
 
 ### Automation development loop
 
-These automations work together to implement features and fix bugs autonomously:
+These automations work together to implement features and fix bugs autonomously.
+All automations run as the `sw-factory-automations` service account.
 
 | Automation | Trigger | Role |
 |---|---|---|
-| Feature Planner | Manual | Triages unlabeled issues, decomposes specs into issues |
-| Feature Builder | Cron (30 min) | Implements features/enhancements from backlog |
-| Bug Fixer | Cron (30 min) | Implements bug fixes from backlog |
-| PR Reviewer | Cron (15 min) | Reviews and merges PRs |
-| Incident Responder | Cron (15 min) | Triages Sentry errors into bug issues |
+| Feature Planner | Cron (1h) | Triages unlabeled issues, decomposes specs into issues |
+| Feature Builder | Cron (2h) | Implements features/enhancements from backlog |
+| Bug Fixer | Cron (2h) | Implements bug fixes from backlog |
+| PR Reviewer | Cron (30 min) + webhook | Reviews and merges PRs |
 | Post-Merge Verifier | On PR merge | Smoke-tests production after merge |
 | UI Verifier | On PR merge | Checks design spec compliance |
-| Performance Monitor | Weekly | Checks latency, errors, build size |
-| Feedback Digest | Daily (8 AM UTC) | Posts categorized user feedback digest to Slack |
-| Needs-Human Requeue | Cron (30 min) | Re-queues issues after user responds |
+| PR Shepherd | Cron (2h) | Unsticks stalled PRs, resolves conflicts and duplicates |
+| Stale Issue Reviewer | Cron (4h) | Resets stuck in-progress issues to backlog |
+| Needs-Human Requeue | Cron (2h) | Re-queues issues after user responds |
+| Incident Responder | Cron (1h) | Triages Sentry errors into bug issues |
+| Performance Monitor | Weekly (Mon 10 AM UTC) | Checks latency, errors, build size |
+| Feedback Digest | Cron (1h) | Posts categorized user feedback digest to Slack |
+| Product Improver | Mon + Thu (9 AM UTC) | Proposes enhancement issues from live product review |
+| Tweet Drafter | 3x daily (9, 15, 21 UTC) | Posts build-in-public updates to @swfactory_dev |
+| Daily Metrics | Daily (9 AM UTC) | Collects daily project stats |
+| Weekly Recap | Weekly (Mon 9 AM UTC) | Produces weekly summary for build-in-public audience |
+| Automation Auditor | Weekly (Mon 8 AM UTC) | Reviews automation performance and knowledge base freshness |
 
 For full details on the development workflow, see `.ona/skills/development-workflow/SKILL.md`.
 

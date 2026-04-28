@@ -6,7 +6,7 @@ triggers:
             projectIds:
                 - 019d8bf4-1ded-7317-be2f-555e8fb55ff9
       time:
-        cronExpression: "*/30 * * * *"
+        cronExpression: "0 * * * *"
     - context:
         projects:
             projectIds:
