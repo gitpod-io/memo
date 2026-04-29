@@ -10,6 +10,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
+import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 
 const KeyboardShortcutsDialog = dynamic(
@@ -51,6 +52,8 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   const searchRef = useRef<RefObject<HTMLInputElement | null> | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
+  const pathname = usePathname();
+  const prevPathnameRef = useRef(pathname);
 
   useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
@@ -65,6 +68,18 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     mql.addEventListener("change", onChange);
     return () => mql.removeEventListener("change", onChange);
   }, []);
+
+  // Close the mobile Sheet sidebar when the route changes.
+  // The setState is deferred via queueMicrotask to avoid a synchronous
+  // setState in the effect body (react-hooks/set-state-in-effect).
+  useEffect(() => {
+    if (prevPathnameRef.current !== pathname) {
+      prevPathnameRef.current = pathname;
+      if (isMobile) {
+        queueMicrotask(() => setOpen(false));
+      }
+    }
+  }, [pathname, isMobile]);
 
   const toggle = useCallback(() => setOpen((prev) => !prev), []);
 
