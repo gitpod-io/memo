@@ -8,10 +8,28 @@ import {
   Code,
   Link,
 } from "lucide-react";
+import { type FontFamilyKey, FONT_FAMILIES } from "@/components/editor/font-family";
 
 // Static representation of the floating toolbar. The actual plugin requires
 // Lexical context and DOM selection — stories render the same visual output
 // with controlled state.
+
+function FontFamilyDropdown({ value }: { value: FontFamilyKey }) {
+  return (
+    <select
+      value={value}
+      onChange={() => {}}
+      className="h-11 sm:h-7 bg-transparent text-xs text-muted-foreground hover:text-foreground focus:text-foreground outline-none cursor-pointer px-1.5 appearance-none"
+      aria-label="Font family"
+    >
+      {FONT_FAMILIES.map((f) => (
+        <option key={f.key} value={f.key}>
+          {f.label}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 function ToolbarButton({
   active,
@@ -45,6 +63,7 @@ function StaticFloatingToolbar({
   isStrikethrough = false,
   isCode = false,
   isLink = false,
+  fontFamily = "monospace" as FontFamilyKey,
 }: {
   isBold?: boolean;
   isItalic?: boolean;
@@ -52,6 +71,7 @@ function StaticFloatingToolbar({
   isStrikethrough?: boolean;
   isCode?: boolean;
   isLink?: boolean;
+  fontFamily?: FontFamilyKey;
 }) {
   return (
     <div className="mx-auto max-w-md">
@@ -60,6 +80,8 @@ function StaticFloatingToolbar({
         role="toolbar"
         aria-label="Text formatting"
       >
+        <FontFamilyDropdown value={fontFamily} />
+        <div className="mx-0.5 h-4 w-px bg-overlay-border" aria-hidden="true" />
         <ToolbarButton active={isBold} label="Bold (⌘+B)">
           <Bold className="h-4 w-4" />
         </ToolbarButton>
@@ -138,4 +160,19 @@ export const InContext: Story = {
       </p>
     </div>
   ),
+};
+
+/** Font family dropdown showing sans-serif selected. */
+export const FontSansSerif: Story = {
+  render: () => <StaticFloatingToolbar fontFamily="sans-serif" />,
+};
+
+/** Font family dropdown showing serif selected. */
+export const FontSerif: Story = {
+  render: () => <StaticFloatingToolbar fontFamily="serif" />,
+};
+
+/** Font family dropdown showing monospace (default) selected. */
+export const FontMonospace: Story = {
+  render: () => <StaticFloatingToolbar fontFamily="monospace" />,
 };

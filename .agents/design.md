@@ -103,7 +103,19 @@ Rules:
 
 ## Typography
 
-One typeface: **JetBrains Mono** (monospace), matching the software-factory.dev landing page. Loaded via `next/font/google` with `--font-jetbrains-mono` CSS variable. Falls back to `"Berkeley Mono", "SFMono-Regular", Menlo, Consolas, monospace`.
+Default typeface: **JetBrains Mono** (monospace), matching the software-factory.dev landing page. Loaded via `next/font/google` with `--font-jetbrains-mono` CSS variable. Falls back to `"Berkeley Mono", "SFMono-Regular", Menlo, Consolas, monospace`.
+
+### Editor Font Families
+
+The editor supports three font families, selectable via the floating toolbar dropdown:
+
+| Key | Font | CSS Variable / Stack | Usage |
+|---|---|---|---|
+| `monospace` | JetBrains Mono | `var(--font-jetbrains-mono)` (default, no inline style) | Technical content, code-adjacent prose |
+| `sans-serif` | Inter | `var(--font-inter), ui-sans-serif, system-ui, sans-serif` | Notes, general writing |
+| `serif` | Georgia | `Georgia, 'Times New Roman', serif` | Long-form prose |
+
+Font family is applied as an inline CSS `font-family` style on Lexical `TextNode` via `$patchStyleText`. Monospace is the default — selecting it removes the inline style. Font choice persists in Lexical JSON serialization. Inter is loaded via `next/font/google`; Georgia is a system font.
 
 | Element | Class | Weight | Color |
 |---|---|---|---|
@@ -333,7 +345,9 @@ Each block is a full-width element with consistent vertical spacing.
 ### Toolbar
 
 - Floating toolbar appears on text selection.
-- Items: bold, italic, underline, strikethrough, code, link.
+- Items (left to right): font family dropdown, separator, bold, italic, underline, strikethrough, code, link.
+- Font family dropdown: native `<select>`, `appearance-none`, `text-xs`, shows Sans-serif / Serif / Monospace.
+- Separator: 1px vertical line (`w-px h-4 bg-overlay-border`) between font dropdown and format buttons.
 - Icon-only buttons, 28px square, `gap-0.5`.
 - `bg-popover border border-white/[0.06] shadow-md p-1`. Sharp corners.
 
@@ -603,6 +617,6 @@ When a database row is opened as a full page, properties display above the Lexic
 - No hover animations or transitions on text.
 - No "empty" pages with just a button — always provide context.
 - No rounded corners except the explicit exceptions in the Corners section.
-- No system font stack — use JetBrains Mono everywhere.
+- No system font stack in the UI shell — use JetBrains Mono. Editor content may use sans-serif (Inter) or serif (Georgia) via the font family selector.
 - No visible borders — borders should blend with surfaces (`border-overlay-border` or match `--border` to `--muted`).
 - No hardcoded `white/` or `black/` opacity values — use overlay and label tokens instead.
