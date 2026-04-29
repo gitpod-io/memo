@@ -34,12 +34,16 @@ action:
                     "in_review": N,
                     "done": N,
                     "opened_today": N,
-                    "closed_today": N
+                    "closed_today": N,
+                    "delta_opened": N,
+                    "delta_done": N
                   },
                   "tests": { "unit": N, "e2e": N },
                   "ci": { "runs_total": N, "runs_passed": N, "pass_rate_pct": N },
                   "test_coverage_pct": N,
                   "autonomous_pct": N,
+                  "pr_merge_time_buckets": { "lt_5m": N, "5_10m": N, "10_20m": N, "30_60m": N, "1_2h": N },
+                  "issue_close_time_buckets": { "lt_15m": N, "15_30m": N, "30_60m": N, "1_2h": N, "2_4h": N, "4_8h": N },
                   "human_minutes": null,
                   "agent_minutes": null
                 }
@@ -54,8 +58,10 @@ action:
                 - `commits.delta`: Computed as `commits.total - yesterday.commits.total`. Do NOT use `git log --since` for this — compute it from the cumulative values.
                 - `loc.total` / `files.total`: Current totals in the codebase right now.
                 - `loc.delta` / `files.delta`: Difference from yesterday's snapshot.
-                - `issues.opened_today`: Issues created today (since midnight UTC).
-                - `issues.closed_today`: Issues closed today (since midnight UTC).
+                - `issues.opened_today`: Issues created today (since midnight UTC). Same value as `delta_opened`.
+                - `issues.closed_today`: Issues closed today (since midnight UTC). Same value as `delta_done`.
+                - `issues.delta_opened`: Issues created today (since midnight UTC). Same value as `opened_today`.
+                - `issues.delta_done`: Issues closed today (since midnight UTC). Same value as `closed_today`.
                 - `tests.unit`: Number of unit test cases (from Vitest).
                 - `tests.e2e`: Number of E2E test cases (from Playwright).
                 - `ci.runs_total`: Total GitHub Actions workflow runs created today.
@@ -63,6 +69,8 @@ action:
                 - `ci.pass_rate_pct`: `round((ci.runs_passed / ci.runs_total) * 100, 1)`. If runs_total is 0, set to 100.
                 - `autonomous_pct`: Percentage of merged PRs that were NOT labeled `ona-user`.
                 - `test_coverage_pct`: Statement coverage from Vitest, or null if unavailable.
+                - `pr_merge_time_buckets`: Cumulative histogram of ALL merged PRs bucketed by time-to-merge. Keys are fixed and must always be present: `lt_5m`, `5_10m`, `10_20m`, `30_60m`, `1_2h`.
+                - `issue_close_time_buckets`: Cumulative histogram of ALL closed issues bucketed by time-to-close. Keys are fixed and must always be present: `lt_15m`, `15_30m`, `30_60m`, `1_2h`, `2_4h`, `4_8h`.
                 - `human_minutes` / `agent_minutes`: Always null (filled manually).
 
                 ## 2. Data Collection Commands
@@ -144,6 +152,23 @@ action:
                 gh issue list --state all --limit 500 --json number,createdAt --jq '[.[] | select(.createdAt >= "YYYY-MM-DDT00:00:00Z")] | length'
                 gh issue list --state closed --limit 500 --json number,closedAt --jq '[.[] | select(.closedAt >= "YYYY-MM-DDT00:00:00Z")] | length'
                 ```
+                Use the same values for both `opened_today`/`delta_opened` and `closed_today`/`delta_done`.
+
+                **PR merge time distribution (cumulative, all time):**
+                ```
+                gh pr list --state merged --limit 1000 --json number,createdAt,mergedAt
+                ```
+                For each merged PR, compute `merge_minutes = (mergedAt - createdAt) / 60000`.
+                Bucket into: `lt_5m` (< 5 min), `5_10m` (5–10), `10_20m` (10–20), `30_60m` (30–60), `1_2h` (60–120).
+                All five keys MUST be present even if the count is 0.
+
+                **Issue close time distribution (cumulative, all time):**
+                ```
+                gh issue list --state closed --limit 1000 --json number,createdAt,closedAt
+                ```
+                For each closed issue, compute `close_minutes = (closedAt - createdAt) / 60000`.
+                Bucket into: `lt_15m` (< 15 min), `15_30m` (15–30), `30_60m` (30–60), `1_2h` (60–120), `2_4h` (120–240), `4_8h` (240–480).
+                All six keys MUST be present even if the count is 0.
 
                 **Delta fields (prs, commits, loc, files):**
                 Read yesterday's snapshot from `metrics/daily/`. If no previous file exists, delta = total.
@@ -165,15 +190,29 @@ action:
                 8. Confirm `ci.pass_rate_pct` equals `round((ci.runs_passed / ci.runs_total) * 100, 1)`.
                 9. Confirm `prs.delta` equals `prs.total - yesterday.prs.total` (not from a date-filtered query).
                 10. Confirm `commits.delta` equals `commits.total - yesterday.commits.total`.
-                11. If any check fails, re-collect the data for that field.
+                11. Confirm `pr_merge_time_buckets` has exactly 5 keys: `lt_5m`, `5_10m`, `10_20m`, `30_60m`, `1_2h`.
+                12. Confirm `issue_close_time_buckets` has exactly 6 keys: `lt_15m`, `15_30m`, `30_60m`, `1_2h`, `2_4h`, `4_8h`.
+                13. Confirm `issues.delta_opened` equals `issues.opened_today`.
+                14. Confirm `issues.delta_done` equals `issues.closed_today`.
+                15. If any check fails, re-collect the data for that field.
 
-                ## 4. Commit and PR
+                ## 4. Regenerate timeseries aggregate
+
+                After writing the daily snapshot, regenerate the timeseries aggregate:
+                ```
+                node scripts/metrics/build-timeseries.mjs
+                ```
+                This reads all `metrics/daily/*.json` files and writes `metrics/timeseries.json`.
+                If the script fails, do NOT commit — investigate and fix the issue.
+
+                ## 5. Commit and PR
 
                 Create branch: `chore/metrics-YYYY-MM-DD`
 
-                1. Commit: `chore: daily metrics snapshot YYYY-MM-DD`
-                2. Push the branch.
-                3. Open a PR:
+                1. Stage both the daily snapshot and `metrics/timeseries.json`.
+                2. Commit: `chore: daily metrics snapshot YYYY-MM-DD`
+                3. Push the branch.
+                4. Open a PR:
                    - Title: `chore: daily metrics snapshot YYYY-MM-DD`
                    - Body: summary table of today's stats
-                4. The PR Reviewer will auto-merge chore PRs.
+                5. The PR Reviewer will auto-merge chore PRs.

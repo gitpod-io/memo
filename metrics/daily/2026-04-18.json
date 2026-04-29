@@ -30,7 +30,9 @@
     "in_review": 0,
     "done": 88,
     "opened_today": 7,
-    "closed_today": 7
+    "closed_today": 7,
+    "delta_opened": 7,
+    "delta_done": 7
   },
   "human_minutes": null,
   "agent_minutes": null,
@@ -42,5 +44,20 @@
   "tests": {
     "unit": 180,
     "e2e": 50
+  },
+  "pr_merge_time_buckets": {
+    "lt_5m": 100,
+    "5_10m": 27,
+    "10_20m": 6,
+    "30_60m": 8,
+    "1_2h": 2
+  },
+  "issue_close_time_buckets": {
+    "lt_15m": 21,
+    "15_30m": 22,
+    "30_60m": 19,
+    "1_2h": 14,
+    "2_4h": 10,
+    "4_8h": 3
   }
 }
