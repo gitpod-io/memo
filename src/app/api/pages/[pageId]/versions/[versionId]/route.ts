@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/lib/supabase/server";
-import { captureSupabaseError, isInsufficientPrivilegeError } from "@/lib/sentry";
+import { captureApiError, captureSupabaseError, isInsufficientPrivilegeError } from "@/lib/sentry";
 
 /**
  * GET /api/pages/[pageId]/versions/[versionId]
@@ -44,7 +43,7 @@ export async function GET(
     if (error instanceof Error && isInsufficientPrivilegeError(error)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    Sentry.captureException(error);
+    captureApiError(error, "page-versions:get");
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -148,7 +147,7 @@ export async function POST(
     if (error instanceof Error && isInsufficientPrivilegeError(error)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    Sentry.captureException(error);
+    captureApiError(error, "page-versions:restore");
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import * as Sentry from "@sentry/nextjs";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { captureApiError, captureSupabaseError } from "@/lib/sentry";
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.rpc("purge_old_trash");
 
     if (error) {
-      Sentry.captureException(error);
+      captureSupabaseError(error, "cron:purge-trash");
       return NextResponse.json(
         { error: "Purge failed" },
         { status: 500 },
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     const deletedCount = typeof data === "number" ? data : 0;
     return NextResponse.json({ ok: true, deleted: deletedCount });
   } catch (error) {
-    Sentry.captureException(error);
+    captureApiError(error, "cron:purge-trash");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

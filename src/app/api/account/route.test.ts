@@ -13,6 +13,16 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(),
 }));
 
+const captureApiErrorMock = vi.fn();
+
+vi.mock("@/lib/sentry", () => ({
+  captureApiError: (...args: unknown[]) => captureApiErrorMock(...args),
+  captureSupabaseError: vi.fn(),
+  isInsufficientPrivilegeError: (err: Error & { code?: string }) =>
+    err.code === "42501" ||
+    err.message?.includes("violates row-level security policy"),
+}));
+
 import { DELETE } from "./route";
 import { createClient } from "@/lib/supabase/server";
 
@@ -116,5 +126,18 @@ describe("DELETE /api/account", () => {
     expect(response.status).toBe(200);
     expect(body.ok).toBe(true);
     expect(mockRpc).toHaveBeenCalledWith("delete_account");
+  });
+
+  it("routes transient fetch errors through captureApiError (#856)", async () => {
+    const fetchError = new TypeError("fetch failed");
+    mockedCreateClient.mockRejectedValue(fetchError);
+
+    const response = await DELETE();
+
+    expect(response.status).toBe(500);
+    expect(captureApiErrorMock).toHaveBeenCalledWith(
+      fetchError,
+      "account:delete",
+    );
   });
 });

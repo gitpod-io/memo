@@ -16,6 +16,16 @@ vi.mock("@/lib/track-event-server", () => ({
   trackEvent: vi.fn(),
 }));
 
+const captureApiErrorMock = vi.fn();
+
+vi.mock("@/lib/sentry", () => ({
+  captureApiError: (...args: unknown[]) => captureApiErrorMock(...args),
+  captureSupabaseError: vi.fn(),
+  isInsufficientPrivilegeError: (err: Error & { code?: string }) =>
+    err.code === "42501" ||
+    err.message?.includes("violates row-level security policy"),
+}));
+
 import { POST } from "./route";
 import { createClient } from "@/lib/supabase/server";
 import { trackEvent } from "@/lib/track-event-server";
@@ -260,6 +270,32 @@ describe("POST /api/feedback", () => {
         screenshot_url: null,
         metadata: null,
       }),
+    );
+  });
+
+  it("routes transient fetch errors through captureApiError (#856)", async () => {
+    const fetchError = new TypeError("fetch failed");
+    mockedCreateClient.mockRejectedValue(fetchError);
+
+    const response = await POST(makeRequest(validBody()));
+
+    expect(response.status).toBe(500);
+    expect(captureApiErrorMock).toHaveBeenCalledWith(
+      fetchError,
+      "feedback:submit",
+    );
+  });
+
+  it("routes non-transient errors through captureApiError (#856)", async () => {
+    const unexpectedError = new Error("unexpected failure");
+    mockedCreateClient.mockRejectedValue(unexpectedError);
+
+    const response = await POST(makeRequest(validBody()));
+
+    expect(response.status).toBe(500);
+    expect(captureApiErrorMock).toHaveBeenCalledWith(
+      unexpectedError,
+      "feedback:submit",
     );
   });
 });

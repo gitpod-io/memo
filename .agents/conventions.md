@@ -314,14 +314,14 @@ Check `supabase/migrations/` for constraint names. The naming convention is
 
 ### API route catch blocks
 
-All catch blocks in API routes must call `Sentry.captureException`, but filter
-out expected authorization errors first. Supabase may throw RLS violations as
-generic `Error` instances (without PostgrestError shape) in catch blocks, so
-always check with `isInsufficientPrivilegeError` before reporting to Sentry:
+All catch blocks in API routes must use `captureApiError` (not raw
+`Sentry.captureException`). `captureApiError` classifies transient network
+errors (`TypeError: fetch failed`, `Failed to fetch`) at warning level,
+preventing them from creating noise in Sentry. Filter out expected
+authorization errors before reporting:
 
 ```typescript
-import * as Sentry from "@sentry/nextjs";
-import { isInsufficientPrivilegeError } from "@/lib/sentry";
+import { captureApiError, isInsufficientPrivilegeError } from "@/lib/sentry";
 
 try {
   // ... route logic
@@ -329,10 +329,14 @@ try {
   if (error instanceof Error && isInsufficientPrivilegeError(error)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  Sentry.captureException(error);
+  captureApiError(error, "route-name:operation");
   return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 }
 ```
+
+Never use `Sentry.captureException(error)` directly in API route catch blocks —
+it bypasses transient network error classification and reports all errors at
+error level.
 
 ### Safe `request.json()` parsing in API routes
 
@@ -1451,14 +1455,14 @@ Never return 500 for `42501` — it inflates Sentry error counts with non-bugs.
 Supabase can throw RLS violations as exceptions (e.g. via `.single()` or async
 rejection) instead of returning them in `{ data, error }`. The outer `catch`
 block in every API route must check for `isInsufficientPrivilegeError` before
-falling through to `Sentry.captureException`:
+falling through to `captureApiError`:
 
 ```typescript
 } catch (error) {
   if (error instanceof Error && isInsufficientPrivilegeError(error)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  Sentry.captureException(error);
+  captureApiError(error, "route-name:operation");
   return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 }
 ```
