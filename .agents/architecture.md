@@ -464,7 +464,10 @@ src/
 │   │   ├── turn-into-menu.tsx       # Floating menu UI for turn-into transformations
 │   │   ├── auto-link-plugin.tsx     # Auto-detect URLs and emails, convert to links
 │   │   ├── word-count-plugin.tsx    # Word count + reading time display below editor
-│   │   └── code-language-selector-plugin.tsx # Floating language picker for code blocks
+│   │   ├── code-language-selector-plugin.tsx # Floating language picker for code blocks
+│   │   ├── demo-editor.tsx          # Standalone demo editor for landing page (no Supabase, sessionStorage persistence)
+│   │   ├── demo-slash-command-plugin.tsx # Slash commands for demo editor (excludes image, page-link, database)
+│   │   └── local-persistence-plugin.tsx # Lexical plugin: persist editor state to sessionStorage (100KB cap)
 │   ├── database/                # Database views system
 │   │   ├── database-view-client.tsx     # Main client component: loads data, composes hooks + JSX
 │   │   ├── database-view-helpers.tsx    # ViewConfigDropdown, ComingSoonPlaceholder, DatabaseSkeleton
@@ -513,6 +516,7 @@ src/
 │   │   └── feedback-form.tsx        # User feedback form with type selector, screenshot capture, and submission
 │   ├── keyboard-shortcuts-dialog.tsx # ⌘+? keyboard shortcuts reference dialog
 │   ├── providers.tsx                # Client-side providers wrapper (ThemeProvider, Toaster, TooltipProvider)
+│   ├── landing-demo-editor.tsx      # Client wrapper: lazy-loads DemoEditor via next/dynamic for landing page
 │   ├── change-password-section.tsx # Password change form (new + confirm, calls updateUser)
 │   ├── delete-account-section.tsx # Account deletion danger zone with double-confirm dialog
 │   ├── emoji-picker.tsx         # Floating emoji grid with search, used by page icon picker

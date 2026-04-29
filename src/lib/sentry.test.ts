@@ -20,6 +20,8 @@ const BARE_CATCH_PERMANENT_ALLOWLIST = new Set([
   "src/components/members/invite-form.tsx", // clipboard writeText — intentionally silent on permission denied
   "src/components/members/pending-invite-list.tsx", // clipboard writeText — intentionally silent on permission denied
   "src/lib/use-persisted-expanded.ts", // localStorage read/write — intentionally silent in private browsing / SSR
+  "src/components/editor/demo-editor.tsx", // URL validation (new URL() throws) — same pattern as editor.tsx
+  "src/components/editor/local-persistence-plugin.tsx", // sessionStorage read/write — intentionally silent in private browsing
 ]);
 
 /**
