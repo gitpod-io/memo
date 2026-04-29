@@ -1,10 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
-import * as Sentry from "@sentry/nextjs";
-
-vi.mock("@sentry/nextjs", () => ({
-  captureException: vi.fn(),
-}));
 
 // Chainable query builder that resolves to a configurable result
 function createChain(result: { data: unknown; error: unknown }) {
@@ -50,7 +45,10 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
+const captureApiErrorMock = vi.fn();
+
 vi.mock("@/lib/sentry", () => ({
+  captureApiError: (...args: unknown[]) => captureApiErrorMock(...args),
   captureSupabaseError: vi.fn(),
   isInsufficientPrivilegeError: (err: Error & { code?: string }) =>
     err.code === "42501" ||
@@ -224,7 +222,7 @@ describe("POST /api/pages/[pageId]/versions/[versionId] (restore)", () => {
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toBe("Invalid JSON in request body");
-    expect(Sentry.captureException).not.toHaveBeenCalled();
+    expect(captureApiErrorMock).not.toHaveBeenCalled();
   });
 
   it("returns 400 on malformed JSON body (#380)", async () => {
@@ -238,6 +236,6 @@ describe("POST /api/pages/[pageId]/versions/[versionId] (restore)", () => {
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toBe("Invalid JSON in request body");
-    expect(Sentry.captureException).not.toHaveBeenCalled();
+    expect(captureApiErrorMock).not.toHaveBeenCalled();
   });
 });

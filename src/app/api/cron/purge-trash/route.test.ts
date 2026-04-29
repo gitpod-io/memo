@@ -4,8 +4,9 @@ vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: vi.fn(),
 }));
 
-vi.mock("@sentry/nextjs", () => ({
-  captureException: vi.fn(),
+vi.mock("@/lib/sentry", () => ({
+  captureApiError: vi.fn(),
+  captureSupabaseError: vi.fn(),
 }));
 
 import { GET } from "./route";
@@ -110,5 +111,21 @@ describe("GET /api/cron/purge-trash", () => {
 
     expect(response.status).toBe(500);
     expect(body.error).toBe("Internal server error");
+  });
+
+  it("routes transient fetch errors through captureApiError (#856)", async () => {
+    const { captureApiError } = await import("@/lib/sentry");
+    const fetchError = new TypeError("fetch failed");
+    mockedCreateAdminClient.mockImplementation(() => {
+      throw fetchError;
+    });
+
+    const response = await GET(makeRequest("Bearer test-cron-secret"));
+
+    expect(response.status).toBe(500);
+    expect(captureApiError).toHaveBeenCalledWith(
+      fetchError,
+      "cron:purge-trash",
+    );
   });
 });

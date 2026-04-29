@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/lib/supabase/server";
-import { captureSupabaseError, isInsufficientPrivilegeError } from "@/lib/sentry";
+import { captureApiError, captureSupabaseError, isInsufficientPrivilegeError } from "@/lib/sentry";
 import { trackEvent } from "@/lib/track-event-server";
 import type { FeedbackType } from "@/lib/types";
 
@@ -88,7 +87,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error && isInsufficientPrivilegeError(error)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    Sentry.captureException(error);
+    captureApiError(error, "feedback:submit");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
