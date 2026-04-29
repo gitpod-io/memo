@@ -2,6 +2,7 @@ import { test, expect } from "./fixtures/auth";
 
 const MOBILE_VIEWPORT = { width: 375, height: 667 };
 const DESKTOP_VIEWPORT = { width: 1280, height: 720 };
+const SHEET_SELECTOR = '[data-slot="sheet-content"]';
 
 test.describe("Responsive sidebar behavior", () => {
   test("mobile: sidebar is hidden by default and opens as a Sheet overlay", async ({
@@ -92,5 +93,54 @@ test.describe("Responsive sidebar behavior", () => {
       expect(box).not.toBeNull();
       expect(box!.width).toBeGreaterThan(100);
     }).toPass({ timeout: 3_000 });
+  });
+
+  test("mobile: sidebar Sheet closes automatically after navigating via a page link", async ({
+    authenticatedPage: page,
+  }) => {
+    await page.setViewportSize(MOBILE_VIEWPORT);
+
+    const sheetContent = page.locator(SHEET_SELECTOR);
+    await expect(sheetContent).toBeHidden();
+
+    // Open the sidebar Sheet
+    const toggleButton = page.getByRole("button", { name: "Toggle sidebar" });
+    await expect(toggleButton).toBeVisible({ timeout: 5_000 });
+    await toggleButton.click();
+    await expect(sheetContent).toBeVisible({ timeout: 5_000 });
+
+    // Wait for the page tree to load inside the Sheet
+    const treeItem = sheetContent.locator('[role="treeitem"]').first();
+    try {
+      await expect(treeItem).toBeVisible({ timeout: 10_000 });
+    } catch {
+      // No pages exist — create one so we can navigate
+      const newPageBtn = sheetContent.getByRole("button", { name: /new page/i });
+      if ((await newPageBtn.count()) > 0) {
+        await newPageBtn.click();
+        // Wait for navigation to the new page
+        await page.waitForURL(
+          (url) => url.pathname.split("/").filter(Boolean).length >= 2,
+          { timeout: 10_000 },
+        );
+        // Sheet should have closed after navigation
+        await expect(sheetContent).toBeHidden({ timeout: 5_000 });
+        return;
+      }
+      test.skip(true, "No pages and no new-page button available");
+      return;
+    }
+
+    // Record the current URL before clicking
+    const urlBefore = page.url();
+
+    // Click the first page link in the tree to navigate
+    await treeItem.click();
+
+    // Wait for the URL to change (navigation occurred)
+    await page.waitForURL((url) => url.href !== urlBefore, { timeout: 10_000 });
+
+    // The Sheet sidebar should close automatically after navigation
+    await expect(sheetContent).toBeHidden({ timeout: 5_000 });
   });
 });

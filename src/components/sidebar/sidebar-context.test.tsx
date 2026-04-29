@@ -1,6 +1,12 @@
 import "@testing-library/jest-dom/vitest";
 import { render, screen, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
+let mockPathname = "/workspace/page-1";
+vi.mock("next/navigation", () => ({
+  usePathname: () => mockPathname,
+}));
+
 import { SidebarProvider, useSidebar } from "./sidebar-context";
 
 // Helper component that exposes sidebar context values for assertions
@@ -377,6 +383,68 @@ describe("SidebarProvider", () => {
 
     // Should remain closed — no modifier key
     expect(screen.getByTestId("open")).toHaveTextContent("false");
+
+    vi.unstubAllGlobals();
+  });
+
+  it("closes sidebar on mobile when pathname changes", async () => {
+    vi.stubGlobal("matchMedia", createMockMatchMedia(true));
+    mockPathname = "/workspace/page-1";
+
+    const { rerender } = render(
+      <SidebarProvider>
+        <SidebarConsumer />
+      </SidebarProvider>
+    );
+
+    // Mobile defaults to closed — open it
+    act(() => {
+      screen.getByTestId("set-open-true").click();
+    });
+    expect(screen.getByTestId("open")).toHaveTextContent("true");
+    expect(screen.getByTestId("is-mobile")).toHaveTextContent("true");
+
+    // Simulate a route change — the close is deferred via queueMicrotask
+    mockPathname = "/workspace/page-2";
+    await act(async () => {
+      rerender(
+        <SidebarProvider>
+          <SidebarConsumer />
+        </SidebarProvider>
+      );
+      // Flush the microtask that calls setOpen(false)
+      await Promise.resolve();
+    });
+
+    // Sidebar should auto-close on mobile after navigation
+    expect(screen.getByTestId("open")).toHaveTextContent("false");
+
+    vi.unstubAllGlobals();
+  });
+
+  it("does not close sidebar on desktop when pathname changes", () => {
+    vi.stubGlobal("matchMedia", createMockMatchMedia(false));
+    mockPathname = "/workspace/page-1";
+
+    const { rerender } = render(
+      <SidebarProvider>
+        <SidebarConsumer />
+      </SidebarProvider>
+    );
+
+    expect(screen.getByTestId("open")).toHaveTextContent("true");
+    expect(screen.getByTestId("is-mobile")).toHaveTextContent("false");
+
+    // Simulate a route change
+    mockPathname = "/workspace/page-2";
+    rerender(
+      <SidebarProvider>
+        <SidebarConsumer />
+      </SidebarProvider>
+    );
+
+    // Sidebar should remain open on desktop
+    expect(screen.getByTestId("open")).toHaveTextContent("true");
 
     vi.unstubAllGlobals();
   });
