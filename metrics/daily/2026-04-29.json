@@ -29,7 +29,9 @@
     "in_review": 0,
     "done": 343,
     "opened_today": 1,
-    "closed_today": 0
+    "closed_today": 0,
+    "delta_opened": 1,
+    "delta_done": 0
   },
   "tests": {
     "unit": 1722,
@@ -43,5 +45,20 @@
   "test_coverage_pct": 38.35,
   "autonomous_pct": 85,
   "human_minutes": null,
-  "agent_minutes": null
+  "agent_minutes": null,
+  "pr_merge_time_buckets": {
+    "lt_5m": 206,
+    "5_10m": 179,
+    "10_20m": 56,
+    "30_60m": 29,
+    "1_2h": 10
+  },
+  "issue_close_time_buckets": {
+    "lt_15m": 49,
+    "15_30m": 81,
+    "30_60m": 101,
+    "1_2h": 66,
+    "2_4h": 47,
+    "4_8h": 17
+  }
 }

@@ -1,0 +1,487 @@
+{
+  "updatedAt": "2026-04-29T21:55:19Z",
+  "startDate": "2026-04-14",
+  "days": [
+    {
+      "date": "2026-04-14",
+      "dayNumber": 1,
+      "loc": {
+        "total": 217,
+        "delta": 217
+      },
+      "prs": {
+        "total": 17,
+        "delta": 17
+      },
+      "commits": {
+        "total": 40,
+        "delta": 40
+      },
+      "issues": {
+        "done": 0,
+        "deltaDone": 0,
+        "deltaOpened": 0
+      },
+      "tests": {
+        "unit": 0,
+        "e2e": 0,
+        "total": 0
+      },
+      "autonomousPct": 100,
+      "ciGreenPct": 98.3
+    },
+    {
+      "date": "2026-04-15",
+      "dayNumber": 2,
+      "loc": {
+        "total": 217,
+        "delta": 0
+      },
+      "prs": {
+        "total": 54,
+        "delta": 37
+      },
+      "commits": {
+        "total": 77,
+        "delta": 37
+      },
+      "issues": {
+        "done": 0,
+        "deltaDone": 20,
+        "deltaOpened": 20
+      },
+      "tests": {
+        "unit": 0,
+        "e2e": 0,
+        "total": 0
+      },
+      "autonomousPct": 100,
+      "ciGreenPct": 94.8
+    },
+    {
+      "date": "2026-04-16",
+      "dayNumber": 3,
+      "loc": {
+        "total": 7848,
+        "delta": 7631
+      },
+      "prs": {
+        "total": 89,
+        "delta": 35
+      },
+      "commits": {
+        "total": 112,
+        "delta": 35
+      },
+      "issues": {
+        "done": 0,
+        "deltaDone": 23,
+        "deltaOpened": 28
+      },
+      "tests": {
+        "unit": 30,
+        "e2e": 0,
+        "total": 30
+      },
+      "autonomousPct": 87,
+      "ciGreenPct": 100
+    },
+    {
+      "date": "2026-04-17",
+      "dayNumber": 4,
+      "loc": {
+        "total": 10410,
+        "delta": 2562
+      },
+      "prs": {
+        "total": 132,
+        "delta": 43
+      },
+      "commits": {
+        "total": 155,
+        "delta": 43
+      },
+      "issues": {
+        "done": 30,
+        "deltaDone": 39,
+        "deltaOpened": 34
+      },
+      "tests": {
+        "unit": 80,
+        "e2e": 20,
+        "total": 100
+      },
+      "autonomousPct": 86,
+      "ciGreenPct": 97.8
+    },
+    {
+      "date": "2026-04-18",
+      "dayNumber": 5,
+      "loc": {
+        "total": 12202,
+        "delta": 1792
+      },
+      "prs": {
+        "total": 143,
+        "delta": 11
+      },
+      "commits": {
+        "total": 166,
+        "delta": 11
+      },
+      "issues": {
+        "done": 88,
+        "deltaDone": 7,
+        "deltaOpened": 7
+      },
+      "tests": {
+        "unit": 180,
+        "e2e": 50,
+        "total": 230
+      },
+      "autonomousPct": 86,
+      "ciGreenPct": 100
+    },
+    {
+      "date": "2026-04-19",
+      "dayNumber": 6,
+      "loc": {
+        "total": 12331,
+        "delta": 129
+      },
+      "prs": {
+        "total": 155,
+        "delta": 12
+      },
+      "commits": {
+        "total": 178,
+        "delta": 12
+      },
+      "issues": {
+        "done": 92,
+        "deltaDone": 8,
+        "deltaOpened": 8
+      },
+      "tests": {
+        "unit": 270,
+        "e2e": 74,
+        "total": 344
+      },
+      "autonomousPct": 85,
+      "ciGreenPct": 100
+    },
+    {
+      "date": "2026-04-20",
+      "dayNumber": 7,
+      "loc": {
+        "total": 12592,
+        "delta": 261
+      },
+      "prs": {
+        "total": 182,
+        "delta": 27
+      },
+      "commits": {
+        "total": 205,
+        "delta": 27
+      },
+      "issues": {
+        "done": 95,
+        "deltaDone": 17,
+        "deltaOpened": 17
+      },
+      "tests": {
+        "unit": 270,
+        "e2e": 74,
+        "total": 344
+      },
+      "autonomousPct": 82,
+      "ciGreenPct": 99.1
+    },
+    {
+      "date": "2026-04-21",
+      "dayNumber": 8,
+      "loc": {
+        "total": 18581,
+        "delta": 5989
+      },
+      "prs": {
+        "total": 210,
+        "delta": 28
+      },
+      "commits": {
+        "total": 231,
+        "delta": 26
+      },
+      "issues": {
+        "done": 170,
+        "deltaDone": 75,
+        "deltaOpened": 84
+      },
+      "tests": {
+        "unit": 500,
+        "e2e": 120,
+        "total": 620
+      },
+      "autonomousPct": 83,
+      "ciGreenPct": 97.8
+    },
+    {
+      "date": "2026-04-22",
+      "dayNumber": 9,
+      "loc": {
+        "total": 42077,
+        "delta": 23496
+      },
+      "prs": {
+        "total": 300,
+        "delta": 90
+      },
+      "commits": {
+        "total": 323,
+        "delta": 92
+      },
+      "issues": {
+        "done": 241,
+        "deltaDone": 71,
+        "deltaOpened": 63
+      },
+      "tests": {
+        "unit": 700,
+        "e2e": 170,
+        "total": 870
+      },
+      "autonomousPct": 87,
+      "ciGreenPct": 99.7
+    },
+    {
+      "date": "2026-04-23",
+      "dayNumber": 10,
+      "loc": {
+        "total": 43860,
+        "delta": 1783
+      },
+      "prs": {
+        "total": 342,
+        "delta": 42
+      },
+      "commits": {
+        "total": 365,
+        "delta": 42
+      },
+      "issues": {
+        "done": 255,
+        "deltaDone": 14,
+        "deltaOpened": 13
+      },
+      "tests": {
+        "unit": 815,
+        "e2e": 190,
+        "total": 1005
+      },
+      "autonomousPct": 88,
+      "ciGreenPct": 100
+    },
+    {
+      "date": "2026-04-24",
+      "dayNumber": 11,
+      "loc": {
+        "total": 44958,
+        "delta": 1098
+      },
+      "prs": {
+        "total": 363,
+        "delta": 21
+      },
+      "commits": {
+        "total": 385,
+        "delta": 20
+      },
+      "issues": {
+        "done": 269,
+        "deltaDone": 10,
+        "deltaOpened": 14
+      },
+      "tests": {
+        "unit": 854,
+        "e2e": 213,
+        "total": 1067
+      },
+      "autonomousPct": 86,
+      "ciGreenPct": 94.9
+    },
+    {
+      "date": "2026-04-25",
+      "dayNumber": 12,
+      "loc": {
+        "total": 61017,
+        "delta": 16059
+      },
+      "prs": {
+        "total": 429,
+        "delta": 18
+      },
+      "commits": {
+        "total": 452,
+        "delta": 18
+      },
+      "issues": {
+        "done": 322,
+        "deltaDone": 33,
+        "deltaOpened": 32
+      },
+      "tests": {
+        "unit": 1548,
+        "e2e": 282,
+        "total": 1830
+      },
+      "autonomousPct": 86,
+      "ciGreenPct": 99.3
+    },
+    {
+      "date": "2026-04-26",
+      "dayNumber": 13,
+      "loc": {
+        "total": 62927,
+        "delta": 1910
+      },
+      "prs": {
+        "total": 448,
+        "delta": 0
+      },
+      "commits": {
+        "total": 471,
+        "delta": 0
+      },
+      "issues": {
+        "done": 337,
+        "deltaDone": 0,
+        "deltaOpened": 0
+      },
+      "tests": {
+        "unit": 1548,
+        "e2e": 282,
+        "total": 1830
+      },
+      "autonomousPct": 86,
+      "ciGreenPct": 100
+    },
+    {
+      "date": "2026-04-27",
+      "dayNumber": 14,
+      "loc": {
+        "total": 62927,
+        "delta": 0
+      },
+      "prs": {
+        "total": 453,
+        "delta": 1
+      },
+      "commits": {
+        "total": 476,
+        "delta": 1
+      },
+      "issues": {
+        "done": 337,
+        "deltaDone": 6,
+        "deltaOpened": 6
+      },
+      "tests": {
+        "unit": 1591,
+        "e2e": 290,
+        "total": 1881
+      },
+      "autonomousPct": 86,
+      "ciGreenPct": 100
+    },
+    {
+      "date": "2026-04-28",
+      "dayNumber": 15,
+      "loc": {
+        "total": 64546,
+        "delta": 1619
+      },
+      "prs": {
+        "total": 465,
+        "delta": 0
+      },
+      "commits": {
+        "total": 488,
+        "delta": 0
+      },
+      "issues": {
+        "done": 343,
+        "deltaDone": 1,
+        "deltaOpened": 1
+      },
+      "tests": {
+        "unit": 1591,
+        "e2e": 290,
+        "total": 1881
+      },
+      "autonomousPct": 85,
+      "ciGreenPct": 100
+    },
+    {
+      "date": "2026-04-29",
+      "dayNumber": 16,
+      "loc": {
+        "total": 64546,
+        "delta": 0
+      },
+      "prs": {
+        "total": 471,
+        "delta": 6
+      },
+      "commits": {
+        "total": 494,
+        "delta": 6
+      },
+      "issues": {
+        "done": 343,
+        "deltaDone": 0,
+        "deltaOpened": 1
+      },
+      "tests": {
+        "unit": 1722,
+        "e2e": 295,
+        "total": 2017
+      },
+      "autonomousPct": 85,
+      "ciGreenPct": 100
+    }
+  ],
+  "latest": {
+    "date": "2026-04-29",
+    "dayNumber": 16,
+    "totals": {
+      "prs": 471,
+      "commits": 494,
+      "loc": 64546,
+      "issuesDone": 343,
+      "tests": 2017
+    },
+    "rates": {
+      "autonomousPct": 85,
+      "ciGreenPct": 100,
+      "testCoveragePct": 38.35
+    },
+    "distributions": {
+      "prMergeTime": {
+        "lt_5m": 206,
+        "5_10m": 179,
+        "10_20m": 56,
+        "30_60m": 29,
+        "1_2h": 10
+      },
+      "issueCloseTime": {
+        "lt_15m": 49,
+        "15_30m": 81,
+        "30_60m": 101,
+        "1_2h": 66,
+        "2_4h": 47,
+        "4_8h": 17
+      }
+    }
+  }
+}

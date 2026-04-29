@@ -30,8 +30,36 @@
     "backlog": 0,
     "in_progress": 0,
     "in_review": 0,
-    "done": 343
+    "done": 343,
+    "delta_opened": 1,
+    "delta_done": 1,
+    "opened_today": 1,
+    "closed_today": 1
   },
   "human_minutes": null,
-  "agent_minutes": null
+  "agent_minutes": null,
+  "pr_merge_time_buckets": {
+    "lt_5m": 206,
+    "5_10m": 177,
+    "10_20m": 54,
+    "30_60m": 24,
+    "1_2h": 10
+  },
+  "issue_close_time_buckets": {
+    "lt_15m": 49,
+    "15_30m": 81,
+    "30_60m": 101,
+    "1_2h": 66,
+    "2_4h": 44,
+    "4_8h": 16
+  },
+  "tests": {
+    "unit": 1591,
+    "e2e": 290
+  },
+  "ci": {
+    "runs_total": 24,
+    "runs_passed": 24,
+    "pass_rate_pct": 100
+  }
 }
