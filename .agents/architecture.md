@@ -439,7 +439,8 @@ src/
 │   │   ├── editor.tsx               # Main editor: LexicalComposer, plugins, auto-save to Supabase
 │   │   ├── theme.ts                 # EditorThemeClasses mapping Lexical nodes to Tailwind classes
 │   │   ├── slash-command-plugin.tsx  # "/" typeahead: paragraph, h1-h3, lists, code, quote, divider, table, image, callout, toggle
-│   │   ├── floating-toolbar-plugin.tsx # Selection toolbar: bold, italic, underline, strikethrough, code, link
+│   │   ├── font-family.ts             # Font family options (sans-serif, serif, monospace) and CSS value mapping
+│   │   ├── floating-toolbar-plugin.tsx # Selection toolbar: font family, bold, italic, underline, strikethrough, code, link
 │   │   ├── floating-link-editor-plugin.tsx # Link preview/edit/remove popover (⌘+K)
 │   │   ├── code-highlight-plugin.tsx # Registers Prism-based syntax highlighting for code blocks
 │   │   ├── markdown-utils.ts        # Markdown ↔ Lexical conversion (export/import/download/parse)

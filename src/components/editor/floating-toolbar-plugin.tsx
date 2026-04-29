@@ -12,6 +12,10 @@ import {
   SELECTION_CHANGE_COMMAND,
 } from "lexical";
 import { $isLinkNode, TOGGLE_LINK_COMMAND } from "@lexical/link";
+import {
+  $patchStyleText,
+  $getSelectionStyleValueForProperty,
+} from "@lexical/selection";
 import { mergeRegister } from "@lexical/utils";
 import { computePosition, offset, flip, shift } from "@floating-ui/react";
 import {
@@ -22,6 +26,12 @@ import {
   Code,
   Link,
 } from "lucide-react";
+import {
+  type FontFamilyKey,
+  FONT_FAMILIES,
+  fontFamilyKeyFromCSS,
+  fontFamilyCSSFromKey,
+} from "@/components/editor/font-family";
 
 interface FloatingToolbarPluginProps {
   anchorElem: HTMLElement;
@@ -55,6 +65,7 @@ export function FloatingToolbarPlugin({
   const [isStrikethrough, setIsStrikethrough] = useState(false);
   const [isCode, setIsCode] = useState(false);
   const [isLink, setIsLink] = useState(false);
+  const [fontFamily, setFontFamily] = useState<FontFamilyKey>("monospace");
 
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
@@ -78,6 +89,13 @@ export function FloatingToolbarPlugin({
     const node = getSelectedNode(selection);
     const parent = node?.getParent();
     setIsLink($isLinkNode(parent) || $isLinkNode(node));
+
+    const currentFontCSS = $getSelectionStyleValueForProperty(
+      selection,
+      "font-family",
+      "",
+    );
+    setFontFamily(fontFamilyKeyFromCSS(currentFontCSS));
 
     setIsVisible(true);
   }, []);
@@ -164,6 +182,21 @@ export function FloatingToolbarPlugin({
     });
   };
 
+  const applyFontFamily = useCallback(
+    (key: FontFamilyKey) => {
+      editor.update(() => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) return;
+        const cssValue = fontFamilyCSSFromKey(key);
+        // null removes the inline style, reverting to the editor default (monospace)
+        $patchStyleText(selection, {
+          "font-family": cssValue || null,
+        });
+      });
+    },
+    [editor],
+  );
+
   if (!isVisible) return null;
 
   return createPortal(
@@ -174,6 +207,11 @@ export function FloatingToolbarPlugin({
       aria-label="Text formatting"
       data-testid="editor-toolbar"
     >
+      <FontFamilyDropdown
+        value={fontFamily}
+        onChange={applyFontFamily}
+      />
+      <div className="mx-0.5 h-4 w-px bg-overlay-border" aria-hidden="true" />
       <ToolbarButton
         active={isBold}
         onClick={formatBold}
@@ -224,6 +262,31 @@ export function FloatingToolbarPlugin({
       </ToolbarButton>
     </div>,
     anchorElem
+  );
+}
+
+function FontFamilyDropdown({
+  value,
+  onChange,
+}: {
+  value: FontFamilyKey;
+  onChange: (key: FontFamilyKey) => void;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value as FontFamilyKey)}
+      onMouseDown={(e) => e.stopPropagation()}
+      className="h-11 sm:h-7 bg-transparent text-xs text-muted-foreground hover:text-foreground focus:text-foreground outline-none cursor-pointer px-1.5 appearance-none"
+      aria-label="Font family"
+      data-testid="editor-toolbar-font-family"
+    >
+      {FONT_FAMILIES.map((f) => (
+        <option key={f.key} value={f.key}>
+          {f.label}
+        </option>
+      ))}
+    </select>
   );
 }
 
