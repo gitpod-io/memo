@@ -4,6 +4,10 @@ import { NextResponse, type NextRequest } from "next/server";
 // Routes that unauthenticated users can access
 const PUBLIC_ROUTES = ["/sign-in", "/sign-up", "/invite", "/auth/callback", "/forgot-password", "/reset-password"];
 
+// Next.js metadata file convention routes and SEO assets that must be accessible
+// to search engine crawlers and social media scrapers without authentication.
+const SEO_ROUTES = ["/robots.txt", "/sitemap.xml", "/opengraph-image", "/twitter-image"];
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -35,7 +39,8 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isPublicRoute =
     pathname === "/" ||
-    PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
+    PUBLIC_ROUTES.some((route) => pathname.startsWith(route)) ||
+    SEO_ROUTES.includes(pathname);
 
   // Unauthenticated users trying to access protected routes → redirect to sign-in
   if (!user && !isPublicRoute) {

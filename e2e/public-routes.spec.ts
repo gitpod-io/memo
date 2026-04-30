@@ -142,6 +142,37 @@ test.describe("Auth redirects for protected routes", () => {
   }
 });
 
+test.describe("SEO routes accessible without authentication", () => {
+  test("/robots.txt returns valid robots.txt content", async ({ request }) => {
+    const response = await request.get("/robots.txt");
+    expect(response.status()).toBe(200);
+    const text = await response.text();
+    expect(text).toContain("User-Agent");
+    expect(text).toContain("Sitemap");
+  });
+
+  test("/sitemap.xml returns valid XML sitemap", async ({ request }) => {
+    const response = await request.get("/sitemap.xml");
+    expect(response.status()).toBe(200);
+    const text = await response.text();
+    expect(text).toContain("<?xml");
+    expect(text).toContain("<urlset");
+    expect(text).toContain("<loc>");
+  });
+
+  test("/opengraph-image returns a PNG image", async ({ request }) => {
+    const response = await request.get("/opengraph-image");
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-type"]).toContain("image/png");
+  });
+
+  test("/twitter-image returns a PNG image", async ({ request }) => {
+    const response = await request.get("/twitter-image");
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-type"]).toContain("image/png");
+  });
+});
+
 test.describe("Health API", () => {
   test("/api/health returns a successful response", async ({ request }) => {
     const response = await request.get("/api/health");
