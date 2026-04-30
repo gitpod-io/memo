@@ -13,12 +13,35 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+const SITE_URL = "https://software-factory.dev";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     template: "%s — Memo",
     default: "Memo",
   },
   description: "A Notion-style workspace, built with zero human code.",
+  openGraph: {
+    title: "Memo",
+    description: "A Notion-style workspace, built with zero human code.",
+    url: SITE_URL,
+    siteName: "Memo",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Memo",
+    description: "A Notion-style workspace, built with zero human code.",
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "32x32" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 /**

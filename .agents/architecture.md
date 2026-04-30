@@ -373,6 +373,10 @@ src/
 │   ├── layout.tsx          # Root layout (JetBrains Mono font, TooltipProvider)
 │   ├── page.tsx            # Landing page (redirects authenticated users to workspace)
 │   ├── manifest.ts         # PWA manifest (name, icons, display mode)
+│   ├── robots.ts           # robots.txt — allows all crawlers, points to sitemap
+│   ├── sitemap.ts          # sitemap.xml — public routes (/, /sign-in, /sign-up)
+│   ├── opengraph-image.tsx # OG image (1200×630, generated via next/og ImageResponse)
+│   ├── twitter-image.tsx   # Twitter card image (same design as OG image)
 │   ├── global-error.tsx    # Sentry error boundary
 │   ├── not-found.tsx       # Root 404 page
 │   ├── globals.css         # Tailwind v4 theme — dark-only oklch tokens, --radius: 0
