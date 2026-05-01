@@ -34,7 +34,7 @@ export function TextEditor({ value, property, onChange, onBlur }: EditorProps) {
         }
       }}
       aria-label={`Edit ${property.name} text property`}
-      data-testid="cell-editor-text"
+      data-testid="db-cell-editor-text"
       className="h-8 text-sm"
     />
   );

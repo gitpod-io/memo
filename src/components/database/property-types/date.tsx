@@ -263,7 +263,7 @@ export function DateEditor({ value, property, onChange, onBlur }: EditorProps) {
     typeof value.date === "string" ? value.date : null;
 
   return (
-    <div className="w-full" data-testid="cell-editor-date" aria-label={`Edit ${property.name} date property`}>
+    <div className="w-full" data-testid="db-cell-editor-date" aria-label={`Edit ${property.name} date property`}>
       <DatePicker
         selectedDate={currentDate}
         onSelect={(iso) => onChange({ ...value, date: iso })}

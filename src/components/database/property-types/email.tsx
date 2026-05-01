@@ -44,7 +44,7 @@ export function EmailEditor({ value, property, onChange, onBlur }: EditorProps) 
         }
       }}
       aria-label={`Edit ${property.name} email property`}
-      data-testid="cell-editor-email"
+      data-testid="db-cell-editor-email"
       placeholder="name@example.com"
       className="h-8 text-sm"
     />

@@ -68,7 +68,7 @@ export function NumberEditor({ value, property, onChange, onBlur }: EditorProps)
         }
       }}
       aria-label={`Edit ${property.name} number property`}
-      data-testid="cell-editor-number"
+      data-testid="db-cell-editor-number"
       className="h-8 text-right text-sm tabular-nums"
     />
   );

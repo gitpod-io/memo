@@ -85,7 +85,7 @@ export function SelectEditor({
   );
 
   return (
-    <div className="w-full" data-testid="cell-editor-select" aria-label={`Edit ${property.name} select property`}>
+    <div className="w-full" data-testid="db-cell-editor-select" aria-label={`Edit ${property.name} select property`}>
       <SelectDropdown
         options={localOptions}
         selected={selected}

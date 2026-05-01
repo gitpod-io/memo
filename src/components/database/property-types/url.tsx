@@ -57,7 +57,7 @@ export function UrlEditor({ value, property, onChange, onBlur }: EditorProps) {
         }
       }}
       aria-label={`Edit ${property.name} URL property`}
-      data-testid="cell-editor-url"
+      data-testid="db-cell-editor-url"
       placeholder="https://…"
       className="h-8 text-sm"
     />

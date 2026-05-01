@@ -22,7 +22,7 @@ function CheckboxCell({
       role="checkbox"
       aria-checked={checked}
       aria-label={propertyName ? `Edit ${propertyName} checkbox property` : undefined}
-      data-testid="cell-editor-checkbox"
+      data-testid="db-cell-editor-checkbox"
       onClick={onToggle}
       className="flex h-full w-full items-center justify-center"
     >

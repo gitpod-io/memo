@@ -49,7 +49,7 @@ export function PhoneEditor({ value, property, onChange, onBlur }: EditorProps) 
         }
       }}
       aria-label={`Edit ${property.name} phone property`}
-      data-testid="cell-editor-phone"
+      data-testid="db-cell-editor-phone"
       placeholder="+1 (555) 000-0000"
       className="h-8 text-sm"
     />

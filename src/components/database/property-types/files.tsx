@@ -271,7 +271,7 @@ export function FilesEditor({ value, property, onChange, onBlur }: EditorProps) 
     <div
       ref={containerRef}
       className="w-64 rounded-sm border border-border bg-background shadow-md"
-      data-testid="cell-editor-files"
+      data-testid="db-cell-editor-files"
       aria-label={`Edit ${property.name} files property`}
     >
       {/* File list */}

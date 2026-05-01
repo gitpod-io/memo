@@ -14,7 +14,7 @@ export function TableSkeleton({ rowHeight, columnCount }: TableSkeletonProps) {
   const cols = Array.from({ length: columnCount }, (_, i) => i);
 
   return (
-    <div className="w-full" data-testid="table-skeleton">
+    <div className="w-full" data-testid="db-table-skeleton">
       {/* Header skeleton */}
       <div className="flex border-b border-overlay-border">
         {cols.map((i) => (
