@@ -42,7 +42,7 @@ export function NumberRenderer({ value, property }: RendererProps) {
   );
 }
 
-export function NumberEditor({ value, onChange, onBlur }: EditorProps) {
+export function NumberEditor({ value, property, onChange, onBlur }: EditorProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const raw = value.number ?? value.value;
   const numStr =
@@ -67,6 +67,8 @@ export function NumberEditor({ value, onChange, onBlur }: EditorProps) {
           onBlur();
         }
       }}
+      aria-label={`Edit ${property.name} number property`}
+      data-testid="db-cell-editor-number"
       className="h-8 text-right text-sm tabular-nums"
     />
   );

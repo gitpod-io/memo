@@ -104,7 +104,7 @@ export function MultiSelectEditor({
   );
 
   return (
-    <div className="w-full">
+    <div className="w-full" data-testid="db-cell-editor-multi_select" aria-label={`Edit ${property.name} multi-select property`}>
       <SelectDropdown
         options={localOptions}
         selected={selectedIds}

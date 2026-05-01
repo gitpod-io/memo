@@ -30,7 +30,7 @@ vi.mock("./property-types/date", () => ({
 // Mock SelectOptionBadge to simplify select option rendering
 vi.mock("./property-types/select-option-badge", () => ({
   SelectOptionBadge: ({ name }: { name: string }) => (
-    <span data-testid="select-option-badge">{name}</span>
+    <span data-testid="db-select-option-badge">{name}</span>
   ),
 }));
 

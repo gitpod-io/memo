@@ -9,9 +9,11 @@ import type { RendererProps, EditorProps } from "./index";
 
 function CheckboxCell({
   checked,
+  propertyName,
   onToggle,
 }: {
   checked: boolean;
+  propertyName?: string;
   onToggle: () => void;
 }) {
   return (
@@ -19,6 +21,8 @@ function CheckboxCell({
       type="button"
       role="checkbox"
       aria-checked={checked}
+      aria-label={propertyName ? `Edit ${propertyName} checkbox property` : undefined}
+      data-testid="db-cell-editor-checkbox"
       onClick={onToggle}
       className="flex h-full w-full items-center justify-center"
     >
@@ -55,11 +59,12 @@ export function CheckboxRenderer({ value }: RendererProps) {
   );
 }
 
-export function CheckboxEditor({ value, onChange, onBlur }: EditorProps) {
+export function CheckboxEditor({ value, property, onChange, onBlur }: EditorProps) {
   const checked = value.checked === true || value.value === true;
   return (
     <CheckboxCell
       checked={checked}
+      propertyName={property.name}
       onToggle={() => {
         onChange({ checked: !checked });
         onBlur();

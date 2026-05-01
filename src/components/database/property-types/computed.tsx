@@ -63,7 +63,7 @@ export function CreatedTimeRenderer({ value }: RendererProps) {
 
   return (
     <Tooltip>
-      <TooltipTrigger className="truncate text-sm text-muted-foreground">
+      <TooltipTrigger className="truncate text-sm text-muted-foreground" data-testid="db-cell-renderer-created_time">
         {label}
       </TooltipTrigger>
       <TooltipContent>{full}</TooltipContent>
@@ -83,7 +83,7 @@ export function UpdatedTimeRenderer({ value }: RendererProps) {
 
   return (
     <Tooltip>
-      <TooltipTrigger className="truncate text-sm text-muted-foreground">
+      <TooltipTrigger className="truncate text-sm text-muted-foreground" data-testid="db-cell-renderer-updated_time">
         {label}
       </TooltipTrigger>
       <TooltipContent>{full}</TooltipContent>
@@ -127,7 +127,7 @@ export function CreatedByRenderer({ value, property }: RendererProps) {
 
   return (
     <Tooltip>
-      <TooltipTrigger className="flex items-center gap-1.5">
+      <TooltipTrigger className="flex items-center gap-1.5" data-testid="db-cell-renderer-created_by">
         {creator.avatar_url ? (
           <img
             src={creator.avatar_url}

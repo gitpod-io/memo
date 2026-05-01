@@ -28,17 +28,18 @@ export function PropertyTypePicker({ onSelect }: PropertyTypePickerProps) {
       <DropdownMenuTrigger
         className="flex h-full items-center text-muted-foreground hover:text-foreground"
         aria-label="Add column"
+        data-testid="db-property-type-picker-trigger"
       >
         <Plus className="h-3.5 w-3.5" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent side="bottom" align="start" className="w-48">
+      <DropdownMenuContent side="bottom" align="start" className="w-48" data-testid="db-property-type-picker-menu">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Property type</DropdownMenuLabel>
           <DropdownMenuSeparator />
           {STANDARD_PROPERTY_TYPES.map((type) => {
             const Icon = PROPERTY_TYPE_ICON[type];
             return (
-              <DropdownMenuItem key={type} onClick={() => onSelect(type)}>
+              <DropdownMenuItem key={type} onClick={() => onSelect(type)} data-testid={`db-property-type-option-${type}`}>
                 <Icon className="h-4 w-4 text-muted-foreground" />
                 {PROPERTY_TYPE_LABEL[type]}
               </DropdownMenuItem>
@@ -51,7 +52,7 @@ export function PropertyTypePicker({ onSelect }: PropertyTypePickerProps) {
           {ADVANCED_PROPERTY_TYPES.map((type) => {
             const Icon = PROPERTY_TYPE_ICON[type];
             return (
-              <DropdownMenuItem key={type} onClick={() => onSelect(type)}>
+              <DropdownMenuItem key={type} onClick={() => onSelect(type)} data-testid={`db-property-type-option-${type}`}>
                 <Icon className="h-4 w-4 text-muted-foreground" />
                 {PROPERTY_TYPE_LABEL[type]}
               </DropdownMenuItem>

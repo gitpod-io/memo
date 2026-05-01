@@ -43,7 +43,7 @@ export const RowCountAnnouncer = memo(function RowCountAnnouncer({
   }, [filteredCount, totalCount]);
 
   return (
-    <span className="sr-only" aria-live="polite" role="status">
+    <span className="sr-only" aria-live="polite" role="status" data-testid="db-row-count-announcer">
       {announcement}
     </span>
   );

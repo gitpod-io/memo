@@ -94,7 +94,7 @@ export function StatusEditor({
   );
 
   return (
-    <div className="w-full">
+    <div className="w-full" data-testid="db-cell-editor-status" aria-label={`Edit ${property.name} status property`}>
       <SelectDropdown
         options={localOptions}
         selected={selected}

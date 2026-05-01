@@ -21,7 +21,7 @@ export function EmailRenderer({ value }: RendererProps) {
   );
 }
 
-export function EmailEditor({ value, onChange, onBlur }: EditorProps) {
+export function EmailEditor({ value, property, onChange, onBlur }: EditorProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const email = typeof value.email === "string"
     ? value.email
@@ -43,6 +43,8 @@ export function EmailEditor({ value, onChange, onBlur }: EditorProps) {
           onBlur();
         }
       }}
+      aria-label={`Edit ${property.name} email property`}
+      data-testid="db-cell-editor-email"
       placeholder="name@example.com"
       className="h-8 text-sm"
     />

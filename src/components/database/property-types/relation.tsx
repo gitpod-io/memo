@@ -321,7 +321,7 @@ export function RelationEditor({
 
   if (!targetDatabaseId) {
     return (
-      <div className="w-56 rounded-sm border border-border bg-background p-3 shadow-md">
+      <div className="w-56 rounded-sm border border-border bg-background p-3 shadow-md" data-testid="db-cell-editor-relation">
         <p className="text-xs text-muted-foreground">
           No target database configured for this relation property.
         </p>
@@ -333,6 +333,8 @@ export function RelationEditor({
     <div
       ref={containerRef}
       className="w-56 rounded-sm border border-border bg-background shadow-md"
+      data-testid="db-cell-editor-relation"
+      aria-label={`Edit ${property.name} relation property`}
     >
       <div className="p-1.5">
         <Input
