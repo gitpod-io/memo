@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-29T21:55:19Z",
+  "updatedAt": "2026-05-01T14:04:56Z",
   "startDate": "2026-04-14",
   "days": [
     {
@@ -449,37 +449,93 @@
       },
       "autonomousPct": 85,
       "ciGreenPct": 100
+    },
+    {
+      "date": "2026-04-30",
+      "dayNumber": 17,
+      "loc": {
+        "total": 65528,
+        "delta": 982
+      },
+      "prs": {
+        "total": 482,
+        "delta": 11
+      },
+      "commits": {
+        "total": 505,
+        "delta": 11
+      },
+      "issues": {
+        "done": 348,
+        "deltaDone": 0,
+        "deltaOpened": 0
+      },
+      "tests": {
+        "unit": 1730,
+        "e2e": 312,
+        "total": 2042
+      },
+      "autonomousPct": 84,
+      "ciGreenPct": 100
+    },
+    {
+      "date": "2026-05-01",
+      "dayNumber": 18,
+      "loc": {
+        "total": 65696,
+        "delta": 168
+      },
+      "prs": {
+        "total": 489,
+        "delta": 7
+      },
+      "commits": {
+        "total": 512,
+        "delta": 7
+      },
+      "issues": {
+        "done": 351,
+        "deltaDone": 1,
+        "deltaOpened": 1
+      },
+      "tests": {
+        "unit": 1730,
+        "e2e": 316,
+        "total": 2046
+      },
+      "autonomousPct": 85,
+      "ciGreenPct": 100
     }
   ],
   "latest": {
-    "date": "2026-04-29",
-    "dayNumber": 16,
+    "date": "2026-05-01",
+    "dayNumber": 18,
     "totals": {
-      "prs": 471,
-      "commits": 494,
-      "loc": 64546,
-      "issuesDone": 343,
-      "tests": 2017
+      "prs": 489,
+      "commits": 512,
+      "loc": 65696,
+      "issuesDone": 351,
+      "tests": 2046
     },
     "rates": {
       "autonomousPct": 85,
       "ciGreenPct": 100,
-      "testCoveragePct": 38.35
+      "testCoveragePct": 37.77
     },
     "distributions": {
       "prMergeTime": {
         "lt_5m": 206,
-        "5_10m": 179,
-        "10_20m": 56,
-        "30_60m": 29,
-        "1_2h": 10
+        "5_10m": 180,
+        "10_20m": 57,
+        "30_60m": 34,
+        "1_2h": 12
       },
       "issueCloseTime": {
         "lt_15m": 49,
         "15_30m": 81,
         "30_60m": 101,
         "1_2h": 66,
-        "2_4h": 47,
+        "2_4h": 50,
         "4_8h": 17
       }
     }
