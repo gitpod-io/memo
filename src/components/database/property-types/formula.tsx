@@ -21,14 +21,14 @@ export function FormulaRenderer({ value }: RendererProps) {
 
   if (error) {
     return (
-      <span className="truncate text-sm text-destructive">Error</span>
+      <span className="truncate text-sm text-destructive" data-testid="cell-editor-formula">Error</span>
     );
   }
 
   if (!display) return null;
 
   return (
-    <span className="truncate text-sm text-muted-foreground">{display}</span>
+    <span className="truncate text-sm text-muted-foreground" data-testid="cell-editor-formula">{display}</span>
   );
 }
 

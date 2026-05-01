@@ -28,6 +28,7 @@ export function SelectOptionBadge({
         styles.text,
         className,
       )}
+      data-testid="select-option-badge"
     >
       {name}
     </span>

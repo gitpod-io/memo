@@ -280,7 +280,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
       )}
 
       {/* Database view area */}
-      <div className="mt-6">
+      <div className="mt-6" data-testid="database-view-container">
         {loading ? (
           <DatabaseSkeleton />
         ) : error ? (
@@ -291,7 +291,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
               <p className="max-w-sm text-sm text-muted-foreground">
                 {error}
               </p>
-              <Button onClick={handleRetry}>Try again</Button>
+              <Button onClick={handleRetry} data-testid="database-retry-button">Try again</Button>
             </div>
           </div>
         ) : (

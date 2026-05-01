@@ -84,15 +84,17 @@ function RenameForm({
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
           autoComplete="off"
+          data-testid="rename-property-input"
         />
       </div>
       <DialogFooter>
-        <Button variant="outline" onClick={onCancel}>
+        <Button variant="outline" onClick={onCancel} data-testid="rename-property-cancel">
           Cancel
         </Button>
         <Button
           onClick={handleSubmit}
           disabled={value.trim() === "" || value.trim() === propertyName}
+          data-testid="rename-property-confirm"
         >
           Rename
         </Button>
@@ -121,7 +123,7 @@ export function RenamePropertyDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false}>
+      <DialogContent showCloseButton={false} data-testid="rename-property-dialog">
         {open && (
           <RenameForm
             propertyName={propertyName}

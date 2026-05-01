@@ -263,6 +263,8 @@ export function PersonEditor({
     <div
       ref={containerRef}
       className="w-56 rounded-sm border border-border bg-background shadow-md"
+      data-testid="cell-editor-person"
+      aria-label={`Edit ${property.name} person property`}
     >
       <div className="p-1.5">
         <div className="relative">

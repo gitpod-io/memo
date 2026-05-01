@@ -118,6 +118,7 @@ export function SelectDropdown({
     <div
       ref={containerRef}
       className="w-56 rounded-sm border border-border bg-background shadow-md"
+      data-testid="select-dropdown"
     >
       <div className="p-1.5">
         <Input

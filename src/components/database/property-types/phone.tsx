@@ -26,7 +26,7 @@ export function PhoneRenderer({ value }: RendererProps) {
   return <span className="truncate text-sm">{formatPhone(phone)}</span>;
 }
 
-export function PhoneEditor({ value, onChange, onBlur }: EditorProps) {
+export function PhoneEditor({ value, property, onChange, onBlur }: EditorProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const phone = typeof value.phone === "string"
     ? value.phone
@@ -48,6 +48,8 @@ export function PhoneEditor({ value, onChange, onBlur }: EditorProps) {
           onBlur();
         }
       }}
+      aria-label={`Edit ${property.name} phone property`}
+      data-testid="cell-editor-phone"
       placeholder="+1 (555) 000-0000"
       className="h-8 text-sm"
     />

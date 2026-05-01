@@ -14,7 +14,7 @@ export const RowCountStatusBar = memo(function RowCountStatusBar({
   const isFiltered = filteredCount !== totalCount;
 
   return (
-    <div className="px-2 py-1.5 text-xs text-muted-foreground">
+    <div className="px-2 py-1.5 text-xs text-muted-foreground" data-testid="row-count-status-bar">
       {isFiltered
         ? `${filteredCount} of ${totalCount} rows`
         : `${totalCount} rows`}

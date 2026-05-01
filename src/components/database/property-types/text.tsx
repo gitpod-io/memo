@@ -12,7 +12,7 @@ export function TextRenderer({ value }: RendererProps) {
   return <span className="truncate text-sm">{text}</span>;
 }
 
-export function TextEditor({ value, onChange, onBlur }: EditorProps) {
+export function TextEditor({ value, property, onChange, onBlur }: EditorProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const text = typeof value.text === "string"
     ? value.text
@@ -33,6 +33,8 @@ export function TextEditor({ value, onChange, onBlur }: EditorProps) {
           onBlur();
         }
       }}
+      aria-label={`Edit ${property.name} text property`}
+      data-testid="cell-editor-text"
       className="h-8 text-sm"
     />
   );

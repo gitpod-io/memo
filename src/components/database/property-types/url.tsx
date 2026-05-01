@@ -34,7 +34,7 @@ export function UrlRenderer({ value }: RendererProps) {
   );
 }
 
-export function UrlEditor({ value, onChange, onBlur }: EditorProps) {
+export function UrlEditor({ value, property, onChange, onBlur }: EditorProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const url = typeof value.url === "string"
     ? value.url
@@ -56,6 +56,8 @@ export function UrlEditor({ value, onChange, onBlur }: EditorProps) {
           onBlur();
         }
       }}
+      aria-label={`Edit ${property.name} URL property`}
+      data-testid="cell-editor-url"
       placeholder="https://…"
       className="h-8 text-sm"
     />
