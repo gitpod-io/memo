@@ -62,6 +62,24 @@ function ciGreenPct(snap) {
   return 100;
 }
 
+const DEFAULT_PR_BUCKETS = { lt_5m: 0, '5_10m': 0, '10_20m': 0, '30_60m': 0, '1_2h': 0 };
+const DEFAULT_ISSUE_BUCKETS = { lt_15m: 0, '15_30m': 0, '30_60m': 0, '1_2h': 0, '2_4h': 0, '4_8h': 0 };
+
+/**
+ * Scan daily snapshot files (newest first) for a non-null object field.
+ * Used to find the most recent distribution buckets when the latest
+ * snapshot omits them.
+ */
+function findLatestField(files, field) {
+  for (let i = files.length - 1; i >= 0; i--) {
+    const snap = JSON.parse(readFileSync(join(DAILY_DIR, files[i]), 'utf8'));
+    if (snap[field] != null && typeof snap[field] === 'object') {
+      return snap[field];
+    }
+  }
+  return null;
+}
+
 // ── Main ──
 
 const dayFiles = readdirSync(DAILY_DIR)
@@ -115,6 +133,16 @@ const days = dayFiles.map(f => {
 
 const lastSnap = JSON.parse(readFileSync(join(DAILY_DIR, dayFiles[dayFiles.length - 1]), 'utf8'));
 
+// Distribution buckets may be missing from the latest snapshot if the daily
+// automation omitted them. Scan backward to find the most recent snapshot
+// that includes them, falling back to zero-filled defaults.
+const prMergeTime = lastSnap.pr_merge_time_buckets
+  ?? findLatestField(dayFiles, 'pr_merge_time_buckets')
+  ?? DEFAULT_PR_BUCKETS;
+const issueCloseTime = lastSnap.issue_close_time_buckets
+  ?? findLatestField(dayFiles, 'issue_close_time_buckets')
+  ?? DEFAULT_ISSUE_BUCKETS;
+
 const out = {
   updatedAt: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
   startDate: START,
@@ -135,8 +163,8 @@ const out = {
       testCoveragePct: lastSnap.test_coverage_pct,
     },
     distributions: {
-      prMergeTime: lastSnap.pr_merge_time_buckets,
-      issueCloseTime: lastSnap.issue_close_time_buckets,
+      prMergeTime,
+      issueCloseTime,
     },
   },
 };

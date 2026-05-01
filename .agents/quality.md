@@ -33,9 +33,9 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 
 | Category | Files | Tests |
 |---|---|---|
-| Unit/Integration (Vitest) | 126 | 1730 |
+| Unit/Integration (Vitest) | 127 | 1736 |
 | E2E (Playwright) | 64 | 318 |
-| **Total** | **190** | **2048** |
+| **Total** | **191** | **2054** |
 
 ### Test files by domain
 
@@ -52,7 +52,7 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 - **API**: `health/route.test.ts` (6 tests), `search/route.test.ts` (11 tests), `account/route.test.ts` (6 tests), `cron/purge-trash/route.test.ts` (8 tests), `feedback/route.test.ts` (17 tests), `pages/[pageId]/versions/route.test.ts` (11 tests), `pages/[pageId]/versions/[versionId]/route.test.ts` (11 tests), `e2e/account-deletion.spec.ts` (4 tests)
 - **UI**: `overlay-opacity.test.ts` (2 tests), `toast-error-duration.test.ts` (1 test), `dialog-design-spec.test.ts` (3 tests), `relative-time.test.ts` (7 tests), `e2e/visual-regression.spec.ts` (1 test)
 - **Lib**: `sentry.test.ts` (4 tests), `sentry.unit.test.ts` (108 tests), `retry.test.ts` (6 tests), `track-event-server.test.ts` (6 tests), `track-event.test.ts` (4 tests), `usage-tracking-guard.test.ts` (5 tests)
-- **Infrastructure**: `migrations.test.ts` (33 tests)
+- **Infrastructure**: `migrations.test.ts` (33 tests), `build-timeseries.test.mjs` (6 tests)
 
 ## Known Gaps
 
@@ -88,6 +88,7 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | 2026-04-25 | Test count drift fix (#786). Added 38 new Vitest files (mostly database component, hook, property type, and view tests): `csv-export.test.ts` (38), `table-cell.test.tsx` (40), `database-view-client.test.tsx` (6), `filter-bar.test.tsx` (20), `filter-value-editor.test.tsx` (34), `sort-menu.test.tsx` (19), `rename-property-dialog.test.tsx` (14), `row-properties-header.test.tsx` (17), `view-tabs.test.tsx` (24), `use-database-filters.test.ts` (18), `use-database-properties.test.ts` (18), `use-database-rows.test.ts` (19), `use-database-views.test.ts` (24), `checkbox.test.tsx` (8), `computed.test.tsx` (15), `date.test.tsx` (12), `email.test.tsx` (8), `files.test.tsx` (11), `formula.test.tsx` (6), `multi-select.test.tsx` (10), `number.test.tsx` (14), `person.test.tsx` (9), `phone.test.tsx` (10), `relation.test.tsx` (12), `select-dropdown.test.tsx` (32), `select.test.tsx` (11), `status.test.tsx` (14), `text.test.tsx` (10), `url.test.tsx` (10), `board-view-helpers.test.ts` (18), `board-view.test.tsx` (13), `calendar-view-helpers.test.ts` (35), `calendar-view.test.tsx` (15), `database-empty-state.test.tsx` (14), `gallery-view.test.tsx` (17), `list-keyboard.test.ts` (14), `list-view.test.tsx` (22), `row-count-announcer.test.tsx` (7), `row-count-status-bar.test.tsx` (5). Added 2 new loading test files: `[workspaceSlug]/settings/loading.test.ts` (5), `[workspaceSlug]/settings/members/loading.test.ts` (5). Added 10 new E2E specs: `database-add-property-types.spec.ts` (10), `database-board-keyboard.spec.ts` (6), `database-csv-export.spec.ts` (3), `database-files.spec.ts` (4), `database-filter-keyboard.spec.ts` (6), `database-formula.spec.ts` (3), `database-gallery-keyboard.spec.ts` (5), `database-list-keyboard.spec.ts` (6), `database-relation.spec.ts` (3), `public-routes.spec.ts` (11). Updated 3 files with grown counts: `gallery-view-design-spec.test.ts` (2→3), `migrations.test.ts` (29→33), `database-crud.spec.ts` (8→10). Test totals: 119 Vitest files (1618 tests), 59 E2E specs (274 tests). |
 | 2026-04-29 | Font family selector (#848). Added 1 new E2E spec: `editor-font-family.spec.ts` (5 tests). Test totals: 126 Vitest files (1722 tests), 62 E2E specs (289 tests). |
 | 2026-04-29 | Mobile sidebar close-on-navigate fix (#853). Updated `sidebar-context.test.tsx` (19→21 tests): added mobile close-on-navigate and desktop no-close-on-navigate tests. Updated `e2e/sidebar-responsive.spec.ts` (3→4 tests): added mobile Sheet auto-close after page navigation. Test totals: 126 Vitest files (1724 tests), 63 E2E specs (300 tests). |
+| 2026-05-01 | Timeseries aggregator fix (#877). Added 1 new Vitest file: `build-timeseries.test.mjs` (6 tests) — regression tests for missing distribution buckets and CI pass rate fallback. Test totals: 127 Vitest files (1736 tests), 64 E2E specs (318 tests). |
 | 2026-04-29 | API route transient error classification fix (#856). Updated 4 files with regression tests: `feedback/route.test.ts` (15→17), `account/route.test.ts` (5→6), `search/route.test.ts` (10→11), `cron/purge-trash/route.test.ts` (7→8). Test totals: 126 Vitest files (1730 tests), 63 E2E specs (300 tests). |
 | 2026-04-29 | Interactive demo editor on landing page (#860). Added 1 new E2E spec: `demo-editor.spec.ts` (11 tests). Corrected `public-routes.spec.ts` count (11→14 tests). Test totals: 126 Vitest files (1730 tests), 64 E2E specs (314 tests). |
 | 2026-04-30 | SEO routes auth middleware fix (#870). Updated `public-routes.spec.ts` (14→18 tests): added 4 regression tests for /robots.txt, /sitemap.xml, /opengraph-image, /twitter-image. Test totals: 126 Vitest files (1730 tests), 64 E2E specs (318 tests). |
