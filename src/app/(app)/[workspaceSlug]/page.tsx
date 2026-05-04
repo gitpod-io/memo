@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { WorkspaceHome } from "@/components/workspace-home";
+import { WorkspaceHomeClient } from "@/components/workspace-home-client";
 
 export async function generateMetadata({
   params,
@@ -81,7 +81,7 @@ export default async function WorkspacePage({
   });
 
   return (
-    <WorkspaceHome
+    <WorkspaceHomeClient
       workspace={workspace}
       pages={pages ?? []}
       userId={userId}

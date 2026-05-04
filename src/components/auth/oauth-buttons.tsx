@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError } from "@/lib/sentry";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,7 +52,7 @@ export function OAuthButtons() {
     setError(null);
     setLoadingProvider(provider);
 
-    const supabase = createClient();
+    const supabase = await getClient();
     const redirectTo = `${window.location.origin}/auth/callback`;
 
     const { error: oauthError } = await supabase.auth.signInWithOAuth({

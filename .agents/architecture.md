@@ -531,9 +531,13 @@ src/
 │   ├── relative-time.tsx        # Client component for "2 hours ago" timestamps (avoids hydration mismatch)
 │   ├── route-error.tsx          # Reusable error boundary UI (Sentry capture + retry button)
 │   ├── workspace-home.tsx       # Workspace home: page list or empty state with create CTA
-│   ├── workspace-settings-form.tsx # Edit workspace name/slug, delete workspace
+│   ├── workspace-home-client.tsx # Client wrapper: lazy-loads WorkspaceHome via next/dynamic
+│   ├── workspace-settings-form.tsx # Edit workspace name/slug, lazy-loads delete workspace section
+│   ├── delete-workspace-section.tsx # Workspace deletion danger zone with AlertDialog confirmation
+│   ├── danger-zone-settings.tsx # Client wrapper: lazy-loads DeleteAccountSection via next/dynamic
 │   ├── members/             # Workspace member management components
 │   │   ├── members-page.tsx       # Client orchestrator: member list + invite form + pending invites
+│   │   ├── members-page-client.tsx # Client wrapper: lazy-loads MembersPage via next/dynamic
 │   │   ├── member-list.tsx        # Table of members with role badges, role change, remove
 │   │   ├── invite-form.tsx        # Email + role invite form (admin/owner only)
 │   │   ├── invite-accept.tsx      # Client component for accepting an invite token

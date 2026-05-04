@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { MembersPage } from "@/components/members/members-page";
+import { MembersPageClient } from "@/components/members/members-page-client";
 import type { MemberWithProfile, WorkspaceInviteWithInviter } from "@/lib/types";
 
 export async function generateMetadata({
@@ -104,7 +104,7 @@ export default async function WorkspaceMembersPage({
         Manage who has access to this workspace.
       </p>
       <div className="mt-6">
-        <MembersPage
+        <MembersPageClient
           workspace={workspace}
           members={members}
           pendingInvites={pendingInvites}
