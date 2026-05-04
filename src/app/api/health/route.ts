@@ -1,30 +1,19 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 
 /**
- * Singleton Supabase client for health checks. Uses the publishable key
- * directly — no cookies, no SSR wrapper — to avoid the per-request overhead
- * of `@supabase/ssr` + `next/headers` cookies().
+ * Direct-fetch health check. Bypasses the Supabase JS client entirely to
+ * avoid GoTrue/Realtime initialization overhead on serverless cold starts.
+ * Measures pure network + PostgREST + Postgres round-trip latency.
  */
-let healthClient: ReturnType<typeof createClient> | null = null;
 
-function getHealthClient() {
-  if (healthClient) return healthClient;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) return null;
-
-  healthClient = createClient(url, key, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-  return healthClient;
-}
+/** Abort health-check fetch after this many milliseconds. */
+const TIMEOUT_MS = 2000;
 
 export async function GET() {
-  const client = getHealthClient();
-
-  if (!client) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
     return NextResponse.json({
       status: "ok",
       db: { connected: false, latency_ms: 0, reason: "not_configured" },
@@ -34,32 +23,36 @@ export async function GET() {
 
   let dbStatus = "ok";
   let dbLatency = 0;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
   const start = Date.now();
-
   try {
-    const { error } = await client.rpc("health_check");
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/health_check`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: "{}",
+      signal: controller.signal,
+    });
     dbLatency = Date.now() - start;
 
-    if (error) {
-      // RPC may not exist yet (migration pending) — fall back to table probe
-      if (error.message.includes("does not exist") || error.code === "PGRST202") {
-        const fallbackStart = Date.now();
-        const { error: fallbackError } = await client
-          .from("pages")
-          .select("id")
-          .limit(1)
-          .maybeSingle();
-        dbLatency = Date.now() - fallbackStart;
-        if (fallbackError && !fallbackError.message.includes("does not exist")) {
-          dbStatus = "degraded";
-        }
-      } else {
-        dbStatus = "degraded";
-      }
+    if (!res.ok) {
+      dbStatus = "degraded";
     }
-  } catch {
-    dbStatus = "down";
+  } catch (err) {
     dbLatency = Date.now() - start;
+    if (err instanceof DOMException && err.name === "AbortError") {
+      dbStatus = "degraded";
+    } else {
+      dbStatus = "down";
+    }
+  } finally {
+    clearTimeout(timer);
   }
 
   const status = dbStatus === "down" ? "down" : "ok";
