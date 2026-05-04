@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { getClient } from "@/lib/supabase/lazy-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +14,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { OAuthButtons } from "@/components/auth/oauth-buttons";
+import dynamic from "next/dynamic";
+
+const OAuthButtons = dynamic(
+  () =>
+    import("@/components/auth/oauth-buttons").then((mod) => mod.OAuthButtons),
+);
 
 function SignInFormInner() {
   const router = useRouter();
@@ -31,7 +36,7 @@ function SignInFormInner() {
     setError(null);
     setLoading(true);
 
-    const supabase = createClient();
+    const supabase = await getClient();
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,

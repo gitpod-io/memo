@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { getClient } from "@/lib/supabase/lazy-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +14,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { OAuthButtons } from "@/components/auth/oauth-buttons";
+import dynamic from "next/dynamic";
+
+const OAuthButtons = dynamic(
+  () =>
+    import("@/components/auth/oauth-buttons").then((mod) => mod.OAuthButtons),
+);
 
 export function SignUpForm() {
   const router = useRouter();
@@ -30,7 +35,7 @@ export function SignUpForm() {
     setError(null);
     setLoading(true);
 
-    const supabase = createClient();
+    const supabase = await getClient();
     const siteUrl =
       typeof window !== "undefined" ? window.location.origin : "";
     const { data, error: signUpError } = await supabase.auth.signUp({

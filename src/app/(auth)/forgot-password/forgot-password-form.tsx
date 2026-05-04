@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError } from "@/lib/sentry";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,7 @@ export function ForgotPasswordForm() {
     setError(null);
     setLoading(true);
 
-    const supabase = createClient();
+    const supabase = await getClient();
     const siteUrl =
       typeof window !== "undefined" ? window.location.origin : "";
 

@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { WorkspaceSettingsForm } from "@/components/workspace-settings-form";
 import { ChangePasswordSection } from "@/components/change-password-section";
-import { DeleteAccountSection } from "@/components/delete-account-section";
+import { DangerZoneSettings } from "@/components/danger-zone-settings";
 import { Separator } from "@/components/ui/separator";
 
 export async function generateMetadata({
@@ -80,7 +80,7 @@ export default async function WorkspaceSettingsPage({
           </div>
           <Separator className="mt-8 bg-overlay-border" />
           <div className="mt-8">
-            <DeleteAccountSection userEmail={userEmail} />
+            <DangerZoneSettings userEmail={userEmail} />
           </div>
         </>
       )}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError } from "@/lib/sentry";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,7 +40,7 @@ export function ResetPasswordForm() {
 
     setLoading(true);
 
-    const supabase = createClient();
+    const supabase = await getClient();
     const { error: updateError } = await supabase.auth.updateUser({
       password,
     });
