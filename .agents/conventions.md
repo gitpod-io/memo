@@ -530,20 +530,16 @@ Rules:
 Route handlers use `NextResponse.json()` with structured error handling:
 
 ```typescript
-// src/app/api/health/route.ts
+// src/app/api/health/route.ts — uses direct fetch to PostgREST,
+// bypassing the Supabase JS client to avoid cold-start overhead.
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const TIMEOUT_MS = 2000;
 
 export async function GET() {
-  const start = Date.now();
-  let dbStatus = "ok";
-  let dbLatency = 0;
-
-  if (
-    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-  ) {
-    // Supabase is not configured — report as unconfigured rather than down
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
     return NextResponse.json({
       status: "ok",
       db: { connected: false, latency_ms: 0, reason: "not_configured" },
@@ -551,27 +547,35 @@ export async function GET() {
     });
   }
 
+  let dbStatus = "ok";
+  let dbLatency = 0;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const start = Date.now();
+
   try {
-    const supabase = await createClient();
-    const { error } = await supabase
-      .from("_health_check")
-      .select("1")
-      .limit(1)
-      .maybeSingle();
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/health_check`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: "{}",
+      signal: controller.signal,
+    });
     dbLatency = Date.now() - start;
-    // Table may not exist yet — that's fine, connection worked if no network error
-    if (error && !error.message.includes("does not exist")) {
-      dbStatus = "degraded";
-    }
-  } catch {
-    dbStatus = "down";
+    if (!res.ok) dbStatus = "degraded";
+  } catch (err) {
     dbLatency = Date.now() - start;
+    dbStatus = err instanceof DOMException && err.name === "AbortError"
+      ? "degraded" : "down";
+  } finally {
+    clearTimeout(timer);
   }
 
-  const status = dbStatus === "down" ? "down" : "ok";
-
   return NextResponse.json({
-    status,
+    status: dbStatus === "down" ? "down" : "ok",
     db: { connected: dbStatus !== "down", latency_ms: dbLatency },
     timestamp: new Date().toISOString(),
   });
@@ -579,6 +583,8 @@ export async function GET() {
 ```
 
 Pattern: wrap in try/catch, return structured JSON with appropriate status codes.
+For latency-sensitive endpoints, use direct `fetch` to PostgREST instead of the
+Supabase JS client to avoid GoTrue/Realtime initialization on serverless cold starts.
 
 ### Guarding Supabase env vars in API routes
 
