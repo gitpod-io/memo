@@ -61,7 +61,7 @@ workspaces
 database_properties (schema definition — columns of a database)
   ├── database_id → pages.id (ON DELETE CASCADE, where is_database = true)
   ├── name: text (unique per database)
-  ├── type: text (text | number | select | multi_select | checkbox | date | url | email | phone | person | files | relation | formula | created_time | updated_time | created_by)
+  ├── type: text (text | number | select | multi_select | status | checkbox | date | url | email | phone | person | files | relation | formula | created_time | updated_time | created_by)
   ├── config: jsonb (type-specific: select options, number format, formula expression, relation target)
   ├── position: integer (column ordering)
   └── Index: (database_id, position)
@@ -297,15 +297,15 @@ src/components/database/
   ├── filter-bar.tsx               # Active filter pills + add filter UI (composition only)
   ├── filter-value-editor.tsx      # Type-specific filter value editors, property picker, operator picker
   ├── sort-menu.tsx                # Sort configuration dropdown
-  ├── property-config.tsx          # Column header dropdown: rename, type change, delete
-  ├── property-editor.tsx          # Inline cell editor (dispatches to type-specific editors)
-  ├── property-renderer.tsx        # Cell renderer (dispatches to type-specific renderers)
   ├── property-types/              # Registry of type-specific renderers and editors
   │   ├── index.ts                 # PropertyTypeRegistry: Record<PropertyType, {Renderer, Editor}>
   │   ├── text.tsx
   │   ├── number.tsx
   │   ├── select.tsx
+  │   ├── select-dropdown.tsx      # Shared dropdown for select/multi-select/status option picking
+  │   ├── select-option-badge.tsx  # Colored badge for select option display
   │   ├── multi-select.tsx
+  │   ├── status.tsx               # Status property (select variant with defaults: Not Started / In Progress / Done)
   │   ├── checkbox.tsx
   │   ├── date.tsx
   │   ├── url.tsx
@@ -339,8 +339,7 @@ src/components/database/
   │   ├── calendar-view-helpers.ts # Pure date/grid logic extracted from calendar-view
   │   ├── gallery-view.tsx         # Responsive card grid with cover + title
   │   └── gallery-keyboard.ts     # useGalleryKeyboardNavigation — arrow key nav for gallery cards
-  ├── row-properties-header.tsx    # Properties displayed above editor when row opened as page
-  └── new-database-dialog.tsx      # Dialog for creating a new database
+  └── row-properties-header.tsx    # Properties displayed above editor when row opened as page
 ```
 
 ### Row-as-page rendering flow
@@ -485,9 +484,6 @@ src/
 │   │   ├── filter-bar.tsx               # Active filter pills + add filter UI (composition only)
 │   │   ├── filter-value-editor.tsx      # Type-specific filter value editors, property picker, operator picker
 │   │   ├── sort-menu.tsx                # Sort configuration dropdown
-│   │   ├── property-config.tsx          # Column header dropdown: rename, type change, delete
-│   │   ├── property-editor.tsx          # Inline cell editor (dispatches to type-specific editors)
-│   │   ├── property-renderer.tsx        # Cell renderer (dispatches to type-specific renderers)
 │   │   ├── property-types/              # Registry of type-specific renderers and editors
 │   │   ├── views/
 │   │   │   ├── table-view.tsx           # Composition root — wires sub-components together
@@ -514,8 +510,7 @@ src/
 │   │   │   └── gallery-keyboard.ts     # useGalleryKeyboardNavigation — arrow key nav for gallery cards
 │   │   ├── property-type-picker.tsx      # Dropdown menu for selecting property type when adding columns
 │   │   ├── rename-property-dialog.tsx   # Styled dialog replacing window.prompt for column rename
-│   │   ├── row-properties-header.tsx    # Properties displayed above editor when row opened as page
-│   │   └── new-database-dialog.tsx      # Dialog for creating a new database
+│   │   └── row-properties-header.tsx    # Properties displayed above editor when row opened as page
 │   ├── feedback/
 │   │   └── feedback-form.tsx        # User feedback form with type selector, screenshot capture, and submission
 │   ├── keyboard-shortcuts-dialog.tsx # ⌘+? keyboard shortcuts reference dialog
@@ -586,7 +581,9 @@ src/
 │   ├── word-count.ts       # Word count and reading time calculation utilities
 │   ├── workspace.ts        # Workspace utilities: slug generation, validation, limits
 │   └── supabase/
+│       ├── admin.ts        # Service-role client for server-only operations (cron jobs)
 │       ├── client.ts       # Browser client (createBrowserClient)
+│       ├── lazy-client.ts  # Lazy-loaded browser client (defers SDK import to reduce initial bundle)
 │       ├── server.ts       # Server component client (createServerClient + cookies)
 │       └── proxy.ts        # Session refresh + auth redirect logic (updateSession)
 ├── proxy.ts                # Root proxy — calls updateSession, skips static/health routes
