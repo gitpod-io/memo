@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { DatabaseEmptyState } from "@/components/database/views/database-empty-state";
 import { PROPERTY_TYPE_ICON } from "@/lib/property-icons";
 import { PropertyTypePicker } from "@/components/database/property-type-picker";
@@ -31,6 +32,19 @@ const ROW_HEIGHT_CLASS: Record<NonNullable<DatabaseViewConfig["row_height"]>, st
   default: "h-10 md:h-10 min-h-[44px] md:min-h-0",
   tall: "h-14",
 };
+
+// Pixel heights for the virtualizer's estimateSize (desktop values).
+const ROW_HEIGHT_PX: Record<NonNullable<DatabaseViewConfig["row_height"]>, number> = {
+  compact: 33, // 32px (h-8) + 1px border-b
+  default: 41, // 40px (h-10) + 1px border-b
+  tall: 57,    // 56px (h-14) + 1px border-b
+};
+
+// Only virtualize when row count exceeds this threshold.
+const VIRTUALIZATION_THRESHOLD = 50;
+
+// Rows rendered beyond the visible area in each direction.
+const OVERSCAN_COUNT = 10;
 
 // ---------------------------------------------------------------------------
 // useScrollShadow — shows gradient shadows on scrollable edges
@@ -110,6 +124,7 @@ export const TableView = memo(function TableView({
 }: TableViewProps) {
   const rowHeight = viewConfig.row_height ?? "default";
   const rowHeightClass = ROW_HEIGHT_CLASS[rowHeight];
+  const rowHeightPx = ROW_HEIGHT_PX[rowHeight];
 
   // Visible properties (filter by viewConfig.visible_properties if set)
   const visibleProperties = useMemo(() => {
@@ -161,6 +176,38 @@ export const TableView = memo(function TableView({
 
   // Scroll shadow for horizontal overflow (must be called before early returns)
   const { scrollRef, canScrollLeft, canScrollRight } = useScrollShadow();
+
+  // --- Row virtualization ---
+  const useVirtual = rows.length > VIRTUALIZATION_THRESHOLD;
+  const virtualScrollRef = useRef<HTMLDivElement>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => virtualScrollRef.current,
+    estimateSize: () => rowHeightPx,
+    overscan: OVERSCAN_COUNT,
+    enabled: useVirtual,
+  });
+
+  // Expose scrollToIndex so keyboard navigation can scroll virtualized rows
+  // into view before focusing them.
+  const scrollToRow = useCallback(
+    (rowIndex: number) => {
+      if (useVirtual) {
+        rowVirtualizer.scrollToIndex(rowIndex, { align: "auto" });
+      }
+    },
+    [useVirtual, rowVirtualizer],
+  );
+
+  // Attach scrollToRow to the grid element for table-navigation to call.
+  useEffect(() => {
+    const el = gridRef.current;
+    if (el) {
+      (el as HTMLDivElement & { __scrollToRow?: (idx: number) => void }).__scrollToRow =
+        scrollToRow;
+    }
+  }, [gridRef, scrollToRow]);
 
   // --- Loading skeleton ---
 
@@ -246,6 +293,9 @@ export const TableView = memo(function TableView({
 
   // --- Main table ---
 
+  const virtualItems = useVirtual ? rowVirtualizer.getVirtualItems() : null;
+  const totalSize = useVirtual ? rowVirtualizer.getTotalSize() : 0;
+
   return (
     <div className="relative w-full" data-testid="db-table-container">
       {/* Left scroll shadow */}
@@ -268,17 +318,21 @@ export const TableView = memo(function TableView({
       <div ref={scrollRef} className="w-full overflow-x-auto">
         <div
           ref={gridRef}
-          className="grid w-max min-w-full"
-          style={{ gridTemplateColumns }}
+          className="w-max min-w-full"
           role="grid"
           aria-label="Database table"
+          aria-rowcount={rows.length + 1}
           onKeyDown={handleFocusedCellKeyDown}
         >
           {/* Header row */}
-          <div role="row" style={{ display: "contents" }}>
+          <div
+            role="row"
+            className="sticky top-0 z-10 grid"
+            style={{ gridTemplateColumns }}
+          >
             {/* Title column header */}
             <div
-              className="sticky top-0 z-10 border-b border-overlay-border bg-background p-2"
+              className="border-b border-overlay-border bg-background p-2"
               role="columnheader"
             >
               <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
@@ -324,30 +378,82 @@ export const TableView = memo(function TableView({
             })}
 
             {/* Add column header button */}
-            <div className="sticky top-0 z-10 flex items-center border-b border-overlay-border bg-background px-2" data-testid="db-table-add-column">
+            <div className="flex items-center border-b border-overlay-border bg-background px-2" data-testid="db-table-add-column">
               {onAddColumn && <PropertyTypePicker onSelect={onAddColumn} />}
             </div>
           </div>
 
-          {/* Data rows */}
-          {rows.map((row, rowIndex) => (
-            <TableRow
-              key={row.page.id}
-              row={row}
-              rowIndex={rowIndex}
-              visibleProperties={visibleProperties}
-              allProperties={properties}
-              rowHeightClass={rowHeightClass}
-              workspaceSlug={workspaceSlug}
-              editingCell={editingCell}
-              focusedCell={focusedCell}
-              onStartEditing={startEditing}
-              onCellKeyDown={handleCellKeyDown}
-              onCellBlur={handleCellBlur}
-              onCellFocus={handleCellFocus}
-              onDeleteRow={onDeleteRow}
-            />
-          ))}
+          {/* Data rows — virtualized when above threshold */}
+          {useVirtual ? (
+            <div
+              ref={virtualScrollRef}
+              className="overflow-y-auto"
+              style={{ maxHeight: `${Math.min(rows.length, 20) * rowHeightPx}px` }}
+              data-testid="db-table-virtual-scroll"
+            >
+              <div
+                style={{
+                  height: `${totalSize}px`,
+                  width: "100%",
+                  position: "relative",
+                }}
+              >
+                {virtualItems!.map((virtualRow) => {
+                  const row = rows[virtualRow.index];
+                  return (
+                    <div
+                      key={row.page.id}
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: `${virtualRow.size}px`,
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
+                    >
+                      <TableRow
+                        row={row}
+                        rowIndex={virtualRow.index}
+                        visibleProperties={visibleProperties}
+                        allProperties={properties}
+                        rowHeightClass={rowHeightClass}
+                        workspaceSlug={workspaceSlug}
+                        editingCell={editingCell}
+                        focusedCell={focusedCell}
+                        onStartEditing={startEditing}
+                        onCellKeyDown={handleCellKeyDown}
+                        onCellBlur={handleCellBlur}
+                        onCellFocus={handleCellFocus}
+                        onDeleteRow={onDeleteRow}
+                        gridTemplateColumns={gridTemplateColumns}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            rows.map((row, rowIndex) => (
+              <TableRow
+                key={row.page.id}
+                row={row}
+                rowIndex={rowIndex}
+                visibleProperties={visibleProperties}
+                allProperties={properties}
+                rowHeightClass={rowHeightClass}
+                workspaceSlug={workspaceSlug}
+                editingCell={editingCell}
+                focusedCell={focusedCell}
+                onStartEditing={startEditing}
+                onCellKeyDown={handleCellKeyDown}
+                onCellBlur={handleCellBlur}
+                onCellFocus={handleCellFocus}
+                onDeleteRow={onDeleteRow}
+                gridTemplateColumns={gridTemplateColumns}
+              />
+            ))
+          )}
         </div>
       </div>
 

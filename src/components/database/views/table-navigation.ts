@@ -34,7 +34,8 @@ export function useTableCellNavigation({
     setEditingCell(null);
   }, []);
 
-  // Focus a cell in the DOM by its grid coordinates.
+  // Focus a cell in the DOM by its grid coordinates. If the cell is not in the
+  // DOM (virtualized away), scroll it into view first and retry after a frame.
   const focusCellElement = useCallback(
     (rowIndex: number, colIndex: number) => {
       if (!gridRef.current) return;
@@ -42,6 +43,18 @@ export function useTableCellNavigation({
       const el = gridRef.current.querySelector<HTMLElement>(selector);
       if (el) {
         el.focus();
+        return;
+      }
+      // Cell not in DOM — ask the virtualizer to scroll it into view, then retry.
+      const scrollToRow = (gridRef.current as HTMLDivElement & { __scrollToRow?: (idx: number) => void }).__scrollToRow;
+      if (scrollToRow) {
+        scrollToRow(rowIndex);
+        requestAnimationFrame(() => {
+          const retryEl = gridRef.current?.querySelector<HTMLElement>(selector);
+          if (retryEl) {
+            retryEl.focus();
+          }
+        });
       }
     },
     [],
