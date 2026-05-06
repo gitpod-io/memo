@@ -1769,6 +1769,26 @@ if (config) {
 }
 ```
 
+### Row virtualization
+
+The table view virtualizes rows when the count exceeds 50 using `@tanstack/react-virtual`.
+Below the threshold, rows render directly without a virtualizer.
+
+Key patterns:
+- `useVirtualizer` manages which rows are in the DOM. Overscan of 10 rows in each
+  direction prevents flicker during fast scrolling.
+- Each `TableRow` receives `gridTemplateColumns` and renders as its own CSS grid
+  instead of using `display: contents`. This is required because virtualized rows
+  are absolutely positioned within a height container.
+- When `gridTemplateColumns` is not provided, `TableRow` falls back to
+  `display: contents` for backward compatibility (e.g., Storybook stories that
+  wrap rows in a parent grid).
+- Keyboard navigation (`table-navigation.ts`) calls `scrollToRow` via a ref on the
+  grid element to scroll virtualized rows into view before focusing them. If the
+  target cell is not in the DOM, it scrolls first and retries after a frame.
+- `ROW_HEIGHT_PX` maps row height settings to pixel values for the virtualizer's
+  `estimateSize`. These must stay in sync with the Tailwind height classes.
+
 ## Event Handler Argument Leaks
 
 Never pass a callback that accepts optional business arguments directly to `onClick`.

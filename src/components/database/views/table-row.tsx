@@ -47,6 +47,9 @@ export interface TableRowProps {
   onCellBlur: (rowId: string, propertyId: string, newValue: Record<string, unknown>) => void;
   onCellFocus: (rowIndex: number, colIndex: number) => void;
   onDeleteRow?: (rowId: string) => void;
+  /** CSS grid-template-columns value. When provided, the row renders as its own
+   *  grid container instead of using `display: contents`. */
+  gridTemplateColumns?: string;
 }
 
 // editingCell and focusedCell change on every interaction but only affect the
@@ -64,6 +67,7 @@ function areTableRowPropsEqual(prev: TableRowProps, next: TableRowProps): boolea
   if (prev.onCellBlur !== next.onCellBlur) return false;
   if (prev.onCellFocus !== next.onCellFocus) return false;
   if (prev.onDeleteRow !== next.onDeleteRow) return false;
+  if (prev.gridTemplateColumns !== next.gridTemplateColumns) return false;
 
   // Only re-render if editing/focus state targets this row
   const prevEditing = prev.editingCell?.rowId === prev.row.page.id ? prev.editingCell : null;
@@ -91,9 +95,15 @@ export const TableRow = memo(function TableRow({
   onCellBlur,
   onCellFocus,
   onDeleteRow,
+  gridTemplateColumns,
 }: TableRowProps) {
   return (
-    <div role="row" style={{ display: "contents" }} data-testid={`db-table-row-${rowIndex}`}>
+    <div
+      role="row"
+      className={gridTemplateColumns ? "grid" : undefined}
+      style={gridTemplateColumns ? { gridTemplateColumns } : { display: "contents" }}
+      data-testid={`db-table-row-${rowIndex}`}
+    >
       {/* Title cell */}
       <div
         className={cn(

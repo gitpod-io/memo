@@ -166,6 +166,7 @@ Sign-up flow (atomic, via DB trigger):
 | Package manager | pnpm | Strict dependency resolution, faster installs |
 | Session management | Next.js 16 proxy (not middleware) | `src/proxy.ts` with `updateSession` — Next.js 16 convention replacing middleware |
 | Floating UI | `@floating-ui/react` | Positioning for slash command menu, floating toolbar, link editor (same as Lexical playground) |
+| Row virtualization | `@tanstack/react-virtual` | Virtualizes table rows when count exceeds 50. Only visible rows + overscan buffer are rendered. |
 | Image storage | Supabase Storage | Bucket for uploaded images, public URL stored in ImageNode |
 | Full-text search | PostgreSQL `tsvector` + `tsquery` | Generated column on pages combining title (weight A) + extracted content text (weight B), GIN index, `search_pages` RPC |
 | Page ancestors | PostgreSQL recursive CTE | `get_page_ancestors` RPC walks `parent_id` chain to build breadcrumb path. Returns ancestors root-first. `security invoker` respects RLS. |
@@ -318,8 +319,8 @@ src/components/database/
   │   ├── formula.tsx
   │   └── computed.tsx             # created_time, updated_time, created_by (read-only)
   ├── views/
-  │   ├── table-view.tsx           # Composition root — wires sub-components together
-  │   ├── table-row.tsx            # TableRow — title cell + property cells for one row
+  │   ├── table-view.tsx           # Composition root — wires sub-components together, virtualizes rows >50
+  │   ├── table-row.tsx            # TableRow — title cell + property cells for one row (own grid when virtualized)
   │   ├── table-cell.tsx           # TableCell + RegistryEditorCell — display/edit modes, portal editors
   │   ├── table-column-header.tsx  # TableColumnHeader — sort, menu, drag, resize handle
   │   ├── table-skeleton.tsx       # TableSkeleton — loading placeholder
@@ -488,8 +489,8 @@ src/
 │   │   ├── sort-menu.tsx                # Sort configuration dropdown
 │   │   ├── property-types/              # Registry of type-specific renderers and editors
 │   │   ├── views/
-│   │   │   ├── table-view.tsx           # Composition root — wires sub-components together
-│   │   │   ├── table-row.tsx            # TableRow — title cell + property cells for one row
+│   │   │   ├── table-view.tsx           # Composition root — wires sub-components together, virtualizes rows >50
+│   │   │   ├── table-row.tsx            # TableRow — title cell + property cells for one row (own grid when virtualized)
 │   │   │   ├── table-cell.tsx           # TableCell + RegistryEditorCell — display/edit, portal editors
 │   │   │   ├── table-column-header.tsx  # TableColumnHeader — sort, menu, drag, resize handle
 │   │   │   ├── table-skeleton.tsx       # TableSkeleton — loading placeholder

@@ -408,3 +408,33 @@ export const Tablet: Story = {
     viewConfig: defaultConfig,
   },
 };
+
+// ---------------------------------------------------------------------------
+// Virtualized — 200 rows triggers the virtualization threshold
+// ---------------------------------------------------------------------------
+
+const manyRows: DatabaseRow[] = Array.from({ length: 200 }, (_, i) =>
+  makeRow(`row-v-${i}`, `Task ${i + 1}`, i % 5 === 0 ? "📌" : null, {
+    "prop-status": { value: i % 3 === 0 ? "Done" : i % 3 === 1 ? "In Progress" : "To Do", color: i % 3 === 0 ? "green" : i % 3 === 1 ? "blue" : "gray" },
+    "prop-priority": { value: i % 2 === 0 ? "High" : "Medium", color: i % 2 === 0 ? "red" : "yellow" },
+    "prop-done": { value: i % 3 === 0 },
+  }),
+);
+
+export const Virtualized: Story = {
+  name: "Virtualized (200 rows)",
+  args: {
+    rows: manyRows,
+    properties: mockProperties,
+    viewConfig: defaultConfig,
+  },
+};
+
+export const VirtualizedCompact: Story = {
+  name: "Virtualized Compact (200 rows)",
+  args: {
+    rows: manyRows,
+    properties: mockProperties,
+    viewConfig: { row_height: "compact" },
+  },
+};
