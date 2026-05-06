@@ -48,12 +48,48 @@ export function useDatabaseRows({
 
   const handleAddRow = useCallback(
     async (initialValues?: Record<string, Record<string, unknown>>) => {
+      // Generate a temporary ID for the optimistic row
+      const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const now = new Date().toISOString();
+
+      // Build optimistic row_values from initialValues
+      const optimisticValues: DatabaseRow["values"] = {};
+      if (initialValues) {
+        for (const [propertyId, value] of Object.entries(initialValues)) {
+          optimisticValues[propertyId] = {
+            id: "",
+            row_id: tempId,
+            property_id: propertyId,
+            value,
+            created_at: now,
+            updated_at: now,
+          };
+        }
+      }
+
+      // Insert placeholder row immediately
+      const optimisticRow: DatabaseRow = {
+        page: {
+          id: tempId,
+          title: "",
+          icon: null,
+          cover_url: null,
+          created_at: now,
+          updated_at: now,
+          created_by: userId,
+        },
+        values: optimisticValues,
+      };
+      setRows((prev) => [...prev, optimisticRow]);
+
       const { data: rowPage, error } = await addRow(
         pageId,
         userId,
         initialValues,
       );
       if (error || !rowPage) {
+        // Rollback: remove the optimistic row
+        setRows((prev) => prev.filter((r) => r.page.id !== tempId));
         if (error && !isInsufficientPrivilegeError(error)) {
           captureSupabaseError(error, "database-rows:add");
         }
@@ -66,24 +102,28 @@ export function useDatabaseRows({
         });
         return;
       }
-      // Build optimistic row_values from initialValues
-      const optimisticValues: DatabaseRow["values"] = {};
+
+      // Replace the placeholder with the real row from the server
+      const realValues: DatabaseRow["values"] = {};
       if (initialValues) {
         for (const [propertyId, value] of Object.entries(initialValues)) {
-          optimisticValues[propertyId] = {
+          realValues[propertyId] = {
             id: "",
             row_id: rowPage.id,
             property_id: propertyId,
             value,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            created_at: now,
+            updated_at: now,
           };
         }
       }
-      setRows((prev) => [
-        ...prev,
-        { page: rowPage as DatabaseRow["page"], values: optimisticValues },
-      ]);
+      setRows((prev) =>
+        prev.map((r) =>
+          r.page.id === tempId
+            ? { page: rowPage as DatabaseRow["page"], values: realValues }
+            : r,
+        ),
+      );
     },
     [pageId, userId, setRows],
   );

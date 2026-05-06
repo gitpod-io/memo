@@ -114,7 +114,54 @@ describe("useDatabaseRows", () => {
   // -------------------------------------------------------------------------
 
   describe("handleAddRow", () => {
-    it("adds a row optimistically on success", async () => {
+    it("inserts a placeholder row immediately before the server responds", async () => {
+      // Use a deferred promise so we can inspect state before resolution
+      let resolveAdd!: (v: { data: Record<string, unknown>; error: null }) => void;
+      const deferred = new Promise<{ data: Record<string, unknown>; error: null }>((r) => {
+        resolveAdd = r;
+      });
+      addRowMock.mockImplementation(() => deferred);
+
+      const { result, setRows } = setup();
+
+      // Start the add but don't await yet
+      const p = act(async () => {
+        await result.current.handleAddRow();
+      });
+
+      // setRows should have been called once with the optimistic placeholder
+      expect(setRows).toHaveBeenCalledTimes(1);
+      const optimisticUpdater = setRows.mock.calls[0][0];
+      const optimistic = optimisticUpdater([makeRow("row-1")]);
+      expect(optimistic).toHaveLength(2);
+      expect(optimistic[1].page.id).toMatch(/^temp-/);
+      expect(optimistic[1].page.title).toBe("");
+
+      // Resolve the server call
+      resolveAdd({
+        data: {
+          id: "new-row-1",
+          title: "",
+          icon: null,
+          cover_url: null,
+          created_at: "2025-01-01T00:00:00Z",
+          updated_at: "2025-01-01T00:00:00Z",
+          created_by: "user-1",
+        },
+        error: null,
+      });
+      await p;
+
+      // setRows called a second time to replace the placeholder with the real row
+      expect(setRows).toHaveBeenCalledTimes(2);
+      const replaceUpdater = setRows.mock.calls[1][0];
+      // Feed it the optimistic state so the temp ID is present
+      const replaced = replaceUpdater(optimistic);
+      expect(replaced).toHaveLength(2);
+      expect(replaced[1].page.id).toBe("new-row-1");
+    });
+
+    it("replaces placeholder with real row on success", async () => {
       const newPage = {
         id: "new-row-1",
         title: "",
@@ -133,12 +180,14 @@ describe("useDatabaseRows", () => {
       });
 
       expect(addRowMock).toHaveBeenCalledWith("db-1", "user-1", undefined);
-      expect(setRows).toHaveBeenCalled();
-      // Verify the updater appends the new row
-      const updater = setRows.mock.calls[0][0];
-      const updated = updater([makeRow("row-1")]);
-      expect(updated).toHaveLength(2);
-      expect(updated[1].page.id).toBe("new-row-1");
+      // First call: optimistic insert, second call: replace with real
+      expect(setRows).toHaveBeenCalledTimes(2);
+
+      // Chain the updaters to simulate React state flow
+      const optimistic = setRows.mock.calls[0][0]([makeRow("row-1")]);
+      const final = setRows.mock.calls[1][0](optimistic);
+      expect(final).toHaveLength(2);
+      expect(final[1].page.id).toBe("new-row-1");
     });
 
     it("builds optimistic row_values from initialValues", async () => {
@@ -164,16 +213,25 @@ describe("useDatabaseRows", () => {
       });
 
       expect(addRowMock).toHaveBeenCalledWith("db-1", "user-1", initialValues);
-      const updater = setRows.mock.calls[0][0];
-      const updated = updater([]);
-      expect(updated[0].values["prop-1"]).toMatchObject({
+
+      // Optimistic insert should have values with temp row_id
+      const optimistic = setRows.mock.calls[0][0]([]);
+      expect(optimistic[0].values["prop-1"]).toMatchObject({
+        property_id: "prop-1",
+        value: { option_id: "opt-a" },
+      });
+      expect(optimistic[0].values["prop-1"].row_id).toMatch(/^temp-/);
+
+      // After replacement, values should reference the real row_id
+      const final = setRows.mock.calls[1][0](optimistic);
+      expect(final[0].values["prop-1"]).toMatchObject({
         row_id: "new-row-2",
         property_id: "prop-1",
         value: { option_id: "opt-a" },
       });
     });
 
-    it("shows toast on error and does not update rows", async () => {
+    it("rolls back the optimistic row on error", async () => {
       addRowMock.mockResolvedValue({
         data: null,
         error: new Error("insert failed"),
@@ -185,11 +243,22 @@ describe("useDatabaseRows", () => {
         await result.current.handleAddRow();
       });
 
+      // First call: optimistic insert, second call: rollback removal
+      expect(setRows).toHaveBeenCalledTimes(2);
+
+      // Simulate: optimistic insert adds a temp row
+      const optimistic = setRows.mock.calls[0][0]([makeRow("row-1")]);
+      expect(optimistic).toHaveLength(2);
+
+      // Rollback removes the temp row
+      const rolledBack = setRows.mock.calls[1][0](optimistic);
+      expect(rolledBack).toHaveLength(1);
+      expect(rolledBack[0].page.id).toBe("row-1");
+
       expect(toastErrorMock).toHaveBeenCalledWith("Failed to add row", expect.objectContaining({ duration: 8000 }));
-      expect(setRows).not.toHaveBeenCalled();
     });
 
-    it("shows toast when data is null without error", async () => {
+    it("rolls back the optimistic row when data is null without error", async () => {
       addRowMock.mockResolvedValue({ data: null, error: null });
 
       const { result, setRows } = setup();
@@ -198,8 +267,9 @@ describe("useDatabaseRows", () => {
         await result.current.handleAddRow();
       });
 
+      // First call: optimistic insert, second call: rollback removal
+      expect(setRows).toHaveBeenCalledTimes(2);
       expect(toastErrorMock).toHaveBeenCalledWith("Failed to add row", expect.objectContaining({ duration: 8000 }));
-      expect(setRows).not.toHaveBeenCalled();
     });
 
     it("passes a Retry action that re-invokes handleAddRow", async () => {
@@ -226,6 +296,43 @@ describe("useDatabaseRows", () => {
         call[1].action.onClick();
       });
       expect(addRowMock).toHaveBeenCalledWith("db-1", "user-1", { "prop-1": { option_id: "opt-a" } });
+    });
+
+    it("uses unique temp IDs so concurrent adds don't collide", async () => {
+      const newPage1 = {
+        id: "real-1", title: "", icon: null, cover_url: null,
+        created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z", created_by: "user-1",
+      };
+      const newPage2 = {
+        id: "real-2", title: "", icon: null, cover_url: null,
+        created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z", created_by: "user-1",
+      };
+      addRowMock
+        .mockResolvedValueOnce({ data: newPage1, error: null })
+        .mockResolvedValueOnce({ data: newPage2, error: null });
+
+      const { result, setRows } = setup();
+
+      await act(async () => {
+        await result.current.handleAddRow();
+      });
+      await act(async () => {
+        await result.current.handleAddRow();
+      });
+
+      // Each add produces 2 setRows calls (optimistic + replace) = 4 total
+      expect(setRows).toHaveBeenCalledTimes(4);
+
+      // The optimistic inserts should have different temp IDs
+      const tempId1 = setRows.mock.calls[0][0]([]).find(
+        (r: DatabaseRow) => r.page.id.startsWith("temp-"),
+      )?.page.id;
+      const tempId2 = setRows.mock.calls[2][0]([]).find(
+        (r: DatabaseRow) => r.page.id.startsWith("temp-"),
+      )?.page.id;
+      expect(tempId1).toBeDefined();
+      expect(tempId2).toBeDefined();
+      expect(tempId1).not.toBe(tempId2);
     });
   });
 

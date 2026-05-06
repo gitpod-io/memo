@@ -85,8 +85,29 @@ export function useDatabaseProperties({
         const existingNames = new Set(properties.map((p) => p.name));
         const name = generateColumnName(type, existingNames);
         const config = getDefaultColumnConfig(type);
+
+        // Generate a temporary ID for the optimistic property
+        const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+        const now = new Date().toISOString();
+        const nextPos = properties.length;
+
+        // Insert placeholder property immediately
+        const optimisticProp: DatabaseProperty = {
+          id: tempId,
+          database_id: pageId,
+          name,
+          type,
+          config: config ?? {},
+          position: nextPos,
+          created_at: now,
+          updated_at: now,
+        };
+        setProperties((prev) => [...prev, optimisticProp]);
+
         const { data: newProp, error } = await addProperty(pageId, name, type, config);
         if (error || !newProp) {
+          // Rollback: remove the optimistic property
+          setProperties((prev) => prev.filter((p) => p.id !== tempId));
           if (error && !isInsufficientPrivilegeError(error)) {
             captureSupabaseError(error, "database-properties:add");
           }
@@ -99,7 +120,11 @@ export function useDatabaseProperties({
           });
           return;
         }
-        setProperties((prev) => [...prev, newProp]);
+
+        // Replace the placeholder with the real property from the server
+        setProperties((prev) =>
+          prev.map((p) => (p.id === tempId ? newProp : p)),
+        );
       } finally {
         isAddingColumn.current = false;
       }
