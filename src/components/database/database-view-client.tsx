@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import type { SerializedEditorState } from "lexical";
@@ -11,6 +11,7 @@ import { PageCover } from "@/components/page-cover";
 import { ViewTabs } from "@/components/database/view-tabs";
 import { SortMenu } from "@/components/database/sort-menu";
 import { FilterBar } from "@/components/database/filter-bar";
+import { DatabaseSearchInput } from "@/components/database/database-search-input";
 import { RenamePropertyDialog } from "@/components/database/rename-property-dialog";
 
 import {
@@ -240,6 +241,28 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     handleSortToggle,
   } = useDatabaseFilters({ pageId, activeView, rows, properties, setViews });
 
+  // Local search state — filters rows by title substring match (case-insensitive).
+  // Keyed to activeViewId so it resets automatically on view switch.
+  const [searchState, setSearchState] = useState({ viewId: activeViewId, query: "" });
+
+  // When the active view changes, reset the search query
+  const searchQuery = searchState.viewId === activeViewId ? searchState.query : "";
+  const setSearchQuery = useCallback(
+    (query: string) => setSearchState({ viewId: activeViewId, query }),
+    [activeViewId],
+  );
+
+  // Apply search filter on top of the filter/sort chain
+  const searchFilteredRows = useMemo(() => {
+    if (!searchQuery.trim()) return displayedRows;
+    const query = searchQuery.trim().toLowerCase();
+    return displayedRows.filter((row) =>
+      (row.page.title ?? "").toLowerCase().includes(query),
+    );
+  }, [displayedRows, searchQuery]);
+
+  const hasActiveSearch = searchQuery.trim().length > 0;
+
   // Check if there's Lexical content to render above the database
   const hasContent =
     initialContent !== null &&
@@ -312,6 +335,10 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
             {/* Sort & filter toolbar */}
             {activeView && (
               <div className="flex items-center gap-1 p-2">
+                <DatabaseSearchInput
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                />
                 <SortMenu
                   properties={properties}
                   sorts={activeSorts}
@@ -340,7 +367,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                 )}
                 <div className="flex-1" />
                 <CSVExportButton
-                  rows={displayedRows}
+                  rows={searchFilteredRows}
                   properties={properties}
                   databaseTitle={pageTitle}
                   userId={userId}
@@ -353,7 +380,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
             <div className="mt-0">
               {activeView?.type === "table" ? (
                 <TableView
-                  rows={displayedRows}
+                  rows={searchFilteredRows}
                   properties={properties}
                   viewConfig={activeView.config}
                   workspaceSlug={workspaceSlug}
@@ -367,52 +394,67 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   sorts={activeSorts}
                   onSortToggle={handleSortToggle}
                   totalRowCount={rows.length}
-                  hasActiveFilters={activeFilters.length > 0}
-                  onClearFilters={() => handleFiltersChange([])}
+                  hasActiveFilters={activeFilters.length > 0 || hasActiveSearch}
+                  onClearFilters={() => {
+                    void handleFiltersChange([]);
+                    setSearchQuery("");
+                  }}
                 />
               ) : activeView?.type === "board" ? (
                 <BoardView
-                  rows={displayedRows}
+                  rows={searchFilteredRows}
                   properties={properties}
                   viewConfig={activeView.config}
                   workspaceSlug={workspaceSlug}
                   onCardMove={handleCardMove}
                   onAddRow={handleAddRow}
                   onNavigate={router.push}
-                  hasActiveFilters={activeFilters.length > 0}
-                  onClearFilters={() => handleFiltersChange([])}
+                  hasActiveFilters={activeFilters.length > 0 || hasActiveSearch}
+                  onClearFilters={() => {
+                    void handleFiltersChange([]);
+                    setSearchQuery("");
+                  }}
                 />
               ) : activeView?.type === "list" ? (
                 <ListView
-                  rows={displayedRows}
+                  rows={searchFilteredRows}
                   properties={properties}
                   viewConfig={activeView.config}
                   workspaceSlug={workspaceSlug}
                   onAddRow={handleAddRow}
                   onNavigate={router.push}
-                  hasActiveFilters={activeFilters.length > 0}
-                  onClearFilters={() => handleFiltersChange([])}
+                  hasActiveFilters={activeFilters.length > 0 || hasActiveSearch}
+                  onClearFilters={() => {
+                    void handleFiltersChange([]);
+                    setSearchQuery("");
+                  }}
                 />
               ) : activeView?.type === "calendar" ? (
                 <CalendarView
-                  rows={displayedRows}
+                  rows={searchFilteredRows}
                   properties={properties}
                   viewConfig={activeView.config}
                   workspaceSlug={workspaceSlug}
                   onAddRow={handleAddRow}
-                  hasActiveFilters={activeFilters.length > 0}
-                  onClearFilters={() => handleFiltersChange([])}
+                  hasActiveFilters={activeFilters.length > 0 || hasActiveSearch}
+                  onClearFilters={() => {
+                    void handleFiltersChange([]);
+                    setSearchQuery("");
+                  }}
                 />
               ) : activeView?.type === "gallery" ? (
                 <GalleryView
-                  rows={displayedRows}
+                  rows={searchFilteredRows}
                   properties={properties}
                   viewConfig={activeView.config}
                   workspaceSlug={workspaceSlug}
                   onAddRow={handleAddRow}
                   onNavigate={router.push}
-                  hasActiveFilters={activeFilters.length > 0}
-                  onClearFilters={() => handleFiltersChange([])}
+                  hasActiveFilters={activeFilters.length > 0 || hasActiveSearch}
+                  onClearFilters={() => {
+                    void handleFiltersChange([]);
+                    setSearchQuery("");
+                  }}
                 />
               ) : activeView ? (
                 <ComingSoonPlaceholder viewType={activeView.type} />
@@ -421,7 +463,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
 
             {/* Screen-reader announcement for row count changes */}
             <RowCountAnnouncer
-              filteredCount={displayedRows.length}
+              filteredCount={searchFilteredRows.length}
               totalCount={rows.length}
             />
           </>

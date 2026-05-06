@@ -288,6 +288,7 @@ src/components/database/
   ├── database-view-client.tsx     # Main client component: loads data, composes hooks + JSX
   ├── database-view-helpers.tsx    # ViewConfigDropdown, ComingSoonPlaceholder, DatabaseSkeleton
   ├── csv-export-button.tsx        # Download CSV toolbar button with relation title resolution
+  ├── database-search-input.tsx    # Search input for filtering rows by title substring
   ├── hooks/
   │   ├── use-database-views.ts    # View CRUD: add, rename, delete, duplicate, reorder, config
   │   ├── use-database-rows.ts     # Row mutations: add, delete (deferred with undo), cell update, card move
@@ -475,6 +476,7 @@ src/
 │   │   ├── database-view-client.tsx     # Main client component: loads data, composes hooks + JSX
 │   │   ├── database-view-helpers.tsx    # ViewConfigDropdown, ComingSoonPlaceholder, DatabaseSkeleton
 │   │   ├── csv-export-button.tsx        # Download CSV toolbar button with relation title resolution
+│   │   ├── database-search-input.tsx    # Search input for filtering rows by title substring
 │   │   ├── hooks/                       # Domain hooks extracted from database-view-client
 │   │   │   ├── use-database-views.ts    # View CRUD callbacks
 │   │   │   ├── use-database-rows.ts     # Row mutations (deferred delete with undo)
