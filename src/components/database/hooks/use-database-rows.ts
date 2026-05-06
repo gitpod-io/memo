@@ -30,6 +30,7 @@ export interface UseDatabaseRowsReturn {
   handleCardMove: (rowId: string, propertyId: string, newOptionId: string | null) => Promise<void>;
   handleCellUpdate: (rowId: string, propertyId: string, value: Record<string, unknown>) => Promise<void>;
   handleDeleteRow: (rowId: string) => void;
+  handleBulkDeleteRows: (rowIds: string[]) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -293,11 +294,84 @@ export function useDatabaseRows({
     [pageId, setRows],
   );
 
+  const handleBulkDeleteRows = useCallback(
+    (rowIds: string[]) => {
+      if (rowIds.length === 0) return;
+
+      // Snapshot all rows being deleted for undo
+      let snapshots: DatabaseRow[] = [];
+      setRows((prev) => {
+        const deleteSet = new Set(rowIds);
+        snapshots = prev.filter((r) => deleteSet.has(r.page.id));
+        return prev.filter((r) => !deleteSet.has(r.page.id));
+      });
+
+      // Cancel any existing pending single-row deletions for these rows
+      for (const rowId of rowIds) {
+        const existing = pendingRowDeletions.current.get(rowId);
+        if (existing) {
+          clearTimeout(existing);
+          pendingRowDeletions.current.delete(rowId);
+        }
+      }
+
+      const timer = setTimeout(async () => {
+        const supabase = createClient();
+        const errors: string[] = [];
+        for (const rowId of rowIds) {
+          pendingRowDeletions.current.delete(rowId);
+          const { error } = await supabase.rpc("soft_delete_page", {
+            page_id: rowId,
+          });
+          if (error) {
+            if (!isInsufficientPrivilegeError(error)) {
+              captureSupabaseError(error, "database-view:bulk-delete-row");
+            }
+            errors.push(rowId);
+          }
+        }
+        if (errors.length > 0) {
+          toast.error(`Failed to delete ${errors.length} row${errors.length !== 1 ? "s" : ""}`, {
+            duration: 8000,
+            action: {
+              label: "Retry",
+              onClick: () => handlersRef.current?.handleBulkDeleteRows(errors),
+            },
+          });
+          // Reload to restore failed rows
+          const { data } = await loadDatabase(pageId);
+          if (data) setRows(data.rows);
+        }
+      }, 5500);
+
+      // Track all rows under a single timer keyed to the first row ID
+      const timerKey = `bulk-${Date.now()}`;
+      pendingRowDeletions.current.set(timerKey, timer);
+
+      const count = rowIds.length;
+      toast(`${count} row${count !== 1 ? "s" : ""} deleted`, {
+        duration: 5000,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            clearTimeout(timer);
+            pendingRowDeletions.current.delete(timerKey);
+            if (snapshots.length > 0) {
+              setRows((prev) => [...prev, ...snapshots]);
+            }
+          },
+        },
+      });
+    },
+    [pageId, setRows],
+  );
+
   const handlers: UseDatabaseRowsReturn = {
     handleAddRow,
     handleCardMove,
     handleCellUpdate,
     handleDeleteRow,
+    handleBulkDeleteRows,
   };
   useEffect(() => { handlersRef.current = handlers; });
 

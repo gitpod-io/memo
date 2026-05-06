@@ -3,6 +3,7 @@
 import { memo } from "react";
 import Link from "next/link";
 import { Trash2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import type {
   DatabaseProperty,
@@ -50,6 +51,10 @@ export interface TableRowProps {
   /** CSS grid-template-columns value. When provided, the row renders as its own
    *  grid container instead of using `display: contents`. */
   gridTemplateColumns?: string;
+  /** Whether this row is selected for bulk actions. */
+  isSelected?: boolean;
+  /** Called when the row's selection checkbox is toggled. */
+  onToggleSelect?: (rowId: string, shiftKey: boolean) => void;
 }
 
 // editingCell and focusedCell change on every interaction but only affect the
@@ -68,6 +73,8 @@ function areTableRowPropsEqual(prev: TableRowProps, next: TableRowProps): boolea
   if (prev.onCellFocus !== next.onCellFocus) return false;
   if (prev.onDeleteRow !== next.onDeleteRow) return false;
   if (prev.gridTemplateColumns !== next.gridTemplateColumns) return false;
+  if (prev.isSelected !== next.isSelected) return false;
+  if (prev.onToggleSelect !== next.onToggleSelect) return false;
 
   // Only re-render if editing/focus state targets this row
   const prevEditing = prev.editingCell?.rowId === prev.row.page.id ? prev.editingCell : null;
@@ -96,6 +103,8 @@ export const TableRow = memo(function TableRow({
   onCellFocus,
   onDeleteRow,
   gridTemplateColumns,
+  isSelected = false,
+  onToggleSelect,
 }: TableRowProps) {
   return (
     <div
@@ -104,10 +113,35 @@ export const TableRow = memo(function TableRow({
       style={gridTemplateColumns ? { gridTemplateColumns } : { display: "contents" }}
       data-testid={`db-table-row-${rowIndex}`}
     >
+      {/* Selection checkbox cell */}
+      {onToggleSelect && (
+        <div
+          className={cn(
+            "flex items-center justify-center border-b border-overlay-border",
+            isSelected ? "bg-overlay-active" : "hover:bg-overlay-subtle",
+            rowHeightClass,
+          )}
+          role="gridcell"
+        >
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={(_checked, details) => {
+              const shiftKey = "shiftKey" in details.event
+                ? (details.event as MouseEvent | KeyboardEvent).shiftKey
+                : false;
+              onToggleSelect(row.page.id, shiftKey);
+            }}
+            aria-label={`Select row ${row.page.title || "Untitled"}`}
+            data-testid={`db-table-row-checkbox-${rowIndex}`}
+          />
+        </div>
+      )}
+
       {/* Title cell */}
       <div
         className={cn(
           "group/row flex items-center border-b border-overlay-border p-2 hover:bg-overlay-subtle",
+          isSelected && "bg-overlay-active",
           rowHeightClass,
         )}
         role="gridcell"

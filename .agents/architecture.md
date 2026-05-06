@@ -292,9 +292,10 @@ src/components/database/
   ├── database-search-input.tsx    # Search input for filtering rows by title substring
   ├── hooks/
   │   ├── use-database-views.ts    # View CRUD: add, rename, delete, duplicate, reorder, config
-  │   ├── use-database-rows.ts     # Row mutations: add, delete (deferred with undo), cell update, card move
+  │   ├── use-database-rows.ts     # Row mutations: add, delete (deferred with undo), bulk delete, cell update, card move
   │   ├── use-database-properties.ts # Property CRUD: add, rename, delete (deferred with undo), reorder
-  │   └── use-database-filters.ts  # Sort/filter state and derived displayedRows
+  │   ├── use-database-filters.ts  # Sort/filter state and derived displayedRows
+  │   └── use-row-selection.ts     # Row selection state: toggle, toggleAll, shift-range, clear, Escape
   ├── view-tabs.tsx                # Horizontal tab bar for switching views
   ├── filter-bar.tsx               # Active filter pills + add filter UI (composition only)
   ├── filter-value-editor.tsx      # Type-specific filter value editors, property picker, operator picker
@@ -329,6 +330,7 @@ src/components/database/
   │   ├── table-cell-renderer.tsx  # CellRenderer + SelectBadge — display-only value rendering
   │   ├── table-keyboard.ts       # handleCellKeyDown — editing-mode key handler
   │   ├── table-defaults.ts       # Pure helpers: value keys, select options, display values, date formatting
+  │   ├── bulk-action-bar.tsx      # BulkActionBar — floating toolbar for bulk delete when rows are selected
   │   ├── row-count-status-bar.tsx # RowCountStatusBar — "X rows" / "X of Y rows" below the table
   │   ├── row-count-announcer.tsx  # RowCountAnnouncer — sr-only aria-live region for row count changes
   │   ├── database-empty-state.tsx # DatabaseEmptyState — shared empty state (no-rows vs filtered-empty)
@@ -480,9 +482,10 @@ src/
 │   │   ├── database-search-input.tsx    # Search input for filtering rows by title substring
 │   │   ├── hooks/                       # Domain hooks extracted from database-view-client
 │   │   │   ├── use-database-views.ts    # View CRUD callbacks
-│   │   │   ├── use-database-rows.ts     # Row mutations (deferred delete with undo)
+│   │   │   ├── use-database-rows.ts     # Row mutations (deferred delete with undo, bulk delete)
 │   │   │   ├── use-database-properties.ts # Property CRUD (deferred delete with undo)
-│   │   │   └── use-database-filters.ts  # Sort/filter state + displayedRows
+│   │   │   ├── use-database-filters.ts  # Sort/filter state + displayedRows
+│   │   │   └── use-row-selection.ts     # Row selection state: toggle, toggleAll, shift-range, clear
 │   │   ├── view-tabs.tsx                # Horizontal tab bar for switching views
 │   │   ├── filter-bar.tsx               # Active filter pills + add filter UI (composition only)
 │   │   ├── filter-value-editor.tsx      # Type-specific filter value editors, property picker, operator picker
@@ -499,6 +502,7 @@ src/
 │   │   │   ├── table-cell-renderer.tsx  # CellRenderer + SelectBadge — display-only value rendering
 │   │   │   ├── table-keyboard.ts       # handleCellKeyDown — editing-mode key handler
 │   │   │   ├── table-defaults.ts       # Pure helpers: value keys, select options, display values
+│   │   │   ├── bulk-action-bar.tsx      # BulkActionBar — floating toolbar for bulk delete when rows selected
 │   │   │   ├── row-count-status-bar.tsx # RowCountStatusBar — "X rows" / "X of Y rows" below the table
 │   │   │   ├── row-count-announcer.tsx  # RowCountAnnouncer — sr-only aria-live region for row count changes
 │   │   │   ├── database-empty-state.tsx # DatabaseEmptyState — shared empty state (no-rows vs filtered-empty)

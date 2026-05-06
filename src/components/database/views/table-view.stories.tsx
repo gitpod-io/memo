@@ -182,6 +182,8 @@ const meta: Meta<typeof TableView> = {
     onColumnHeaderClick: fn(),
     onColumnReorder: fn(),
     onDeleteColumn: fn(),
+    onBulkDeleteRows: fn(),
+    selectionResetKey: "view-1",
   },
 };
 
@@ -436,5 +438,29 @@ export const VirtualizedCompact: Story = {
     rows: manyRows,
     properties: mockProperties,
     viewConfig: { row_height: "compact" },
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Row Selection stories
+// ---------------------------------------------------------------------------
+
+export const WithSelectionCheckboxes: Story = {
+  name: "Selection Checkboxes",
+  args: {
+    rows: mockRows,
+    properties: mockProperties,
+    viewConfig: defaultConfig,
+    onBulkDeleteRows: fn(),
+  },
+};
+
+export const SelectionDisabled: Story = {
+  name: "Selection Disabled (no bulk delete handler)",
+  args: {
+    rows: mockRows,
+    properties: mockProperties,
+    viewConfig: defaultConfig,
+    onBulkDeleteRows: undefined,
   },
 };

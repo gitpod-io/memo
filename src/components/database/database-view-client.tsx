@@ -212,6 +212,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     handleCardMove,
     handleCellUpdate,
     handleDeleteRow,
+    handleBulkDeleteRows,
   } = useDatabaseRows({ pageId, userId, rows, setRows, setProperties });
 
   const {
@@ -391,6 +392,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   onColumnReorder={handleColumnReorder}
                   onDeleteColumn={handleDeleteColumn}
                   onDeleteRow={handleDeleteRow}
+                  onBulkDeleteRows={handleBulkDeleteRows}
                   sorts={activeSorts}
                   onSortToggle={handleSortToggle}
                   totalRowCount={rows.length}
@@ -399,6 +401,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                     void handleFiltersChange([]);
                     setSearchQuery("");
                   }}
+                  selectionResetKey={activeViewId}
                 />
               ) : activeView?.type === "board" ? (
                 <BoardView
