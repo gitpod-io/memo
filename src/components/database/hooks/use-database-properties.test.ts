@@ -172,11 +172,47 @@ describe("useDatabaseProperties", () => {
   // -------------------------------------------------------------------------
 
   describe("handleAddColumn", () => {
-    it("adds a property with generated name and default config", async () => {
+    it("inserts a placeholder property immediately before the server responds", async () => {
+      let resolveAdd!: (v: { data: DatabaseProperty; error: null }) => void;
+      const deferred = new Promise<{ data: DatabaseProperty; error: null }>((r) => {
+        resolveAdd = r;
+      });
+      addPropertyMock.mockImplementation(() => deferred);
+
+      const { result, setProperties, properties } = setup();
+
+      // Start the add but don't await yet
+      const p = act(async () => {
+        await result.current.handleAddColumn("text");
+      });
+
+      // setProperties should have been called once with the optimistic placeholder
+      expect(setProperties).toHaveBeenCalledTimes(1);
+      const optimisticUpdater = setProperties.mock.calls[0][0];
+      const optimistic = optimisticUpdater(properties);
+      expect(optimistic).toHaveLength(3);
+      expect(optimistic[2].id).toMatch(/^temp-/);
+      expect(optimistic[2].name).toBe("Text");
+      expect(optimistic[2].type).toBe("text");
+
+      // Resolve the server call
+      const realProp = makeProp("new-prop", "Text", 2);
+      resolveAdd({ data: realProp, error: null });
+      await p;
+
+      // setProperties called a second time to replace the placeholder
+      expect(setProperties).toHaveBeenCalledTimes(2);
+      const replaceUpdater = setProperties.mock.calls[1][0];
+      const replaced = replaceUpdater(optimistic);
+      expect(replaced).toHaveLength(3);
+      expect(replaced[2].id).toBe("new-prop");
+    });
+
+    it("replaces placeholder with real property on success", async () => {
       const newProp = makeProp("new-prop", "Text", 2);
       addPropertyMock.mockResolvedValue({ data: newProp, error: null });
 
-      const { result, setProperties } = setup();
+      const { result, setProperties, properties } = setup();
 
       await act(async () => {
         await result.current.handleAddColumn("text");
@@ -188,10 +224,14 @@ describe("useDatabaseProperties", () => {
         "text",
         {},
       );
-      const updater = setProperties.mock.calls[0][0];
-      const updated = updater([makeProp("title-prop", "Title", 0)]);
-      expect(updated).toHaveLength(2);
-      expect(updated[1].id).toBe("new-prop");
+      // First call: optimistic insert, second call: replace with real
+      expect(setProperties).toHaveBeenCalledTimes(2);
+
+      // Chain the updaters to simulate React state flow
+      const optimistic = setProperties.mock.calls[0][0](properties);
+      const final = setProperties.mock.calls[1][0](optimistic);
+      expect(final).toHaveLength(3);
+      expect(final[2].id).toBe("new-prop");
     });
 
     it("passes status default config for status type", async () => {
@@ -212,14 +252,14 @@ describe("useDatabaseProperties", () => {
       );
     });
 
-    it("shows toast and captures Sentry error on failure", async () => {
+    it("rolls back the optimistic property on failure", async () => {
       const error = new Error("failed");
       addPropertyMock.mockResolvedValue({
         data: null,
         error,
       });
 
-      const { result, setProperties } = setup();
+      const { result, setProperties, properties } = setup();
 
       await act(async () => {
         await result.current.handleAddColumn("text");
@@ -227,7 +267,15 @@ describe("useDatabaseProperties", () => {
 
       expect(toastErrorMock).toHaveBeenCalledWith("Failed to add column", expect.objectContaining({ duration: 8000 }));
       expect(captureSupabaseErrorMock).toHaveBeenCalledWith(error, "database-properties:add");
-      expect(setProperties).not.toHaveBeenCalled();
+
+      // First call: optimistic insert, second call: rollback removal
+      expect(setProperties).toHaveBeenCalledTimes(2);
+      const optimistic = setProperties.mock.calls[0][0](properties);
+      expect(optimistic).toHaveLength(3);
+      const rolledBack = setProperties.mock.calls[1][0](optimistic);
+      expect(rolledBack).toHaveLength(2);
+      // Only original properties remain
+      expect(rolledBack.every((p: DatabaseProperty) => !p.id.startsWith("temp-"))).toBe(true);
     });
 
     it("skips Sentry capture for insufficient privilege errors", async () => {
