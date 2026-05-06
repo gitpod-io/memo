@@ -11,7 +11,7 @@ import {
   isSchemaNotFoundError,
 } from "@/lib/sentry";
 import { trackEventClient } from "@/lib/track-event";
-import { createDatabase } from "@/lib/database";
+import { createDatabase, duplicateDatabase } from "@/lib/database";
 import type { SidebarPage } from "@/lib/types";
 import {
   computeNest,
@@ -217,6 +217,31 @@ export function usePageTreeActions({
         .select("content")
         .eq("id", page.id)
         .single();
+
+      if (page.is_database) {
+        const { data: newDbPage, error: dbError } = await duplicateDatabase(
+          page.id,
+          workspaceId,
+          userId,
+          duplicateTitle,
+          page.parent_id,
+          page.icon,
+          nextPosition,
+          fullPage?.content as Record<string, unknown> | null ?? null,
+        );
+
+        if (dbError || !newDbPage) {
+          if (dbError) captureSupabaseError(dbError, "page-tree:duplicate-database");
+          toast.error("Failed to duplicate database", { duration: 8000 });
+          return;
+        }
+
+        setPages((prev) => [...prev, newDbPage]);
+        toast.success("Database duplicated");
+        router.push(`/${workspaceSlug}/${newDbPage.id}`);
+        router.refresh();
+        return;
+      }
 
       const { data: newPage, error } = await supabase
         .from("pages")

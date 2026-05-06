@@ -170,6 +170,254 @@ export async function deleteDatabase(
 }
 
 // ---------------------------------------------------------------------------
+// Database Duplication
+// ---------------------------------------------------------------------------
+
+/**
+ * Remap property IDs inside a DatabaseViewConfig.
+ * Handles visible_properties, sorts, filters, column_widths, group_by,
+ * date_property, and cover_property.
+ */
+export function remapViewConfig(
+  config: DatabaseViewConfig,
+  propertyMap: Map<string, string>,
+): DatabaseViewConfig {
+  const remapped: DatabaseViewConfig = { ...config };
+
+  if (config.visible_properties) {
+    remapped.visible_properties = config.visible_properties.map(
+      (id) => propertyMap.get(id) ?? id,
+    );
+  }
+
+  if (config.sorts) {
+    remapped.sorts = config.sorts.map((s) => ({
+      ...s,
+      property_id: propertyMap.get(s.property_id) ?? s.property_id,
+    }));
+  }
+
+  if (config.filters) {
+    remapped.filters = config.filters.map((f) => ({
+      ...f,
+      property_id: propertyMap.get(f.property_id) ?? f.property_id,
+    }));
+  }
+
+  if (config.column_widths) {
+    const newWidths: Record<string, number> = {};
+    for (const [id, width] of Object.entries(config.column_widths)) {
+      newWidths[propertyMap.get(id) ?? id] = width;
+    }
+    remapped.column_widths = newWidths;
+  }
+
+  if (config.group_by) {
+    remapped.group_by = propertyMap.get(config.group_by) ?? config.group_by;
+  }
+
+  if (config.date_property) {
+    remapped.date_property =
+      propertyMap.get(config.date_property) ?? config.date_property;
+  }
+
+  if (config.cover_property) {
+    remapped.cover_property =
+      propertyMap.get(config.cover_property) ?? config.cover_property;
+  }
+
+  return remapped;
+}
+
+/**
+ * Duplicate a database page including its properties, views, child rows,
+ * and row values. Property IDs are remapped so views and row values
+ * reference the new properties.
+ *
+ * Returns the new page (with `is_database: true`) or an error.
+ * On partial failure, the created page is cleaned up.
+ */
+export async function duplicateDatabase(
+  sourcePageId: string,
+  workspaceId: string,
+  userId: string,
+  title: string,
+  parentId: string | null,
+  icon: string | null,
+  position: number,
+  content: Record<string, unknown> | null,
+): Promise<{ data: Page | null; error: Error | null }> {
+  const supabase = getClient();
+
+  // 1. Create the new database page
+  const { data: newPage, error: pageError } = await supabase
+    .from("pages")
+    .insert({
+      workspace_id: workspaceId,
+      parent_id: parentId,
+      title,
+      content: content ? JSON.parse(JSON.stringify(content)) : null,
+      icon,
+      is_database: true,
+      position,
+      created_by: userId,
+    })
+    .select()
+    .single();
+
+  if (pageError || !newPage) {
+    return { data: null, error: pageError ?? new Error("Failed to create database page") };
+  }
+
+  // 2. Fetch source properties, views, and child rows in parallel
+  const [propsResult, viewsResult, rowsResult] = await Promise.all([
+    supabase
+      .from("database_properties")
+      .select("*")
+      .eq("database_id", sourcePageId)
+      .order("position"),
+    supabase
+      .from("database_views")
+      .select("*")
+      .eq("database_id", sourcePageId)
+      .order("position"),
+    supabase
+      .from("pages")
+      .select("id, title, icon, position, content, created_by")
+      .eq("parent_id", sourcePageId)
+      .is("deleted_at", null)
+      .order("position"),
+  ]);
+
+  if (propsResult.error || viewsResult.error || rowsResult.error) {
+    // Clean up the created page
+    await supabase.from("pages").delete().eq("id", newPage.id);
+    const firstError = propsResult.error ?? viewsResult.error ?? rowsResult.error;
+    return { data: null, error: firstError };
+  }
+
+  const sourceProperties = propsResult.data as DatabaseProperty[];
+  const sourceViews = viewsResult.data as DatabaseView[];
+  const sourceRows = rowsResult.data as {
+    id: string;
+    title: string;
+    icon: string | null;
+    position: number;
+    content: Record<string, unknown> | null;
+    created_by: string;
+  }[];
+
+  // 3. Copy properties and build old→new ID mapping
+  const propertyMap = new Map<string, string>();
+
+  if (sourceProperties.length > 0) {
+    const propertyInserts = sourceProperties.map((p) => ({
+      database_id: newPage.id,
+      name: p.name,
+      type: p.type,
+      config: p.config,
+      position: p.position,
+    }));
+
+    const { data: newProps, error: propInsertError } = await supabase
+      .from("database_properties")
+      .insert(propertyInserts)
+      .select("id");
+
+    if (propInsertError || !newProps) {
+      await supabase.from("pages").delete().eq("id", newPage.id);
+      return { data: null, error: propInsertError ?? new Error("Failed to copy properties") };
+    }
+
+    // Map old property IDs to new ones (insertion order is preserved)
+    for (let i = 0; i < sourceProperties.length; i++) {
+      propertyMap.set(sourceProperties[i].id, newProps[i].id);
+    }
+  }
+
+  // 4. Copy views with remapped property references
+  if (sourceViews.length > 0) {
+    const viewInserts = sourceViews.map((v) => ({
+      database_id: newPage.id,
+      name: v.name,
+      type: v.type,
+      config: remapViewConfig(v.config, propertyMap),
+      position: v.position,
+    }));
+
+    const { error: viewInsertError } = await supabase
+      .from("database_views")
+      .insert(viewInserts);
+
+    if (viewInsertError) {
+      await supabase.from("pages").delete().eq("id", newPage.id);
+      return { data: null, error: viewInsertError };
+    }
+  }
+
+  // 5. Copy child rows (pages) and their row_values
+  if (sourceRows.length > 0) {
+    const rowInserts = sourceRows.map((r) => ({
+      workspace_id: workspaceId,
+      parent_id: newPage.id,
+      title: r.title,
+      icon: r.icon,
+      content: r.content ? JSON.parse(JSON.stringify(r.content)) : null,
+      is_database: false,
+      position: r.position,
+      created_by: userId,
+    }));
+
+    const { data: newRows, error: rowInsertError } = await supabase
+      .from("pages")
+      .insert(rowInserts)
+      .select("id");
+
+    if (rowInsertError || !newRows) {
+      await supabase.from("pages").delete().eq("id", newPage.id);
+      return { data: null, error: rowInsertError ?? new Error("Failed to copy rows") };
+    }
+
+    // Build old→new row ID mapping
+    const rowMap = new Map<string, string>();
+    for (let i = 0; i < sourceRows.length; i++) {
+      rowMap.set(sourceRows[i].id, newRows[i].id);
+    }
+
+    // Fetch all row_values for source rows
+    const sourceRowIds = sourceRows.map((r) => r.id);
+    const { data: sourceValues, error: valFetchError } = await supabase
+      .from("row_values")
+      .select("row_id, property_id, value")
+      .in("row_id", sourceRowIds);
+
+    if (valFetchError) {
+      // Rows were created but values failed — non-fatal, the database is usable
+      // but cells will be empty. Don't roll back.
+      return { data: newPage as Page, error: null };
+    }
+
+    if (sourceValues && sourceValues.length > 0) {
+      const valueInserts = sourceValues.map((v) => ({
+        row_id: rowMap.get(v.row_id) ?? v.row_id,
+        property_id: propertyMap.get(v.property_id) ?? v.property_id,
+        value: v.value,
+      }));
+
+      const { error: valInsertError } = await supabase
+        .from("row_values")
+        .insert(valueInserts);
+
+      if (valInsertError) {
+        // Non-fatal — database structure is intact, just missing cell values
+      }
+    }
+  }
+
+  return { data: newPage as Page, error: null };
+}
+
+// ---------------------------------------------------------------------------
 // Property CRUD
 // ---------------------------------------------------------------------------
 

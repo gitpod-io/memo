@@ -22,6 +22,7 @@ import { lazyCaptureException } from "@/lib/capture";
 import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError } from "@/lib/sentry";
 import { trackEventClient } from "@/lib/track-event";
+import { duplicateDatabase } from "@/lib/database";
 import { useFavorite } from "@/components/sidebar/favorites-section";
 import { useSidebar } from "@/components/sidebar/sidebar-context";
 
@@ -32,6 +33,7 @@ interface PageMenuProps {
   workspaceSlug: string;
   userId: string;
   editorRef: React.MutableRefObject<LexicalEditor | null>;
+  isDatabase?: boolean;
   onVersionHistoryOpen?: () => void;
 }
 
@@ -42,6 +44,7 @@ export function PageMenu({
   workspaceSlug,
   userId,
   editorRef,
+  isDatabase = false,
   onVersionHistoryOpen,
 }: PageMenuProps) {
   const router = useRouter();
@@ -89,6 +92,30 @@ export function PageMenu({
 
     const duplicateTitle = (pageTitle.trim() || "Untitled") + " (copy)";
 
+    if (isDatabase) {
+      const { data: newDbPage, error: dbError } = await duplicateDatabase(
+        pageId,
+        workspaceId,
+        userId,
+        duplicateTitle,
+        sourcePage.parent_id,
+        sourcePage.icon,
+        nextPosition,
+        sourcePage.content as Record<string, unknown> | null ?? null,
+      );
+
+      if (dbError || !newDbPage) {
+        if (dbError) captureSupabaseError(dbError, "page-menu:duplicate-database");
+        toast.error("Failed to duplicate database", { duration: 8000 });
+        return;
+      }
+
+      toast.success("Database duplicated");
+      router.push(`/${workspaceSlug}/${newDbPage.id}`);
+      router.refresh();
+      return;
+    }
+
     const { data: newPage, error: insertError } = await supabase
       .from("pages")
       .insert({
@@ -118,7 +145,7 @@ export function PageMenu({
     toast.success("Page duplicated");
     router.push(`/${workspaceSlug}/${newPage.id}`);
     router.refresh();
-  }, [pageId, pageTitle, workspaceId, workspaceSlug, userId, router]);
+  }, [pageId, pageTitle, workspaceId, workspaceSlug, userId, isDatabase, router]);
 
   const handleExport = useCallback(() => {
     const editor = editorRef.current;
