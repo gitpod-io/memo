@@ -191,3 +191,49 @@ export const WithFocusedCell: Story = {
     focusedCell: { rowIndex: 0, colIndex: 1 },
   },
 };
+
+export const WithSelectionCheckbox: Story = {
+  name: "With selection checkbox (unselected)",
+  decorators: [
+    (Story) => (
+      <div
+        className="max-w-3xl bg-background"
+        role="grid"
+        style={{
+          display: "grid",
+          gridTemplateColumns: `32px minmax(200px, 1fr) ${mockProperties.map(() => "150px").join(" ")} 40px`,
+        }}
+      >
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    row: defaultRow,
+    onToggleSelect: fn(),
+    isSelected: false,
+  },
+};
+
+export const SelectedRow: Story = {
+  name: "Selected row",
+  decorators: [
+    (Story) => (
+      <div
+        className="max-w-3xl bg-background"
+        role="grid"
+        style={{
+          display: "grid",
+          gridTemplateColumns: `32px minmax(200px, 1fr) ${mockProperties.map(() => "150px").join(" ")} 40px`,
+        }}
+      >
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    row: defaultRow,
+    onToggleSelect: fn(),
+    isSelected: true,
+  },
+};

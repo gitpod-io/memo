@@ -5,6 +5,9 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { DatabaseEmptyState } from "@/components/database/views/database-empty-state";
 import { PROPERTY_TYPE_ICON } from "@/lib/property-icons";
 import { PropertyTypePicker } from "@/components/database/property-type-picker";
+import { Checkbox } from "@/components/ui/checkbox";
+import { BulkActionBar } from "@/components/database/views/bulk-action-bar";
+import { useRowSelection } from "@/components/database/hooks/use-row-selection";
 import type { SortRule } from "@/lib/database-filters";
 import { cn } from "@/lib/utils";
 import type {
@@ -93,6 +96,8 @@ export interface TableViewProps {
   sorts?: SortRule[];
   onSortToggle?: (propertyId: string) => void;
   onDeleteRow?: (rowId: string) => void;
+  /** Bulk delete handler — called with an array of row IDs to delete. */
+  onBulkDeleteRows?: (rowIds: string[]) => void;
   loading?: boolean;
   /** Total row count before filtering — used to show "X of Y rows" when filters are active */
   totalRowCount?: number;
@@ -100,6 +105,8 @@ export interface TableViewProps {
   hasActiveFilters?: boolean;
   /** Callback to clear all active filters */
   onClearFilters?: () => void;
+  /** Key that resets row selection when it changes (e.g. active view ID). */
+  selectionResetKey?: string;
 }
 
 export const TableView = memo(function TableView({
@@ -115,12 +122,14 @@ export const TableView = memo(function TableView({
   onColumnReorder,
   onDeleteColumn,
   onDeleteRow,
+  onBulkDeleteRows,
   sorts = [],
   onSortToggle,
   loading = false,
   totalRowCount,
   hasActiveFilters = false,
   onClearFilters,
+  selectionResetKey,
 }: TableViewProps) {
   const rowHeight = viewConfig.row_height ?? "default";
   const rowHeightClass = ROW_HEIGHT_CLASS[rowHeight];
@@ -134,6 +143,25 @@ export const TableView = memo(function TableView({
     }
     return properties;
   }, [properties, viewConfig.visible_properties]);
+
+  // Row selection state
+  const rowIds = useMemo(() => rows.map((r) => r.page.id), [rows]);
+  const selectionEnabled = !!onBulkDeleteRows;
+  const {
+    selectedIds,
+    isSelected,
+    isAllSelected,
+    isIndeterminate,
+    toggle: toggleRowSelection,
+    toggleAll: toggleAllRows,
+    clear: clearSelection,
+  } = useRowSelection({ rowIds, resetKey: selectionResetKey });
+
+  const handleBulkDelete = useCallback(() => {
+    if (!onBulkDeleteRows || selectedIds.size === 0) return;
+    onBulkDeleteRows(Array.from(selectedIds));
+    clearSelection();
+  }, [onBulkDeleteRows, selectedIds, clearSelection]);
 
   // Column resize state
   const { columnWidths, resizingColumn, handleResizeStart } = useColumnResize({
@@ -164,15 +192,16 @@ export const TableView = memo(function TableView({
     handleCellFocus,
   } = useTableCellNavigation({ rows, visibleProperties, onCellUpdate });
 
-  // Grid template: title column + property columns + flexible trailing column.
+  // Grid template: checkbox column (when selection enabled) + title column + property columns + flexible trailing column.
   const gridTemplateColumns = useMemo(() => {
     const cols = [
+      ...(selectionEnabled ? ["32px"] : []),
       `${TITLE_COLUMN_WIDTH}px`,
       ...visibleProperties.map((p) => `${columnWidths[p.id] ?? DEFAULT_COLUMN_WIDTH}px`),
       "minmax(48px, 1fr)",
     ];
     return cols.join(" ");
-  }, [visibleProperties, columnWidths]);
+  }, [visibleProperties, columnWidths, selectionEnabled]);
 
   // Scroll shadow for horizontal overflow (must be called before early returns)
   const { scrollRef, canScrollLeft, canScrollRight } = useScrollShadow();
@@ -221,6 +250,10 @@ export const TableView = memo(function TableView({
     return (
       <div className="w-full">
         <div className="grid w-full" style={{ gridTemplateColumns }}>
+          {/* Empty checkbox column placeholder in empty state */}
+          {selectionEnabled && (
+            <div className="border-b border-overlay-border" />
+          )}
           <div className="border-b border-overlay-border p-2">
             <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
               Title
@@ -330,6 +363,21 @@ export const TableView = memo(function TableView({
             className="sticky top-0 z-10 grid"
             style={{ gridTemplateColumns }}
           >
+            {/* Select-all checkbox header */}
+            {selectionEnabled && (
+              <div
+                className="flex items-center justify-center border-b border-overlay-border bg-background"
+              >
+                <Checkbox
+                  checked={isAllSelected}
+                  indeterminate={isIndeterminate}
+                  onCheckedChange={() => toggleAllRows()}
+                  aria-label="Select all rows"
+                  data-testid="db-table-select-all"
+                />
+              </div>
+            )}
+
             {/* Title column header */}
             <div
               className="border-b border-overlay-border bg-background p-2"
@@ -427,6 +475,8 @@ export const TableView = memo(function TableView({
                         onCellFocus={handleCellFocus}
                         onDeleteRow={onDeleteRow}
                         gridTemplateColumns={gridTemplateColumns}
+                        isSelected={isSelected(row.page.id)}
+                        onToggleSelect={selectionEnabled ? toggleRowSelection : undefined}
                       />
                     </div>
                   );
@@ -451,6 +501,8 @@ export const TableView = memo(function TableView({
                 onCellFocus={handleCellFocus}
                 onDeleteRow={onDeleteRow}
                 gridTemplateColumns={gridTemplateColumns}
+                isSelected={isSelected(row.page.id)}
+                onToggleSelect={selectionEnabled ? toggleRowSelection : undefined}
               />
             ))
           )}
@@ -474,6 +526,15 @@ export const TableView = memo(function TableView({
         filteredCount={rows.length}
         totalCount={totalRowCount ?? rows.length}
       />
+
+      {/* Bulk action bar — floating at bottom when rows are selected */}
+      {selectionEnabled && (
+        <BulkActionBar
+          selectedCount={selectedIds.size}
+          onBulkDelete={handleBulkDelete}
+          onClear={clearSelection}
+        />
+      )}
     </div>
   );
 });
