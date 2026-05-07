@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DatabaseEmptyState } from "@/components/database/views/database-empty-state";
@@ -19,6 +19,7 @@ import {
   toISODate,
   type CalendarCell,
 } from "./calendar-view-helpers";
+import { useCalendarKeyboardNavigation } from "./calendar-keyboard";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -60,6 +61,8 @@ export interface CalendarViewProps {
   hasActiveFilters?: boolean;
   /** Callback to clear all active filters */
   onClearFilters?: () => void;
+  /** Called when keyboard Enter navigates to an item. Receives the URL path. */
+  onNavigate?: (path: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -75,6 +78,7 @@ export const CalendarView = memo(function CalendarView({
   loading = false,
   hasActiveFilters = false,
   onClearFilters,
+  onNavigate,
 }: CalendarViewProps) {
   const now = new Date();
   const todayYear = now.getFullYear();
@@ -82,7 +86,7 @@ export const CalendarView = memo(function CalendarView({
   const todayDay = now.getDate();
   const [viewYear, setViewYear] = useState(todayYear);
   const [viewMonth, setViewMonth] = useState(todayMonth);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const outerRef = useRef<HTMLDivElement>(null);
   const isMobile = useMediaQuery("(max-width: 767px)");
 
   // Resolve the date property
@@ -133,7 +137,7 @@ export const CalendarView = memo(function CalendarView({
   }, [viewYear, viewMonth, rowsByDate, todayYear, todayMonth, todayDay]);
 
   // Navigation handlers
-  function goToPrevMonth() {
+  const goToPrevMonth = useCallback(() => {
     setViewMonth((m) => {
       if (m === 0) {
         setViewYear((y) => y - 1);
@@ -141,9 +145,9 @@ export const CalendarView = memo(function CalendarView({
       }
       return m - 1;
     });
-  }
+  }, []);
 
-  function goToNextMonth() {
+  const goToNextMonth = useCallback(() => {
     setViewMonth((m) => {
       if (m === 11) {
         setViewYear((y) => y + 1);
@@ -151,7 +155,7 @@ export const CalendarView = memo(function CalendarView({
       }
       return m + 1;
     });
-  }
+  }, []);
 
   function goToToday() {
     const d = new Date();
@@ -159,41 +163,19 @@ export const CalendarView = memo(function CalendarView({
     setViewMonth(d.getMonth());
   }
 
-  // Keyboard navigation — uses state updater functions so the effect
-  // doesn't depend on the navigation handlers or current state values.
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (
-        !containerRef.current ||
-        !containerRef.current.contains(document.activeElement)
-      ) {
-        return;
-      }
-
-      if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        setViewMonth((m) => {
-          if (m === 0) {
-            setViewYear((y) => y - 1);
-            return 11;
-          }
-          return m - 1;
-        });
-      } else if (e.key === "ArrowRight") {
-        e.preventDefault();
-        setViewMonth((m) => {
-          if (m === 11) {
-            setViewYear((y) => y + 1);
-            return 0;
-          }
-          return m + 1;
-        });
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  // Keyboard navigation for the calendar grid
+  const {
+    focus: calendarFocus,
+    containerRef,
+    handleKeyDown,
+    handleCellFocus,
+  } = useCalendarKeyboardNavigation({
+    cells,
+    workspaceSlug,
+    onNavigate,
+    onPrevMonth: goToPrevMonth,
+    onNextMonth: goToNextMonth,
+  });
 
   // Cell click handler — create a new row with the date pre-filled.
   // Interactive children (CalendarItem links, overflow button) already call
@@ -235,7 +217,7 @@ export const CalendarView = memo(function CalendarView({
   }
 
   return (
-    <div ref={containerRef} tabIndex={-1} className="outline-none">
+    <div ref={outerRef} className="outline-none">
       {/* Header: month/year + navigation */}
       <div className="mb-3 flex items-center gap-2">
         <h2 className="text-lg font-medium">
@@ -295,15 +277,26 @@ export const CalendarView = memo(function CalendarView({
 
           {/* Calendar grid */}
           <div
+            ref={containerRef}
             className="grid grid-cols-7"
             role="grid"
             aria-label={`${FULL_MONTHS[viewMonth]} ${viewYear} calendar`}
+            tabIndex={-1}
+            onKeyDown={handleKeyDown}
           >
-            {cells.map((cell) => (
+            {cells.map((cell, index) => (
               <CalendarDayCell
                 key={cell.date}
                 cell={cell}
+                cellIndex={index}
                 workspaceSlug={workspaceSlug}
+                isFocused={calendarFocus?.cellIndex === index}
+                focusedItemIndex={
+                  calendarFocus?.cellIndex === index
+                    ? calendarFocus.itemIndex
+                    : null
+                }
+                onCellFocus={handleCellFocus}
                 onClick={onAddRow ? handleCellClick : undefined}
               />
             ))}
@@ -320,11 +313,23 @@ export const CalendarView = memo(function CalendarView({
 
 interface CalendarDayCellProps {
   cell: CalendarCell;
+  cellIndex: number;
   workspaceSlug: string;
+  isFocused: boolean;
+  focusedItemIndex: number | null;
+  onCellFocus: (cellIndex: number) => void;
   onClick?: (date: string) => void;
 }
 
-function CalendarDayCell({ cell, workspaceSlug, onClick }: CalendarDayCellProps) {
+function CalendarDayCell({
+  cell,
+  cellIndex,
+  workspaceSlug,
+  isFocused,
+  focusedItemIndex,
+  onCellFocus,
+  onClick,
+}: CalendarDayCellProps) {
   const [showAll, setShowAll] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -364,12 +369,25 @@ function CalendarDayCell({ cell, workspaceSlug, onClick }: CalendarDayCellProps)
     <div
       role="gridcell"
       aria-label={cell.date}
+      tabIndex={isFocused ? 0 : -1}
+      data-calendar-index={cellIndex}
       className={cn(
-        "relative min-h-24 border border-overlay-border p-1",
+        "relative min-h-24 border border-overlay-border p-1 outline-none",
+        "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
         cell.isToday && "bg-accent/10",
         onClick && "cursor-pointer",
+        isFocused &&
+          focusedItemIndex === null &&
+          "ring-2 ring-ring ring-offset-2",
       )}
       onClick={onClick ? () => onClick(cell.date) : undefined}
+      onFocus={(e) => {
+        // Only track cell focus when the cell itself is focused, not when
+        // focus bubbles up from a child item element.
+        if (e.target === e.currentTarget) {
+          onCellFocus(cellIndex);
+        }
+      }}
     >
       {/* Day number */}
       <span
@@ -383,11 +401,13 @@ function CalendarDayCell({ cell, workspaceSlug, onClick }: CalendarDayCellProps)
 
       {/* Items */}
       <div className="mt-0.5">
-        {visibleItems.map((row) => (
+        {visibleItems.map((row, itemIdx) => (
           <CalendarItem
             key={row.page.id}
             row={row}
+            itemIndex={itemIdx}
             workspaceSlug={workspaceSlug}
+            isFocused={isFocused && focusedItemIndex === itemIdx}
           />
         ))}
 
@@ -514,17 +534,30 @@ function CalendarMobileList({ days, workspaceSlug, onClick }: CalendarMobileList
 
 interface CalendarItemProps {
   row: DatabaseRow;
+  itemIndex?: number;
   workspaceSlug: string;
+  isFocused?: boolean;
 }
 
-function CalendarItem({ row, workspaceSlug }: CalendarItemProps) {
+function CalendarItem({
+  row,
+  itemIndex,
+  workspaceSlug,
+  isFocused = false,
+}: CalendarItemProps) {
   const title = row.page.title || "Untitled";
 
   return (
     <Link
       href={`/${workspaceSlug}/${row.page.id}`}
       onClick={(e) => e.stopPropagation()}
-      className="mb-0.5 block truncate bg-muted px-1 py-0.5 text-xs hover:bg-overlay-active"
+      tabIndex={isFocused ? 0 : -1}
+      data-calendar-item={itemIndex}
+      className={cn(
+        "mb-0.5 block truncate bg-muted px-1 py-0.5 text-xs outline-none hover:bg-overlay-active",
+        "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+        isFocused && "ring-2 ring-ring ring-offset-2",
+      )}
     >
       {row.page.icon && <span className="mr-1">{row.page.icon}</span>}
       {title}

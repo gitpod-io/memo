@@ -126,6 +126,7 @@ const meta: Meta<typeof CalendarView> = {
   args: {
     workspaceSlug: "my-workspace",
     onAddRow: fn(),
+    onNavigate: fn(),
   },
 };
 
