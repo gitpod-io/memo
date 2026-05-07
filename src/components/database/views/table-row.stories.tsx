@@ -153,6 +153,15 @@ export const WithDeleteButton: Story = {
   },
 };
 
+export const WithContextMenu: Story = {
+  name: "With context menu (right-click row)",
+  args: {
+    row: defaultRow,
+    onDeleteRow: fn(),
+    onDuplicateRow: fn(),
+  },
+};
+
 export const UntitledRow: Story = {
   name: "Untitled row",
   args: {

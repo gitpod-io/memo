@@ -2,6 +2,13 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { Copy } from "lucide-react";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
 import { DatabaseEmptyState } from "@/components/database/views/database-empty-state";
 import { getPropertyTypeConfig } from "@/components/database/property-types/index";
@@ -35,6 +42,8 @@ export interface BoardViewProps {
   onCardMove?: (rowId: string, propertyId: string, newOptionId: string | null) => void;
   /** Called when a new row should be added with a pre-filled select value. */
   onAddRow?: (initialValues?: Record<string, Record<string, unknown>>) => void;
+  /** Called to duplicate a row by its page ID. */
+  onDuplicateRow?: (rowId: string) => void;
   /** Called when keyboard Enter navigates to a card. Receives the URL path. */
   onNavigate?: (path: string) => void;
   /** Loading state — shows skeleton. */
@@ -72,6 +81,7 @@ export const BoardView = memo(function BoardView({
   workspaceSlug,
   onCardMove,
   onAddRow,
+  onDuplicateRow,
   onNavigate,
   loading = false,
   hasActiveFilters = false,
@@ -243,6 +253,7 @@ export const BoardView = memo(function BoardView({
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onAddCard={onAddRow ? handleAddCard : undefined}
+            onDuplicateRow={onDuplicateRow}
             onCardFocus={handleCardFocus}
           />
         ))}
@@ -274,6 +285,7 @@ interface BoardColumnProps {
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, columnId: string) => void;
   onAddCard?: (columnId: string) => void;
+  onDuplicateRow?: (rowId: string) => void;
   onCardFocus: (columnIndex: number, cardIndex: number) => void;
 }
 
@@ -305,6 +317,7 @@ function BoardColumn({
   onDragLeave,
   onDrop,
   onAddCard,
+  onDuplicateRow,
   onCardFocus,
 }: BoardColumnProps) {
   const columnRef = useRef<HTMLDivElement>(null);
@@ -374,6 +387,7 @@ function BoardColumn({
             onDragStart={onDragStart}
             onDragEnd={onDragEnd}
             onDragOver={onDragOver}
+            onDuplicateRow={onDuplicateRow}
             onCardFocus={onCardFocus}
           />
         ))}
@@ -417,6 +431,7 @@ interface BoardCardProps {
   onDragStart: (e: React.DragEvent, rowId: string, columnId: string) => void;
   onDragEnd: (e: React.DragEvent) => void;
   onDragOver: (e: React.DragEvent, columnId: string, insertIndex: number) => void;
+  onDuplicateRow?: (rowId: string) => void;
   onCardFocus: (columnIndex: number, cardIndex: number) => void;
 }
 
@@ -434,6 +449,7 @@ function BoardCard({
   onDragStart,
   onDragEnd,
   onDragOver,
+  onDuplicateRow,
   onCardFocus,
 }: BoardCardProps) {
   const title = row.page.title || "Untitled";
@@ -450,60 +466,81 @@ function BoardCard({
     onCardFocus(columnIndex, index);
   }, [onCardFocus, columnIndex, index]);
 
-  return (
-    <>
-      {showDropIndicatorBefore && <div className="h-0.5 bg-accent" />}
-      <Link
-        href={`/${workspaceSlug}/${row.page.id}`}
-        draggable
-        tabIndex={0}
-        role="listitem"
-        aria-label={title}
-        data-testid={`db-board-card-${row.page.id}`}
-        data-board-col={columnIndex}
-        data-board-row={index}
-        onDragStart={(e) => onDragStart(e, row.page.id, columnId)}
-        onDragEnd={onDragEnd}
-        onDragOver={handleCardDragOver}
-        onFocus={handleFocus}
-        className={cn(
-          "mb-1.5 block border border-overlay-border bg-muted p-3",
-          "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-          isDragging && "opacity-50 shadow-lg",
-          isFocused && "ring-2 ring-ring ring-offset-2",
-        )}
-      >
-        {/* Card title */}
-        <p className="line-clamp-2 text-sm font-medium">{title}</p>
+  const cardLink = (
+    <Link
+      href={`/${workspaceSlug}/${row.page.id}`}
+      draggable
+      tabIndex={0}
+      role="listitem"
+      aria-label={title}
+      data-testid={`db-board-card-${row.page.id}`}
+      data-board-col={columnIndex}
+      data-board-row={index}
+      onDragStart={(e) => onDragStart(e, row.page.id, columnId)}
+      onDragEnd={onDragEnd}
+      onDragOver={handleCardDragOver}
+      onFocus={handleFocus}
+      className={cn(
+        "mb-1.5 block border border-overlay-border bg-muted p-3",
+        "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+        isDragging && "opacity-50 shadow-lg",
+        isFocused && "ring-2 ring-ring ring-offset-2",
+      )}
+    >
+      {/* Card title */}
+      <p className="line-clamp-2 text-sm font-medium">{title}</p>
 
-        {/* Card properties */}
-        {visibleProperties.length > 0 && (
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {visibleProperties.map((prop) => {
-              if (prop.type === "formula") {
-                const formulaValue = evaluateFormulaForRow(prop, row, allProperties);
-                if (formulaValue._error || !formulaValue._display) return null;
-                return (
-                  <CardPropertyValue
-                    key={prop.id}
-                    property={prop}
-                    value={formulaValue}
-                  />
-                );
-              }
-              const rv = row.values[prop.id];
-              if (!rv) return null;
+      {/* Card properties */}
+      {visibleProperties.length > 0 && (
+        <div className="mt-1.5 flex flex-wrap gap-1.5">
+          {visibleProperties.map((prop) => {
+            if (prop.type === "formula") {
+              const formulaValue = evaluateFormulaForRow(prop, row, allProperties);
+              if (formulaValue._error || !formulaValue._display) return null;
               return (
                 <CardPropertyValue
                   key={prop.id}
                   property={prop}
-                  value={rv.value}
+                  value={formulaValue}
                 />
               );
-            })}
-          </div>
-        )}
-      </Link>
+            }
+            const rv = row.values[prop.id];
+            if (!rv) return null;
+            return (
+              <CardPropertyValue
+                key={prop.id}
+                property={prop}
+                value={rv.value}
+              />
+            );
+          })}
+        </div>
+      )}
+    </Link>
+  );
+
+  return (
+    <>
+      {showDropIndicatorBefore && <div className="h-0.5 bg-accent" />}
+      {onDuplicateRow ? (
+        <ContextMenu>
+          <ContextMenuTrigger>
+            {cardLink}
+          </ContextMenuTrigger>
+          <ContextMenuContent>
+            <ContextMenuItem
+              onClick={() => onDuplicateRow(row.page.id)}
+              data-testid="card-context-duplicate"
+            >
+              <Copy className="h-4 w-4" />
+              Duplicate
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+      ) : (
+        cardLink
+      )}
     </>
   );
 }

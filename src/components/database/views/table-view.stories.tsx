@@ -182,6 +182,8 @@ const meta: Meta<typeof TableView> = {
     onColumnHeaderClick: fn(),
     onColumnReorder: fn(),
     onDeleteColumn: fn(),
+    onDeleteRow: fn(),
+    onDuplicateRow: fn(),
     onBulkDeleteRows: fn(),
     selectionResetKey: "view-1",
   },

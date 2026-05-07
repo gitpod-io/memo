@@ -606,6 +606,94 @@ export async function addRow(
   return { data: rowPage as Page, error: null };
 }
 
+/** Property types whose values derive from page metadata — skip when duplicating rows. */
+const SKIP_ON_DUPLICATE: ReadonlySet<PropertyType> = new Set([
+  "created_time",
+  "updated_time",
+  "created_by",
+  "formula",
+]);
+
+/**
+ * Duplicate a row within a database. Creates a new child page titled
+ * "{original title} (copy)" and copies all non-computed row_values.
+ *
+ * `sourceRow` provides the in-memory data so we avoid an extra DB round-trip.
+ * `properties` is needed to filter out computed/formula types.
+ */
+export async function duplicateRow(
+  databaseId: string,
+  userId: string,
+  sourceRow: DatabaseRow,
+  properties: DatabaseProperty[],
+): Promise<{ data: Page | null; error: Error | null }> {
+  // Build initialValues from the source row, skipping computed types
+  const skipProps = new Set(
+    properties
+      .filter((p) => SKIP_ON_DUPLICATE.has(p.type))
+      .map((p) => p.id),
+  );
+
+  const initialValues: Record<string, Record<string, unknown>> = {};
+  for (const [propertyId, rv] of Object.entries(sourceRow.values)) {
+    if (skipProps.has(propertyId)) continue;
+    initialValues[propertyId] = rv.value;
+  }
+
+  const supabase = getClient();
+
+  // Look up the workspace_id from the database page
+  const { data: dbPage, error: dbError } = await supabase
+    .from("pages")
+    .select("workspace_id")
+    .eq("id", databaseId)
+    .single();
+
+  if (dbError) {
+    return { data: null, error: dbError };
+  }
+
+  const position = await nextPagePosition(databaseId);
+
+  const newTitle = sourceRow.page.title
+    ? `${sourceRow.page.title} (copy)`
+    : "(copy)";
+
+  const { data: rowPage, error: rowError } = await supabase
+    .from("pages")
+    .insert({
+      workspace_id: dbPage.workspace_id,
+      parent_id: databaseId,
+      title: newTitle,
+      icon: sourceRow.page.icon,
+      is_database: false,
+      position,
+      created_by: userId,
+    })
+    .select()
+    .single();
+
+  if (rowError) {
+    return { data: null, error: rowError };
+  }
+
+  // Insert copied values
+  const valueEntries = Object.entries(initialValues);
+  if (valueEntries.length > 0) {
+    const rows = valueEntries.map(([propertyId, value]) => ({
+      row_id: rowPage.id,
+      property_id: propertyId,
+      value,
+    }));
+
+    await supabase.from("row_values").insert(rows);
+    // Non-fatal if values fail — the row is still usable
+  }
+
+  invalidateDatabase(databaseId);
+  return { data: rowPage as Page, error: null };
+}
+
 /**
  * Upsert a cell value for a row + property combination.
  */

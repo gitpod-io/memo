@@ -96,6 +96,7 @@ export interface TableViewProps {
   sorts?: SortRule[];
   onSortToggle?: (propertyId: string) => void;
   onDeleteRow?: (rowId: string) => void;
+  onDuplicateRow?: (rowId: string) => void;
   /** Bulk delete handler — called with an array of row IDs to delete. */
   onBulkDeleteRows?: (rowIds: string[]) => void;
   loading?: boolean;
@@ -122,6 +123,7 @@ export const TableView = memo(function TableView({
   onColumnReorder,
   onDeleteColumn,
   onDeleteRow,
+  onDuplicateRow,
   onBulkDeleteRows,
   sorts = [],
   onSortToggle,
@@ -474,6 +476,7 @@ export const TableView = memo(function TableView({
                         onCellBlur={handleCellBlur}
                         onCellFocus={handleCellFocus}
                         onDeleteRow={onDeleteRow}
+                        onDuplicateRow={onDuplicateRow}
                         gridTemplateColumns={gridTemplateColumns}
                         isSelected={isSelected(row.page.id)}
                         onToggleSelect={selectionEnabled ? toggleRowSelection : undefined}
@@ -500,6 +503,7 @@ export const TableView = memo(function TableView({
                 onCellBlur={handleCellBlur}
                 onCellFocus={handleCellFocus}
                 onDeleteRow={onDeleteRow}
+                onDuplicateRow={onDuplicateRow}
                 gridTemplateColumns={gridTemplateColumns}
                 isSelected={isSelected(row.page.id)}
                 onToggleSelect={selectionEnabled ? toggleRowSelection : undefined}

@@ -2,8 +2,15 @@
 
 import { memo } from "react";
 import Link from "next/link";
-import { Trash2 } from "lucide-react";
+import { Copy, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
 import type {
   DatabaseProperty,
@@ -48,6 +55,7 @@ export interface TableRowProps {
   onCellBlur: (rowId: string, propertyId: string, newValue: Record<string, unknown>) => void;
   onCellFocus: (rowIndex: number, colIndex: number) => void;
   onDeleteRow?: (rowId: string) => void;
+  onDuplicateRow?: (rowId: string) => void;
   /** CSS grid-template-columns value. When provided, the row renders as its own
    *  grid container instead of using `display: contents`. */
   gridTemplateColumns?: string;
@@ -72,6 +80,7 @@ function areTableRowPropsEqual(prev: TableRowProps, next: TableRowProps): boolea
   if (prev.onCellBlur !== next.onCellBlur) return false;
   if (prev.onCellFocus !== next.onCellFocus) return false;
   if (prev.onDeleteRow !== next.onDeleteRow) return false;
+  if (prev.onDuplicateRow !== next.onDuplicateRow) return false;
   if (prev.gridTemplateColumns !== next.gridTemplateColumns) return false;
   if (prev.isSelected !== next.isSelected) return false;
   if (prev.onToggleSelect !== next.onToggleSelect) return false;
@@ -102,10 +111,41 @@ export const TableRow = memo(function TableRow({
   onCellBlur,
   onCellFocus,
   onDeleteRow,
+  onDuplicateRow,
   gridTemplateColumns,
   isSelected = false,
   onToggleSelect,
 }: TableRowProps) {
+  const hasContextMenu = !!(onDuplicateRow || onDeleteRow);
+
+  const titleCellContent = (
+    <>
+      <Link
+        href={`/${workspaceSlug}/${row.page.id}`}
+        className="min-w-0 flex-1 truncate text-sm text-foreground hover:underline"
+      >
+        {row.page.icon && <span className="mr-1.5">{row.page.icon}</span>}
+        {row.page.title || "Untitled"}
+      </Link>
+      {onDeleteRow && (
+        <button
+          type="button"
+          onClick={() => onDeleteRow(row.page.id)}
+          className="ml-1 shrink-0 text-muted-foreground opacity-0 hover:text-destructive group-hover/row:opacity-100"
+          aria-label="Delete row"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </>
+  );
+
+  const titleCellClass = cn(
+    "group/row flex items-center border-b border-overlay-border p-2 hover:bg-overlay-subtle",
+    isSelected && "bg-overlay-active",
+    rowHeightClass,
+  );
+
   return (
     <div
       role="row"
@@ -137,34 +177,48 @@ export const TableRow = memo(function TableRow({
         </div>
       )}
 
-      {/* Title cell */}
-      <div
-        className={cn(
-          "group/row flex items-center border-b border-overlay-border p-2 hover:bg-overlay-subtle",
-          isSelected && "bg-overlay-active",
-          rowHeightClass,
-        )}
-        role="gridcell"
-        data-testid={`db-table-cell-${rowIndex}-title`}
-      >
-        <Link
-          href={`/${workspaceSlug}/${row.page.id}`}
-          className="min-w-0 flex-1 truncate text-sm text-foreground hover:underline"
-        >
-          {row.page.icon && <span className="mr-1.5">{row.page.icon}</span>}
-          {row.page.title || "Untitled"}
-        </Link>
-        {onDeleteRow && (
-          <button
-            type="button"
-            onClick={() => onDeleteRow(row.page.id)}
-            className="ml-1 shrink-0 text-muted-foreground opacity-0 hover:text-destructive group-hover/row:opacity-100"
-            aria-label="Delete row"
+      {/* Title cell — wrapped in ContextMenu when actions are available */}
+      {hasContextMenu ? (
+        <ContextMenu>
+          <ContextMenuTrigger
+            className={titleCellClass}
+            role="gridcell"
+            data-testid={`db-table-cell-${rowIndex}-title`}
           >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
+            {titleCellContent}
+          </ContextMenuTrigger>
+          <ContextMenuContent>
+            {onDuplicateRow && (
+              <ContextMenuItem
+                onClick={() => onDuplicateRow(row.page.id)}
+                data-testid="row-context-duplicate"
+              >
+                <Copy className="h-4 w-4" />
+                Duplicate
+              </ContextMenuItem>
+            )}
+            {onDeleteRow && onDuplicateRow && <ContextMenuSeparator />}
+            {onDeleteRow && (
+              <ContextMenuItem
+                variant="destructive"
+                onClick={() => onDeleteRow(row.page.id)}
+                data-testid="row-context-delete"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </ContextMenuItem>
+            )}
+          </ContextMenuContent>
+        </ContextMenu>
+      ) : (
+        <div
+          className={titleCellClass}
+          role="gridcell"
+          data-testid={`db-table-cell-${rowIndex}-title`}
+        >
+          {titleCellContent}
+        </div>
+      )}
 
       {/* Property cells */}
       {visibleProperties.map((prop, colIndex) => {
