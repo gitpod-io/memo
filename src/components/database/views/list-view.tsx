@@ -2,7 +2,13 @@
 
 import { memo, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { FileText, Plus } from "lucide-react";
+import { Copy, FileText, Plus } from "lucide-react";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { DatabaseEmptyState } from "@/components/database/views/database-empty-state";
 import { cn } from "@/lib/utils";
 import type {
@@ -26,6 +32,8 @@ export interface ListViewProps {
   workspaceSlug: string;
   /** Called when a new row should be added. */
   onAddRow?: () => void;
+  /** Called to duplicate a row by its page ID. */
+  onDuplicateRow?: (rowId: string) => void;
   /** Called when keyboard Enter navigates to a row. Receives the URL path. */
   onNavigate?: (path: string) => void;
   /** Loading state — shows skeleton. */
@@ -46,6 +54,7 @@ export const ListView = memo(function ListView({
   viewConfig,
   workspaceSlug,
   onAddRow,
+  onDuplicateRow,
   onNavigate,
   loading = false,
   hasActiveFilters = false,
@@ -117,6 +126,7 @@ export const ListView = memo(function ListView({
           workspaceSlug={workspaceSlug}
           isFocused={focusedIndex === index}
           onRowFocus={handleRowFocus}
+          onDuplicateRow={onDuplicateRow}
         />
       ))}
 
@@ -145,6 +155,7 @@ interface ListRowProps {
   workspaceSlug: string;
   isFocused: boolean;
   onRowFocus: (index: number) => void;
+  onDuplicateRow?: (rowId: string) => void;
 }
 
 function ListRow({
@@ -154,12 +165,13 @@ function ListRow({
   workspaceSlug,
   isFocused,
   onRowFocus,
+  onDuplicateRow,
 }: ListRowProps) {
   const handleFocus = useCallback(() => {
     onRowFocus(index);
   }, [onRowFocus, index]);
 
-  return (
+  const link = (
     <Link
       href={`/${workspaceSlug}/${row.page.id}`}
       className={cn(
@@ -205,6 +217,25 @@ function ListRow({
         </span>
       )}
     </Link>
+  );
+
+  if (!onDuplicateRow) return link;
+
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger>
+        {link}
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem
+          onClick={() => onDuplicateRow(row.page.id)}
+          data-testid="list-row-context-duplicate"
+        >
+          <Copy className="h-4 w-4" />
+          Duplicate
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
 

@@ -164,6 +164,7 @@ const meta: Meta<typeof BoardView> = {
     workspaceSlug: "my-workspace",
     onCardMove: fn(),
     onAddRow: fn(),
+    onDuplicateRow: fn(),
     onNavigate: fn(),
   },
 };

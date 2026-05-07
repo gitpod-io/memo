@@ -209,11 +209,12 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
 
   const {
     handleAddRow,
+    handleDuplicateRow,
     handleCardMove,
     handleCellUpdate,
     handleDeleteRow,
     handleBulkDeleteRows,
-  } = useDatabaseRows({ pageId, userId, rows, setRows, setProperties });
+  } = useDatabaseRows({ pageId, userId, rows, properties, setRows, setProperties });
 
   const {
     renameDialogOpen,
@@ -392,6 +393,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   onColumnReorder={handleColumnReorder}
                   onDeleteColumn={handleDeleteColumn}
                   onDeleteRow={handleDeleteRow}
+                  onDuplicateRow={handleDuplicateRow}
                   onBulkDeleteRows={handleBulkDeleteRows}
                   sorts={activeSorts}
                   onSortToggle={handleSortToggle}
@@ -411,6 +413,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   workspaceSlug={workspaceSlug}
                   onCardMove={handleCardMove}
                   onAddRow={handleAddRow}
+                  onDuplicateRow={handleDuplicateRow}
                   onNavigate={router.push}
                   hasActiveFilters={activeFilters.length > 0 || hasActiveSearch}
                   onClearFilters={() => {
@@ -425,6 +428,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   viewConfig={activeView.config}
                   workspaceSlug={workspaceSlug}
                   onAddRow={handleAddRow}
+                  onDuplicateRow={handleDuplicateRow}
                   onNavigate={router.push}
                   hasActiveFilters={activeFilters.length > 0 || hasActiveSearch}
                   onClearFilters={() => {

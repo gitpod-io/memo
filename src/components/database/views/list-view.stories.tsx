@@ -157,6 +157,7 @@ const meta: Meta<typeof ListView> = {
   args: {
     workspaceSlug: "my-workspace",
     onAddRow: fn(),
+    onDuplicateRow: fn(),
     onNavigate: fn(),
   },
 };

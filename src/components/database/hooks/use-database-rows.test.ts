@@ -6,6 +6,7 @@ import { renderHook, act } from "@testing-library/react";
 // ---------------------------------------------------------------------------
 
 const addRowMock = vi.fn();
+const duplicateRowMock = vi.fn();
 const updateRowValueMock = vi.fn();
 const updatePropertyMock = vi.fn();
 const loadDatabaseMock = vi.fn();
@@ -18,6 +19,7 @@ const softDeletePageMock = vi.fn();
 
 vi.mock("@/lib/database", () => ({
   addRow: (...args: unknown[]) => addRowMock(...args),
+  duplicateRow: (...args: unknown[]) => duplicateRowMock(...args),
   updateRowValue: (...args: unknown[]) => updateRowValueMock(...args),
   updateProperty: (...args: unknown[]) => updatePropertyMock(...args),
   loadDatabase: (...args: unknown[]) => loadDatabaseMock(...args),
@@ -30,10 +32,15 @@ vi.mock("@/lib/sentry", () => ({
     isInsufficientPrivilegeErrorMock(error),
 }));
 
+const toastSuccessMock = vi.fn();
+
 vi.mock("sonner", () => ({
   toast: Object.assign(
     (...args: unknown[]) => toastMock(...args),
-    { error: (...args: unknown[]) => toastErrorMock(...args) },
+    {
+      error: (...args: unknown[]) => toastErrorMock(...args),
+      success: (...args: unknown[]) => toastSuccessMock(...args),
+    },
   ),
 }));
 
@@ -91,6 +98,7 @@ function setup(overrides?: Partial<Parameters<typeof useDatabaseRows>[0]>) {
     pageId: "db-1",
     userId: "user-1",
     rows,
+    properties: [] as DatabaseProperty[],
     setRows,
     setProperties,
     ...overrides,

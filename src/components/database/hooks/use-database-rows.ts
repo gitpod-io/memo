@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import {
   addRow,
+  duplicateRow,
   loadDatabase,
   updateProperty,
   updateRowValue,
@@ -21,12 +22,14 @@ export interface UseDatabaseRowsParams {
   pageId: string;
   userId: string;
   rows: DatabaseRow[];
+  properties: DatabaseProperty[];
   setRows: React.Dispatch<React.SetStateAction<DatabaseRow[]>>;
   setProperties: React.Dispatch<React.SetStateAction<DatabaseProperty[]>>;
 }
 
 export interface UseDatabaseRowsReturn {
   handleAddRow: (initialValues?: Record<string, Record<string, unknown>>) => Promise<void>;
+  handleDuplicateRow: (rowId: string) => Promise<void>;
   handleCardMove: (rowId: string, propertyId: string, newOptionId: string | null) => Promise<void>;
   handleCellUpdate: (rowId: string, propertyId: string, value: Record<string, unknown>) => Promise<void>;
   handleDeleteRow: (rowId: string) => void;
@@ -40,6 +43,8 @@ export interface UseDatabaseRowsReturn {
 export function useDatabaseRows({
   pageId,
   userId,
+  rows,
+  properties,
   setRows,
   setProperties,
 }: UseDatabaseRowsParams): UseDatabaseRowsReturn {
@@ -126,6 +131,80 @@ export function useDatabaseRows({
       );
     },
     [pageId, userId, setRows],
+  );
+
+  const handleDuplicateRow = useCallback(
+    async (rowId: string) => {
+      const sourceRow = rows.find((r) => r.page.id === rowId);
+      if (!sourceRow) return;
+
+      // Optimistic: insert a placeholder row right after the source
+      const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const now = new Date().toISOString();
+      const optimisticRow: DatabaseRow = {
+        page: {
+          id: tempId,
+          title: sourceRow.page.title
+            ? `${sourceRow.page.title} (copy)`
+            : "(copy)",
+          icon: sourceRow.page.icon,
+          cover_url: null,
+          created_at: now,
+          updated_at: now,
+          created_by: userId,
+        },
+        values: { ...sourceRow.values },
+      };
+
+      setRows((prev) => {
+        const idx = prev.findIndex((r) => r.page.id === rowId);
+        const next = [...prev];
+        next.splice(idx + 1, 0, optimisticRow);
+        return next;
+      });
+
+      const { data: newPage, error } = await duplicateRow(
+        pageId,
+        userId,
+        sourceRow,
+        properties,
+      );
+
+      if (error || !newPage) {
+        // Rollback
+        setRows((prev) => prev.filter((r) => r.page.id !== tempId));
+        if (error && !isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "database-rows:duplicate");
+        }
+        toast.error("Failed to duplicate row", {
+          duration: 8000,
+          action: {
+            label: "Retry",
+            onClick: () => void handlersRef.current?.handleDuplicateRow(rowId),
+          },
+        });
+        return;
+      }
+
+      // Replace placeholder with real row
+      const realValues: DatabaseRow["values"] = {};
+      for (const [propertyId, rv] of Object.entries(sourceRow.values)) {
+        realValues[propertyId] = {
+          ...rv,
+          row_id: newPage.id,
+        };
+      }
+      setRows((prev) =>
+        prev.map((r) =>
+          r.page.id === tempId
+            ? { page: newPage as DatabaseRow["page"], values: realValues }
+            : r,
+        ),
+      );
+
+      toast.success("Row duplicated");
+    },
+    [pageId, userId, rows, properties, setRows],
   );
 
   const handleCardMove = useCallback(
@@ -408,6 +487,7 @@ export function useDatabaseRows({
 
   const handlers: UseDatabaseRowsReturn = {
     handleAddRow,
+    handleDuplicateRow,
     handleCardMove,
     handleCellUpdate,
     handleDeleteRow,
