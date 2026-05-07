@@ -14,9 +14,15 @@ type SupabaseResult = { error: PostgrestError | null };
 /**
  * Retry a Supabase query when it fails with a transient network error.
  *
+ * Handles both failure modes:
+ * - Result-level errors: `{ data: null, error: PostgrestError }` where the
+ *   error is a transient network failure.
+ * - Thrown errors: Node.js undici `TypeError: fetch failed` that bypasses
+ *   the Supabase result pattern entirely.
+ *
  * Returns the first successful result, or the last error after all retries
  * are exhausted. Only retries on transient network errors — application-level
- * Supabase errors (e.g. RLS violations) are returned immediately.
+ * Supabase errors (e.g. RLS violations) are returned/thrown immediately.
  *
  * Accepts both `Promise` and `PromiseLike` return types — Supabase query
  * builders implement `PromiseLike` but not full `Promise`.
@@ -27,19 +33,43 @@ export async function retryOnNetworkError<T extends SupabaseResult>(
 ): Promise<T> {
   const { maxRetries = 2, baseDelayMs = 500 } = options;
 
-  let lastResult = await fn();
+  let lastThrownError: Error | null = null;
 
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    if (!lastResult.error || !isTransientNetworkError(lastResult.error)) {
-      return lastResult;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    if (attempt > 0) {
+      await new Promise((resolve) =>
+        setTimeout(resolve, baseDelayMs * 2 ** (attempt - 1)),
+      );
     }
 
-    await new Promise((resolve) =>
-      setTimeout(resolve, baseDelayMs * 2 ** attempt),
-    );
+    try {
+      const result = await fn();
 
-    lastResult = await fn();
+      // Result-level error: retry only transient network errors
+      if (result.error && isTransientNetworkError(result.error)) {
+        lastThrownError = null;
+        if (attempt < maxRetries) continue;
+      }
+
+      return result;
+    } catch (error) {
+      // Thrown error: retry only transient network errors
+      if (error instanceof Error && isTransientNetworkError(error)) {
+        lastThrownError = error;
+        if (attempt < maxRetries) continue;
+      }
+
+      // Non-transient thrown error — do not retry
+      throw error;
+    }
   }
 
-  return lastResult;
+  // All retries exhausted with a thrown transient error
+  if (lastThrownError) {
+    throw lastThrownError;
+  }
+
+  // This path is unreachable — the loop always returns or throws — but
+  // TypeScript cannot prove it, so we satisfy the return type.
+  throw new Error("retryOnNetworkError: unexpected state");
 }

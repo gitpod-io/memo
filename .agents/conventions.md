@@ -273,8 +273,9 @@ lazyCaptureException(error);
 ### Retrying transient network errors
 
 Client-side Supabase queries that run on page load (e.g. workspace lookup, page
-list fetch) should use `retryOnNetworkError` from `@/lib/retry` to retry on
-transient network failures before reporting to Sentry:
+list fetch) and server-side API route RPC/query calls should use
+`retryOnNetworkError` from `@/lib/retry` to retry on transient network failures
+before reporting to Sentry:
 
 ```typescript
 import { retryOnNetworkError } from "@/lib/retry";
@@ -285,10 +286,16 @@ const { data, error } = await retryOnNetworkError(() => {
 });
 ```
 
+The utility handles both failure modes:
+- **Result-level errors**: `{ data: null, error: PostgrestError }` where the error
+  is a transient network failure.
+- **Thrown errors**: Node.js undici `TypeError: fetch failed` that bypasses the
+  Supabase result pattern entirely (common in serverless environments).
+
 This retries up to 2 times with exponential backoff (500ms, 1s). Only transient
 network errors are retried — application errors (RLS violations, constraint errors)
-are returned immediately. Do **not** wrap user-initiated mutations (create, update,
-delete) in retry — those should fail fast and show a toast.
+are returned/thrown immediately. Do **not** wrap user-initiated mutations (create,
+update, delete) in retry — those should fail fast and show a toast.
 
 ### Disambiguating Supabase joins
 

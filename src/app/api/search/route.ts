@@ -1,6 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { captureApiError, captureSupabaseError, isInsufficientPrivilegeError } from "@/lib/sentry";
+import {
+  captureApiError,
+  captureSupabaseError,
+  isInsufficientPrivilegeError,
+  isTransientNetworkError,
+} from "@/lib/sentry";
+import { retryOnNetworkError } from "@/lib/retry";
 import { trackEvent } from "@/lib/track-event-server";
 
 export async function GET(request: NextRequest) {
@@ -40,11 +46,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data, error } = await supabase.rpc("search_pages", {
-      query,
-      ws_id: workspaceId,
-      result_limit: 20,
-    });
+    const { data, error } = await retryOnNetworkError(
+      () =>
+        supabase.rpc("search_pages", {
+          query,
+          ws_id: workspaceId,
+          result_limit: 20,
+        }),
+      { maxRetries: 1, baseDelayMs: 500 },
+    );
 
     if (error) {
       if (isInsufficientPrivilegeError(error)) {
@@ -68,9 +78,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     captureApiError(error, "search:query");
+
+    const isTransient =
+      error instanceof Error && isTransientNetworkError(error);
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      {
+        error: isTransient
+          ? "Search temporarily unavailable, please try again"
+          : "Internal server error",
+      },
+      { status: 500 },
     );
   }
 }
