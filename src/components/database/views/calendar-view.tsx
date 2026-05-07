@@ -373,11 +373,12 @@ function CalendarDayCell({
       data-calendar-index={cellIndex}
       className={cn(
         "relative min-h-24 border border-overlay-border p-1 outline-none",
+        "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
         cell.isToday && "bg-accent/10",
         onClick && "cursor-pointer",
         isFocused &&
           focusedItemIndex === null &&
-          "ring-2 ring-ring ring-offset-0",
+          "ring-2 ring-ring ring-offset-2",
       )}
       onClick={onClick ? () => onClick(cell.date) : undefined}
       onFocus={(e) => {
@@ -554,7 +555,8 @@ function CalendarItem({
       data-calendar-item={itemIndex}
       className={cn(
         "mb-0.5 block truncate bg-muted px-1 py-0.5 text-xs outline-none hover:bg-overlay-active",
-        isFocused && "ring-2 ring-ring ring-offset-0",
+        "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+        isFocused && "ring-2 ring-ring ring-offset-2",
       )}
     >
       {row.page.icon && <span className="mr-1">{row.page.icon}</span>}
