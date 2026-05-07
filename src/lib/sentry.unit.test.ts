@@ -243,6 +243,21 @@ describe("isTransientNetworkError", () => {
     });
     expect(isTransientNetworkError(error as unknown as Error)).toBe(true);
   });
+
+  // --- Null details regression test (MEMO-2E / #944) ---
+  // PostgREST 500 responses return `details: null`. The `in` operator in
+  // isPostgrestError passes (key exists), but `null.startsWith()` crashes.
+
+  it("does not crash when PostgREST error has details: null (#944 MEMO-2E)", () => {
+    const error = { message: "server error", code: "XX000", details: null, hint: null };
+    expect(() => isTransientNetworkError(error as unknown as Error)).not.toThrow();
+    expect(isTransientNetworkError(error as unknown as Error)).toBe(false);
+  });
+
+  it("still detects transient fetch error when details is null but message matches (#944 MEMO-2E)", () => {
+    const error = { message: "TypeError: fetch failed", code: "XX000", details: null, hint: null };
+    expect(isTransientNetworkError(error as unknown as Error)).toBe(true);
+  });
 });
 
 describe("isSchemaNotFoundError", () => {
@@ -605,6 +620,14 @@ describe("isSupabaseAuthLockError", () => {
     });
     expect(isSupabaseAuthLockError(error)).toBe(false);
   });
+
+  // --- Null details regression test (MEMO-2E / #944) ---
+
+  it("does not crash when PostgREST error has details: null (#944 MEMO-2E)", () => {
+    const error = { message: "server error", code: "XX000", details: null, hint: null };
+    expect(() => isSupabaseAuthLockError(error as unknown as Error)).not.toThrow();
+    expect(isSupabaseAuthLockError(error as unknown as Error)).toBe(false);
+  });
 });
 
 describe("captureSupabaseError", () => {
@@ -893,6 +916,20 @@ describe("captureSupabaseError", () => {
     // Non-transient → error level (no level override)
     expect(opts.level).toBeUndefined();
     expect(opts.extra.code).toBe("PGRST500");
+  });
+
+  // --- Null details/hint regression test (MEMO-2E / #944) ---
+
+  it("does not crash when PostgREST error has details: null and hint: null (#944 MEMO-2E)", async () => {
+    const error = { message: "server error", code: "XX000", details: null, hint: null };
+    expect(() => captureSupabaseError(error as unknown as Error, "page-tree:fetch-pages")).not.toThrow();
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [, opts] = captureExceptionMock.mock.calls[0];
+    expect(opts.extra.details).toBe("");
+    expect(opts.extra.hint).toBe("");
+    expect(opts.extra.code).toBe("XX000");
   });
 });
 
