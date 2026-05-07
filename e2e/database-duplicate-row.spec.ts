@@ -37,12 +37,6 @@ test.afterAll(async () => {
 /**
  * Click a context menu item by test ID.
  * @base-ui/react menu items animate on open, making them unstable for
- * Playwright's actionability checks. We wait for the element to appear,
- * let the animation settle, then click via evaluate.
- */
-/**
- * Click a context menu item by test ID.
- * @base-ui/react menu items animate on open, making them unstable for
  * Playwright's actionability checks. We poll for the element and click
  * it via evaluate as soon as it appears.
  */
