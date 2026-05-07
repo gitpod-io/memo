@@ -103,3 +103,4 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | 2026-05-06 | Fix database duplication (#908). Added `duplicateDatabase` and `remapViewConfig` to `src/lib/database.ts`. Updated both duplicate code paths (sidebar and page-menu) to handle database pages. Added 1 new Vitest file: `database-duplicate.test.ts` (11 tests). Added 1 new E2E spec: `e2e/database-duplicate.spec.ts` (2 tests). Test totals: 129 Vitest files (1753 tests), 66 E2E specs (322 tests). |
 | 2026-05-06 | Bulk row selection and delete (#779). Added `use-row-selection.ts` hook, `bulk-action-bar.tsx` component, checkbox column in table view, bulk delete in `use-database-rows.ts`. Added 1 new Vitest file: `use-row-selection.test.ts` (10 tests). Added 1 new E2E spec: `e2e/database-bulk-select.spec.ts` (6 tests). Test totals: 130 Vitest files (1763 tests), 67 E2E specs (328 tests). |
 
+

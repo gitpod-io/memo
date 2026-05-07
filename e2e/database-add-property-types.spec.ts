@@ -325,8 +325,10 @@ test.describe("Database: add each property type", () => {
     await expect(header.first()).toBeVisible({ timeout: 5_000 });
 
     await clickLastPropertyCell(page);
-    // The URL cell uses a plain text input (same as text/number/email/phone)
-    const input = page.locator('[role="gridcell"] input');
+    // The URL cell uses a plain text input — use type="text" to avoid matching bulk-select checkboxes
+    const input = page.locator(
+      '[role="gridcell"] input[type="text"]',
+    );
     await expect(input).toBeVisible({ timeout: 5_000 });
     await input.fill("https://example.com");
     await input.blur();
@@ -351,7 +353,9 @@ test.describe("Database: add each property type", () => {
     await expect(header.first()).toBeVisible({ timeout: 5_000 });
 
     await clickLastPropertyCell(page);
-    const input = page.locator('[role="gridcell"] input');
+    const input = page.locator(
+      '[role="gridcell"] input[type="text"]',
+    );
     await expect(input).toBeVisible({ timeout: 5_000 });
     await input.fill("test@example.com");
     await input.blur();
@@ -376,7 +380,9 @@ test.describe("Database: add each property type", () => {
     await expect(header.first()).toBeVisible({ timeout: 5_000 });
 
     await clickLastPropertyCell(page);
-    const input = page.locator('[role="gridcell"] input');
+    const input = page.locator(
+      '[role="gridcell"] input[type="text"]',
+    );
     await expect(input).toBeVisible({ timeout: 5_000 });
     await input.fill("5551234567");
     await input.blur();
