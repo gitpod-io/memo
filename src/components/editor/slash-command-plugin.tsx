@@ -57,6 +57,7 @@ class SlashCommandOption extends MenuOption {
   title: string;
   description: string;
   icon: ReactElement;
+  shortcut?: string;
   onSelect: (queryString: string) => void;
 
   constructor(
@@ -64,6 +65,7 @@ class SlashCommandOption extends MenuOption {
     options: {
       description: string;
       icon: ReactElement;
+      shortcut?: string;
       onSelect: (queryString: string) => void;
     }
   ) {
@@ -71,6 +73,7 @@ class SlashCommandOption extends MenuOption {
     this.title = title;
     this.description = options.description;
     this.icon = options.icon;
+    this.shortcut = options.shortcut;
     this.onSelect = options.onSelect;
   }
 }
@@ -106,6 +109,7 @@ export function SlashCommandPlugin(): JSX.Element | null {
       new SlashCommandOption("Heading 1", {
         description: "Large section heading",
         icon: <Heading1 className="h-5 w-5" />,
+        shortcut: "# Space",
         onSelect: () => {
           editor.update(() => {
             const selection = $getSelection();
@@ -119,6 +123,7 @@ export function SlashCommandPlugin(): JSX.Element | null {
       new SlashCommandOption("Heading 2", {
         description: "Medium section heading",
         icon: <Heading2 className="h-5 w-5" />,
+        shortcut: "## Space",
         onSelect: () => {
           editor.update(() => {
             const selection = $getSelection();
@@ -132,6 +137,7 @@ export function SlashCommandPlugin(): JSX.Element | null {
       new SlashCommandOption("Heading 3", {
         description: "Small section heading",
         icon: <Heading3 className="h-5 w-5" />,
+        shortcut: "### Space",
         onSelect: () => {
           editor.update(() => {
             const selection = $getSelection();
@@ -145,6 +151,7 @@ export function SlashCommandPlugin(): JSX.Element | null {
       new SlashCommandOption("Bullet List", {
         description: "Unordered list",
         icon: <List className="h-5 w-5" />,
+        shortcut: "- Space",
         onSelect: () => {
           editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
         },
@@ -152,6 +159,7 @@ export function SlashCommandPlugin(): JSX.Element | null {
       new SlashCommandOption("Numbered List", {
         description: "Ordered list",
         icon: <ListOrdered className="h-5 w-5" />,
+        shortcut: "1. Space",
         onSelect: () => {
           editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined);
         },
@@ -159,6 +167,7 @@ export function SlashCommandPlugin(): JSX.Element | null {
       new SlashCommandOption("To-do List", {
         description: "Checklist with checkboxes",
         icon: <CheckSquare className="h-5 w-5" />,
+        shortcut: "[] Space",
         onSelect: () => {
           editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined);
         },
@@ -166,6 +175,7 @@ export function SlashCommandPlugin(): JSX.Element | null {
       new SlashCommandOption("Code Block", {
         description: "Code with syntax highlighting",
         icon: <Code className="h-5 w-5" />,
+        shortcut: "```",
         onSelect: () => {
           editor.update(() => {
             const selection = $getSelection();
@@ -179,6 +189,7 @@ export function SlashCommandPlugin(): JSX.Element | null {
       new SlashCommandOption("Quote", {
         description: "Blockquote",
         icon: <Quote className="h-5 w-5" />,
+        shortcut: "> Space",
         onSelect: () => {
           editor.update(() => {
             const selection = $getSelection();
@@ -192,6 +203,7 @@ export function SlashCommandPlugin(): JSX.Element | null {
       new SlashCommandOption("Divider", {
         description: "Horizontal rule",
         icon: <Minus className="h-5 w-5" />,
+        shortcut: "---",
         onSelect: () => {
           editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined);
         },
@@ -362,7 +374,7 @@ export function SlashCommandPlugin(): JSX.Element | null {
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground">
                   {option.icon}
                 </span>
-                <span className="flex flex-col">
+                <span className="flex min-w-0 flex-col">
                   <span className="text-sm font-medium text-foreground">
                     {option.title}
                   </span>
@@ -370,6 +382,11 @@ export function SlashCommandPlugin(): JSX.Element | null {
                     {option.description}
                   </span>
                 </span>
+                {option.shortcut && (
+                  <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                    {option.shortcut}
+                  </span>
+                )}
               </button>
             ))}
           </div>,

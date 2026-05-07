@@ -27,19 +27,20 @@ interface CommandOption {
   title: string;
   description: string;
   icon: ReactElement;
+  shortcut?: string;
 }
 
 const allCommands: CommandOption[] = [
   { title: "Paragraph", description: "Plain text block", icon: <Type className="h-5 w-5" /> },
-  { title: "Heading 1", description: "Large section heading", icon: <Heading1 className="h-5 w-5" /> },
-  { title: "Heading 2", description: "Medium section heading", icon: <Heading2 className="h-5 w-5" /> },
-  { title: "Heading 3", description: "Small section heading", icon: <Heading3 className="h-5 w-5" /> },
-  { title: "Bullet List", description: "Unordered list", icon: <List className="h-5 w-5" /> },
-  { title: "Numbered List", description: "Ordered list", icon: <ListOrdered className="h-5 w-5" /> },
-  { title: "To-do List", description: "Checklist with checkboxes", icon: <CheckSquare className="h-5 w-5" /> },
-  { title: "Code Block", description: "Code with syntax highlighting", icon: <Code className="h-5 w-5" /> },
-  { title: "Quote", description: "Blockquote", icon: <Quote className="h-5 w-5" /> },
-  { title: "Divider", description: "Horizontal rule", icon: <Minus className="h-5 w-5" /> },
+  { title: "Heading 1", description: "Large section heading", icon: <Heading1 className="h-5 w-5" />, shortcut: "# Space" },
+  { title: "Heading 2", description: "Medium section heading", icon: <Heading2 className="h-5 w-5" />, shortcut: "## Space" },
+  { title: "Heading 3", description: "Small section heading", icon: <Heading3 className="h-5 w-5" />, shortcut: "### Space" },
+  { title: "Bullet List", description: "Unordered list", icon: <List className="h-5 w-5" />, shortcut: "- Space" },
+  { title: "Numbered List", description: "Ordered list", icon: <ListOrdered className="h-5 w-5" />, shortcut: "1. Space" },
+  { title: "To-do List", description: "Checklist with checkboxes", icon: <CheckSquare className="h-5 w-5" />, shortcut: "[] Space" },
+  { title: "Code Block", description: "Code with syntax highlighting", icon: <Code className="h-5 w-5" />, shortcut: "```" },
+  { title: "Quote", description: "Blockquote", icon: <Quote className="h-5 w-5" />, shortcut: "> Space" },
+  { title: "Divider", description: "Horizontal rule", icon: <Minus className="h-5 w-5" />, shortcut: "---" },
   { title: "Table", description: "Insert a 3×3 table", icon: <Grid3X3 className="h-5 w-5" /> },
   { title: "Image", description: "Upload an image", icon: <ImageIcon className="h-5 w-5" /> },
   { title: "Callout", description: "Highlighted info block", icon: <MessageSquare className="h-5 w-5" /> },
@@ -77,7 +78,7 @@ function StaticSlashCommandMenu({
             <span className="flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground">
               {option.icon}
             </span>
-            <span className="flex flex-col">
+            <span className="flex min-w-0 flex-col">
               <span className="text-sm font-medium text-foreground">
                 {option.title}
               </span>
@@ -85,6 +86,11 @@ function StaticSlashCommandMenu({
                 {option.description}
               </span>
             </span>
+            {option.shortcut && (
+              <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                {option.shortcut}
+              </span>
+            )}
           </button>
         ))}
       </div>
