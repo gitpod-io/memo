@@ -13,6 +13,7 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { computePosition, flip, shift, offset } from "@floating-ui/react";
 import { lazyCaptureException } from "@/lib/capture";
+import { captureSupabaseError } from "@/lib/sentry";
 import { cn } from "@/lib/utils";
 import type {
   DatabaseProperty,
@@ -144,17 +145,9 @@ export const TableCell = memo(function TableCell({
                 : raw;
               onBlur(rowId, propertyId, { [key]: parsed });
             } catch (err) {
-              lazyCaptureException(
+              captureSupabaseError(
                 err instanceof Error ? err : new Error(String(err)),
-                {
-                  extra: {
-                    operation: "table-view:cell-edit-save",
-                    rowId,
-                    propertyId,
-                    propertyType,
-                  },
-                  level: "warning",
-                },
+                "table-cell:cell-edit-save",
               );
               toast.error("Failed to save cell edit", { duration: 8000 });
             }
@@ -188,16 +181,9 @@ export const TableCell = memo(function TableCell({
             try {
               onBlur(rowId, propertyId, { checked: !checked });
             } catch (err) {
-              lazyCaptureException(
+              captureSupabaseError(
                 err instanceof Error ? err : new Error(String(err)),
-                {
-                  extra: {
-                    operation: "table-view:checkbox-toggle",
-                    rowId,
-                    propertyId,
-                  },
-                  level: "warning",
-                },
+                "table-cell:checkbox-toggle",
               );
               toast.error("Failed to save cell edit", { duration: 8000 });
             }
@@ -374,17 +360,9 @@ function RegistryEditorCell({
         latestValue.current = newValue;
         onBlur(rowId, propertyId, newValue);
       } catch (err) {
-        lazyCaptureException(
+        captureSupabaseError(
           err instanceof Error ? err : new Error(String(err)),
-          {
-            extra: {
-              operation: "table-view:registry-editor-change",
-              rowId,
-              propertyId,
-              propertyType,
-            },
-            level: "warning",
-          },
+          "table-cell:registry-editor-change",
         );
         toast.error("Failed to save cell edit", { duration: 8000 });
       }
@@ -396,17 +374,9 @@ function RegistryEditorCell({
     try {
       onBlur(rowId, propertyId, latestValue.current);
     } catch (err) {
-      lazyCaptureException(
+      captureSupabaseError(
         err instanceof Error ? err : new Error(String(err)),
-        {
-          extra: {
-            operation: "table-view:registry-editor-blur",
-            rowId,
-            propertyId,
-            propertyType,
-          },
-          level: "warning",
-        },
+        "table-cell:registry-editor-blur",
       );
       toast.error("Failed to save cell edit", { duration: 8000 });
     }

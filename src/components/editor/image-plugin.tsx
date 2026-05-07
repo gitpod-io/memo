@@ -12,7 +12,6 @@ import {
   DROP_COMMAND,
   type LexicalCommand,
 } from "lexical";
-import { lazyCaptureException } from "@/lib/capture";
 import { toast } from "@/lib/toast";
 import { $createImageNode, type ImagePayload } from "@/components/editor/image-node";
 import { getClient } from "@/lib/supabase/lazy-client";
@@ -118,7 +117,7 @@ export function ImagePlugin(): null {
               });
             })
             .catch((error) => {
-              lazyCaptureException(error);
+              captureSupabaseError(error instanceof Error ? error : new Error(String(error)), "image-plugin:drop-upload");
               toast.error("Failed to upload image", { duration: 8000 });
             });
         }
@@ -168,7 +167,7 @@ export function openImagePicker(editor: ReturnType<typeof useLexicalComposerCont
         altText: file.name,
       });
     } catch (error) {
-      lazyCaptureException(error);
+      captureSupabaseError(error instanceof Error ? error : new Error(String(error)), "image-plugin:picker-upload");
       toast.error("Failed to upload image", { duration: 8000 });
     }
   };

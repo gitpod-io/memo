@@ -5,7 +5,6 @@ import { FileText, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
-import { lazyCaptureException } from "@/lib/capture";
 import { getClient } from "@/lib/supabase/lazy-client";
 import {
   captureSupabaseError,
@@ -98,7 +97,7 @@ async function uploadFile(file: File): Promise<FileEntry | null> {
 
     return { name: file.name, url: urlData.publicUrl };
   } catch (err) {
-    lazyCaptureException(err);
+    captureSupabaseError(err instanceof Error ? err : new Error(String(err)), "files-property:upload-outer");
     toast.error("Failed to upload file", { duration: 8000 });
     return null;
   }

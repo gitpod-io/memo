@@ -4,7 +4,6 @@ import { useCallback, useRef, useState } from "react";
 import { ImagePlus, ImageOff, Replace } from "lucide-react";
 import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError } from "@/lib/sentry";
-import { lazyCaptureException } from "@/lib/capture";
 import { toast } from "@/lib/toast";
 import {
   DropdownMenu,
@@ -85,7 +84,7 @@ export function PageCover({ pageId, initialCoverUrl }: PageCoverProps) {
           toast.error("Failed to save cover image", { duration: 8000 });
         }
       } catch (error) {
-        lazyCaptureException(error);
+        captureSupabaseError(error instanceof Error ? error : new Error(String(error)), "page-cover:upload");
         toast.error("Failed to upload cover image", { duration: 8000 });
       } finally {
         setUploading(false);
@@ -111,7 +110,7 @@ export function PageCover({ pageId, initialCoverUrl }: PageCoverProps) {
         toast.error("Failed to remove cover image", { duration: 8000 });
       }
     } catch (error) {
-      lazyCaptureException(error);
+      captureSupabaseError(error instanceof Error ? error : new Error(String(error)), "page-cover:remove-outer");
       setCoverUrl(previousUrl);
       toast.error("Failed to remove cover image", { duration: 8000 });
     }

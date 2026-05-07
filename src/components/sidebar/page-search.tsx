@@ -3,10 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { FileText, Search, Table2, X } from "lucide-react";
-import { lazyCaptureException } from "@/lib/capture";
 import { Input } from "@/components/ui/input";
 import { getClient } from "@/lib/supabase/lazy-client";
-import { captureSupabaseError } from "@/lib/sentry";
+import { captureApiError, captureSupabaseError } from "@/lib/sentry";
 import { retryOnNetworkError } from "@/lib/retry";
 import { useSidebar } from "@/components/sidebar/sidebar-context";
 
@@ -91,7 +90,7 @@ export function PageSearch() {
       })
       .catch((error: unknown) => {
         if (cancelled) return;
-        lazyCaptureException(error);
+        captureSupabaseError(error instanceof Error ? error : new Error(String(error)), "page-search:workspace-resolve");
         setWorkspaceResolved(true);
       });
 
@@ -124,7 +123,7 @@ export function PageSearch() {
         // AbortErrors are expected when the user types quickly — only
         // capture genuine failures.
         if (!(error instanceof DOMException && error.name === "AbortError")) {
-          lazyCaptureException(error);
+          captureApiError(error, "page-search:search");
         }
         setResults([]);
       } finally {

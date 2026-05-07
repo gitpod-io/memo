@@ -194,6 +194,8 @@ describe("error handling conventions", () => {
       "src/components/auth/oauth-buttons.tsx", // auth sign-in, not a table mutation
       "src/components/change-password-section.tsx", // auth updateUser (password change), not a table mutation
       "src/components/delete-account-section.tsx", // account deletion via RPC
+      "src/components/database/views/table-cell.tsx", // catch wraps onBlur callback, not direct Supabase error objects
+      "src/components/editor/database-plugin.tsx", // createDatabase handles errors internally, outer catch is fallback
       "src/components/editor/image-plugin.tsx", // storage upload, not table RLS
       "src/components/members/invite-accept.tsx", // RPC call, returns app-level error
       "src/components/members/invite-form.tsx", // insert into invites, admin-only
