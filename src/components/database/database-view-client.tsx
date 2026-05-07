@@ -443,6 +443,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   viewConfig={activeView.config}
                   workspaceSlug={workspaceSlug}
                   onAddRow={handleAddRow}
+                  onNavigate={router.push}
                   hasActiveFilters={activeFilters.length > 0 || hasActiveSearch}
                   onClearFilters={() => {
                     void handleFiltersChange([]);
