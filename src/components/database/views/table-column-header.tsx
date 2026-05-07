@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -15,6 +16,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { SortRule } from "@/lib/database-filters";
 import { cn } from "@/lib/utils";
 import type { DatabaseProperty } from "@/lib/types";
@@ -75,6 +86,27 @@ export function TableColumnHeader({
   onResizeStart,
 }: TableColumnHeaderProps) {
   const Icon = PROPERTY_TYPE_ICON[property.type];
+
+  // ---------------------------------------------------------------------------
+  // Delete confirmation
+  // ---------------------------------------------------------------------------
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const requestDelete = useCallback(() => {
+    setShowDeleteConfirm(true);
+  }, []);
+
+  const confirmDelete = useCallback(() => {
+    if (onDeleteColumn) {
+      onDeleteColumn(property.id);
+    }
+    setShowDeleteConfirm(false);
+  }, [onDeleteColumn, property.id]);
+
+  const cancelDelete = useCallback(() => {
+    setShowDeleteConfirm(false);
+  }, []);
 
   return (
     <div
@@ -141,7 +173,7 @@ export function TableColumnHeader({
                   {onColumnHeaderClick && <DropdownMenuSeparator />}
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
-                    onClick={() => onDeleteColumn(property.id)}
+                    onClick={requestDelete}
                   >
                     <Trash2 className="h-4 w-4" />
                     Delete property
@@ -168,6 +200,34 @@ export function TableColumnHeader({
         role="separator"
         aria-orientation="vertical"
       />
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog
+        open={showDeleteConfirm}
+        onOpenChange={(open) => {
+          if (!open) cancelDelete();
+        }}
+      >
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete &ldquo;{property.name}&rdquo;?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              All row values for this column will be permanently deleted. This
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDelete}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

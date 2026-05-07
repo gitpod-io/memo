@@ -362,7 +362,9 @@ test.describe("Database CRUD", () => {
 
   test("user can delete a property column via the column header menu", async ({
     authenticatedPage: page,
-  }) => {
+  }, testInfo) => {
+    // Confirmation dialog + toast dismiss + reload makes this test longer
+    testInfo.setTimeout(60_000);
     await createDatabaseFromSidebar(page);
 
     // Add a row to get the full grid, then add a column
@@ -390,18 +392,27 @@ test.describe("Database CRUD", () => {
     await expect(deleteItem).toBeVisible({ timeout: 5_000 });
     await deleteItem.click();
 
-    // Column is optimistically removed — no confirmation dialog
+    // Confirmation dialog should appear
+    const confirmDialog = page.locator('[data-slot="alert-dialog-content"]');
+    await expect(confirmDialog).toBeVisible({ timeout: 5_000 });
+    await expect(
+      confirmDialog.locator("text=All row values for this column will be permanently deleted"),
+    ).toBeVisible();
+
+    // Confirm the deletion
+    const confirmBtn = confirmDialog.getByRole("button", { name: "Delete" });
+    await confirmBtn.click();
+
+    // Column is optimistically removed after confirmation
     const deletedHeader = page.locator('[role="columnheader"]', {
       hasText: /^text$/i,
     });
     await expect(deletedHeader).not.toBeVisible({ timeout: 5_000 });
 
-    // An undo toast should appear
+    // An undo toast should appear — wait for it to dismiss (deletion persists)
     const undoToast = page.locator('[data-sonner-toast]', { hasText: /Column .* deleted/ });
     await expect(undoToast).toBeVisible({ timeout: 5_000 });
-
-    // Wait for the toast to dismiss and deletion to persist
-    await expect(undoToast).not.toBeVisible({ timeout: 12_000 });
+    await expect(undoToast).not.toBeVisible({ timeout: 15_000 });
 
     // Reload and verify the column is still gone (persisted)
     await page.reload();
@@ -412,6 +423,49 @@ test.describe("Database CRUD", () => {
       hasText: /^text$/i,
     });
     await expect(deletedHeaderAfterReload).not.toBeVisible({ timeout: 5_000 });
+  });
+
+  test("user can cancel property deletion via confirmation dialog", async ({
+    authenticatedPage: page,
+  }) => {
+    await createDatabaseFromSidebar(page);
+
+    // Add a row to get the full grid, then add a column
+    const addRowBtn = page.getByTestId("db-table-add-row");
+    await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
+    await addRowBtn.click();
+    await expect(page.locator('[role="grid"]')).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Add a text column
+    await addColumnViaTypePicker(page, "Text");
+
+    // Verify the column exists
+    const propertyHeader = page
+      .locator('[role="columnheader"]', { hasText: /^text$/i })
+      .first();
+    await expect(propertyHeader).toBeVisible({ timeout: 5_000 });
+
+    // Open the column header menu and click "Delete property"
+    await openColumnMenu(page, propertyHeader);
+    const deleteItem = page.getByRole("menuitem", { name: "Delete property" });
+    await expect(deleteItem).toBeVisible({ timeout: 5_000 });
+    await deleteItem.click();
+
+    // Confirmation dialog should appear
+    const confirmDialog = page.locator('[data-slot="alert-dialog-content"]');
+    await expect(confirmDialog).toBeVisible({ timeout: 5_000 });
+
+    // Cancel the deletion
+    const cancelBtn = confirmDialog.getByRole("button", { name: "Cancel" });
+    await cancelBtn.click();
+
+    // Dialog should close
+    await expect(confirmDialog).not.toBeVisible({ timeout: 5_000 });
+
+    // Column should still exist
+    await expect(propertyHeader).toBeVisible({ timeout: 5_000 });
   });
 
   test("user can undo column deletion via toast", async ({
@@ -441,6 +495,12 @@ test.describe("Database CRUD", () => {
     const deleteItem = page.getByRole("menuitem", { name: "Delete property" });
     await expect(deleteItem).toBeVisible({ timeout: 5_000 });
     await deleteItem.click();
+
+    // Confirm the deletion via the confirmation dialog
+    const confirmDialog = page.locator('[data-slot="alert-dialog-content"]');
+    await expect(confirmDialog).toBeVisible({ timeout: 5_000 });
+    const confirmBtn = confirmDialog.getByRole("button", { name: "Delete" });
+    await confirmBtn.click();
 
     // Column is optimistically removed
     await expect(

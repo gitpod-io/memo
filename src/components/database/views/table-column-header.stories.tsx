@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { fn } from "@storybook/test";
+import { expect, fn, userEvent, within, waitFor } from "@storybook/test";
 import { TableColumnHeader } from "./table-column-header";
 import type { DatabaseProperty } from "@/lib/types";
 
@@ -172,5 +172,42 @@ export const TitleColumn: Story = {
     property: textProp,
     onColumnHeaderClick: fn(),
     onDeleteColumn: fn(),
+  },
+};
+
+export const DeleteConfirmation: Story = {
+  name: "Delete confirmation dialog",
+  args: {
+    property: dateProp,
+    onColumnHeaderClick: fn(),
+    onDeleteColumn: fn(),
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-48 bg-background" style={{ minHeight: 300 }}>
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Open the column header dropdown menu
+    const menuTrigger = canvas.getByLabelText("Due Date column menu");
+    await userEvent.click(menuTrigger);
+
+    // Click "Delete property" to open the confirmation dialog
+    const deleteItem = await waitFor(() =>
+      within(document.body).getByText("Delete property"),
+    );
+    await userEvent.click(deleteItem);
+
+    // Verify the confirmation dialog is visible
+    await waitFor(() => {
+      const dialog = within(document.body).getByText(
+        /All row values for this column will be permanently deleted/,
+      );
+      expect(dialog).toBeInTheDocument();
+    });
   },
 };
