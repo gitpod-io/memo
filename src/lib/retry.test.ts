@@ -141,4 +141,55 @@ describe("retryOnNetworkError", () => {
     expect(fn).toHaveBeenCalledTimes(3);
     expect(result).toEqual({ data: { id: "ws-1" }, error: null });
   });
+
+  it("retries on thrown transient network error and succeeds (#937)", async () => {
+    const fetchError = new TypeError("fetch failed");
+    const fn = vi
+      .fn()
+      .mockRejectedValueOnce(fetchError)
+      .mockResolvedValueOnce({ data: { id: "ws-1" }, error: null });
+
+    const promise = retryOnNetworkError(fn, {
+      maxRetries: 1,
+      baseDelayMs: 100,
+    });
+
+    await vi.advanceTimersByTimeAsync(100);
+    const result = await promise;
+
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(result).toEqual({ data: { id: "ws-1" }, error: null });
+  });
+
+  it("re-throws transient error after all retries exhausted (#937)", async () => {
+    const fetchError = new TypeError("fetch failed");
+    const fn = vi.fn().mockRejectedValue(fetchError);
+
+    let caughtError: Error | null = null;
+    const promise = retryOnNetworkError(fn, {
+      maxRetries: 1,
+      baseDelayMs: 100,
+    }).catch((err: Error) => {
+      caughtError = err;
+    });
+
+    await vi.advanceTimersByTimeAsync(100);
+    await promise;
+
+    expect(caughtError).toBe(fetchError);
+    expect(fn).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry non-transient thrown errors", async () => {
+    const appError = new Error("Something unexpected");
+    const fn = vi.fn().mockRejectedValue(appError);
+
+    const promise = retryOnNetworkError(fn, {
+      maxRetries: 2,
+      baseDelayMs: 100,
+    });
+
+    await expect(promise).rejects.toThrow("Something unexpected");
+    expect(fn).toHaveBeenCalledOnce();
+  });
 });
