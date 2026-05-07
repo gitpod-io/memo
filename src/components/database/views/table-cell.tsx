@@ -12,8 +12,7 @@ import type { ErrorInfo, ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { computePosition, flip, shift, offset } from "@floating-ui/react";
-import { lazyCaptureException } from "@/lib/capture";
-import { captureSupabaseError } from "@/lib/sentry";
+import { captureSupabaseError, lazyCaptureException } from "@/lib/sentry";
 import { cn } from "@/lib/utils";
 import type {
   DatabaseProperty,

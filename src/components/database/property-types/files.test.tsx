@@ -21,16 +21,13 @@ vi.mock("@/lib/supabase/lazy-client", () => ({
 
 vi.mock("@/lib/sentry", () => ({
   captureSupabaseError: vi.fn(),
+  lazyCaptureException: vi.fn(),
   isInsufficientPrivilegeError: vi.fn().mockReturnValue(false),
   isSchemaNotFoundError: vi.fn().mockReturnValue(false),
 }));
 
 vi.mock("@/lib/toast", () => ({
   toast: { error: vi.fn() },
-}));
-
-vi.mock("@/lib/capture", () => ({
-  lazyCaptureException: vi.fn(),
 }));
 
 // ---------------------------------------------------------------------------

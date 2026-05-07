@@ -18,11 +18,8 @@ vi.mock("@/lib/database", () => ({
 
 vi.mock("@/lib/sentry", () => ({
   captureSupabaseError: (...args: unknown[]) => captureSupabaseErrorMock(...args),
-  isInsufficientPrivilegeError: () => false,
-}));
-
-vi.mock("@/lib/capture", () => ({
   lazyCaptureException: vi.fn(),
+  isInsufficientPrivilegeError: () => false,
 }));
 
 vi.mock("@sentry/nextjs", () => ({

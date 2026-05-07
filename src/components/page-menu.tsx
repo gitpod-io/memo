@@ -18,9 +18,8 @@ import {
   readFileAsText,
   parseMarkdownToEditorState,
 } from "@/components/editor/markdown-utils";
-import { lazyCaptureException } from "@/lib/capture";
 import { getClient } from "@/lib/supabase/lazy-client";
-import { captureSupabaseError } from "@/lib/sentry";
+import { captureSupabaseError, lazyCaptureException } from "@/lib/sentry";
 import { trackEventClient } from "@/lib/track-event";
 import { duplicateDatabase } from "@/lib/database";
 import { useFavorite } from "@/components/sidebar/favorites-section";

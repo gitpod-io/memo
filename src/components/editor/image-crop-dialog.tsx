@@ -2,7 +2,7 @@
 
 import type { JSX } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { lazyCaptureException } from "@/lib/capture";
+import { lazyCaptureException } from "@/lib/sentry";
 import { toast } from "@/lib/toast";
 import {
   Dialog,
