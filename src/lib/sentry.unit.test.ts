@@ -1474,13 +1474,47 @@ describe("isE2ETestRequest", () => {
     expect(isE2ETestRequest(event)).toBe(false);
   });
 
-  it("returns false when request has no headers", () => {
+  it("returns true when request has no headers but browser context is HeadlessChrome", () => {
+    const event = {
+      type: undefined,
+      request: {},
+      contexts: { browser: { name: "HeadlessChrome", version: "147.0.0" } },
+    } as unknown as ErrorEvent;
+    expect(isE2ETestRequest(event)).toBe(true);
+  });
+
+  it("returns true when event has no request but browser context is HeadlessChrome", () => {
+    const event = {
+      type: undefined,
+      contexts: { browser: { name: "HeadlessChrome", version: "147.0.0" } },
+    } as unknown as ErrorEvent;
+    expect(isE2ETestRequest(event)).toBe(true);
+  });
+
+  it("returns false when browser context is regular Chrome", () => {
+    const event = {
+      type: undefined,
+      request: {},
+      contexts: { browser: { name: "Chrome", version: "147.0.0" } },
+    } as unknown as ErrorEvent;
+    expect(isE2ETestRequest(event)).toBe(false);
+  });
+
+  it("returns false when request has no headers and no browser context", () => {
     const event = { type: undefined, request: {} } as unknown as ErrorEvent;
     expect(isE2ETestRequest(event)).toBe(false);
   });
 
-  it("returns false when event has no request", () => {
+  it("returns false when event has no request and no contexts", () => {
     const event = { type: undefined } as ErrorEvent;
+    expect(isE2ETestRequest(event)).toBe(false);
+  });
+
+  it("returns false when browser context name is not a string", () => {
+    const event = {
+      type: undefined,
+      contexts: { browser: { name: 42 } },
+    } as unknown as ErrorEvent;
     expect(isE2ETestRequest(event)).toBe(false);
   });
 });

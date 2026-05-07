@@ -396,9 +396,15 @@ filter these out:
 - **Client-side** — Playwright's auth fixture sets `window.__SENTRY_DISABLED__`
   via `addInitScript`. The `beforeSend` filter checks `isE2ETestSession()`.
 - **Server-side** — `sentry.server.config.ts` and `sentry.edge.config.ts` use
-  `isE2ETestRequest(event)` which checks the request user-agent for
-  `HeadlessChrome/`. This catches errors from API routes and server components
-  that the client-side flag cannot reach.
+  `isE2ETestRequest(event)` which checks two sources:
+  1. `event.request.headers` for `HeadlessChrome/` in the User-Agent — works for
+     unhandled exceptions where Sentry auto-attaches request context.
+  2. `event.contexts.browser.name` for `HeadlessChrome` — fallback for manually
+     captured exceptions (via `captureException`/`lazyCaptureException`) where
+     `event.request` is empty but the SDK enriches browser context.
+
+  Both checks are needed because manually captured exceptions skip request
+  header enrichment. Always check both paths when filtering E2E test noise.
 
 When adding new Sentry config files or `beforeSend` filters, always include
 both `isNextjsInternalNoise` and `isE2ETestRequest` checks.
