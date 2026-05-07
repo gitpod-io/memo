@@ -161,7 +161,7 @@ export function SignUpForm() {
               minLength={6}
             />
           </div>
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {error && <p className="text-xs text-destructive" role="alert">{error}</p>}
           <Button type="submit" disabled={loading} className="mt-1">
             {loading ? "Creating account…" : "Sign up"}
           </Button>

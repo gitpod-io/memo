@@ -81,9 +81,9 @@ describe("ResetPasswordPage", () => {
     form.requestSubmit();
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Passwords do not match."),
-      ).toBeInTheDocument();
+      const errorEl = screen.getByText("Passwords do not match.");
+      expect(errorEl).toBeInTheDocument();
+      expect(errorEl).toHaveAttribute("role", "alert");
     });
 
     expect(mockUpdateUser).not.toHaveBeenCalled();
@@ -143,7 +143,9 @@ describe("ResetPasswordPage", () => {
     form.requestSubmit();
 
     await waitFor(() => {
-      expect(screen.getByText("Token expired")).toBeInTheDocument();
+      const errorEl = screen.getByText("Token expired");
+      expect(errorEl).toBeInTheDocument();
+      expect(errorEl).toHaveAttribute("role", "alert");
     });
   });
 

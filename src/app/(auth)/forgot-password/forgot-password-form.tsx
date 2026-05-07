@@ -113,7 +113,7 @@ export function ForgotPasswordForm() {
               autoFocus
             />
           </div>
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {error && <p className="text-xs text-destructive" role="alert">{error}</p>}
           <Button type="submit" disabled={loading} className="mt-1">
             {loading ? "Sending…" : "Send reset link"}
           </Button>

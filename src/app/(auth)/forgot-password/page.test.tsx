@@ -114,7 +114,9 @@ describe("ForgotPasswordPage", () => {
     form.requestSubmit();
 
     await waitFor(() => {
-      expect(screen.getByText("Rate limit exceeded")).toBeInTheDocument();
+      const errorEl = screen.getByText("Rate limit exceeded");
+      expect(errorEl).toBeInTheDocument();
+      expect(errorEl).toHaveAttribute("role", "alert");
     });
   });
 

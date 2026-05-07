@@ -100,7 +100,9 @@ describe("SignUpPage", () => {
     form.requestSubmit();
 
     await waitFor(() => {
-      expect(screen.getByText("User already registered")).toBeInTheDocument();
+      const errorEl = screen.getByText("User already registered");
+      expect(errorEl).toBeInTheDocument();
+      expect(errorEl).toHaveAttribute("role", "alert");
     });
   });
 

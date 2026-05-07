@@ -96,9 +96,9 @@ describe("SignInPage", () => {
     form.requestSubmit();
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Invalid login credentials"),
-      ).toBeInTheDocument();
+      const errorEl = screen.getByText("Invalid login credentials");
+      expect(errorEl).toBeInTheDocument();
+      expect(errorEl).toHaveAttribute("role", "alert");
     });
   });
 

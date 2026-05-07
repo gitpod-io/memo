@@ -120,7 +120,7 @@ function SignInFormInner() {
               Email confirmed — you can now sign in.
             </p>
           )}
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {error && <p className="text-xs text-destructive" role="alert">{error}</p>}
           <Button type="submit" disabled={loading} className="mt-1">
             {loading ? "Signing in…" : "Sign in"}
           </Button>
