@@ -51,6 +51,12 @@ export function useDatabaseRows({
   // Ref holds the latest handlers so retry closures always call the current version
   const handlersRef = useRef<UseDatabaseRowsReturn>(null);
 
+  // Refs for values used inside callbacks to keep callback references stable
+  const rowsRef = useRef(rows);
+  const propertiesRef = useRef(properties);
+  useEffect(() => { rowsRef.current = rows; });
+  useEffect(() => { propertiesRef.current = properties; });
+
   const handleAddRow = useCallback(
     async (initialValues?: Record<string, Record<string, unknown>>) => {
       // Generate a temporary ID for the optimistic row
@@ -135,7 +141,7 @@ export function useDatabaseRows({
 
   const handleDuplicateRow = useCallback(
     async (rowId: string) => {
-      const sourceRow = rows.find((r) => r.page.id === rowId);
+      const sourceRow = rowsRef.current.find((r) => r.page.id === rowId);
       if (!sourceRow) return;
 
       // Optimistic: insert a placeholder row right after the source
@@ -167,7 +173,7 @@ export function useDatabaseRows({
         pageId,
         userId,
         sourceRow,
-        properties,
+        propertiesRef.current,
       );
 
       if (error || !newPage) {
@@ -204,7 +210,7 @@ export function useDatabaseRows({
 
       toast.success("Row duplicated");
     },
-    [pageId, userId, rows, properties, setRows],
+    [pageId, userId, setRows],
   );
 
   const handleCardMove = useCallback(
