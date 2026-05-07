@@ -191,7 +191,7 @@ export function WorkspaceHome({
                     <FileText className="h-4 w-4 text-muted-foreground" />
                   )}
                 </span>
-                <span className="flex-1 truncate">
+                <span className="flex-1 truncate" title={visit.title || "Untitled"}>
                   {visit.title || "Untitled"}
                 </span>
                 <RelativeTime
@@ -272,7 +272,7 @@ export function WorkspaceHome({
                     <FileText className="h-4 w-4 text-muted-foreground" />
                   )}
                 </span>
-                <span className="flex-1 truncate">
+                <span className="flex-1 truncate" title={page.title || "Untitled"}>
                   {page.title || "Untitled"}
                 </span>
                 <RelativeTime

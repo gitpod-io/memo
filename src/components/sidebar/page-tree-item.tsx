@@ -156,6 +156,7 @@ export function PageTreeItem({
         <button
           className="flex-1 truncate text-left"
           onClick={() => onNavigate(page.id)}
+          title={page.title || "Untitled"}
         >
           {page.title || "Untitled"}
         </button>
