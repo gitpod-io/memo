@@ -211,46 +211,99 @@ test.describe("Database bulk row selection", () => {
     await expect(rowCheckbox3).not.toHaveAttribute("data-checked", "");
   });
 
-  test("bulk delete removes selected rows with undo toast", async ({
+  test("bulk delete shows confirmation dialog and removes row on confirm", async ({
     authenticatedPage: page,
   }) => {
     await createDatabaseFromSidebar(page);
-    await addRows(page, 3);
+    await addRows(page, 2);
 
-    // Select all rows
-    const selectAll = page.locator('[data-testid="db-table-select-all"]');
-    await selectAll.click();
+    // Select a single row
+    const cb0 = page.locator('[data-testid="db-table-row-checkbox-0"]');
+    await expect(cb0).toBeVisible({ timeout: 5_000 });
+    await cb0.click();
+
+    await expect(
+      page.locator('[data-testid="db-bulk-selection-count"]'),
+    ).toHaveText("1 row selected", { timeout: 5_000 });
+
+    // Click the bulk delete button — should open confirmation dialog, not delete
+    const deleteBtn = page.locator('[data-testid="db-bulk-delete-button"]');
+    await expect(deleteBtn).toBeVisible({ timeout: 5_000 });
+    await deleteBtn.click();
+
+    // Confirmation dialog should appear
+    const dialog = page.getByRole("alertdialog");
+    await expect(dialog).toBeVisible({ timeout: 5_000 });
+    await expect(dialog.getByText("Delete 1 row?")).toBeVisible();
+    await expect(
+      dialog.getByText(
+        "This row and its page content will be moved to trash.",
+      ),
+    ).toBeVisible();
+
+    // The destructive confirm button should be present
+    const confirmBtn = page.locator('[data-testid="db-bulk-delete-confirm"]');
+    await expect(confirmBtn).toBeVisible();
+
+    // Confirm deletion
+    await confirmBtn.click();
+
+    // Dialog should close and row should be removed
+    await expect(dialog).not.toBeVisible({ timeout: 5_000 });
+    await expect(
+      page.locator('[data-testid="db-table-row-0"]'),
+    ).toBeVisible({ timeout: 5_000 });
+
+    // Undo toast should appear
+    const undoToast = page.locator('[data-sonner-toast]', {
+      hasText: /1 row.* deleted/,
+    });
+    await expect(undoToast).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("bulk delete confirmation dialog can be cancelled", async ({
+    authenticatedPage: page,
+  }) => {
+    await createDatabaseFromSidebar(page);
+    await addRows(page, 2);
+
+    // Wait for the grid to stabilise before interacting with checkboxes
+    const row0 = page.locator('[data-testid="db-table-row-0"]');
+    await expect(row0).toBeVisible({ timeout: 10_000 });
+
+    // Select the row
+    const rowCheckbox = page.locator(
+      '[data-testid="db-table-row-checkbox-0"]',
+    );
+    await expect(rowCheckbox).toBeVisible({ timeout: 5_000 });
+    await rowCheckbox.click();
+
+    // Wait for action bar to appear
+    const actionBar = page.locator('[data-testid="db-bulk-action-bar"]');
+    await expect(actionBar).toBeVisible({ timeout: 10_000 });
 
     // Click the bulk delete button
     const deleteBtn = page.locator('[data-testid="db-bulk-delete-button"]');
     await expect(deleteBtn).toBeVisible({ timeout: 5_000 });
     await deleteBtn.click();
 
-    // Rows should be removed from the table
-    await expect(
-      page.locator('[data-testid="db-table-row-0"]'),
-    ).not.toBeVisible({ timeout: 5_000 });
+    // Confirmation dialog should appear
+    const dialog = page.getByRole("alertdialog");
+    await expect(dialog).toBeVisible({ timeout: 5_000 });
 
-    // Undo toast should appear
-    const undoToast = page.locator('[data-sonner-toast]', {
-      hasText: "3 rows deleted",
-    });
-    await expect(undoToast).toBeVisible({ timeout: 5_000 });
+    // Cancel the dialog
+    const cancelBtn = page.locator('[data-testid="db-bulk-delete-cancel"]');
+    await expect(cancelBtn).toBeVisible({ timeout: 5_000 });
+    await cancelBtn.click();
 
-    // Click undo
-    const undoBtn = undoToast.getByRole("button", { name: "Undo" });
-    await undoBtn.click();
+    // Dialog should close
+    await expect(dialog).not.toBeVisible({ timeout: 5_000 });
 
-    // Rows should be restored
-    await expect(
-      page.locator('[data-testid="db-table-row-0"]'),
-    ).toBeVisible({ timeout: 5_000 });
-    await expect(
-      page.locator('[data-testid="db-table-row-1"]'),
-    ).toBeVisible({ timeout: 5_000 });
-    await expect(
-      page.locator('[data-testid="db-table-row-2"]'),
-    ).toBeVisible({ timeout: 5_000 });
+    // Row should still be present
+    await expect(row0).toBeVisible({ timeout: 5_000 });
+
+    // Bulk action bar should still be visible (selection preserved)
+    await expect(actionBar).toBeVisible({ timeout: 5_000 });
   });
 
   test("clear selection button in action bar works", async ({
