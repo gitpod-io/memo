@@ -254,6 +254,19 @@ proper `Error` before sending to Sentry so they get proper stack traces and
 grouping. The `isPostgrestError` duck-type check in `src/lib/sentry.ts` also
 handles both shapes.
 
+**Null-safety for PostgREST fields:** PostgREST error responses may return
+`details: null` and `hint: null` (e.g. PGRST500 server errors). The `in` operator
+in `isPostgrestError` returns `true` when the key exists regardless of value type.
+Always null-coalesce when reading these fields:
+
+```typescript
+// ✅ Correct — handles null from PostgREST 500 responses
+const details = isPostgrestError(error) ? (error.details ?? "") : "";
+
+// ❌ Wrong — crashes with TypeError: null.startsWith() / null.includes()
+const details = isPostgrestError(error) ? error.details : "";
+```
+
 ### Always use `captureApiError` for internal API fetch errors
 
 Non-Supabase fetch calls (e.g. `/api/pages/…/versions`) must use `captureApiError`

@@ -56,7 +56,7 @@ export function isE2ETestRequest(event: ErrorEvent): boolean {
  */
 function isPostgrestError(
   error: unknown,
-): error is { message: string; code: string; details: string; hint: string } {
+): error is { message: string; code: string; details: string | null; hint: string | null } {
   if (error == null || typeof error !== "object") return false;
   return (
     "message" in error &&
@@ -317,7 +317,8 @@ const NODE_FETCH_CAUSE_PATTERNS = [
  */
 export function isSupabaseAuthLockError(error: Error): boolean {
   const msg = error.message;
-  const details = isPostgrestError(error) ? error.details : "";
+  // PostgREST 500 responses may have `details: null` — coalesce to ""
+  const details = isPostgrestError(error) ? (error.details ?? "") : "";
 
   return (
     msg.includes("Lock broken by another request") ||
@@ -429,7 +430,8 @@ export function isSupabaseAuthLockContention(event: ErrorEvent): boolean {
  */
 export function isTransientNetworkError(error: Error): boolean {
   const msg = error.message;
-  const details = isPostgrestError(error) ? error.details : "";
+  // PostgREST 500 responses may have `details: null` — coalesce to ""
+  const details = isPostgrestError(error) ? (error.details ?? "") : "";
 
   // Browser-style fetch errors.
   // The Supabase client may append the hostname in parentheses, e.g.
@@ -548,8 +550,8 @@ export function captureSupabaseError(
 
   if (isPostgrestError(error)) {
     extra.code = error.code;
-    extra.details = error.details;
-    extra.hint = error.hint;
+    extra.details = error.details ?? "";
+    extra.hint = error.hint ?? "";
   }
 
   // Wrap plain objects in a proper Error for Sentry grouping
