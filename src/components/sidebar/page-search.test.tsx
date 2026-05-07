@@ -31,6 +31,7 @@ vi.mock("@/lib/supabase/client", () => ({
 }));
 
 vi.mock("@/lib/sentry", () => ({
+  captureApiError: vi.fn(),
   captureSupabaseError: vi.fn(),
   isTransientNetworkError: vi.fn().mockReturnValue(false),
 }));
@@ -584,10 +585,6 @@ describe("PageSearch", () => {
     // Regression test for #178: if retryOnNetworkError rejects,
     // workspaceResolved is set to true (from .catch()) and workspaceId
     // stays null. The unified effect transitions directly to "done".
-    const captureException = vi.mocked(
-      (await import("@sentry/nextjs")).captureException
-    );
-
     mockMaybeSingle.mockImplementation(() => {
       throw new Error("Unexpected Supabase error");
     });
@@ -613,11 +610,11 @@ describe("PageSearch", () => {
       await vi.advanceTimersByTimeAsync(50);
     });
 
-    // The error should have been captured in Sentry (lazyCaptureException
-    // passes opts as second arg, which is undefined for bare calls)
-    expect(captureException).toHaveBeenCalledWith(
+    // The error should have been captured via captureSupabaseError
+    const { captureSupabaseError: mockCaptureSupabaseError } = await import("@/lib/sentry");
+    expect(mockCaptureSupabaseError).toHaveBeenCalledWith(
       expect.objectContaining({ message: "Unexpected Supabase error" }),
-      undefined,
+      "page-search:workspace-resolve",
     );
 
     // Empty state should show (workspaceResolved=true, workspaceId=null)

@@ -247,7 +247,7 @@ export function PageMenu({
         router.push(`/${workspaceSlug}/${newPage.id}`);
         router.refresh();
       } catch (error) {
-        lazyCaptureException(error);
+        captureSupabaseError(error instanceof Error ? error : new Error(String(error)), "page-menu:import");
         toast.error("Failed to read or parse the markdown file", {
           duration: 8000,
         });

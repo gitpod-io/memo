@@ -17,7 +17,7 @@ import {
   type LexicalCommand,
 } from "lexical";
 import { Plus, Search, Table2 } from "lucide-react";
-import { lazyCaptureException } from "@/lib/capture";
+import { captureSupabaseError } from "@/lib/sentry";
 import {
   $createDatabaseNode,
   DatabaseNode,
@@ -234,7 +234,7 @@ export function DatabasePlugin(): JSX.Element | null {
       });
       closeMenu();
     } catch (err) {
-      lazyCaptureException(err);
+      captureSupabaseError(err instanceof Error ? err : new Error(String(err)), "database-plugin:create-insert");
       setCreating(false);
     }
   }, [workspaceId, userId, creating, editor, closeMenu]);

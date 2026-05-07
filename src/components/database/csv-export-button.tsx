@@ -9,7 +9,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "@/lib/toast";
-import { lazyCaptureException } from "@/lib/capture";
 import { getClient } from "@/lib/supabase/lazy-client";
 import {
   captureSupabaseError,
@@ -111,7 +110,7 @@ export function CSVExportButton({
           // Client init failed — skip tracking silently
         });
     } catch (error) {
-      lazyCaptureException(error);
+      captureSupabaseError(error instanceof Error ? error : new Error(String(error)), "csv-export:export");
       toast.error("CSV export failed", { duration: 8000 });
     } finally {
       setExporting(false);
