@@ -41,7 +41,7 @@ import {
   LocalPersistencePlugin,
   loadDemoContent,
 } from "@/components/editor/local-persistence-plugin";
-import { lazyCaptureException } from "@/lib/capture";
+import { lazyCaptureException } from "@/lib/sentry";
 
 function validateUrl(url: string): boolean {
   if (url === "https://" || url === "http://") return true;

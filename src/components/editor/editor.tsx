@@ -31,8 +31,7 @@ import type {
   LexicalEditor,
   SerializedEditorState,
 } from "lexical";
-import { lazyCaptureException } from "@/lib/capture";
-import { captureSupabaseError, isInsufficientPrivilegeError } from "@/lib/sentry";
+import { captureSupabaseError, isInsufficientPrivilegeError, lazyCaptureException } from "@/lib/sentry";
 import { editorTheme } from "@/components/editor/theme";
 import { SlashCommandPlugin } from "@/components/editor/slash-command-plugin";
 import { FloatingToolbarPlugin } from "@/components/editor/floating-toolbar-plugin";

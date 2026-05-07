@@ -20,6 +20,33 @@ const eslintConfig = defineConfig([
       "react-hooks/rules-of-hooks": "off",
     },
   },
+  // Prevent raw lazyCaptureException imports — use captureSupabaseError or
+  // captureApiError from @/lib/sentry instead. The classification wrappers
+  // and React error boundaries are exempt.
+  {
+    files: ["src/**/*.ts", "src/**/*.tsx"],
+    ignores: [
+      "src/lib/sentry.ts",
+      "src/lib/capture.ts",
+      "src/app/global-error.tsx",
+      "src/components/route-error.tsx",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@/lib/capture",
+              importNames: ["lazyCaptureException"],
+              message:
+                "Use captureSupabaseError or captureApiError from @/lib/sentry instead. Raw lazyCaptureException bypasses error classification.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;

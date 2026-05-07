@@ -62,10 +62,11 @@ vi.mock("@floating-ui/react", () => ({
   offset: vi.fn(() => ({})),
 }));
 
-// Mock lazyCaptureException to spy on Sentry reporting
+// Mock Sentry reporting helpers
 const mockCaptureException = vi.fn();
-vi.mock("@/lib/capture", () => ({
+vi.mock("@/lib/sentry", () => ({
   lazyCaptureException: (...args: unknown[]) => mockCaptureException(...args),
+  captureSupabaseError: vi.fn(),
 }));
 
 // Mock sonner toast
