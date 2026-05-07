@@ -230,6 +230,22 @@
 }
 
 /*
+ * Reduced motion: disable or shorten animations and transitions for users
+ * who prefer reduced motion (WCAG 2.1 SC 2.3.3). Uses 0.01ms instead of 0s
+ * to avoid breaking JS animationend/transitionend event listeners.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/*
  * Lexical checklist checkbox rendering.
  * Lexical's CheckListPlugin expects ::before pseudo-elements to render checkboxes.
  * Tailwind cannot generate these, so raw CSS is required here.
