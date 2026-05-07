@@ -27,6 +27,11 @@ import {
   Link,
 } from "lucide-react";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   type FontFamilyKey,
   FONT_FAMILIES,
   fontFamilyKeyFromCSS,
@@ -35,6 +40,19 @@ import {
 
 interface FloatingToolbarPluginProps {
   anchorElem: HTMLElement;
+}
+
+/** OS-aware shortcut labels for toolbar buttons. */
+function getToolbarTooltips(isMac: boolean) {
+  const mod = isMac ? "⌘" : "Ctrl+";
+  return {
+    bold: `Bold ${mod}B`,
+    italic: `Italic ${mod}I`,
+    underline: `Underline ${mod}U`,
+    strikethrough: "Strikethrough",
+    code: "Inline code",
+    link: `Link ${mod}K`,
+  };
 }
 
 function getSelectedNode(selection: ReturnType<typeof $getSelection>) {
@@ -66,6 +84,10 @@ export function FloatingToolbarPlugin({
   const [isCode, setIsCode] = useState(false);
   const [isLink, setIsLink] = useState(false);
   const [fontFamily, setFontFamily] = useState<FontFamilyKey>("monospace");
+  const [isMac] = useState(
+    () => typeof navigator !== "undefined" && navigator.platform.toUpperCase().includes("MAC")
+  );
+  const tooltips = getToolbarTooltips(isMac);
 
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
@@ -215,7 +237,7 @@ export function FloatingToolbarPlugin({
       <ToolbarButton
         active={isBold}
         onClick={formatBold}
-        label="Bold (⌘+B)"
+        label={tooltips.bold}
         testId="editor-toolbar-bold"
       >
         <Bold className="h-4 w-4" />
@@ -223,7 +245,7 @@ export function FloatingToolbarPlugin({
       <ToolbarButton
         active={isItalic}
         onClick={formatItalic}
-        label="Italic (⌘+I)"
+        label={tooltips.italic}
         testId="editor-toolbar-italic"
       >
         <Italic className="h-4 w-4" />
@@ -231,7 +253,7 @@ export function FloatingToolbarPlugin({
       <ToolbarButton
         active={isUnderline}
         onClick={formatUnderline}
-        label="Underline (⌘+U)"
+        label={tooltips.underline}
         testId="editor-toolbar-underline"
       >
         <Underline className="h-4 w-4" />
@@ -239,7 +261,7 @@ export function FloatingToolbarPlugin({
       <ToolbarButton
         active={isStrikethrough}
         onClick={formatStrikethrough}
-        label="Strikethrough"
+        label={tooltips.strikethrough}
         testId="editor-toolbar-strikethrough"
       >
         <Strikethrough className="h-4 w-4" />
@@ -247,7 +269,7 @@ export function FloatingToolbarPlugin({
       <ToolbarButton
         active={isCode}
         onClick={formatCode}
-        label="Inline code"
+        label={tooltips.code}
         testId="editor-toolbar-code"
       >
         <Code className="h-4 w-4" />
@@ -255,7 +277,7 @@ export function FloatingToolbarPlugin({
       <ToolbarButton
         active={isLink}
         onClick={toggleLink}
-        label="Link (⌘+K)"
+        label={tooltips.link}
         testId="editor-toolbar-link"
       >
         <Link className="h-4 w-4" />
@@ -304,20 +326,27 @@ function ToolbarButton({
   children: ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      onMouseDown={(e) => e.preventDefault()}
-      className={`flex h-11 w-11 sm:h-7 sm:w-7 items-center justify-center text-sm ${
-        active
-          ? "bg-overlay-active text-foreground"
-          : "text-muted-foreground hover:bg-overlay-hover hover:text-foreground"
-      }`}
-      onClick={onClick}
-      aria-label={label}
-      aria-pressed={active}
-      data-testid={testId}
-    >
-      {children}
-    </button>
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            className={`flex h-11 w-11 sm:h-7 sm:w-7 items-center justify-center text-sm ${
+              active
+                ? "bg-overlay-active text-foreground"
+                : "text-muted-foreground hover:bg-overlay-hover hover:text-foreground"
+            }`}
+            onClick={onClick}
+            aria-label={label}
+            aria-pressed={active}
+            data-testid={testId}
+          />
+        }
+      >
+        {children}
+      </TooltipTrigger>
+      <TooltipContent side="top">{label}</TooltipContent>
+    </Tooltip>
   );
 }
