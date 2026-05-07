@@ -33,9 +33,9 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 
 | Category | Files | Tests |
 |---|---|---|
-| Unit/Integration (Vitest) | 131 | 1795 |
+| Unit/Integration (Vitest) | 132 | 1802 |
 | E2E (Playwright) | 69 | 340 |
-| **Total** | **200** | **2135** |
+| **Total** | **201** | **2142** |
 
 ### Test files by domain
 
@@ -52,7 +52,7 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 - **API**: `health/route.test.ts` (7 tests), `search/route.test.ts` (11 tests), `account/route.test.ts` (6 tests), `cron/purge-trash/route.test.ts` (8 tests), `feedback/route.test.ts` (17 tests), `pages/[pageId]/versions/route.test.ts` (11 tests), `pages/[pageId]/versions/[versionId]/route.test.ts` (11 tests), `e2e/account-deletion.spec.ts` (4 tests)
 - **UI**: `overlay-opacity.test.ts` (2 tests), `toast-error-duration.test.ts` (1 test), `dialog-design-spec.test.ts` (3 tests), `design-spec-compliance.test.ts` (6 tests), `relative-time.test.ts` (7 tests), `e2e/visual-regression.spec.ts` (1 test)
 - **Lib**: `sentry.test.ts` (4 tests), `sentry.unit.test.ts` (149 tests), `retry.test.ts` (6 tests), `track-event-server.test.ts` (6 tests), `track-event.test.ts` (4 tests), `usage-tracking-guard.test.ts` (5 tests)
-- **Infrastructure**: `migrations.test.ts` (33 tests), `build-timeseries.test.mjs` (6 tests)
+- **Infrastructure**: `migrations.test.ts` (33 tests), `build-timeseries.test.mjs` (6 tests), `supabase/client.test.ts` (7 tests)
 
 ## Known Gaps
 
@@ -108,5 +108,6 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | 2026-05-07 | Confirmation dialog for bulk row deletion (#921). Added AlertDialog confirmation to `bulk-action-bar.tsx`. Replaced 1 E2E test with 2 new tests (confirm + cancel) in `database-bulk-select.spec.ts` (6→7). Added 2 Storybook stories (DeleteConfirmation, DeleteConfirmationSingleRow). Test totals: 130 Vitest files (1766 tests), 68 E2E specs (333 tests). |
 | 2026-05-07 | Calendar keyboard navigation (#924). Added `calendar-keyboard.ts` hook and wired into `calendar-view.tsx`. Added 1 new Vitest file: `calendar-keyboard.test.ts` (25 tests). Added 1 new E2E spec: `e2e/database-calendar-keyboard.spec.ts` (7 tests). Test totals: 131 Vitest files (1791 tests), 69 E2E specs (340 tests). |
 | 2026-05-07 | E2E test request browser context fallback (#931). Updated `sentry.unit.test.ts` (108→149 tests): added 4 regression tests for browser context fallback in `isE2ETestRequest`. Test totals: 131 Vitest files (1795 tests), 69 E2E specs (340 tests). |
+| 2026-05-07 | Client-side Supabase cookie null-safety (#933). Added null guard to `createBrowserClient` cookie options in `client.ts`, matching server-side pattern. Added 1 new Vitest file: `supabase/client.test.ts` (7 tests). Test totals: 132 Vitest files (1802 tests), 69 E2E specs (340 tests). |
 
 
