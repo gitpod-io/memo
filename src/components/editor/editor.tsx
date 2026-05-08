@@ -370,10 +370,12 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
               readOnly ? (
                 <ContentEditable
                   className="outline-none min-h-[200px] text-sm opacity-70"
+                  aria-label="Page content (read-only)"
                 />
               ) : (
                 <ContentEditable
                   className="outline-none min-h-[200px] text-sm"
+                  aria-label="Page content"
                   aria-placeholder="Type '/' for commands"
                   placeholder={
                     <div className="pointer-events-none absolute top-0.5 left-8 text-sm text-muted-foreground">

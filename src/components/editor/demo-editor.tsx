@@ -106,6 +106,7 @@ export function DemoEditor() {
             contentEditable={
               <ContentEditable
                 className="outline-none min-h-[200px] text-sm"
+                aria-label="Page content"
                 aria-placeholder="Type '/' for commands"
                 placeholder={
                   <div className="pointer-events-none absolute top-0.5 left-0 text-sm text-muted-foreground">

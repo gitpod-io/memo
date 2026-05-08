@@ -184,7 +184,7 @@ export function InviteForm({
             value={role}
             onValueChange={(val) => setRole(val as InviteRole)}
           >
-            <SelectTrigger size="sm" className="w-28">
+            <SelectTrigger size="sm" className="w-28" aria-label="Invite role">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

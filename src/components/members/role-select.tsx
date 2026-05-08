@@ -25,7 +25,7 @@ export function RoleSelect({
       value={value}
       onValueChange={(val) => onChange(val as MemberRole)}
     >
-      <SelectTrigger size="sm" className="w-28">
+      <SelectTrigger size="sm" className="w-28" aria-label="Member role">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

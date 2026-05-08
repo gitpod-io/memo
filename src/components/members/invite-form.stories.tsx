@@ -41,7 +41,7 @@ export const Empty: Story = {
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="invite-role-empty">Role</Label>
           <Select defaultValue="member">
-            <SelectTrigger size="sm" className="w-28">
+            <SelectTrigger size="sm" className="w-28" aria-label="Invite role">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -75,7 +75,7 @@ export const Filled: Story = {
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="invite-role-filled">Role</Label>
           <Select defaultValue="admin">
-            <SelectTrigger size="sm" className="w-28">
+            <SelectTrigger size="sm" className="w-28" aria-label="Invite role">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -109,7 +109,7 @@ export const Submitting: Story = {
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="invite-role-sending">Role</Label>
           <Select defaultValue="member">
-            <SelectTrigger size="sm" className="w-28">
+            <SelectTrigger size="sm" className="w-28" aria-label="Invite role">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -143,7 +143,7 @@ export const WithInviteLink: Story = {
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="invite-role-link">Role</Label>
           <Select defaultValue="member">
-            <SelectTrigger size="sm" className="w-28">
+            <SelectTrigger size="sm" className="w-28" aria-label="Invite role">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -185,7 +185,7 @@ export const LinkCopied: Story = {
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="invite-role-copied">Role</Label>
           <Select defaultValue="member">
-            <SelectTrigger size="sm" className="w-28">
+            <SelectTrigger size="sm" className="w-28" aria-label="Invite role">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
