@@ -1,29 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/server";
-import { Separator } from "@/components/ui/separator";
-
-const AccountSettingsForm = dynamic(
-  () =>
-    import("@/components/account-settings-form").then(
-      (mod) => mod.AccountSettingsForm,
-    ),
-);
-
-const ChangePasswordSection = dynamic(
-  () =>
-    import("@/components/change-password-section").then(
-      (mod) => mod.ChangePasswordSection,
-    ),
-);
-
-const DeleteAccountSection = dynamic(
-  () =>
-    import("@/components/delete-account-section").then(
-      (mod) => mod.DeleteAccountSection,
-    ),
-);
+import { AccountPageClient } from "@/components/account-page-client";
 
 export const metadata: Metadata = {
   title: "Account settings",
@@ -58,20 +36,12 @@ export default async function AccountPage() {
         Manage your display name, avatar, and account.
       </p>
       <div className="mt-6">
-        <AccountSettingsForm
+        <AccountPageClient
           userId={user.id}
           displayName={displayName}
           email={email}
           avatarUrl={avatarUrl}
         />
-      </div>
-      <Separator className="mt-8 bg-overlay-border" />
-      <div className="mt-8">
-        <ChangePasswordSection />
-      </div>
-      <Separator className="mt-8 bg-overlay-border" />
-      <div className="mt-8">
-        <DeleteAccountSection userEmail={email} />
       </div>
     </div>
   );
