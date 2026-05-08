@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getClient } from "@/lib/supabase/lazy-client";
-import { captureSupabaseError } from "@/lib/sentry";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,7 +45,9 @@ export function ResetPasswordForm() {
     });
 
     if (updateError) {
-      captureSupabaseError(updateError, "reset-password:updateUser");
+      import("@/lib/sentry").then(({ captureSupabaseError }) =>
+        captureSupabaseError(updateError, "reset-password:updateUser"),
+      );
       setError(updateError.message);
       setLoading(false);
       return;
