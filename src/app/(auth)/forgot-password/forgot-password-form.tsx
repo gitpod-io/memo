@@ -65,7 +65,7 @@ export function ForgotPasswordForm() {
             Didn&apos;t receive the email? Check your spam folder or{" "}
             <button
               type="button"
-              className="text-accent underline-offset-4 hover:underline"
+              className="text-accent underline underline-offset-4"
               onClick={() => {
                 setSent(false);
                 setEmail("");
@@ -78,7 +78,7 @@ export function ForgotPasswordForm() {
           <p className="mt-4 text-center text-xs text-muted-foreground">
             <Link
               href="/sign-in"
-              className="text-accent underline-offset-4 hover:underline"
+              className="text-accent underline underline-offset-4"
             >
               Back to sign in
             </Link>
@@ -123,7 +123,7 @@ export function ForgotPasswordForm() {
           Remember your password?{" "}
           <Link
             href="/sign-in"
-            className="text-accent underline-offset-4 hover:underline"
+            className="text-accent underline underline-offset-4"
           >
             Sign in
           </Link>

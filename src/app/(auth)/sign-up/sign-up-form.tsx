@@ -103,7 +103,7 @@ export function SignUpForm() {
             Already confirmed?{" "}
             <Link
               href="/sign-in"
-              className="text-accent underline-offset-4 hover:underline"
+              className="text-accent underline underline-offset-4"
             >
               Sign in
             </Link>
@@ -177,7 +177,7 @@ export function SignUpForm() {
         <OAuthButtons />
         <p className="mt-4 text-center text-xs text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/sign-in" className="text-accent underline-offset-4 hover:underline">
+          <Link href="/sign-in" className="text-accent underline underline-offset-4">
             Sign in
           </Link>
         </p>

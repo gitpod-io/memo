@@ -37,7 +37,7 @@ export function SettingsPageContent({
         <h1 className="text-2xl font-semibold">Workspace settings</h1>
         <Link
           href={`/${workspace.slug}/settings/members`}
-          className="text-sm text-accent underline-offset-4 hover:underline"
+          className="text-sm text-accent underline underline-offset-4"
         >
           Members
         </Link>

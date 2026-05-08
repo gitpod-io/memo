@@ -99,7 +99,7 @@ function SignInFormInner() {
               <Label htmlFor="password">Password</Label>
               <Link
                 href="/forgot-password"
-                className="text-xs text-accent underline-offset-4 hover:underline"
+                className="text-xs text-accent underline underline-offset-4"
               >
                 Forgot password?
               </Link>
@@ -136,7 +136,7 @@ function SignInFormInner() {
         <OAuthButtons />
         <p className="mt-4 text-center text-xs text-muted-foreground">
           Don&apos;t have an account?{" "}
-          <Link href="/sign-up" className="text-accent underline-offset-4 hover:underline">
+          <Link href="/sign-up" className="text-accent underline underline-offset-4">
             Sign up
           </Link>
         </p>

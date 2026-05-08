@@ -36,15 +36,9 @@ function formatViolations(violations: AxeViolation[]): string {
 /**
  * Known pre-existing violations excluded from the audit.
  * Each exclusion is documented with the reason and a tracking issue.
- *
- * - color-contrast: The dark theme tokens (text-muted-foreground, text-label-faint)
- *   produce contrast ratios below 4.5:1 against dark backgrounds. This is a systemic
- *   design token issue tracked in a separate enhancement.
- *
- * - link-in-text-block: Links in auth pages use color-only differentiation without
- *   underline or other non-color indicator. Tracked alongside the contrast fix.
+ * Empty — all known violations have been resolved.
  */
-const KNOWN_VIOLATION_RULES = ["color-contrast", "link-in-text-block"];
+const KNOWN_VIOLATION_RULES: string[] = [];
 
 /**
  * Create an AxeBuilder with known pre-existing violations excluded.
