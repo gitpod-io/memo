@@ -1,6 +1,12 @@
+interface ToastAction {
+  label: React.ReactNode;
+  onClick: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
+}
+
 interface ToastData {
   description?: string;
   duration?: number;
+  action?: ToastAction;
 }
 
 type ToastFn = (message: string, data?: ToastData) => void;

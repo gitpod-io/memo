@@ -10,7 +10,7 @@ import {
 } from "react";
 import type { ErrorInfo, ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { computePosition, flip, shift, offset } from "@floating-ui/react";
 import { captureSupabaseError, lazyCaptureException } from "@/lib/sentry";
 import { cn } from "@/lib/utils";

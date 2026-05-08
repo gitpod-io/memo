@@ -23,7 +23,7 @@ vi.mock("@/lib/database-filters", () => ({
     filterRowsMock(rows, filters, props),
 }));
 
-vi.mock("sonner", () => ({
+vi.mock("@/lib/toast", () => ({
   toast: {
     error: (...args: unknown[]) => toastErrorMock(...args),
   },

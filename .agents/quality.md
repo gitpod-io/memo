@@ -111,5 +111,6 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | 2026-05-07 | Client-side Supabase cookie null-safety (#933). Added null guard to `createBrowserClient` cookie options in `client.ts`, matching server-side pattern. Added 1 new Vitest file: `supabase/client.test.ts` (7 tests). Test totals: 132 Vitest files (1802 tests), 69 E2E specs (340 tests). |
 | 2026-05-07 | Transient fetch retry on search RPC (#937). Extended `retryOnNetworkError` to handle thrown transient errors. Wrapped search route RPC call with retry. Updated 2 files with grown counts: `search/route.test.ts` (11→14), `retry.test.ts` (6→9). Test totals: 132 Vitest files (1808 tests), 69 E2E specs (340 tests). |
 | 2026-05-07 | Prefers-reduced-motion accessibility (#940). Added `@media (prefers-reduced-motion: reduce)` rule to `globals.css`. Added 1 new Vitest file: `reduced-motion.test.ts` (6 tests). Test totals: 133 Vitest files (1818 tests), 69 E2E specs (340 tests). |
+| 2026-05-08 | Replace direct sonner imports with lazy `@/lib/toast` wrapper (#949). Updated 5 source files and 5 test mocks. Added ESLint `no-restricted-imports` rule for `sonner` toast. Extended `ToastData` type with `action` property. No new tests. Test totals unchanged: 133 Vitest files (1818 tests), 69 E2E specs (340 tests). |
 
 

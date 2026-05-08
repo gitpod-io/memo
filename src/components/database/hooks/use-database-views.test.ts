@@ -26,7 +26,7 @@ vi.mock("@/lib/database", () => ({
   loadDatabase: (...args: unknown[]) => loadDatabaseMock(...args),
 }));
 
-vi.mock("sonner", () => ({
+vi.mock("@/lib/toast", () => ({
   toast: {
     error: (...args: unknown[]) => toastErrorMock(...args),
   },

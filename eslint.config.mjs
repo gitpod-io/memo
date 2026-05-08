@@ -23,11 +23,14 @@ const eslintConfig = defineConfig([
   // Prevent raw lazyCaptureException imports — use captureSupabaseError or
   // captureApiError from @/lib/sentry instead. The classification wrappers
   // and React error boundaries are exempt.
+  // Prevent direct sonner toast imports — use @/lib/toast instead to keep
+  // sonner (~15 kB) out of the initial bundle via lazy loading.
   {
     files: ["src/**/*.ts", "src/**/*.tsx"],
     ignores: [
       "src/lib/sentry.ts",
       "src/lib/capture.ts",
+      "src/lib/toast.ts",
       "src/app/global-error.tsx",
       "src/components/route-error.tsx",
     ],
@@ -41,6 +44,12 @@ const eslintConfig = defineConfig([
               importNames: ["lazyCaptureException"],
               message:
                 "Use captureSupabaseError or captureApiError from @/lib/sentry instead. Raw lazyCaptureException bypasses error classification.",
+            },
+            {
+              name: "sonner",
+              importNames: ["toast"],
+              message:
+                "Use @/lib/toast instead. Direct sonner imports bypass lazy-loading and add ~15 kB to the initial bundle.",
             },
           ],
         },
