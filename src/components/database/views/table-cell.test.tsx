@@ -69,8 +69,8 @@ vi.mock("@/lib/sentry", () => ({
   captureSupabaseError: vi.fn(),
 }));
 
-// Mock sonner toast
-vi.mock("sonner", () => ({
+// Mock lazy toast wrapper
+vi.mock("@/lib/toast", () => ({
   toast: {
     error: vi.fn(),
     success: vi.fn(),

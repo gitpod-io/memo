@@ -34,7 +34,7 @@ vi.mock("@/lib/column-helpers", () => ({
       : {},
 }));
 
-vi.mock("sonner", () => ({
+vi.mock("@/lib/toast", () => ({
   toast: Object.assign(
     (...args: unknown[]) => toastMock(...args),
     { error: (...args: unknown[]) => toastErrorMock(...args) },

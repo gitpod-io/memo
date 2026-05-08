@@ -34,7 +34,7 @@ vi.mock("@/lib/sentry", () => ({
 
 const toastSuccessMock = vi.fn();
 
-vi.mock("sonner", () => ({
+vi.mock("@/lib/toast", () => ({
   toast: Object.assign(
     (...args: unknown[]) => toastMock(...args),
     {
