@@ -144,6 +144,7 @@ usage_events (server-side product analytics)
   RLS: authenticated users can INSERT where user_id = auth.uid(). No SELECT/UPDATE/DELETE for regular users.
 
 Storage bucket: feedback-screenshots (public, 5 MB limit, png/jpeg/webp)
+Storage bucket: avatars (public, 2 MB limit, png/jpeg/webp — users upload to {user_id}/ folder)
 
 Sign-up flow (atomic, via DB trigger):
   1. auth.users row created by Supabase Auth
@@ -405,6 +406,10 @@ src/
 │   │   ├── layout.tsx      # Auth guard, fetches profile, renders AppShell
 │   │   ├── loading.tsx     # App shell loading skeleton
 │   │   ├── not-found.tsx   # App-level 404 page
+│   │   ├── account/
+│   │   │   ├── page.tsx     # /account — account settings (display name, avatar, password, delete)
+│   │   │   ├── loading.tsx  # Account settings loading skeleton
+│   │   │   └── error.tsx    # Account error boundary (delegates to RouteError)
 │   │   └── [workspaceSlug]/
 │   │       ├── page.tsx         # /[workspaceSlug] — workspace home (+ generateMetadata)
 │   │       ├── loading.tsx      # Workspace loading skeleton
@@ -525,6 +530,7 @@ src/
 │   ├── keyboard-shortcuts-dialog.tsx # ⌘+? keyboard shortcuts reference dialog
 │   ├── providers.tsx                # Client-side providers wrapper (ThemeProvider, Toaster, TooltipProvider)
 │   ├── landing-demo-editor.tsx      # Client wrapper: lazy-loads DemoEditor via next/dynamic for landing page
+│   ├── account-settings-form.tsx # Account settings: display name edit, avatar upload (saves to profiles + auth metadata)
 │   ├── change-password-section.tsx # Password change form (new + confirm, calls updateUser)
 │   ├── delete-account-section.tsx # Account deletion danger zone with double-confirm dialog
 │   ├── emoji-picker.tsx         # Floating emoji grid with search, used by page icon picker

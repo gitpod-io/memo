@@ -7,6 +7,7 @@ import {
   Settings,
   Sun,
   User,
+  UserCog,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,10 @@ export const Default: Story = {
             <p className="text-xs text-muted-foreground">jane@example.com</p>
           </div>
           <DropdownMenuSeparator />
+          <DropdownMenuItem>
+            <UserCog className="h-4 w-4" />
+            Account
+          </DropdownMenuItem>
           <DropdownMenuItem>
             <Settings className="h-4 w-4" />
             Settings
