@@ -33,9 +33,9 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 
 | Category | Files | Tests |
 |---|---|---|
-| Unit/Integration (Vitest) | 133 | 1818 |
-| E2E (Playwright) | 71 | 350 |
-| **Total** | **204** | **2168** |
+| Unit/Integration (Vitest) | 133 | 1819 |
+| E2E (Playwright) | 72 | 355 |
+| **Total** | **205** | **2174** |
 
 ### Test files by domain
 
@@ -49,7 +49,7 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 - **App Shell**: `sidebar-context.test.tsx` (21 tests), `(app)/loading.test.ts` (4 tests), `[workspaceSlug]/loading.test.ts` (5 tests), `[workspaceSlug]/[pageId]/loading.test.ts` (6 tests), `[workspaceSlug]/settings/loading.test.ts` (5 tests), `[workspaceSlug]/settings/members/loading.test.ts` (5 tests), `route-error.test.ts` (6 tests), `[workspaceSlug]/error.test.ts` (4 tests), `[workspaceSlug]/[pageId]/error.test.ts` (4 tests), `[workspaceSlug]/settings/error.test.ts` (4 tests), `[workspaceSlug]/settings/members/error.test.ts` (4 tests), `focus-mode-hint-design-spec.test.ts` (3 tests), `workspace-home-design-spec.test.ts` (5 tests), `e2e/sidebar-responsive.spec.ts` (4 tests), `e2e/mobile-responsive.spec.ts` (5 tests), `e2e/theme-toggle.spec.ts` (4 tests), `e2e/skip-to-content.spec.ts` (2 tests), `e2e/not-found.spec.ts` (3 tests), `e2e/public-routes.spec.ts` (18 tests), `e2e/demo-editor.spec.ts` (11 tests), `e2e/accessibility.spec.ts` (5 tests)
 - **Members**: `invite-form.test.ts` (4 tests), `member-list.test.tsx` (14 tests), `pending-invite-list.test.tsx` (8 tests), `role-select.test.tsx` (8 tests), `e2e/members.spec.ts` (7 tests)
 - **Feedback**: `feedback/route.test.ts` (17 tests), `feedback-form-design-spec.test.ts` (5 tests), `use-screenshot.test.ts` (2 tests)
-- **API**: `health/route.test.ts` (7 tests), `search/route.test.ts` (14 tests), `account/route.test.ts` (6 tests), `cron/purge-trash/route.test.ts` (8 tests), `feedback/route.test.ts` (17 tests), `pages/[pageId]/versions/route.test.ts` (11 tests), `pages/[pageId]/versions/[versionId]/route.test.ts` (11 tests), `e2e/account-deletion.spec.ts` (4 tests)
+- **API**: `health/route.test.ts` (7 tests), `search/route.test.ts` (14 tests), `account/route.test.ts` (6 tests), `cron/purge-trash/route.test.ts` (8 tests), `feedback/route.test.ts` (17 tests), `pages/[pageId]/versions/route.test.ts` (11 tests), `pages/[pageId]/versions/[versionId]/route.test.ts` (11 tests), `e2e/account-deletion.spec.ts` (4 tests), `e2e/account-settings.spec.ts` (5 tests)
 - **UI**: `overlay-opacity.test.ts` (2 tests), `toast-error-duration.test.ts` (1 test), `dialog-design-spec.test.ts` (3 tests), `design-spec-compliance.test.ts` (6 tests), `relative-time.test.ts` (7 tests), `reduced-motion.test.ts` (6 tests), `e2e/visual-regression.spec.ts` (1 test)
 - **Lib**: `sentry.test.ts` (4 tests), `sentry.unit.test.ts` (149 tests), `retry.test.ts` (9 tests), `track-event-server.test.ts` (6 tests), `track-event.test.ts` (4 tests), `usage-tracking-guard.test.ts` (5 tests)
 - **Infrastructure**: `migrations.test.ts` (33 tests), `build-timeseries.test.mjs` (6 tests), `supabase/client.test.ts` (7 tests)
@@ -117,5 +117,6 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | 2026-05-08 | Storybook coverage for 30 components (#957). Added 30 co-located `*.stories.tsx` files for components that predated the story requirement: 18 editor plugins (auto-link, callout, code-highlight, code-language-selector, collapsible, database, demo-slash-command, draggable-block, editor, floating-image-toolbar, image-node, image-plugin, list-tab-indentation, local-persistence, page-link, table-action-menu, turn-into, word-count), 8 top-level components (danger-zone-settings, delete-workspace-section, page-content-client, page-view-client, providers, settings-page-client, settings-page-content, workspace-home-client), 2 sidebar components (app-shell, sidebar-context), 2 members components (members-page, members-page-client). Updated 160 visual regression baselines. No new test files — stories only. Test totals unchanged: 133 Vitest files (1818 tests), 70 E2E specs (345 tests). |
 | 2026-05-08 | Mobile viewport E2E tests (#958). Added `e2e/mobile-responsive.spec.ts` (5 tests) covering page creation/editing, database table horizontal scroll, board view card interaction with snap-scroll indicator, slash command menu positioning, and floating toolbar positioning at 375×667 mobile viewport. Test totals: 133 Vitest files (1818 tests), 71 E2E specs (350 tests). |
 | 2026-05-08 | Bundle budget CI check (#960). Added `scripts/check-bundle.mjs` — standalone script that parses `.next/diagnostics/route-bundle-stats.json`, gzips each chunk, and asserts every page route is ≤ 200 kB. Added `pnpm test:bundle` script and `bundle` CI job in `.github/workflows/ci.yml`. Supports allowlist for exceptions. Not a Vitest/E2E test — runs as a separate CI job after `pnpm build`. Test totals unchanged: 133 Vitest files (1818 tests), 71 E2E specs (350 tests). |
+| 2026-05-08 | Account settings page (#941). Added `/account` route with display name edit, avatar upload, change password, and delete account sections. New component `account-settings-form.tsx` with stories. New E2E spec `e2e/account-settings.spec.ts` (5 tests). New migration `20260508140327_create_avatars_bucket.sql`. Vitest count +1 test (migration validation). Test totals: 133 Vitest files (1819 tests), 72 E2E specs (355 tests). |
 
 

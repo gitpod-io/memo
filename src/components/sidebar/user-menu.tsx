@@ -9,6 +9,7 @@ import {
   Settings,
   Sun,
   User,
+  UserCog,
   Users,
 } from "lucide-react";
 import { useSidebar } from "@/components/sidebar/sidebar-context";
@@ -55,6 +56,10 @@ export function UserMenu({ displayName, email }: UserMenuProps) {
     router.push("/sign-in");
   }
 
+  function handleAccount() {
+    router.push("/account");
+  }
+
   function handleSettings() {
     if (params.workspaceSlug) {
       router.push(`/${params.workspaceSlug}/settings`);
@@ -87,6 +92,10 @@ export function UserMenu({ displayName, email }: UserMenuProps) {
           <p className="text-xs text-muted-foreground">{email}</p>
         </div>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleAccount}>
+          <UserCog className="h-4 w-4" />
+          Account
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={handleSettings}>
           <Settings className="h-4 w-4" />
           Settings
