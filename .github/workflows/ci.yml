@@ -37,7 +37,7 @@ jobs:
       - run: pnpm test:bundle
   e2e:
     runs-on: ubuntu-latest
-    needs: check
+    needs: [check, bundle]
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v5
