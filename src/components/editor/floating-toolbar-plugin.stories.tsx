@@ -9,10 +9,28 @@ import {
   Link,
 } from "lucide-react";
 import { type FontFamilyKey, FONT_FAMILIES } from "@/components/editor/font-family";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Static representation of the floating toolbar. The actual plugin requires
 // Lexical context and DOM selection — stories render the same visual output
 // with controlled state.
+
+function getToolbarTooltips(isMac: boolean) {
+  const mod = isMac ? "⌘" : "Ctrl+";
+  return {
+    bold: `Bold ${mod}B`,
+    italic: `Italic ${mod}I`,
+    underline: `Underline ${mod}U`,
+    strikethrough: "Strikethrough",
+    code: "Inline code",
+    link: `Link ${mod}K`,
+  };
+}
 
 function FontFamilyDropdown({ value }: { value: FontFamilyKey }) {
   return (
@@ -41,18 +59,25 @@ function ToolbarButton({
   children: ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      className={`flex h-11 w-11 sm:h-7 sm:w-7 items-center justify-center text-sm ${
-        active
-          ? "bg-overlay-active text-foreground"
-          : "text-muted-foreground hover:bg-overlay-hover hover:text-foreground"
-      }`}
-      aria-label={label}
-      aria-pressed={active}
-    >
-      {children}
-    </button>
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <button
+            type="button"
+            className={`flex h-11 w-11 sm:h-7 sm:w-7 items-center justify-center text-sm ${
+              active
+                ? "bg-overlay-active text-foreground"
+                : "text-muted-foreground hover:bg-overlay-hover hover:text-foreground"
+            }`}
+            aria-label={label}
+            aria-pressed={active}
+          />
+        }
+      >
+        {children}
+      </TooltipTrigger>
+      <TooltipContent side="top">{label}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -64,6 +89,7 @@ function StaticFloatingToolbar({
   isCode = false,
   isLink = false,
   fontFamily = "monospace" as FontFamilyKey,
+  isMac = true,
 }: {
   isBold?: boolean;
   isItalic?: boolean;
@@ -72,7 +98,9 @@ function StaticFloatingToolbar({
   isCode?: boolean;
   isLink?: boolean;
   fontFamily?: FontFamilyKey;
+  isMac?: boolean;
 }) {
+  const tooltips = getToolbarTooltips(isMac);
   return (
     <div className="mx-auto max-w-md">
       <div
@@ -82,22 +110,22 @@ function StaticFloatingToolbar({
       >
         <FontFamilyDropdown value={fontFamily} />
         <div className="mx-0.5 h-4 w-px bg-overlay-border" aria-hidden="true" />
-        <ToolbarButton active={isBold} label="Bold (⌘+B)">
+        <ToolbarButton active={isBold} label={tooltips.bold}>
           <Bold className="h-4 w-4" />
         </ToolbarButton>
-        <ToolbarButton active={isItalic} label="Italic (⌘+I)">
+        <ToolbarButton active={isItalic} label={tooltips.italic}>
           <Italic className="h-4 w-4" />
         </ToolbarButton>
-        <ToolbarButton active={isUnderline} label="Underline (⌘+U)">
+        <ToolbarButton active={isUnderline} label={tooltips.underline}>
           <Underline className="h-4 w-4" />
         </ToolbarButton>
-        <ToolbarButton active={isStrikethrough} label="Strikethrough">
+        <ToolbarButton active={isStrikethrough} label={tooltips.strikethrough}>
           <Strikethrough className="h-4 w-4" />
         </ToolbarButton>
-        <ToolbarButton active={isCode} label="Inline code">
+        <ToolbarButton active={isCode} label={tooltips.code}>
           <Code className="h-4 w-4" />
         </ToolbarButton>
-        <ToolbarButton active={isLink} label="Link (⌘+K)">
+        <ToolbarButton active={isLink} label={tooltips.link}>
           <Link className="h-4 w-4" />
         </ToolbarButton>
       </div>
@@ -110,13 +138,20 @@ const meta: Meta = {
   parameters: {
     layout: "padded",
   },
+  decorators: [
+    (Story) => (
+      <TooltipProvider>
+        <Story />
+      </TooltipProvider>
+    ),
+  ],
 };
 
 export { meta as default };
 
 type Story = StoryObj;
 
-/** Default state — toolbar visible with no active formats. */
+/** Default state — toolbar visible with no active formats. Hover buttons to see tooltips with keyboard shortcuts. */
 export const Default: Story = {
   render: () => <StaticFloatingToolbar />,
 };
@@ -175,4 +210,14 @@ export const FontSerif: Story = {
 /** Font family dropdown showing monospace (default) selected. */
 export const FontMonospace: Story = {
   render: () => <StaticFloatingToolbar fontFamily="monospace" />,
+};
+
+/** Tooltips with Windows/Linux shortcut format (Ctrl+ prefix). */
+export const WindowsShortcuts: Story = {
+  render: () => <StaticFloatingToolbar isMac={false} />,
+};
+
+/** Tooltips with macOS shortcut format (⌘ prefix). */
+export const MacShortcuts: Story = {
+  render: () => <StaticFloatingToolbar isMac={true} />,
 };
