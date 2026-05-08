@@ -24,6 +24,10 @@ const config: StorybookConfig = {
     config.resolve.alias = {
       ...config.resolve.alias,
       "@": path.resolve(__dirname, "../src"),
+      "next/navigation": path.resolve(
+        __dirname,
+        "next-navigation-mock.ts",
+      ),
     };
     config.server ??= {};
     config.server.allowedHosts = true;

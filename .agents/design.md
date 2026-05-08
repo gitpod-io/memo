@@ -63,8 +63,10 @@ semantic tokens. They flip between white-on-dark and black-on-light automaticall
 | `--overlay-active` | `white 8%` | `black 6%` | Selected/active states |
 | `--overlay-strong` | `white 12%` | `black 12%` | Stronger borders |
 | `--overlay-heavy` | `white 20%` | `black 20%` | Heavy emphasis |
+| `--overlay-backdrop` | `black 50%` | `black 50%` | Modal/dialog overlays, avatar hover overlays |
+| `--overlay-backdrop-foreground` | `white 90%` | `white 90%` | Text/icons on backdrop overlays |
 
-Tailwind classes: `bg-overlay-hover`, `border-overlay-border`, etc.
+Tailwind classes: `bg-overlay-hover`, `border-overlay-border`, `bg-overlay-backdrop`, `text-overlay-backdrop-foreground`, etc.
 
 ### Label Tokens (theme-adaptive)
 
