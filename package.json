@@ -14,7 +14,8 @@
     "test:e2e": "playwright test --project=chromium",
     "test:visual": "playwright test --project=visual-regression",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "test:bundle": "node scripts/check-bundle.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",
