@@ -159,11 +159,11 @@ describe("OAuthButtons — OAuth enabled", () => {
       expect(screen.getByRole("alert")).toHaveTextContent(
         "Provider not enabled",
       );
+      expect(mockCaptureSupabaseError).toHaveBeenCalledWith(
+        oauthError,
+        "oauth.signIn.github",
+      );
     });
-    expect(mockCaptureSupabaseError).toHaveBeenCalledWith(
-      oauthError,
-      "oauth.signIn.github",
-    );
   });
 
   it("disables both buttons while a provider is loading", async () => {

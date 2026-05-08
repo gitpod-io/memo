@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { getClient } from "@/lib/supabase/lazy-client";
-import { captureSupabaseError } from "@/lib/sentry";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -61,7 +60,9 @@ export function OAuthButtons() {
     });
 
     if (oauthError) {
-      captureSupabaseError(oauthError as unknown as Error, `oauth.signIn.${provider}`);
+      import("@/lib/sentry").then(({ captureSupabaseError }) =>
+        captureSupabaseError(oauthError as unknown as Error, `oauth.signIn.${provider}`),
+      );
       setError(oauthError.message);
       setLoadingProvider(null);
     }

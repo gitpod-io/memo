@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { getClient } from "@/lib/supabase/lazy-client";
-import { captureSupabaseError } from "@/lib/sentry";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,7 +35,9 @@ export function ForgotPasswordForm() {
       });
 
     if (resetError) {
-      captureSupabaseError(resetError, "forgot-password:resetPasswordForEmail");
+      import("@/lib/sentry").then(({ captureSupabaseError }) =>
+        captureSupabaseError(resetError, "forgot-password:resetPasswordForEmail"),
+      );
       setError(resetError.message);
       setLoading(false);
       return;
