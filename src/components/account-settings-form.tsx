@@ -209,15 +209,15 @@ export function AccountSettingsForm({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <span className="text-lg font-medium text-muted-foreground">
+              <span className="text-base font-medium text-muted-foreground">
                 {getInitials(displayName)}
               </span>
             )}
-            <span className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+            <span className="absolute inset-0 flex items-center justify-center bg-overlay-backdrop opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
               {uploading ? (
-                <Loader2 className="h-5 w-5 animate-spin text-white" />
+                <Loader2 className="h-5 w-5 animate-spin text-overlay-backdrop-foreground" />
               ) : (
-                <Camera className="h-5 w-5 text-white" />
+                <Camera className="h-5 w-5 text-overlay-backdrop-foreground" />
               )}
             </span>
           </button>

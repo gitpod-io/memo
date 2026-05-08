@@ -50,6 +50,8 @@
   --color-overlay-active: var(--overlay-active);
   --color-overlay-strong: var(--overlay-strong);
   --color-overlay-heavy: var(--overlay-heavy);
+  --color-overlay-backdrop: var(--overlay-backdrop);
+  --color-overlay-backdrop-foreground: var(--overlay-backdrop-foreground);
   --color-label-faint: var(--label-faint);
   --color-label-muted: var(--label-muted);
   --color-label-subtle: var(--label-subtle);
@@ -111,6 +113,8 @@
   --overlay-active: oklch(0 0 0 / 0.06);
   --overlay-strong: oklch(0 0 0 / 0.12);
   --overlay-heavy: oklch(0 0 0 / 0.20);
+  --overlay-backdrop: oklch(0 0 0 / 0.50);
+  --overlay-backdrop-foreground: oklch(1 0 0 / 0.90);
   --label-faint: oklch(0.45 0.01 255 / 0.40);
   --label-muted: oklch(0.35 0.01 255 / 0.55);
   --label-subtle: oklch(0.25 0.01 255 / 0.70);
@@ -160,6 +164,8 @@
   --overlay-active: oklch(1 0 0 / 0.08);
   --overlay-strong: oklch(1 0 0 / 0.12);
   --overlay-heavy: oklch(1 0 0 / 0.20);
+  --overlay-backdrop: oklch(0 0 0 / 0.50);
+  --overlay-backdrop-foreground: oklch(1 0 0 / 0.90);
   --label-faint: oklch(1 0 0 / 0.30);
   --label-muted: oklch(1 0 0 / 0.50);
   --label-subtle: oklch(1 0 0 / 0.70);
@@ -212,6 +218,8 @@
   --overlay-active: oklch(1 0 0 / 0.08);
   --overlay-strong: oklch(1 0 0 / 0.12);
   --overlay-heavy: oklch(1 0 0 / 0.20);
+  --overlay-backdrop: oklch(0 0 0 / 0.50);
+  --overlay-backdrop-foreground: oklch(1 0 0 / 0.90);
   --label-faint: oklch(1 0 0 / 0.30);
   --label-muted: oklch(1 0 0 / 0.50);
   --label-subtle: oklch(1 0 0 / 0.70);
