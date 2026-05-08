@@ -1,11 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { WorkspaceSettingsForm } from "@/components/workspace-settings-form";
-import { ChangePasswordSection } from "@/components/change-password-section";
-import { DangerZoneSettings } from "@/components/danger-zone-settings";
-import { Separator } from "@/components/ui/separator";
+import { SettingsPageClient } from "@/components/settings-page-client";
 
 export async function generateMetadata({
   params,
@@ -56,34 +52,10 @@ export default async function WorkspaceSettingsPage({
   const userEmail = user.email ?? "";
 
   return (
-    <div className="mx-auto max-w-xl p-6">
-      <div className="flex items-center gap-4">
-        <h1 className="text-2xl font-semibold">Workspace settings</h1>
-        <Link
-          href={`/${workspaceSlug}/settings/members`}
-          className="text-sm text-accent underline-offset-4 hover:underline"
-        >
-          Members
-        </Link>
-      </div>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Manage your workspace name, URL, and other settings.
-      </p>
-      <div className="mt-6">
-        <WorkspaceSettingsForm workspace={workspace} userId={user.id} />
-      </div>
-      {workspace.is_personal && (
-        <>
-          <Separator className="mt-8 bg-overlay-border" />
-          <div className="mt-8">
-            <ChangePasswordSection />
-          </div>
-          <Separator className="mt-8 bg-overlay-border" />
-          <div className="mt-8">
-            <DangerZoneSettings userEmail={userEmail} />
-          </div>
-        </>
-      )}
-    </div>
+    <SettingsPageClient
+      workspace={workspace}
+      userId={user.id}
+      userEmail={userEmail}
+    />
   );
 }

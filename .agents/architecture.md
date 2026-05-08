@@ -541,6 +541,8 @@ src/
 │   ├── route-error.tsx          # Reusable error boundary UI (Sentry capture + retry button)
 │   ├── workspace-home.tsx       # Workspace home: page list or empty state with create CTA
 │   ├── workspace-home-client.tsx # Client wrapper: lazy-loads WorkspaceHome via next/dynamic
+│   ├── settings-page-client.tsx  # Client wrapper: lazy-loads SettingsPageContent via next/dynamic
+│   ├── settings-page-content.tsx # Settings page layout: form + change password + danger zone
 │   ├── workspace-settings-form.tsx # Edit workspace name/slug, lazy-loads delete workspace section
 │   ├── delete-workspace-section.tsx # Workspace deletion danger zone with AlertDialog confirmation
 │   ├── danger-zone-settings.tsx # Client wrapper: lazy-loads DeleteAccountSection via next/dynamic
