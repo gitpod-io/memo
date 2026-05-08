@@ -43,7 +43,7 @@ inline script in `<head>`.
 | `--background` | `oklch(0.13 0.008 255)` | `oklch(0.985 0.002 255)` | Page background |
 | `--foreground` | `oklch(0.87 0.01 255)` | `oklch(0.18 0.01 255)` | Primary text |
 | `--muted` | `oklch(0.22 0.012 255)` | `oklch(0.93 0.005 255)` | Secondary surfaces |
-| `--muted-foreground` | `oklch(0.55 0.012 255)` | `oklch(0.45 0.015 255)` | Secondary text, placeholders |
+| `--muted-foreground` | `oklch(0.63 0.012 255)` | `oklch(0.45 0.015 255)` | Secondary text, placeholders |
 | `--border` | `oklch(0.22 0.012 255)` | `oklch(0.88 0.005 255)` | Borders and dividers |
 | `--primary` | `oklch(0.74 0.032 248)` | `oklch(0.45 0.04 248)` | Primary buttons, active states |
 | `--primary-foreground` | `oklch(0.13 0.008 255)` | `oklch(0.985 0.002 255)` | Text on primary |
@@ -74,8 +74,8 @@ Replace all hardcoded `text-white/30`, `text-white/50`, `text-white/70` with the
 
 | Token | Dark | Light | Usage |
 |---|---|---|---|
-| `--label-faint` | `white 30%` | `dark 40%` | Section headings, kbd hints |
-| `--label-muted` | `white 50%` | `dark 55%` | Hover on faint labels |
+| `--label-faint` | `white 48%` | `oklch(0.54 0.01 255)` | Section headings, kbd hints |
+| `--label-muted` | `white 60%` | `oklch(0.50 0.01 255)` | Hover on faint labels |
 | `--label-subtle` | `white 70%` | `dark 70%` | Selected item text |
 
 Tailwind classes: `text-label-faint`, `text-label-muted`, `text-label-subtle`.

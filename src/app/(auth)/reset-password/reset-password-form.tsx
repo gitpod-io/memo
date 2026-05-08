@@ -77,7 +77,7 @@ export function ResetPasswordForm() {
           <p className="text-xs text-muted-foreground">
             <Link
               href="/sign-in"
-              className="text-accent underline-offset-4 hover:underline"
+              className="text-accent underline underline-offset-4"
             >
               Go to sign in
             </Link>
@@ -134,7 +134,7 @@ export function ResetPasswordForm() {
         <p className="mt-4 text-center text-xs text-muted-foreground">
           <Link
             href="/sign-in"
-            className="text-accent underline-offset-4 hover:underline"
+            className="text-accent underline underline-offset-4"
           >
             Back to sign in
           </Link>
