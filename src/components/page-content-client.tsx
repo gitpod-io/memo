@@ -14,8 +14,8 @@ const DatabaseViewClient = dynamic(
     ssr: false,
     loading: () => (
       <div className="mt-6 space-y-3">
-        <div className="h-8 w-48 animate-pulse rounded bg-muted" />
-        <div className="h-64 w-full animate-pulse rounded bg-muted" />
+        <div className="h-8 w-48 animate-pulse bg-muted" />
+        <div className="h-64 w-full animate-pulse bg-muted" />
       </div>
     ),
   },
@@ -30,8 +30,8 @@ const RowPropertiesHeader = dynamic(
     ssr: false,
     loading: () => (
       <div className="mb-4 space-y-2">
-        <div className="h-4 w-32 animate-pulse rounded bg-muted" />
-        <div className="h-4 w-48 animate-pulse rounded bg-muted" />
+        <div className="h-4 w-32 animate-pulse bg-muted" />
+        <div className="h-4 w-48 animate-pulse bg-muted" />
       </div>
     ),
   },
@@ -44,7 +44,7 @@ const PageViewClient = dynamic(
     ssr: false,
     loading: () => (
       <div className="space-y-4">
-        <div className="h-10 w-64 animate-pulse rounded bg-muted" />
+        <div className="h-10 w-64 animate-pulse bg-muted" />
         <div className="space-y-3">
           <div className="h-4 w-full animate-pulse bg-muted" />
           <div className="h-4 w-5/6 animate-pulse bg-muted" />
