@@ -53,7 +53,10 @@ jobs:
         run: |
           npx http-server storybook-static --port 6099 --silent &
           npx wait-on http://localhost:6099/index.json --timeout 30000
-          STORYBOOK_URL=http://localhost:6099 pnpm test:visual
+          pnpm test:visual
+        env:
+          STORYBOOK_URL: http://localhost:6099
+          BASE_URL: http://localhost:6099
       - name: Upload diff artifacts
         if: failure()
         uses: actions/upload-artifact@v4
