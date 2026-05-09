@@ -19,12 +19,8 @@ const STATS_PATH = resolve(".next/diagnostics/route-bundle-stats.json");
 
 // Routes that are allowed to exceed the default budget.
 // Each entry records the observed size (rounded up) so the check prevents further regression.
-// Tracked in #973 — these should be reduced to ≤200 kB over time.
-const ALLOWLIST = [
-  { route: "/[workspaceSlug]", budgetKB: 250, reason: "Workspace root includes editor + sidebar bundles (#973)" },
-  { route: "/[workspaceSlug]/settings", budgetKB: 230, reason: "Settings page includes form + avatar components (#973)" },
-  { route: "/[workspaceSlug]/settings/members", budgetKB: 270, reason: "Members page includes invite dialog + member list (#973)" },
-];
+// Add entries here only as a temporary measure while actively reducing bundle size.
+const ALLOWLIST = [];
 
 function run() {
   let raw;
