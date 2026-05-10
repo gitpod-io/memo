@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { captureApiError, captureSupabaseError, isInsufficientPrivilegeError } from "@/lib/sentry";
+import { captureApiError, captureSupabaseError, isForeignKeyViolationError, isInsufficientPrivilegeError } from "@/lib/sentry";
 
 /**
  * GET /api/pages/[pageId]/versions
@@ -108,6 +108,9 @@ export async function POST(
     if (error) {
       if (isInsufficientPrivilegeError(error)) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      if (isForeignKeyViolationError(error)) {
+        return NextResponse.json({ error: "Page not found" }, { status: 404 });
       }
       captureSupabaseError(error, "page-versions:create");
       return NextResponse.json({ error: "Failed to create version" }, { status: 500 });
