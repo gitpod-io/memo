@@ -5,17 +5,27 @@
  * gzips each chunk to compute accurate transfer sizes, and asserts every page
  * route is ≤ the budget (default 200 kB gzipped).
  *
+ * Also prints a shared chunk analysis showing the framework baseline and
+ * per-route-group breakdown. This helps identify when a new dependency or
+ * eager import inflates the shared chunks that affect all routes.
+ *
  * Usage: node scripts/check-bundle.mjs
  * Requires: a prior `pnpm build` so .next/diagnostics exists.
  */
 
 import { readFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
-import { resolve } from "node:path";
+import { resolve, basename } from "node:path";
 
 const BUDGET_KB = 200;
 const BUDGET_BYTES = BUDGET_KB * 1024;
 const STATS_PATH = resolve(".next/diagnostics/route-bundle-stats.json");
+
+// Framework baseline budget (kB gzipped). This covers the chunks shared by
+// ALL routes: Next.js runtime, React, tailwind-merge, shared providers, etc.
+// If this number grows, a new shared dependency was added — investigate before
+// bumping the limit. See docs/bundle-budget.md for the chunk inventory.
+const FRAMEWORK_BASELINE_BUDGET_KB = 160;
 
 // Routes that are allowed to exceed the default budget.
 // Each entry records the observed size (rounded up) so the check prevents further regression.
@@ -55,6 +65,11 @@ function run() {
     }
   }
 
+  // --- Phase 1: Per-route budget check ---
+
+  // Build chunk → routes mapping for the shared chunk analysis
+  const chunkRoutes = new Map();
+
   const results = [];
   let hasFailure = false;
 
@@ -67,6 +82,12 @@ function run() {
     let totalGzipped = 0;
     for (const chunkPath of firstLoadChunkPaths) {
       totalGzipped += getGzippedSize(chunkPath);
+
+      // Track which routes use each chunk
+      if (!chunkRoutes.has(chunkPath)) {
+        chunkRoutes.set(chunkPath, []);
+      }
+      chunkRoutes.get(chunkPath).push(route);
     }
 
     const totalKB = totalGzipped / 1024;
@@ -128,6 +149,82 @@ function run() {
   console.log(
     `\n✅ All ${results.length} routes are within the ${BUDGET_KB} kB gzipped budget.\n`,
   );
+
+  // --- Phase 2: Shared chunk analysis ---
+
+  const totalRoutes = results.length;
+
+  // Categorize chunks by sharing scope
+  let frameworkTotal = 0;
+  const frameworkChunks = [];
+  const groupShared = [];
+
+  for (const [chunkPath, routeList] of chunkRoutes) {
+    const size = getGzippedSize(chunkPath);
+    const name = basename(chunkPath);
+
+    if (routeList.length === totalRoutes) {
+      frameworkTotal += size;
+      frameworkChunks.push({ name, size });
+    } else if (routeList.length > 1) {
+      groupShared.push({ name, size, routes: routeList });
+    }
+  }
+
+  frameworkChunks.sort((a, b) => b.size - a.size);
+  groupShared.sort((a, b) => b.size - a.size);
+
+  const frameworkKB = frameworkTotal / 1024;
+
+  console.log("Shared Chunk Analysis");
+  console.log("=".repeat(70));
+
+  console.log(
+    `\nFramework baseline: ${frameworkKB.toFixed(1)} kB gzipped (budget: ${FRAMEWORK_BASELINE_BUDGET_KB} kB)`,
+  );
+  console.log(`Chunks shared by all ${totalRoutes} routes:`);
+  for (const c of frameworkChunks) {
+    console.log(`  ${c.name.padEnd(50)} ${(c.size / 1024).toFixed(1).padStart(8)} kB`);
+  }
+
+  if (groupShared.length > 0) {
+    console.log(`\nRoute-group shared chunks:`);
+    for (const c of groupShared) {
+      console.log(
+        `  ${c.name.padEnd(50)} ${(c.size / 1024).toFixed(1).padStart(8)} kB  (${c.routes.length} routes)`,
+      );
+    }
+  }
+
+  console.log(
+    `\nPer-route breakdown (framework + route-specific):`,
+  );
+  for (const r of results) {
+    const routeOnly = parseFloat(r.totalKB) - frameworkKB;
+    console.log(
+      `  ${r.route.padEnd(40)} ${frameworkKB.toFixed(1).padStart(7)} + ${routeOnly.toFixed(1).padStart(5)} = ${r.totalKB.padStart(7)} kB`,
+    );
+  }
+
+  console.log("-".repeat(70));
+
+  // Check framework baseline budget
+  if (frameworkTotal > FRAMEWORK_BASELINE_BUDGET_KB * 1024) {
+    console.error(
+      `\n⚠️  Framework baseline (${frameworkKB.toFixed(1)} kB) exceeds budget (${FRAMEWORK_BASELINE_BUDGET_KB} kB).`,
+    );
+    console.error(
+      `   A new shared dependency may have been added to the root layout or providers.`,
+    );
+    console.error(
+      `   Check docs/bundle-budget.md for the expected chunk inventory.\n`,
+    );
+    // Warning only — don't fail the build for framework growth, but make it visible
+  } else {
+    console.log(
+      `\n✅ Framework baseline (${frameworkKB.toFixed(1)} kB) is within ${FRAMEWORK_BASELINE_BUDGET_KB} kB budget.\n`,
+    );
+  }
 }
 
 run();

@@ -618,6 +618,13 @@ src/
 ├── proxy.ts                # Root proxy — calls updateSession, skips static/health routes
 └── instrumentation.ts      # Sentry server/edge init (register + onRequestError)
 
+scripts/
+├── check-bundle.mjs           # Bundle budget check (per-route + framework baseline)
+
+docs/
+├── product-spec.md            # Product specification
+├── bundle-budget.md           # Chunk inventory, splitting strategy, budget guidelines
+
 Root config files:
 ├── instrumentation-client.ts  # Sentry client init (replay, route transitions)
 ├── sentry.server.config.ts    # Sentry server SDK config

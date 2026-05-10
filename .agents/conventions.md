@@ -1866,6 +1866,25 @@ For parameterized IDs, use kebab-case: `db-sort-rule-{index}`, `editor-slash-ite
 Do not add `data-testid` to every element — only to elements that E2E tests select
 and that lack a stable accessible role/label selector.
 
+## Bundle Size Management
+
+Per-page budget: 200 kB gzipped first-load JS. Framework baseline budget: 160 kB.
+Both are enforced by `pnpm test:bundle` (`scripts/check-bundle.mjs`).
+
+See `docs/bundle-budget.md` for the full chunk inventory, splitting strategy, and
+guidelines for keeping pages within budget when adding new features.
+
+Key patterns already in use:
+- **Sentry**: dynamically imported in `instrumentation-client.ts`
+- **Supabase client**: lazy-loaded via `getClient()` in `src/lib/supabase/lazy-client.ts`
+- **Lexical editor**: dynamically imported in page-view and landing-demo components
+- **Error boundaries**: lazy-loaded via `src/components/lazy-route-error.tsx`
+- **Heavy UI components**: dynamically imported via `next/dynamic` in client wrappers
+
+When adding a new client-side dependency, run `pnpm build && pnpm test:bundle` and
+check the "Shared Chunk Analysis" output. If the framework baseline grew, the import
+likely landed in the root layout or providers — use dynamic import instead.
+
 ## This file evolves
 
 When you discover a new pattern that should be replicated, or an anti-pattern that
