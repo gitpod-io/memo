@@ -40,6 +40,14 @@ export function isE2ETestRequest(event: ErrorEvent): boolean {
   const browserName = (event.contexts?.browser as Record<string, unknown> | undefined)?.name;
   if (typeof browserName === "string" && browserName.includes("HeadlessChrome")) return true;
 
+  // Fallback: check extra.userAgent propagated by captureSupabaseError /
+  // captureApiError from the incoming request's User-Agent header. For
+  // server-side manually captured exceptions, event.request is empty and
+  // event.contexts.browser is not populated by the SDK — the User-Agent
+  // must be explicitly forwarded.
+  const extraUa = event.extra?.userAgent;
+  if (typeof extraUa === "string" && extraUa.includes("HeadlessChrome/")) return true;
+
   return false;
 }
 
@@ -188,18 +196,22 @@ export function isInsufficientPrivilegeError(error: Error): boolean {
  * This is an expected race condition during E2E test teardown and concurrent
  * user sessions, not an application bug.
  *
- * Matches two shapes:
+ * Matches three shapes:
  * 1. PostgrestError objects with `code: "23503"` (from `{ data, error }` path)
  * 2. Generic Error with a `code` property set to `"23503"` (thrown path)
+ * 3. Error whose message contains the FK violation pattern — fallback for
+ *    edge cases where the Supabase client returns an error object that
+ *    doesn't pass the `isPostgrestError` duck-type check (e.g. missing
+ *    `details` or `hint` properties from `.insert().select().single()`)
  */
 export function isForeignKeyViolationError(error: Error): boolean {
   if (isPostgrestError(error)) {
     return error.code === "23503";
   }
-  return (
-    "code" in error &&
-    (error as Record<string, unknown>).code === "23503"
-  );
+  if ("code" in error && (error as Record<string, unknown>).code === "23503") {
+    return true;
+  }
+  return error.message.includes("violates foreign key constraint");
 }
 
 /**
@@ -491,9 +503,15 @@ export function isTransientNetworkError(error: Error): boolean {
  * Use this for non-Supabase fetch calls (e.g. `/api/pages/…/versions`).
  * Transient network errors are captured at `warning` level to reduce noise.
  * All other errors are captured at `error` level.
+ *
+ * @param userAgent - Optional User-Agent from the incoming request. Propagated
+ *   into `extra.userAgent` so the server-side `beforeSend` filter can detect
+ *   E2E test sessions (HeadlessChrome) for manually captured exceptions where
+ *   `event.request` is empty.
  */
-export function captureApiError(error: unknown, operation: string): void {
+export function captureApiError(error: unknown, operation: string, userAgent?: string): void {
   const extra: Record<string, string> = { operation };
+  if (userAgent) extra.userAgent = userAgent;
 
   if (error instanceof Error) {
     extra.message = error.message;
@@ -538,15 +556,22 @@ function ensureError(error: Error | { message: string }): Error {
  *
  * Transient network errors (e.g. `TypeError: Failed to fetch`) are captured at
  * `warning` level to reduce noise — they are not application bugs.
+ *
+ * @param userAgent - Optional User-Agent from the incoming request. Propagated
+ *   into `extra.userAgent` so the server-side `beforeSend` filter can detect
+ *   E2E test sessions (HeadlessChrome) for manually captured exceptions where
+ *   `event.request` is empty.
  */
 export function captureSupabaseError(
   error: Error,
   operation: string,
+  userAgent?: string,
 ): void {
   const extra: Record<string, string> = {
     operation,
     message: error.message,
   };
+  if (userAgent) extra.userAgent = userAgent;
 
   if (isPostgrestError(error)) {
     extra.code = error.code;

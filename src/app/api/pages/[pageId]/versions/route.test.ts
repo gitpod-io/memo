@@ -68,8 +68,9 @@ vi.mock("@/lib/sentry", () => ({
   isInsufficientPrivilegeError: (err: Error & { code?: string }) =>
     err.code === "42501" ||
     err.message?.includes("violates row-level security policy"),
-  isForeignKeyViolationError: (err: Error & { code?: string }) =>
-    err.code === "23503",
+  isForeignKeyViolationError: (err: Error & { code?: string; message?: string }) =>
+    err.code === "23503" ||
+    (err.message?.includes("violates foreign key constraint") ?? false),
 }));
 
 const { GET, POST } = await import("./route");
@@ -265,6 +266,73 @@ describe("POST /api/pages/[pageId]/versions", () => {
     // Must NOT report to Sentry — FK violations on deleted parents are expected race conditions
     expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
     expect(captureApiErrorMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 404 when FK violation is thrown as exception in catch block (MEMO-2F factor 1)", async () => {
+    // Simulate Supabase throwing a FK violation as an exception (catch path)
+    // instead of returning it in { data, error }
+    const fkError = Object.assign(
+      new Error('insert or update on table "page_versions" violates foreign key constraint "page_versions_page_id_fkey"'),
+      { code: "23503" },
+    );
+    throwOnInsert = fkError;
+    listResult = { data: null, error: null };
+
+    const res = await POST(
+      makeRequest("/api/pages/page-123/versions", {
+        method: "POST",
+        body: JSON.stringify({ content: { root: { children: [] } } }),
+      }),
+      { params: mockParams },
+    );
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.error).toBe("Page not found");
+    expect(captureApiErrorMock).not.toHaveBeenCalled();
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
+  });
+
+  it("propagates User-Agent to captureSupabaseError for E2E detection (MEMO-2F factor 2)", async () => {
+    // Simulate a generic Supabase error (not FK, not RLS) so it reaches captureSupabaseError
+    const genericError = Object.assign(
+      new Error("some unexpected error"),
+      { code: "XXXXX", details: "", hint: "" },
+    );
+    insertResult = { data: null, error: genericError };
+    listResult = { data: null, error: null };
+
+    const req = new NextRequest(new URL("/api/pages/page-123/versions", "http://localhost:3000"), {
+      method: "POST",
+      body: JSON.stringify({ content: { root: { children: [] } } }),
+      headers: { "user-agent": "Mozilla/5.0 HeadlessChrome/147.0.0.0" },
+    });
+
+    await POST(req, { params: mockParams });
+    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
+      genericError,
+      "page-versions:create",
+      "Mozilla/5.0 HeadlessChrome/147.0.0.0",
+    );
+  });
+
+  it("propagates User-Agent to captureApiError for E2E detection (MEMO-2F factor 2)", async () => {
+    // Simulate an unexpected throw that reaches the catch block
+    const unexpectedError = new Error("unexpected runtime error");
+    throwOnInsert = unexpectedError;
+    listResult = { data: null, error: null };
+
+    const req = new NextRequest(new URL("/api/pages/page-123/versions", "http://localhost:3000"), {
+      method: "POST",
+      body: JSON.stringify({ content: { root: { children: [] } } }),
+      headers: { "user-agent": "Mozilla/5.0 HeadlessChrome/147.0.0.0" },
+    });
+
+    await POST(req, { params: mockParams });
+    expect(captureApiErrorMock).toHaveBeenCalledWith(
+      unexpectedError,
+      "page-versions:create",
+      "Mozilla/5.0 HeadlessChrome/147.0.0.0",
+    );
   });
 
   it("returns 403 when RLS violation is thrown without PostgrestError shape (MEMO-W regression)", async () => {
