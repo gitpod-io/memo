@@ -33,9 +33,9 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 
 | Category | Files | Tests |
 |---|---|---|
-| Unit/Integration (Vitest) | 138 | 1844 |
+| Unit/Integration (Vitest) | 138 | 1845 |
 | E2E (Playwright) | 73 | 364 |
-| **Total** | **211** | **2208** |
+| **Total** | **211** | **2209** |
 
 ### Test files by domain
 
@@ -49,7 +49,7 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 - **App Shell**: `sidebar-context.test.tsx` (21 tests), `(app)/loading.test.ts` (4 tests), `[workspaceSlug]/loading.test.ts` (5 tests), `[workspaceSlug]/[pageId]/loading.test.ts` (6 tests), `[workspaceSlug]/settings/loading.test.ts` (5 tests), `[workspaceSlug]/settings/members/loading.test.ts` (5 tests), `route-error.test.ts` (6 tests), `[workspaceSlug]/error.test.ts` (4 tests), `[workspaceSlug]/[pageId]/error.test.ts` (4 tests), `[workspaceSlug]/settings/error.test.ts` (4 tests), `[workspaceSlug]/settings/members/error.test.ts` (4 tests), `focus-mode-hint-design-spec.test.ts` (3 tests), `workspace-home-design-spec.test.ts` (5 tests), `e2e/sidebar-responsive.spec.ts` (4 tests), `e2e/mobile-responsive.spec.ts` (5 tests), `e2e/theme-toggle.spec.ts` (4 tests), `e2e/skip-to-content.spec.ts` (2 tests), `e2e/not-found.spec.ts` (3 tests), `e2e/public-routes.spec.ts` (18 tests), `e2e/demo-editor.spec.ts` (11 tests), `e2e/accessibility.spec.ts` (8 tests)
 - **Members**: `invite-form.test.ts` (4 tests), `member-list.test.tsx` (14 tests), `pending-invite-list.test.tsx` (8 tests), `role-select.test.tsx` (8 tests), `e2e/members.spec.ts` (7 tests)
 - **Feedback**: `feedback/route.test.ts` (17 tests), `feedback-form-design-spec.test.ts` (5 tests), `use-screenshot.test.ts` (2 tests), `e2e/feedback.spec.ts` (6 tests)
-- **API**: `health/route.test.ts` (7 tests), `search/route.test.ts` (14 tests), `account/route.test.ts` (6 tests), `cron/purge-trash/route.test.ts` (8 tests), `feedback/route.test.ts` (17 tests), `pages/[pageId]/versions/route.test.ts` (11 tests), `pages/[pageId]/versions/[versionId]/route.test.ts` (11 tests), `e2e/account-deletion.spec.ts` (4 tests), `e2e/account-settings.spec.ts` (5 tests)
+- **API**: `health/route.test.ts` (7 tests), `search/route.test.ts` (14 tests), `account/route.test.ts` (6 tests), `cron/purge-trash/route.test.ts` (8 tests), `feedback/route.test.ts` (17 tests), `pages/[pageId]/versions/route.test.ts` (12 tests), `pages/[pageId]/versions/[versionId]/route.test.ts` (11 tests), `e2e/account-deletion.spec.ts` (4 tests), `e2e/account-settings.spec.ts` (5 tests)
 - **UI**: `overlay-opacity.test.ts` (2 tests), `toast-error-duration.test.ts` (1 test), `dialog-design-spec.test.ts` (3 tests), `design-spec-compliance.test.ts` (9 tests), `relative-time.test.ts` (7 tests), `reduced-motion.test.ts` (6 tests), `e2e/visual-regression.spec.ts` (1 test)
 - **Lib**: `sentry.test.ts` (4 tests), `sentry.unit.test.ts` (149 tests), `retry.test.ts` (9 tests), `track-event-server.test.ts` (6 tests), `track-event.test.ts` (4 tests), `usage-tracking-guard.test.ts` (5 tests)
 - **Infrastructure**: `migrations.test.ts` (33 tests), `build-timeseries.test.mjs` (6 tests), `supabase/client.test.ts` (7 tests)
@@ -127,5 +127,6 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | 2026-05-10 | Extend axe-core accessibility audit to database views (#993). Added 3 new tests to `e2e/accessibility.spec.ts` (5→8 tests): database table view, database board view, database calendar view. Fixed `aria-required-children` in table-view.tsx (added `role="columnheader"` to checkbox and add-column header cells). Fixed `aria-required-children` and `aria-required-parent` in calendar-view.tsx (moved day headers inside grid, wrapped week cells in `role="row"` divs). Fixed `color-contrast` in calendar-view.tsx (changed out-of-month day numbers from `text-muted-foreground/50` to `text-muted-foreground`). Test totals: 133 Vitest files (1822 tests), 73 E2E specs (364 tests). |
 | 2026-05-10 | Auth error boundaries and loading states (#994). Added 5 error boundary files (`sign-in/error.tsx`, `sign-up/error.tsx`, `forgot-password/error.tsx`, `reset-password/error.tsx`, `invite/[token]/error.tsx`) and 1 loading state (`invite/[token]/loading.tsx`). Added 5 test files (22 tests). Extended `RouteError` component with optional `title`, `description`, and `children` props. Test totals: 138 Vitest files (1844 tests), 73 E2E specs (364 tests). |
 | 2026-05-10 | Fix E2E failures after PR #997 (#998). Fixed `text-destructive` color contrast in dark mode: changed `--destructive` from `oklch(0.55 0.2 25)` to `oklch(0.65 0.2 25)` in dark theme, achieving ≥4.5:1 contrast ratio against dark backgrounds. Hardened `fillCell` helper in `database-views.spec.ts` to verify cell value renders after blur, reducing flakiness on slower environments. Test totals unchanged: 133 Vitest files (1822 tests), 73 E2E specs (364 tests). |
+| 2026-05-10 | Fix page-versions FK violation returning 500 instead of 404 (#1004). Updated `pages/[pageId]/versions/route.test.ts` (11→12 tests): added regression test for FK violation → 404 response. Test totals: 138 Vitest files (1845 tests), 73 E2E specs (364 tests). |
 
 

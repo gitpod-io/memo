@@ -60,12 +60,16 @@ vi.mock("@/lib/supabase/server", () => ({
 
 const captureApiErrorMock = vi.fn();
 
+const captureSupabaseErrorMock = vi.fn();
+
 vi.mock("@/lib/sentry", () => ({
   captureApiError: (...args: unknown[]) => captureApiErrorMock(...args),
-  captureSupabaseError: vi.fn(),
+  captureSupabaseError: (...args: unknown[]) => captureSupabaseErrorMock(...args),
   isInsufficientPrivilegeError: (err: Error & { code?: string }) =>
     err.code === "42501" ||
     err.message?.includes("violates row-level security policy"),
+  isForeignKeyViolationError: (err: Error & { code?: string }) =>
+    err.code === "23503",
 }));
 
 const { GET, POST } = await import("./route");
@@ -235,6 +239,31 @@ describe("POST /api/pages/[pageId]/versions", () => {
     const body = await res.json();
     expect(body.error).toBe("Forbidden");
     // Must NOT report to Sentry at error level
+    expect(captureApiErrorMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 404 when FK violation occurs because page was deleted (MEMO-2F regression)", async () => {
+    // Simulate Supabase returning a 23503 FK violation when the page no longer exists
+    const fkError = Object.assign(
+      new Error('insert or update on table "page_versions" violates foreign key constraint "page_versions_page_id_fkey"'),
+      { code: "23503", details: 'Key (page_id)=(page-123) is not present in table "pages".', hint: null },
+    );
+    insertResult = { data: null, error: fkError };
+    // First select = dedup check (no existing version)
+    listResult = { data: null, error: null };
+
+    const res = await POST(
+      makeRequest("/api/pages/page-123/versions", {
+        method: "POST",
+        body: JSON.stringify({ content: { root: { children: [] } } }),
+      }),
+      { params: mockParams },
+    );
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.error).toBe("Page not found");
+    // Must NOT report to Sentry — FK violations on deleted parents are expected race conditions
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
     expect(captureApiErrorMock).not.toHaveBeenCalled();
   });
 
