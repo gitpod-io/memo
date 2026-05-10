@@ -48,7 +48,7 @@ inline script in `<head>`.
 | `--primary` | `oklch(0.74 0.032 248)` | `oklch(0.45 0.04 248)` | Primary buttons, active states |
 | `--primary-foreground` | `oklch(0.13 0.008 255)` | `oklch(0.985 0.002 255)` | Text on primary |
 | `--accent` | `oklch(0.60 0.06 248)` | `oklch(0.45 0.08 248)` | Links, selected items, focus rings |
-| `--destructive` | `oklch(0.55 0.2 25)` | `oklch(0.55 0.2 25)` | Delete actions, error states |
+| `--destructive` | `oklch(0.65 0.2 25)` | `oklch(0.55 0.2 25)` | Delete actions, error states |
 
 ### Overlay Tokens (theme-adaptive)
 
