@@ -1334,13 +1334,15 @@ Rules:
 ## Route-Level Error Boundaries
 
 Every route segment under `(app)/` should have an `error.tsx` that delegates to the
-shared `RouteError` component. This captures the error in Sentry and shows a retry button.
+shared `LazyRouteError` wrapper. This defers loading of `RouteError` (which pulls in
+lucide-react and Button) until an error actually occurs, keeping ~7 kB gzip out of
+every page's first-load JS.
 
 ```typescript
 // src/app/(app)/[workspaceSlug]/error.tsx
 "use client";
 
-import { RouteError } from "@/components/route-error";
+import { LazyRouteError } from "@/components/lazy-route-error";
 
 export default function WorkspaceError({
   error,
@@ -1349,13 +1351,15 @@ export default function WorkspaceError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  return <RouteError error={error} reset={reset} />;
+  return <LazyRouteError error={error} reset={reset} />;
 }
 ```
 
 The `RouteError` component (`src/components/route-error.tsx`) handles Sentry reporting
-and renders a centered error UI with a retry button. Route-level `error.tsx` files are
-thin wrappers — all logic lives in `RouteError`.
+and renders a centered error UI with a retry button. `LazyRouteError`
+(`src/components/lazy-route-error.tsx`) wraps it with `next/dynamic` so the lucide icon
+and Button are only loaded when an error boundary triggers. Route-level `error.tsx` files
+are thin wrappers — all logic lives in `RouteError`.
 
 ## Dynamic Page Titles (generateMetadata)
 
@@ -1402,10 +1406,14 @@ Rules:
 ## Not-Found Pages
 
 Custom `not-found.tsx` files provide contextual 404 messages:
-- Root `not-found.tsx`: full-screen centered, links to `/`.
-- `(app)/not-found.tsx`: within the app shell, mentions workspace/page access.
+- Root `not-found.tsx`: full-screen centered, links to `/`. Uses inline SVG and plain
+  `<a>` instead of lucide icons and Button/Link client components — Next.js embeds the
+  notFound fallback in the RSC payload of every page, so client component imports here
+  add to every route's first-load JS.
+- `(app)/not-found.tsx`: within the app shell, mentions workspace/page access. Uses
+  lucide `FileQuestion` + `Button` + `Link` since the app layout already loads these.
 
-Pattern: `FileQuestion` icon (48px) + heading + description + "Go home" button.
+Pattern: file-question icon (48px) + heading + description + "Go home" link.
 
 ## Graceful Degradation for Optional Features
 

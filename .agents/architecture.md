@@ -552,6 +552,7 @@ src/
 │   ├── version-history-panel.tsx # Sheet panel: lists page versions, preview, restore
 │   ├── relative-time.tsx        # Client component for "2 hours ago" timestamps (avoids hydration mismatch)
 │   ├── route-error.tsx          # Reusable error boundary UI (Sentry capture + retry button)
+│   ├── lazy-route-error.tsx    # Dynamic-import wrapper for route-error (keeps error boundary JS out of first load)
 │   ├── workspace-home.tsx       # Workspace home: page list or empty state with create CTA
 │   ├── workspace-home-client.tsx # Client wrapper: lazy-loads WorkspaceHome via next/dynamic
 │   ├── settings-page-client.tsx  # Client wrapper: lazy-loads SettingsPageContent via next/dynamic
