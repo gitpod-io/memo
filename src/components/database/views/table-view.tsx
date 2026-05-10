@@ -368,6 +368,7 @@ export const TableView = memo(function TableView({
             {/* Select-all checkbox header */}
             {selectionEnabled && (
               <div
+                role="columnheader"
                 className="flex items-center justify-center border-b border-overlay-border bg-background"
               >
                 <Checkbox
@@ -428,7 +429,7 @@ export const TableView = memo(function TableView({
             })}
 
             {/* Add column header button */}
-            <div className="flex items-center border-b border-overlay-border bg-background px-2" data-testid="db-table-add-column">
+            <div role="columnheader" className="flex items-center border-b border-overlay-border bg-background px-2" data-testid="db-table-add-column">
               {onAddColumn && <PropertyTypePicker onSelect={onAddColumn} />}
             </div>
           </div>
