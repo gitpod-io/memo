@@ -391,17 +391,24 @@ src/
 │   │   ├── layout.tsx      # Centered card layout for auth pages
 │   │   ├── sign-in/
 │   │   │   ├── page.tsx        # /sign-in — server page
+│   │   │   ├── error.tsx       # Sign-in error boundary (delegates to RouteError)
 │   │   │   └── sign-in-form.tsx # Client form: email/password, redirect, ?confirmed banner, forgot password link
 │   │   ├── sign-up/
 │   │   │   ├── page.tsx        # /sign-up — server page
+│   │   │   ├── error.tsx       # Sign-up error boundary (delegates to RouteError)
 │   │   │   └── sign-up-form.tsx # Client form: display name + email/password, email confirmation screen
 │   │   ├── forgot-password/
 │   │   │   ├── page.tsx               # /forgot-password — server page
+│   │   │   ├── error.tsx              # Forgot-password error boundary (delegates to RouteError)
 │   │   │   └── forgot-password-form.tsx # Client form: email input, calls resetPasswordForEmail
 │   │   ├── reset-password/
 │   │   │   ├── page.tsx               # /reset-password — server page (landing from email link)
+│   │   │   ├── error.tsx              # Reset-password error boundary (delegates to RouteError)
 │   │   │   └── reset-password-form.tsx # Client form: new password + confirm, calls updateUser
-│   │   └── invite/[token]/page.tsx # /invite/[token] — invite accept flow
+│   │   └── invite/[token]/
+│   │       ├── page.tsx    # /invite/[token] — invite accept flow
+│   │       ├── error.tsx   # Invite error boundary (invite-specific messaging + sign-in link)
+│   │       └── loading.tsx # Invite loading skeleton (Card with pulse placeholders)
 │   ├── (app)/              # Authenticated route group
 │   │   ├── layout.tsx      # Auth guard, fetches profile, renders AppShell
 │   │   ├── loading.tsx     # App shell loading skeleton
