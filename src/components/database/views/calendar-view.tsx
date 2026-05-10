@@ -261,7 +261,13 @@ export const CalendarView = memo(function CalendarView({
           onClick={onAddRow ? handleCellClick : undefined}
         />
       ) : (
-        <>
+        <div
+          ref={containerRef}
+          role="grid"
+          aria-label={`${FULL_MONTHS[viewMonth]} ${viewYear} calendar`}
+          tabIndex={-1}
+          onKeyDown={handleKeyDown}
+        >
           {/* Day headers */}
           <div className="grid grid-cols-7" role="row">
             {DAY_HEADERS.map((day) => (
@@ -275,33 +281,44 @@ export const CalendarView = memo(function CalendarView({
             ))}
           </div>
 
-          {/* Calendar grid */}
-          <div
-            ref={containerRef}
-            className="grid grid-cols-7"
-            role="grid"
-            aria-label={`${FULL_MONTHS[viewMonth]} ${viewYear} calendar`}
-            tabIndex={-1}
-            onKeyDown={handleKeyDown}
-          >
-            {cells.map((cell, index) => (
-              <CalendarDayCell
-                key={cell.date}
-                cell={cell}
-                cellIndex={index}
-                workspaceSlug={workspaceSlug}
-                isFocused={calendarFocus?.cellIndex === index}
-                focusedItemIndex={
-                  calendarFocus?.cellIndex === index
-                    ? calendarFocus.itemIndex
-                    : null
-                }
-                onCellFocus={handleCellFocus}
-                onClick={onAddRow ? handleCellClick : undefined}
-              />
-            ))}
-          </div>
-        </>
+          {/* Week rows — group cells into rows of 7 */}
+          {Array.from(
+            { length: Math.ceil(cells.length / 7) },
+            (_, weekIndex) => {
+              const weekCells = cells.slice(
+                weekIndex * 7,
+                weekIndex * 7 + 7,
+              );
+              return (
+                <div
+                  key={weekIndex}
+                  className="grid grid-cols-7"
+                  role="row"
+                >
+                  {weekCells.map((cell, cellInWeek) => {
+                    const index = weekIndex * 7 + cellInWeek;
+                    return (
+                      <CalendarDayCell
+                        key={cell.date}
+                        cell={cell}
+                        cellIndex={index}
+                        workspaceSlug={workspaceSlug}
+                        isFocused={calendarFocus?.cellIndex === index}
+                        focusedItemIndex={
+                          calendarFocus?.cellIndex === index
+                            ? calendarFocus.itemIndex
+                            : null
+                        }
+                        onCellFocus={handleCellFocus}
+                        onClick={onAddRow ? handleCellClick : undefined}
+                      />
+                    );
+                  })}
+                </div>
+              );
+            },
+          )}
+        </div>
       )}
     </div>
   );
@@ -393,7 +410,7 @@ function CalendarDayCell({
       <span
         className={cn(
           "text-xs",
-          !cell.isCurrentMonth && "text-muted-foreground/50",
+          !cell.isCurrentMonth && "text-muted-foreground",
         )}
       >
         {cell.day}
