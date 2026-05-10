@@ -9,13 +9,13 @@ export default function InviteLoading() {
     <Card>
       <CardHeader>
         {/* Title skeleton */}
-        <div className="h-7 w-48 animate-pulse rounded bg-muted" />
+        <div className="h-7 w-48 animate-pulse bg-muted" />
         {/* Description skeleton */}
-        <div className="h-4 w-64 animate-pulse rounded bg-muted" />
+        <div className="h-4 w-64 animate-pulse bg-muted" />
       </CardHeader>
       <CardContent>
         {/* Action button skeleton */}
-        <div className="h-9 w-full animate-pulse rounded bg-muted" />
+        <div className="h-9 w-full animate-pulse bg-muted" />
       </CardContent>
     </Card>
   );
