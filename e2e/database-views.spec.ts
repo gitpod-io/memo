@@ -84,7 +84,9 @@ async function addColumn(page: import("@playwright/test").Page) {
 }
 
 /**
- * Fill a cell value. Clicks the cell, fills the input, then blurs.
+ * Fill a cell value. Clicks the cell, fills the input, blurs, and waits for
+ * the value to appear in the cell text (confirming the optimistic update
+ * rendered).
  */
 async function fillCell(
   page: import("@playwright/test").Page,
@@ -102,6 +104,9 @@ async function fillCell(
 
   // Wait for the cell input to disappear (blur complete, value persisted)
   await expect(cellInput).not.toBeVisible({ timeout: 5_000 });
+
+  // Verify the value rendered in the cell after the optimistic update
+  await expect(cell).toHaveText(value, { timeout: 5_000 });
 }
 
 /**
