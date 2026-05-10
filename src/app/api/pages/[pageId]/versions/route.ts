@@ -7,10 +7,11 @@ import { captureApiError, captureSupabaseError, isForeignKeyViolationError, isIn
  * Lists versions for a page, newest first. Requires workspace membership.
  */
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ pageId: string }> },
 ) {
   const { pageId } = await params;
+  const userAgent = request.headers.get("user-agent") ?? undefined;
 
   try {
     const supabase = await createClient();
@@ -31,7 +32,7 @@ export async function GET(
       if (isInsufficientPrivilegeError(error)) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
-      captureSupabaseError(error, "page-versions:list");
+      captureSupabaseError(error, "page-versions:list", userAgent);
       return NextResponse.json({ error: "Failed to list versions" }, { status: 500 });
     }
 
@@ -40,7 +41,7 @@ export async function GET(
     if (error instanceof Error && isInsufficientPrivilegeError(error)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    captureApiError(error, "page-versions:list");
+    captureApiError(error, "page-versions:list", userAgent);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -55,6 +56,7 @@ export async function POST(
   { params }: { params: Promise<{ pageId: string }> },
 ) {
   const { pageId } = await params;
+  const userAgent = request.headers.get("user-agent") ?? undefined;
 
   try {
     const supabase = await createClient();
@@ -112,7 +114,7 @@ export async function POST(
       if (isForeignKeyViolationError(error)) {
         return NextResponse.json({ error: "Page not found" }, { status: 404 });
       }
-      captureSupabaseError(error, "page-versions:create");
+      captureSupabaseError(error, "page-versions:create", userAgent);
       return NextResponse.json({ error: "Failed to create version" }, { status: 500 });
     }
 
@@ -121,7 +123,10 @@ export async function POST(
     if (error instanceof Error && isInsufficientPrivilegeError(error)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    captureApiError(error, "page-versions:create");
+    if (error instanceof Error && isForeignKeyViolationError(error)) {
+      return NextResponse.json({ error: "Page not found" }, { status: 404 });
+    }
+    captureApiError(error, "page-versions:create", userAgent);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

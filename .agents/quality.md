@@ -33,9 +33,9 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 
 | Category | Files | Tests |
 |---|---|---|
-| Unit/Integration (Vitest) | 138 | 1845 |
+| Unit/Integration (Vitest) | 138 | 1858 |
 | E2E (Playwright) | 74 | 369 |
-| **Total** | **212** | **2214** |
+| **Total** | **212** | **2227** |
 
 ### Test files by domain
 
@@ -49,9 +49,9 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 - **App Shell**: `sidebar-context.test.tsx` (21 tests), `(app)/loading.test.ts` (4 tests), `[workspaceSlug]/loading.test.ts` (5 tests), `[workspaceSlug]/[pageId]/loading.test.ts` (6 tests), `[workspaceSlug]/settings/loading.test.ts` (5 tests), `[workspaceSlug]/settings/members/loading.test.ts` (5 tests), `route-error.test.ts` (6 tests), `[workspaceSlug]/error.test.ts` (4 tests), `[workspaceSlug]/[pageId]/error.test.ts` (4 tests), `[workspaceSlug]/settings/error.test.ts` (4 tests), `[workspaceSlug]/settings/members/error.test.ts` (4 tests), `focus-mode-hint-design-spec.test.ts` (3 tests), `workspace-home-design-spec.test.ts` (5 tests), `e2e/sidebar-responsive.spec.ts` (4 tests), `e2e/mobile-responsive.spec.ts` (5 tests), `e2e/theme-toggle.spec.ts` (4 tests), `e2e/skip-to-content.spec.ts` (2 tests), `e2e/not-found.spec.ts` (3 tests), `e2e/public-routes.spec.ts` (18 tests), `e2e/demo-editor.spec.ts` (11 tests), `e2e/accessibility.spec.ts` (8 tests), `e2e/keyboard-shortcuts.spec.ts` (5 tests)
 - **Members**: `invite-form.test.ts` (4 tests), `member-list.test.tsx` (14 tests), `pending-invite-list.test.tsx` (8 tests), `role-select.test.tsx` (8 tests), `e2e/members.spec.ts` (7 tests)
 - **Feedback**: `feedback/route.test.ts` (17 tests), `feedback-form-design-spec.test.ts` (5 tests), `use-screenshot.test.ts` (2 tests), `e2e/feedback.spec.ts` (6 tests)
-- **API**: `health/route.test.ts` (7 tests), `search/route.test.ts` (14 tests), `account/route.test.ts` (6 tests), `cron/purge-trash/route.test.ts` (8 tests), `feedback/route.test.ts` (17 tests), `pages/[pageId]/versions/route.test.ts` (12 tests), `pages/[pageId]/versions/[versionId]/route.test.ts` (11 tests), `e2e/account-deletion.spec.ts` (4 tests), `e2e/account-settings.spec.ts` (5 tests)
+- **API**: `health/route.test.ts` (7 tests), `search/route.test.ts` (14 tests), `account/route.test.ts` (6 tests), `cron/purge-trash/route.test.ts` (8 tests), `feedback/route.test.ts` (17 tests), `pages/[pageId]/versions/route.test.ts` (15 tests), `pages/[pageId]/versions/[versionId]/route.test.ts` (11 tests), `e2e/account-deletion.spec.ts` (4 tests), `e2e/account-settings.spec.ts` (5 tests)
 - **UI**: `overlay-opacity.test.ts` (2 tests), `toast-error-duration.test.ts` (1 test), `dialog-design-spec.test.ts` (3 tests), `design-spec-compliance.test.ts` (9 tests), `relative-time.test.ts` (7 tests), `reduced-motion.test.ts` (6 tests), `e2e/visual-regression.spec.ts` (1 test)
-- **Lib**: `sentry.test.ts` (4 tests), `sentry.unit.test.ts` (149 tests), `retry.test.ts` (9 tests), `track-event-server.test.ts` (6 tests), `track-event.test.ts` (4 tests), `usage-tracking-guard.test.ts` (5 tests)
+- **Lib**: `sentry.test.ts` (4 tests), `sentry.unit.test.ts` (163 tests), `retry.test.ts` (9 tests), `track-event-server.test.ts` (6 tests), `track-event.test.ts` (4 tests), `usage-tracking-guard.test.ts` (5 tests)
 - **Infrastructure**: `migrations.test.ts` (33 tests), `build-timeseries.test.mjs` (6 tests), `supabase/client.test.ts` (7 tests)
 
 ## Known Gaps
@@ -131,5 +131,6 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | 2026-05-10 | Add Storybook stories for sign-in and sign-up forms (#996). Added `sign-in-form.stories.tsx` (6 stories: Default, PreFilledEmail, EmailConfirmed, OAuthError, Loading, ValidationError) and `sign-up-form.stories.tsx` (4 stories: Default, Loading, ValidationError, ConfirmationPending). Generated 10 visual regression baselines. Test totals unchanged: 138 Vitest files (1844 tests), 73 E2E specs (364 tests). |
 | 2026-05-10 | Bundle size reduction (#1000). Replaced client component imports in `not-found.tsx` with inline SVG and plain `<a>` to eliminate lucide/base-ui from every page's RSC fallback. Added `lazy-route-error.tsx` wrapper and migrated all 10 error boundaries to use it, deferring RouteError + lucide + Button loading until an error occurs. Auth pages: 194→179 kB, settings pages: 182→173 kB. No test changes. Test totals unchanged: 138 Vitest files (1845 tests), 73 E2E specs (364 tests). |
 | 2026-05-10 | Add E2E tests for keyboard shortcuts dialog (#1001). Added `e2e/keyboard-shortcuts.spec.ts` (5 tests): open via ? key with category verification, shortcut display from each category, close on Escape, open via user menu, input-focus guard. Test totals: 138 Vitest files (1845 tests), 74 E2E specs (369 tests). |
+| 2026-05-10 | Fix FK violation Sentry leak on page-versions (#1013). Updated `sentry.unit.test.ts` (149→163 tests): added 2 tests for message-based FK detection fallback, 4 tests for `isE2ETestRequest` extra.userAgent fallback, 4 tests for userAgent propagation in captureSupabaseError/captureApiError. Updated `pages/[pageId]/versions/route.test.ts` (12→15 tests): added 3 tests for catch-block FK handling and User-Agent propagation. Test totals: 138 Vitest files (1858 tests), 74 E2E specs (369 tests). |
 
 

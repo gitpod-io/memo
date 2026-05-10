@@ -398,6 +398,18 @@ describe("isForeignKeyViolationError", () => {
     );
     expect(isForeignKeyViolationError(error)).toBe(false);
   });
+
+  it("detects FK violation by message when error lacks code property (MEMO-2F fallback)", () => {
+    const error = new Error(
+      'insert or update on table "page_versions" violates foreign key constraint "page_versions_page_id_fkey"',
+    );
+    expect(isForeignKeyViolationError(error)).toBe(true);
+  });
+
+  it("returns false for message without FK violation pattern and no code", () => {
+    const error = new Error("some other database error");
+    expect(isForeignKeyViolationError(error)).toBe(false);
+  });
 });
 
 describe("isDuplicateKeyError", () => {
@@ -931,6 +943,27 @@ describe("captureSupabaseError", () => {
     expect(opts.extra.hint).toBe("");
     expect(opts.extra.code).toBe("XX000");
   });
+
+  it("includes userAgent in extra when provided (MEMO-2F E2E detection)", async () => {
+    const error = new Error("some error");
+    captureSupabaseError(error, "page-versions:create", "Mozilla/5.0 HeadlessChrome/147.0.0.0");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [, opts] = captureExceptionMock.mock.calls[0];
+    expect(opts.extra.userAgent).toBe("Mozilla/5.0 HeadlessChrome/147.0.0.0");
+    expect(opts.extra.operation).toBe("page-versions:create");
+  });
+
+  it("omits userAgent from extra when not provided", async () => {
+    const error = new Error("some error");
+    captureSupabaseError(error, "page-versions:create");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [, opts] = captureExceptionMock.mock.calls[0];
+    expect(opts.extra.userAgent).toBeUndefined();
+  });
 });
 
 function makeSentryEvent(
@@ -1449,6 +1482,27 @@ describe("captureApiError", () => {
     const [, opts] = captureExceptionMock.mock.calls[0];
     expect(opts.extra.operation).toBe("versions:select");
   });
+
+  it("includes userAgent in extra when provided (MEMO-2F E2E detection)", async () => {
+    const error = new Error("some error");
+    captureApiError(error, "page-versions:create", "Mozilla/5.0 HeadlessChrome/147.0.0.0");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [, opts] = captureExceptionMock.mock.calls[0];
+    expect(opts.extra.userAgent).toBe("Mozilla/5.0 HeadlessChrome/147.0.0.0");
+    expect(opts.extra.operation).toBe("page-versions:create");
+  });
+
+  it("omits userAgent from extra when not provided", async () => {
+    const error = new Error("some error");
+    captureApiError(error, "page-versions:create");
+    await flush();
+
+    expect(captureExceptionMock).toHaveBeenCalledOnce();
+    const [, opts] = captureExceptionMock.mock.calls[0];
+    expect(opts.extra.userAgent).toBeUndefined();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1551,6 +1605,38 @@ describe("isE2ETestRequest", () => {
     const event = {
       type: undefined,
       contexts: { browser: { name: 42 } },
+    } as unknown as ErrorEvent;
+    expect(isE2ETestRequest(event)).toBe(false);
+  });
+
+  it("returns true when extra.userAgent contains HeadlessChrome/ (MEMO-2F server-side fallback)", () => {
+    const event = {
+      type: undefined,
+      extra: { userAgent: "Mozilla/5.0 HeadlessChrome/147.0.0.0 Safari/537.36" },
+    } as unknown as ErrorEvent;
+    expect(isE2ETestRequest(event)).toBe(true);
+  });
+
+  it("returns false when extra.userAgent is a normal Chrome UA", () => {
+    const event = {
+      type: undefined,
+      extra: { userAgent: "Mozilla/5.0 Chrome/147.0.0.0 Safari/537.36" },
+    } as unknown as ErrorEvent;
+    expect(isE2ETestRequest(event)).toBe(false);
+  });
+
+  it("returns false when extra.userAgent is not a string", () => {
+    const event = {
+      type: undefined,
+      extra: { userAgent: 42 },
+    } as unknown as ErrorEvent;
+    expect(isE2ETestRequest(event)).toBe(false);
+  });
+
+  it("returns false when extra exists but has no userAgent", () => {
+    const event = {
+      type: undefined,
+      extra: { operation: "page-versions:create" },
     } as unknown as ErrorEvent;
     expect(isE2ETestRequest(event)).toBe(false);
   });
