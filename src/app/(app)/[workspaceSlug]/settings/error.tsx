@@ -1,6 +1,6 @@
 "use client";
 
-import { RouteError } from "@/components/route-error";
+import { LazyRouteError } from "@/components/lazy-route-error";
 
 export default function SettingsError({
   error,
@@ -9,5 +9,5 @@ export default function SettingsError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  return <RouteError error={error} reset={reset} />;
+  return <LazyRouteError error={error} reset={reset} />;
 }
