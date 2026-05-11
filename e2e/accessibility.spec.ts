@@ -222,7 +222,7 @@ const SELECT_OPTIONS = [
   { id: crypto.randomUUID(), name: "Done", color: "green" },
 ];
 
-// Shared state across the three database accessibility tests
+// Shared state across the five database accessibility tests
 let dbWorkspaceSlug: string;
 let dbPageId: string;
 const dbRowPageIds: string[] = [];
@@ -368,6 +368,38 @@ authTest.beforeAll(async () => {
 
   if (cvErr)
     throw new Error(`Failed to create calendar view: ${cvErr.message}`);
+
+  // Create a gallery view
+  const { error: gvErr } = await admin
+    .from("database_views")
+    .insert({
+      database_id: dbPageId,
+      name: "Gallery view",
+      type: "gallery",
+      config: {},
+      position: 3,
+    })
+    .select()
+    .single();
+
+  if (gvErr)
+    throw new Error(`Failed to create gallery view: ${gvErr.message}`);
+
+  // Create a list view
+  const { error: lvErr } = await admin
+    .from("database_views")
+    .insert({
+      database_id: dbPageId,
+      name: "List view",
+      type: "list",
+      config: {},
+      position: 4,
+    })
+    .select()
+    .single();
+
+  if (lvErr)
+    throw new Error(`Failed to create list view: ${lvErr.message}`);
 
   // Create rows with select and date values
   const rowData = [
@@ -539,3 +571,76 @@ authTest.describe("Accessibility: database calendar view", () => {
     },
   );
 });
+
+authTest.describe("Accessibility: database gallery view", () => {
+  authTest(
+    "has no critical or serious axe violations",
+    async ({ authenticatedPage: page }) => {
+      authTest.slow();
+      await page.goto(`/${dbWorkspaceSlug}/${dbPageId}`);
+
+      // Wait for view tabs to load
+      await authExpect(
+        page.getByRole("button", { name: /Table view/i }),
+      ).toBeVisible({ timeout: 15_000 });
+
+      // Switch to gallery view
+      const galleryTab = page.getByRole("button", {
+        name: /Gallery view/i,
+      });
+      await galleryTab.click();
+
+      // Wait for the gallery card grid to render with data
+      await authExpect(
+        page.locator('[data-testid="db-gallery-container"]'),
+      ).toBeVisible({ timeout: 15_000 });
+      await authExpect(
+        page.locator("a").filter({ hasText: "Task A" }),
+      ).toBeVisible({ timeout: 10_000 });
+
+      const results = await createAxeBuilder(page).analyze();
+      const severe = filterSevereViolations(results.violations);
+
+      authExpect(
+        severe,
+        `Found ${severe.length} accessibility violation(s):\n${formatViolations(severe)}`,
+      ).toHaveLength(0);
+    },
+  );
+});
+
+authTest.describe("Accessibility: database list view", () => {
+  authTest(
+    "has no critical or serious axe violations",
+    async ({ authenticatedPage: page }) => {
+      authTest.slow();
+      await page.goto(`/${dbWorkspaceSlug}/${dbPageId}`);
+
+      // Wait for view tabs to load
+      await authExpect(
+        page.getByRole("button", { name: /Table view/i }),
+      ).toBeVisible({ timeout: 15_000 });
+
+      // Switch to list view
+      const listTab = page.getByRole("button", { name: /List view/i });
+      await listTab.click();
+
+      // Wait for the list to render with data
+      await authExpect(
+        page.locator('[role="list"][aria-label="Database list"]'),
+      ).toBeVisible({ timeout: 15_000 });
+      await authExpect(
+        page.locator('[data-testid="list-row"]').first(),
+      ).toBeVisible({ timeout: 10_000 });
+
+      const results = await createAxeBuilder(page).analyze();
+      const severe = filterSevereViolations(results.violations);
+
+      authExpect(
+        severe,
+        `Found ${severe.length} accessibility violation(s):\n${formatViolations(severe)}`,
+      ).toHaveLength(0);
+    },
+  );
+});
+

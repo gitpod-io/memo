@@ -110,25 +110,26 @@ export const ListView = memo(function ListView({
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="w-full"
-      role="list"
-      aria-label="Database list"
-      onKeyDown={handleKeyDown}
-    >
-      {rows.map((row, index) => (
-        <ListRow
-          key={row.page.id}
-          row={row}
-          index={index}
-          visibleProperties={visibleProperties}
-          workspaceSlug={workspaceSlug}
-          isFocused={focusedIndex === index}
-          onRowFocus={handleRowFocus}
-          onDuplicateRow={onDuplicateRow}
-        />
-      ))}
+    <div className="w-full">
+      <div
+        ref={containerRef}
+        role="list"
+        aria-label="Database list"
+        onKeyDown={handleKeyDown}
+      >
+        {rows.map((row, index) => (
+          <ListRow
+            key={row.page.id}
+            row={row}
+            index={index}
+            visibleProperties={visibleProperties}
+            workspaceSlug={workspaceSlug}
+            isFocused={focusedIndex === index}
+            onRowFocus={handleRowFocus}
+            onDuplicateRow={onDuplicateRow}
+          />
+        ))}
+      </div>
 
       {onAddRow && (
         <button
@@ -181,7 +182,7 @@ function ListRow({
       )}
       role="listitem"
       tabIndex={0}
-      aria-selected={isFocused}
+      aria-current={isFocused ? "true" : undefined}
       data-testid="list-row"
       data-list-index={index}
       onFocus={handleFocus}

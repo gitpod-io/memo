@@ -316,7 +316,7 @@ test.describe("List view keyboard navigation", () => {
     await expect(lastRow).toBeFocused({ timeout: 3_000 });
   });
 
-  test("focused row has aria-selected attribute", async ({
+  test("focused row has aria-current attribute", async ({
     authenticatedPage: page,
   }) => {
     await navigateToDatabase(page);
@@ -326,11 +326,11 @@ test.describe("List view keyboard navigation", () => {
     await firstRow.focus();
     await expect(firstRow).toBeFocused({ timeout: 3_000 });
 
-    // The focused row should have aria-selected="true"
-    await expect(firstRow).toHaveAttribute("aria-selected", "true");
+    // The focused row should have aria-current="true"
+    await expect(firstRow).toHaveAttribute("aria-current", "true");
 
-    // Other rows should have aria-selected="false"
+    // Other rows should not have aria-current
     const secondRow = getListRow(page, 1);
-    await expect(secondRow).toHaveAttribute("aria-selected", "false");
+    await expect(secondRow).not.toHaveAttribute("aria-current");
   });
 });
