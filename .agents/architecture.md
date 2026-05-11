@@ -429,12 +429,12 @@ src/
 │   │           ├── page.tsx         # /[workspaceSlug]/settings (+ generateMetadata)
 │   │           └── members/page.tsx # /[workspaceSlug]/settings/members (+ generateMetadata)
 │   └── api/
-│       ├── account/route.ts # Account deletion (DELETE) → calls delete_account RPC
-│       ├── feedback/route.ts # POST: submit user feedback (bug, feature, general) with optional screenshot
+│       ├── account/route.ts # Account deletion (DELETE) → calls delete_account RPC (rate limited: 3/hour per user)
+│       ├── feedback/route.ts # POST: submit user feedback (rate limited: 5/min per IP)
 │       ├── health/route.ts  # Health check endpoint (DB connectivity)
 │       ├── pages/[pageId]/versions/route.ts       # GET: list versions, POST: create version snapshot
 │       ├── pages/[pageId]/versions/[versionId]/route.ts # GET: single version content, POST: restore version
-│       ├── search/route.ts  # Full-text search (GET ?q=&workspace_id=) → calls search_pages RPC
+│       ├── search/route.ts  # Full-text search (GET ?q=&workspace_id=) → search_pages RPC (rate limited: 30/min per IP)
 │       └── cron/purge-trash/route.ts # Vercel Cron: purges pages trashed >30 days (CRON_SECRET auth)
 ├── components/
 │   ├── auth/
@@ -595,6 +595,7 @@ src/
 │   ├── formula.ts          # Formula parser and evaluator for formula property type
 │   ├── page-tree.ts        # Pure functions: tree building, reorder, nest/unnest, drop computation
 │   ├── property-icons.ts   # Shared PropertyType → icon + label mapping for database components
+│   ├── rate-limit.ts       # In-memory sliding window rate limiter (withRateLimit wrapper for API routes)
 │   ├── retry.ts            # retryOnNetworkError helper (exponential backoff for transient failures)
 │   ├── sentry.ts           # captureSupabaseError helper (structured Sentry reporting)
 │   ├── theme.tsx            # ThemeProvider + useTheme hook (light/dark/system, localStorage persistence)

@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { captureApiError, captureSupabaseError, isInsufficientPrivilegeError } from "@/lib/sentry";
+import { withRateLimit } from "@/lib/rate-limit";
 
-export async function DELETE() {
+async function handler(_request: NextRequest) {
   if (
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||
     !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
@@ -51,3 +52,19 @@ export async function DELETE() {
     );
   }
 }
+
+export const DELETE = withRateLimit(handler, {
+  limit: 3,
+  windowMs: 3_600_000, // 1 hour
+  keyFn: async () => {
+    try {
+      const supabase = await createClient();
+      const { data } = await supabase.auth.getUser();
+      return data.user ? `account:${data.user.id}` : null;
+    } catch (_error) {
+      // If we can't determine the user, skip rate limiting and let the
+      // handler's own auth check return 401.
+      return null;
+    }
+  },
+});
