@@ -20,6 +20,7 @@ vi.mock("@/lib/sentry", () => ({
   captureSupabaseError: (...args: unknown[]) => captureSupabaseErrorMock(...args),
   lazyCaptureException: vi.fn(),
   isInsufficientPrivilegeError: () => false,
+  isTransientNetworkError: () => false,
 }));
 
 vi.mock("@sentry/nextjs", () => ({

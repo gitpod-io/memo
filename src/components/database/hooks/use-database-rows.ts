@@ -12,6 +12,7 @@ import {
   captureSupabaseError,
   isInsufficientPrivilegeError,
 } from "@/lib/sentry";
+import { retryOnNetworkError } from "@/lib/retry";
 import type { DatabaseProperty, DatabaseRow } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -394,7 +395,7 @@ export function useDatabaseRows({
             },
           });
           // Reload to restore
-          const { data } = await loadDatabase(pageId);
+          const { data } = await retryOnNetworkError(() => loadDatabase(pageId));
           if (data) setRows(data.rows);
         }
       }, 5500);
@@ -464,7 +465,7 @@ export function useDatabaseRows({
             },
           });
           // Reload to restore failed rows
-          const { data } = await loadDatabase(pageId);
+          const { data } = await retryOnNetworkError(() => loadDatabase(pageId));
           if (data) setRows(data.rows);
         }
       }, 5500);

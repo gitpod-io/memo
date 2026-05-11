@@ -53,7 +53,7 @@ describe("retryOnNetworkError", () => {
     const result = await promise;
 
     expect(fn).toHaveBeenCalledOnce();
-    expect(result.error?.code).toBe("42501");
+    expect((result.error as PostgrestError | null)?.code).toBe("42501");
   });
 
   it("retries on transient network error and succeeds", async () => {

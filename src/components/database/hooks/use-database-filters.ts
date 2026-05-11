@@ -11,6 +11,7 @@ import {
   captureSupabaseError,
   isInsufficientPrivilegeError,
 } from "@/lib/sentry";
+import { retryOnNetworkError } from "@/lib/retry";
 import type {
   DatabaseProperty,
   DatabaseRow,
@@ -81,7 +82,9 @@ export function useDatabaseFilters({
           v.id === activeView.id ? { ...v, config: newConfig } : v,
         ),
       );
-      const { error } = await updateView(activeView.id, { config: newConfig }, pageId);
+      const { error } = await retryOnNetworkError(() =>
+        updateView(activeView.id, { config: newConfig }, pageId),
+      );
       if (error) {
         if (!isInsufficientPrivilegeError(error)) {
           captureSupabaseError(error, "database-filters:update-sort");
@@ -102,7 +105,9 @@ export function useDatabaseFilters({
           v.id === activeView.id ? { ...v, config: newConfig } : v,
         ),
       );
-      const { error } = await updateView(activeView.id, { config: newConfig }, pageId);
+      const { error } = await retryOnNetworkError(() =>
+        updateView(activeView.id, { config: newConfig }, pageId),
+      );
       if (error) {
         if (!isInsufficientPrivilegeError(error)) {
           captureSupabaseError(error, "database-filters:update-filter");

@@ -23,6 +23,12 @@ vi.mock("@/lib/database-filters", () => ({
     filterRowsMock(rows, filters, props),
 }));
 
+vi.mock("@/lib/sentry", () => ({
+  captureSupabaseError: vi.fn(),
+  isInsufficientPrivilegeError: () => false,
+  isTransientNetworkError: () => false,
+}));
+
 vi.mock("@/lib/toast", () => ({
   toast: {
     error: (...args: unknown[]) => toastErrorMock(...args),

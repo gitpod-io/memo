@@ -13,6 +13,7 @@ import {
   captureSupabaseError,
   isInsufficientPrivilegeError,
 } from "@/lib/sentry";
+import { retryOnNetworkError } from "@/lib/retry";
 import type {
   DatabaseProperty,
   DatabaseView,
@@ -281,7 +282,7 @@ export function useDatabaseViews({
           },
         });
         // Reload to restore correct order
-        const { data } = await loadDatabase(pageId);
+        const { data } = await retryOnNetworkError(() => loadDatabase(pageId));
         if (data) setViews(data.views);
       }
     },

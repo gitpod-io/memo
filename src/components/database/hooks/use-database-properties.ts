@@ -12,6 +12,7 @@ import {
   captureSupabaseError,
   isInsufficientPrivilegeError,
 } from "@/lib/sentry";
+import { retryOnNetworkError } from "@/lib/retry";
 import {
   generateColumnName,
   getDefaultColumnConfig,
@@ -266,7 +267,7 @@ export function useDatabaseProperties({
           // Revert all state
           setProperties(prevProperties);
           setViews(prevViews);
-          const { data } = await loadDatabase(pageId);
+          const { data } = await retryOnNetworkError(() => loadDatabase(pageId));
           if (data) setRows(data.rows);
           return;
         }

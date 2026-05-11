@@ -27,6 +27,7 @@ import {
   captureSupabaseError,
   isInsufficientPrivilegeError,
 } from "@/lib/sentry";
+import { retryOnNetworkError } from "@/lib/retry";
 import { useDatabaseViews } from "@/components/database/hooks/use-database-views";
 import { useDatabaseRows } from "@/components/database/hooks/use-database-rows";
 import { useDatabaseProperties } from "@/components/database/hooks/use-database-properties";
@@ -151,8 +152,8 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
       setError(null);
 
       const [dbResult, membersResult] = await Promise.all([
-        loadDatabase(pageId),
-        loadWorkspaceMembers(workspaceId),
+        retryOnNetworkError(() => loadDatabase(pageId)),
+        retryOnNetworkError(() => loadWorkspaceMembers(workspaceId)),
       ]);
       if (cancelled) return;
 
