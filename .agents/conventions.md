@@ -1928,6 +1928,34 @@ When adding a new client-side dependency, run `pnpm build && pnpm test:bundle` a
 check the "Shared Chunk Analysis" output. If the framework baseline grew, the import
 likely landed in the root layout or providers — use dynamic import instead.
 
+## Accessibility
+
+### Error messages — `role="alert"`
+
+Form error messages use `role="alert"` so screen readers announce them immediately.
+All auth forms already follow this pattern.
+
+```tsx
+{error && <p className="text-xs text-destructive" role="alert">{error}</p>}
+```
+
+Apply this to any user-facing error message rendered conditionally after a form
+submission or validation failure.
+
+### Reduced motion
+
+`globals.css` includes a `@media (prefers-reduced-motion: reduce)` rule that sets
+`animation-duration: 0.01ms !important` and `animation-iteration-count: 1 !important`
+on all elements. Do not add CSS transitions or animations without verifying they
+respect this rule. Tailwind's `animate-*` utilities are covered automatically.
+
+### axe-core audit
+
+`e2e/accessibility.spec.ts` runs axe-core on key pages (sign-in, workspace home,
+page editor, workspace settings, members, database table/board/calendar). New pages
+or major layout changes should be added to this spec. Fix any `critical` or `serious`
+violations before merging.
+
 ## This file evolves
 
 When you discover a new pattern that should be replicated, or an anti-pattern that
