@@ -10,6 +10,7 @@ import {
   isInsufficientPrivilegeError,
   isSchemaNotFoundError,
 } from "@/lib/sentry";
+import { createDatabase } from "@/lib/database";
 import { trackEventClient } from "@/lib/track-event";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -140,6 +141,27 @@ export function WorkspaceHome({
     router.refresh();
   }
 
+  async function handleCreateDatabase() {
+    const { data, error } = await createDatabase(workspace.id, userId);
+
+    if (error || !data) {
+      if (error && !isInsufficientPrivilegeError(error)) {
+        captureSupabaseError(error, "workspace-home:create-database");
+      }
+      toast.error("Failed to create database", { duration: 8000 });
+      return;
+    }
+
+    const supabase = await getClient();
+    trackEventClient(supabase, "database.created", userId, {
+      workspaceId: workspace.id,
+      metadata: { page_id: data.page.id, source: "workspace-home" },
+    });
+
+    router.push(`/${workspace.slug}/${data.page.id}`);
+    router.refresh();
+  }
+
   if (pages.length === 0) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center p-6">
@@ -163,10 +185,16 @@ export function WorkspaceHome({
     <div className="mx-auto max-w-3xl p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">{workspace.name}</h1>
-        <Button size="sm" onClick={handleCreatePage}>
-          <Plus className="h-4 w-4" />
-          New Page
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={handleCreateDatabase}>
+            <Table2 className="h-4 w-4" />
+            New Database
+          </Button>
+          <Button size="sm" onClick={handleCreatePage}>
+            <Plus className="h-4 w-4" />
+            New Page
+          </Button>
+        </div>
       </div>
       {recentVisits.length > 0 && (
         <div className="mt-6">

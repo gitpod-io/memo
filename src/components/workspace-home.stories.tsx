@@ -195,10 +195,16 @@ export const WithPages: Story = {
     <div className="mx-auto max-w-3xl p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">My Workspace</h1>
-        <Button size="sm">
-          <Plus className="h-4 w-4" />
-          New Page
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline">
+            <Table2 className="h-4 w-4" />
+            New Database
+          </Button>
+          <Button size="sm">
+            <Plus className="h-4 w-4" />
+            New Page
+          </Button>
+        </div>
       </div>
       <div className="mt-6">
         <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
@@ -226,10 +232,16 @@ export const WithRecentVisits: Story = {
     <div className="mx-auto max-w-3xl p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">My Workspace</h1>
-        <Button size="sm">
-          <Plus className="h-4 w-4" />
-          New Page
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline">
+            <Table2 className="h-4 w-4" />
+            New Database
+          </Button>
+          <Button size="sm">
+            <Plus className="h-4 w-4" />
+            New Page
+          </Button>
+        </div>
       </div>
       <div className="mt-6">
         <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
@@ -273,10 +285,16 @@ export const FilterNoResults: Story = {
     <div className="mx-auto max-w-3xl p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">My Workspace</h1>
-        <Button size="sm">
-          <Plus className="h-4 w-4" />
-          New Page
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline">
+            <Table2 className="h-4 w-4" />
+            New Database
+          </Button>
+          <Button size="sm">
+            <Plus className="h-4 w-4" />
+            New Page
+          </Button>
+        </div>
       </div>
       <div className="mt-6">
         <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
