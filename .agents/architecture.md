@@ -598,7 +598,13 @@ src/
 │   ├── property-icons.ts   # Shared PropertyType → icon + label mapping for database components
 │   ├── rate-limit.ts       # In-memory sliding window rate limiter (withRateLimit wrapper for API routes)
 │   ├── retry.ts            # retryOnNetworkError helper (exponential backoff for transient failures)
-│   ├── sentry.ts           # captureSupabaseError helper (structured Sentry reporting)
+│   ├── sentry/             # Sentry error handling (split into focused modules)
+│   │   ├── index.ts        # Barrel re-exports for backward-compatible @/lib/sentry imports
+│   │   ├── e2e-detection.ts    # isE2ETestSession, isE2ETestRequest
+│   │   ├── postgrest-errors.ts # PostgreSQL/PostgREST error classification (42501, 23503, etc.)
+│   │   ├── network-errors.ts   # Transient network/storage/auth-lock error detection
+│   │   ├── event-filters.ts    # Sentry beforeSend filters (noise, DOM conflicts, network events)
+│   │   └── capture.ts         # captureSupabaseError, captureApiError
 │   ├── theme.tsx            # ThemeProvider + useTheme hook (light/dark/system, localStorage persistence)
 │   ├── toast.ts            # Lazy-loaded sonner toast wrapper to reduce initial bundle size
 │   ├── track-event.ts      # Client-side usage event tracking (trackEventClient)

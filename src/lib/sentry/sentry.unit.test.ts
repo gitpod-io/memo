@@ -27,7 +27,7 @@ import {
   isReactLexicalDomConflict,
   isE2ETestSession,
   isE2ETestRequest,
-} from "./sentry";
+} from ".";
 
 function makePostgrestError(
   overrides: Partial<PostgrestError> = {},

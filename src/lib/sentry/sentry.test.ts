@@ -10,7 +10,7 @@ import { join, relative } from "path";
  * PRs are allowlisted — those PRs must remove their file from the allowlist.
  */
 
-const SRC_DIR = join(__dirname, "..");
+const SRC_DIR = join(__dirname, "..", "..");
 
 /** Files with intentional bare `catch {}` that are permanently allowed. */
 const BARE_CATCH_PERMANENT_ALLOWLIST = new Set([
