@@ -537,6 +537,7 @@ src/
 │   ├── keyboard-shortcuts-dialog.tsx # ⌘+? keyboard shortcuts reference dialog
 │   ├── providers.tsx                # Client-side providers wrapper (ThemeProvider, Toaster, TooltipProvider)
 │   ├── landing-demo-editor.tsx      # Client wrapper: lazy-loads DemoEditor via next/dynamic for landing page
+│   ├── account-page-client.tsx   # Client wrapper: lazy-loads ChangePasswordSection + DeleteAccountSection via React.lazy
 │   ├── account-settings-form.tsx # Account settings: display name edit, avatar upload (saves to profiles + auth metadata)
 │   ├── change-password-section.tsx # Password change form (new + confirm, calls updateUser)
 │   ├── delete-account-section.tsx # Account deletion danger zone with double-confirm dialog
@@ -621,10 +622,14 @@ src/
 
 scripts/
 ├── check-bundle.mjs           # Bundle budget check (per-route + framework baseline)
+├── tweet.ts                   # Post a tweet to @swfactory_dev via Twitter API v2
+└── metrics/
+    └── build-timeseries.mjs   # Build metrics timeseries from daily snapshots (with tests)
 
 docs/
 ├── product-spec.md            # Product specification
 ├── bundle-budget.md           # Chunk inventory, splitting strategy, budget guidelines
+├── automations.md             # Complete automation reference with prompts and label conventions
 
 Root config files:
 ├── instrumentation-client.ts  # Sentry client init (replay, route transitions)
