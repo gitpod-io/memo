@@ -44,6 +44,7 @@ vi.mock("@/lib/toast", () => ({
 vi.mock("@/lib/sentry", () => ({
   captureSupabaseError: (error: unknown, operation: unknown) => captureSupabaseErrorMock(error, operation),
   isInsufficientPrivilegeError: (error: unknown) => isInsufficientPrivilegeErrorMock(error),
+  isTransientNetworkError: () => false,
 }));
 
 // ---------------------------------------------------------------------------

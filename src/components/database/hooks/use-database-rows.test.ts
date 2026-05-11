@@ -30,6 +30,7 @@ vi.mock("@/lib/sentry", () => ({
     captureSupabaseErrorMock(error, operation),
   isInsufficientPrivilegeError: (error: Error) =>
     isInsufficientPrivilegeErrorMock(error),
+  isTransientNetworkError: () => false,
 }));
 
 const toastSuccessMock = vi.fn();

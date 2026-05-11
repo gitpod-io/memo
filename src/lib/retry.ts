@@ -1,5 +1,4 @@
 import { isTransientNetworkError } from "@/lib/sentry";
-import { PostgrestError } from "@supabase/supabase-js";
 
 interface RetryOptions {
   /** Maximum number of retry attempts (default: 2). */
@@ -8,15 +7,19 @@ interface RetryOptions {
   baseDelayMs?: number;
 }
 
-/** Any Supabase query result shape — the only requirement is an `error` field. */
-type SupabaseResult = { error: PostgrestError | null };
+/**
+ * Any Supabase query result shape — the only requirement is an `error` field.
+ * Accepts both `PostgrestError` and plain `Error` so callers like `loadDatabase`
+ * (which widens the error type) can use `retryOnNetworkError` directly.
+ */
+type SupabaseResult = { error: Error | null };
 
 /**
  * Retry a Supabase query when it fails with a transient network error.
  *
  * Handles both failure modes:
- * - Result-level errors: `{ data: null, error: PostgrestError }` where the
- *   error is a transient network failure.
+ * - Result-level errors: `{ data: null, error: Error }` where the error is
+ *   a transient network failure (works with both `PostgrestError` and `Error`).
  * - Thrown errors: Node.js undici `TypeError: fetch failed` that bypasses
  *   the Supabase result pattern entirely.
  *
