@@ -5,16 +5,7 @@
 let captureTransition: ((url: string, type: string) => void) | null = null;
 
 import("@sentry/nextjs").then(async (Sentry) => {
-  // Dynamic import keeps sentry.ts out of the shared framework chunk.
-  // The filter functions only inspect the event object — they have no
-  // Sentry runtime dependency.
-  const {
-    isE2ETestSession,
-    isNextjsInternalNoise,
-    isReactLexicalDomConflict,
-    isSupabaseAuthLockContention,
-    isTransientSupabaseNetworkEvent,
-  } = await import("@/lib/sentry");
+  const { shouldDropClientEvent } = await import("@/lib/sentry");
 
   Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -33,12 +24,7 @@ import("@sentry/nextjs").then(async (Sentry) => {
     integrations: [Sentry.replayIntegration()],
 
     beforeSend(event) {
-      if (isE2ETestSession()) return null;
-      if (isNextjsInternalNoise(event)) return null;
-      if (isReactLexicalDomConflict(event)) return null;
-      if (isSupabaseAuthLockContention(event)) return null;
-      if (isTransientSupabaseNetworkEvent(event)) return null;
-      return event;
+      return shouldDropClientEvent(event) ? null : event;
     },
   });
 

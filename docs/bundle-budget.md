@@ -5,33 +5,33 @@ Framework baseline budget: **160 kB** gzipped (shared by all routes).
 
 Enforced by `pnpm test:bundle` (runs `scripts/check-bundle.mjs`).
 
-## Current state (2026-05-10)
+## Current state (2026-05-11)
 
-All 12 routes are within budget. The heaviest route is `/account` at ~185 kB.
+All 12 routes are within budget. The heaviest route is `/account` at ~184 kB.
 
 | Route | First-load JS (gzip) | Headroom |
 |---|---|---|
-| /account | 185 kB | 15 kB |
+| /account | 184 kB | 16 kB |
 | /sign-up | 180 kB | 20 kB |
-| /sign-in | 179 kB | 21 kB |
+| /sign-in | 180 kB | 20 kB |
 | /reset-password | 179 kB | 21 kB |
 | /forgot-password | 179 kB | 21 kB |
 | /[workspaceSlug]/[pageId] | 177 kB | 23 kB |
-| /[workspaceSlug]/settings/members | 174 kB | 26 kB |
+| /[workspaceSlug]/settings/members | 173 kB | 27 kB |
 | /[workspaceSlug]/settings | 173 kB | 27 kB |
-| /[workspaceSlug] | 173 kB | 27 kB |
-| /invite/[token] | 171 kB | 29 kB |
-| / | 156 kB | 44 kB |
-| /_not-found | 152 kB | 48 kB |
+| /[workspaceSlug] | 172 kB | 28 kB |
+| /invite/[token] | 170 kB | 30 kB |
+| / | 155 kB | 45 kB |
+| /_not-found | 150 kB | 50 kB |
 
 ## Chunk architecture
 
 Every page's first-load JS = framework baseline + route-group chunks + route-specific chunks.
 
-### Framework baseline (~152 kB gzipped)
+### Framework baseline (~150 kB gzipped)
 
 These chunks are shared by **all** routes. They cannot be split further — they are
-the Next.js runtime, React, and shared utilities loaded by the root layout.
+the Next.js runtime, React, and the minimal app shell loaded by the root layout.
 
 | Chunk | Size (gzip) | Contents |
 |---|---|---|
@@ -40,11 +40,11 @@ the Next.js runtime, React, and shared utilities loaded by the root layout.
 | React primitives | ~12 kB | Slot, context, shared React internals |
 | Next.js internals | ~10 kB | Process polyfill, error handling |
 | Next.js navigation | ~7 kB | Link, router hooks, navigation utilities |
-| Shared providers | ~6 kB | ThemeProvider, TooltipProvider (root layout) |
+| Next.js server utils | ~7 kB | URL handling, bot detection, headers |
 | Turbopack runtime | ~4 kB | Module loading, chunk resolution |
-| UI primitives | ~3 kB | Shared Radix UI primitives |
-| Bootstrap | ~2 kB | App initialization |
-| Font loading | ~2 kB | Inter + JetBrains Mono font setup |
+| Next.js error page | ~3 kB | Error boundary, lazy Sentry shim |
+| Next.js perf/routing | ~2 kB | Performance entries, route matching |
+| ThemeProvider + Providers | ~1 kB | Theme context, lazy-loaded TooltipProvider/Toaster |
 
 ### Route-group shared chunks
 
@@ -73,7 +73,8 @@ first-load JS:
 - **Supabase client** (~59 kB): lazy-loaded via `getClient()` in `src/lib/supabase/lazy-client.ts`
 - **Lexical editor** (~200 kB): dynamically imported in `page-view-client.tsx` and `landing-demo-editor.tsx`
 - **Database view** (~100 kB): dynamically imported in `page-content-client.tsx`
-- **Sonner toaster**: dynamically imported in `providers.tsx`
+- **Sonner toaster**: lazy-loaded via `React.lazy` in `lazy-providers.tsx`
+- **TooltipProvider**: lazy-loaded via `React.lazy` in `lazy-providers.tsx`
 - **OAuth buttons**: dynamically imported in auth form components
 - **Error boundaries**: lazy-loaded via `lazy-route-error.tsx`
 - **Sidebar components**: dynamically imported in `app-shell.tsx`

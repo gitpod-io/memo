@@ -535,7 +535,8 @@ src/
 │   ├── feedback/
 │   │   └── feedback-form.tsx        # User feedback form with type selector, screenshot capture, and submission
 │   ├── keyboard-shortcuts-dialog.tsx # ⌘+? keyboard shortcuts reference dialog
-│   ├── providers.tsx                # Client-side providers wrapper (ThemeProvider, Toaster, TooltipProvider)
+│   ├── providers.tsx                # Client-side providers wrapper (ThemeProvider + lazy LazyProviders)
+│   ├── lazy-providers.tsx           # Lazy-loaded TooltipProvider + Toaster (keeps chunk manifests out of shared baseline)
 │   ├── landing-demo-editor.tsx      # Client wrapper: lazy-loads DemoEditor via next/dynamic for landing page
 │   ├── account-page-client.tsx   # Client wrapper: lazy-loads ChangePasswordSection + DeleteAccountSection via React.lazy
 │   ├── account-settings-form.tsx # Account settings: display name edit, avatar upload (saves to profiles + auth metadata)
@@ -604,6 +605,7 @@ src/
 │   │   ├── postgrest-errors.ts # PostgreSQL/PostgREST error classification (42501, 23503, etc.)
 │   │   ├── network-errors.ts   # Transient network/storage/auth-lock error detection
 │   │   ├── event-filters.ts    # Sentry beforeSend filters (noise, DOM conflicts, network events)
+│   │   ├── client-filter.ts   # shouldDropClientEvent — consolidated client-side beforeSend filter
 │   │   └── capture.ts         # captureSupabaseError, captureApiError
 │   ├── theme.tsx            # ThemeProvider + useTheme hook (light/dark/system, localStorage persistence)
 │   ├── toast.ts            # Lazy-loaded sonner toast wrapper to reduce initial bundle size

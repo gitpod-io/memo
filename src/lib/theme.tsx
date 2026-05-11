@@ -1,18 +1,9 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 export type ThemePreference = "light" | "dark" | "system";
 export type ResolvedTheme = "light" | "dark";
-
-const STORAGE_KEY = "memo-theme";
 
 interface ThemeContextValue {
   preference: ThemePreference;
@@ -20,58 +11,44 @@ interface ThemeContextValue {
   setPreference: (pref: ThemePreference) => void;
 }
 
+const STORAGE_KEY = "memo-theme";
+const DARK_MQ = "(prefers-color-scheme:dark)";
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function getSystemTheme(): ResolvedTheme {
   if (typeof window === "undefined") return "dark";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  return window.matchMedia(DARK_MQ).matches ? "dark" : "light";
 }
 
-function resolveTheme(preference: ThemePreference): ResolvedTheme {
-  if (preference === "system") return getSystemTheme();
-  return preference;
-}
-
-function applyTheme(resolved: ResolvedTheme) {
-  const root = document.documentElement;
-  root.setAttribute("data-theme", resolved);
-  if (resolved === "dark") {
-    root.classList.add("dark");
-  } else {
-    root.classList.remove("dark");
-  }
-}
-
-function readStoredPreference(): ThemePreference {
-  if (typeof window === "undefined") return "dark";
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored === "light" || stored === "dark" || stored === "system") {
-    return stored;
-  }
-  return "dark";
+function applyTheme(theme: ResolvedTheme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  document.documentElement.classList.toggle("dark", theme === "dark");
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [preference, setPreferenceState] =
-    useState<ThemePreference>(readStoredPreference);
+  const [preference, setPreferenceState] = useState<ThemePreference>(() => {
+    if (typeof window === "undefined") return "dark";
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored === "light" || stored === "dark" || stored === "system"
+      ? stored
+      : "dark";
+  });
   const [resolved, setResolved] = useState<ResolvedTheme>(() =>
-    resolveTheme(preference),
+    preference === "system" ? getSystemTheme() : preference,
   );
 
-  const setPreference = useCallback((pref: ThemePreference) => {
+  function setPreference(pref: ThemePreference) {
     localStorage.setItem(STORAGE_KEY, pref);
     setPreferenceState(pref);
-    const next = resolveTheme(pref);
+    const next = pref === "system" ? getSystemTheme() : pref;
     setResolved(next);
     applyTheme(next);
-  }, []);
+  }
 
-  // Listen for system theme changes when preference is "system"
   useEffect(() => {
+    applyTheme(resolved);
     if (preference !== "system") return;
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const mq = window.matchMedia(DARK_MQ);
     function onChange() {
       const next = getSystemTheme();
       setResolved(next);
@@ -79,20 +56,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
-  }, [preference]);
-
-  // Apply theme on mount (handles SSR hydration)
-  useEffect(() => {
-    applyTheme(resolved);
-  }, [resolved]);
-
-  const value = useMemo(
-    () => ({ preference, resolved, setPreference }),
-    [preference, resolved, setPreference],
-  );
+  }, [preference, resolved]);
 
   return (
-    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+    <ThemeContext value={{ preference, resolved, setPreference }}>
+      {children}
+    </ThemeContext>
   );
 }
 
