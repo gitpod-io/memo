@@ -50,11 +50,17 @@ describe("GET /api/health", () => {
     expect(body.status).toBe("ok");
     expect(body.db.connected).toBe(true);
     expect(body.db.latency_ms).toBeGreaterThanOrEqual(0);
+    // Best-of-2 sampling: fetch is called twice
+    expect(mockFetch).toHaveBeenCalledTimes(2);
     expect(mockFetch).toHaveBeenCalledWith(
       "https://example.supabase.co/rest/v1/rpc/health_check",
       expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({ apikey: "test-key" }),
+        method: "GET",
+        headers: expect.objectContaining({
+          apikey: "test-key",
+          Prefer: "return=minimal",
+          Connection: "keep-alive",
+        }),
       }),
     );
   });
@@ -77,7 +83,10 @@ describe("GET /api/health", () => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "test-key");
 
-    const abortError = new DOMException("The operation was aborted.", "AbortError");
+    const abortError = new DOMException(
+      "The operation was aborted.",
+      "AbortError",
+    );
     mockFetch.mockRejectedValue(abortError);
 
     const { GET } = await import("./route");
@@ -114,5 +123,35 @@ describe("GET /api/health", () => {
     const body = await response.json();
 
     expect(body.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
+
+  it("reports the minimum latency from best-of-2 sampling", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "test-key");
+
+    mockFetch.mockResolvedValue({ ok: true });
+
+    const { GET } = await import("./route");
+    const response = await GET();
+    const body = await response.json();
+
+    // Both pings resolve near-instantly in tests, so latency should be small
+    expect(body.db.latency_ms).toBeGreaterThanOrEqual(0);
+    expect(body.db.latency_ms).toBeLessThan(1000);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("uses GET method without request body", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "test-key");
+
+    mockFetch.mockResolvedValue({ ok: true });
+
+    const { GET } = await import("./route");
+    await GET();
+
+    const callArgs = mockFetch.mock.calls[0][1];
+    expect(callArgs.method).toBe("GET");
+    expect(callArgs.body).toBeUndefined();
   });
 });
