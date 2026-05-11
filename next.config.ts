@@ -26,6 +26,11 @@ export default withSentryConfig(nextConfig, {
   widenClientFileUpload: true,
   tunnelRoute: "/monitoring",
   silent: !process.env.CI,
+  // Disable client-side route manifest injection. The manifest adds ~800 bytes
+  // to the shared framework chunk. Sentry still captures route names via the
+  // server-side instrumentation; client transactions will use raw URLs instead
+  // of parameterized paths, which is acceptable for our traffic volume.
+  routeManifestInjection: false,
   bundleSizeOptimizations: {
     excludeDebugStatements: true,
     excludeReplayShadowDom: true,

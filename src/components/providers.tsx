@@ -1,37 +1,22 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { ThemeProvider, useTheme } from "@/lib/theme";
+import { lazy, Suspense } from "react";
+import { ThemeProvider } from "@/lib/theme";
 
-const TooltipProvider = dynamic(
-  () =>
-    import("@/components/ui/tooltip").then((mod) => mod.TooltipProvider),
+// LazyProviders is in a separate file so its chunk-loading manifests
+// (TooltipProvider, Toaster) don't inflate the shared framework baseline.
+const LazyProviders = lazy(() =>
+  import("@/components/lazy-providers").then((mod) => ({
+    default: mod.LP,
+  })),
 );
-
-const Toaster = dynamic(() =>
-  import("sonner").then((mod) => mod.Toaster),
-);
-
-function ThemedToaster() {
-  const { resolved } = useTheme();
-  return (
-    <Toaster
-      theme={resolved}
-      position="bottom-right"
-      toastOptions={{
-        className: "rounded-sm font-mono text-sm",
-      }}
-    />
-  );
-}
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
-      <TooltipProvider>
-        {children}
-        <ThemedToaster />
-      </TooltipProvider>
+      <Suspense>
+        <LazyProviders>{children}</LazyProviders>
+      </Suspense>
     </ThemeProvider>
   );
 }

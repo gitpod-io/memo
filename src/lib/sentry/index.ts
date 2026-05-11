@@ -30,3 +30,8 @@ export {
 } from "./event-filters";
 
 export { captureApiError, captureSupabaseError } from "./capture";
+
+// Consolidated client-side beforeSend filter used by instrumentation-client.ts.
+// Importing one name instead of five reduces the property-name overhead in the
+// shared framework chunk where the instrumentation code is inlined.
+export { shouldDropClientEvent } from "./client-filter";

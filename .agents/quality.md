@@ -138,5 +138,6 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | 2026-05-11 | Decompose sentry.ts into focused modules (#1023). Moved `sentry.test.ts` and `sentry.unit.test.ts` into `src/lib/sentry/` directory. No new tests, no test count changes. Pure refactor — all 1877 Vitest tests pass unchanged. Test totals: 139 Vitest files (1877 tests), 74 E2E specs (371 tests). |
 | 2026-05-11 | Clipboard image paste in editor (#1025). Added `PASTE_COMMAND` handler to `image-plugin.tsx`. Added 1 new E2E spec: `e2e/editor-image-paste.spec.ts` (2 tests). Test totals: 139 Vitest files (1877 tests), 75 E2E specs (373 tests). |
 | 2026-05-11 | New Database button on workspace home (#1026). Added 1 new E2E spec: `e2e/workspace-home-new-database.spec.ts` (1 test). Test totals: 139 Vitest files (1877 tests), 76 E2E specs (374 tests). |
+| 2026-05-11 | Reduce shared base JS below 150 kB (#1030). Replaced `next/dynamic` with `React.lazy` in providers, split lazy-loaded providers into separate chunk, disabled Sentry route manifest injection, consolidated client-side Sentry filters. Framework baseline: 152→150 kB gzipped. No test changes. Test totals unchanged: 139 Vitest files (1877 tests), 76 E2E specs (374 tests). |
 
 
