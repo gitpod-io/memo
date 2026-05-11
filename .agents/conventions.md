@@ -251,7 +251,7 @@ if (error instanceof Error && "code" in error) { ... }
 
 `captureSupabaseError` handles this automatically — it wraps plain objects in a
 proper `Error` before sending to Sentry so they get proper stack traces and
-grouping. The `isPostgrestError` duck-type check in `src/lib/sentry.ts` also
+grouping. The `isPostgrestError` duck-type check in `src/lib/sentry/postgrest-errors.ts` also
 handles both shapes.
 
 **Null-safety for PostgREST fields:** PostgREST error responses may return

@@ -28,7 +28,7 @@ const eslintConfig = defineConfig([
   {
     files: ["src/**/*.ts", "src/**/*.tsx"],
     ignores: [
-      "src/lib/sentry.ts",
+      "src/lib/sentry/**",
       "src/lib/capture.ts",
       "src/lib/toast.ts",
       "src/app/global-error.tsx",
