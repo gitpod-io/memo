@@ -10,6 +10,7 @@ import {
   createCommand,
   DRAGOVER_COMMAND,
   DROP_COMMAND,
+  PASTE_COMMAND,
   type LexicalCommand,
 } from "lexical";
 import { toast } from "@/lib/toast";
@@ -118,6 +119,45 @@ export function ImagePlugin(): null {
             })
             .catch((error) => {
               captureSupabaseError(error instanceof Error ? error : new Error(String(error)), "image-plugin:drop-upload");
+              toast.error("Failed to upload image", { duration: 8000 });
+            });
+        }
+
+        return true;
+      },
+      COMMAND_PRIORITY_HIGH
+    );
+  }, [editor]);
+
+  // Handle clipboard paste for image files
+  useEffect(() => {
+    return editor.registerCommand(
+      PASTE_COMMAND,
+      (event: ClipboardEvent) => {
+        const files = event.clipboardData?.files;
+        if (!files || files.length === 0) return false;
+
+        const imageFiles = Array.from(files).filter((f) =>
+          ACCEPTED_IMAGE_TYPES.has(f.type)
+        );
+        if (imageFiles.length === 0) return false;
+
+        event.preventDefault();
+
+        for (const file of imageFiles) {
+          void uploadImage(file)
+            .then((result) => {
+              if (result.error !== null) {
+                toast.error(result.error, { duration: 8000 });
+                return;
+              }
+              editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
+                src: result.url,
+                altText: file.name,
+              });
+            })
+            .catch((error) => {
+              captureSupabaseError(error instanceof Error ? error : new Error(String(error)), "image-plugin:paste-upload");
               toast.error("Failed to upload image", { duration: 8000 });
             });
         }
