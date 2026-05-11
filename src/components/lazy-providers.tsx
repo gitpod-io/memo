@@ -31,7 +31,7 @@ function ThemedToaster() {
   );
 }
 
-export function LP({ children }: { children: React.ReactNode }) {
+export function LazyProviders({ children }: { children: React.ReactNode }) {
   return (
     <Suspense>
       <TooltipProvider>

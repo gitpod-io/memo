@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/lib/theme";
 // (TooltipProvider, Toaster) don't inflate the shared framework baseline.
 const LazyProviders = lazy(() =>
   import("@/components/lazy-providers").then((mod) => ({
-    default: mod.LP,
+    default: mod.LazyProviders,
   })),
 );
 
