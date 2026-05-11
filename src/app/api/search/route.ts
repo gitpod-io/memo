@@ -8,8 +8,9 @@ import {
 } from "@/lib/sentry";
 import { retryOnNetworkError } from "@/lib/retry";
 import { trackEvent } from "@/lib/track-event-server";
+import { withRateLimit, getClientIp } from "@/lib/rate-limit";
 
-export async function GET(request: NextRequest) {
+async function handler(request: NextRequest) {
   if (
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||
     !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
@@ -91,3 +92,9 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export const GET = withRateLimit(handler, {
+  limit: 30,
+  windowMs: 60_000,
+  keyFn: (req) => `search:${getClientIp(req)}`,
+});

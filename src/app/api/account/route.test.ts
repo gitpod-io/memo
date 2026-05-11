@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { NextRequest } from "next/server";
 
 // Mock next/headers cookies before importing the route
 vi.mock("next/headers", () => ({
@@ -11,6 +12,12 @@ vi.mock("next/headers", () => ({
 // Mock the Supabase server client
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(),
+}));
+
+// Mock rate limiter as passthrough so existing tests aren't affected
+vi.mock("@/lib/rate-limit", () => ({
+  withRateLimit: (handler: (...args: unknown[]) => unknown) => handler,
+  getClientIp: () => "127.0.0.1",
 }));
 
 const captureApiErrorMock = vi.fn();
@@ -28,6 +35,12 @@ import { createClient } from "@/lib/supabase/server";
 
 const mockedCreateClient = vi.mocked(createClient);
 
+function makeRequest(): NextRequest {
+  return new NextRequest("http://localhost:3000/api/account", {
+    method: "DELETE",
+  });
+}
+
 beforeEach(() => {
   vi.restoreAllMocks();
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
@@ -38,7 +51,7 @@ describe("DELETE /api/account", () => {
   it("returns 503 when Supabase is not configured", async () => {
     delete process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-    const response = await DELETE();
+    const response = await DELETE(makeRequest());
     const body = await response.json();
 
     expect(response.status).toBe(503);
@@ -51,7 +64,7 @@ describe("DELETE /api/account", () => {
       auth: { getUser: mockGetUser },
     } as unknown as Awaited<ReturnType<typeof createClient>>);
 
-    const response = await DELETE();
+    const response = await DELETE(makeRequest());
     const body = await response.json();
 
     expect(response.status).toBe(401);
@@ -77,7 +90,7 @@ describe("DELETE /api/account", () => {
       rpc: mockRpc,
     } as unknown as Awaited<ReturnType<typeof createClient>>);
 
-    const response = await DELETE();
+    const response = await DELETE(makeRequest());
     const body = await response.json();
 
     expect(response.status).toBe(409);
@@ -103,7 +116,7 @@ describe("DELETE /api/account", () => {
       rpc: mockRpc,
     } as unknown as Awaited<ReturnType<typeof createClient>>);
 
-    const response = await DELETE();
+    const response = await DELETE(makeRequest());
     const body = await response.json();
 
     expect(response.status).toBe(500);
@@ -120,7 +133,7 @@ describe("DELETE /api/account", () => {
       rpc: mockRpc,
     } as unknown as Awaited<ReturnType<typeof createClient>>);
 
-    const response = await DELETE();
+    const response = await DELETE(makeRequest());
     const body = await response.json();
 
     expect(response.status).toBe(200);
@@ -132,7 +145,7 @@ describe("DELETE /api/account", () => {
     const fetchError = new TypeError("fetch failed");
     mockedCreateClient.mockRejectedValue(fetchError);
 
-    const response = await DELETE();
+    const response = await DELETE(makeRequest());
 
     expect(response.status).toBe(500);
     expect(captureApiErrorMock).toHaveBeenCalledWith(

@@ -632,6 +632,49 @@ const supabase = await createClient(); // throws at request time if env vars are
 
 The proxy (`src/proxy.ts`) already follows this pattern. All API routes must do the same.
 
+### Rate limiting API routes
+
+Use `withRateLimit` from `@/lib/rate-limit` to wrap API route handlers. The wrapper
+intercepts requests before the handler runs and returns 429 with `Retry-After` header
+when the limit is exceeded.
+
+```typescript
+import { withRateLimit, getClientIp } from "@/lib/rate-limit";
+
+// IP-based rate limiting (for public or semi-public endpoints)
+async function handler(request: NextRequest) { /* ... */ }
+
+export const POST = withRateLimit(handler, {
+  limit: 5,
+  windowMs: 60_000,       // 1 minute
+  keyFn: (req) => `feedback:${getClientIp(req)}`,
+});
+
+// User-based rate limiting (for authenticated endpoints)
+export const DELETE = withRateLimit(handler, {
+  limit: 3,
+  windowMs: 3_600_000,    // 1 hour
+  keyFn: async () => {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getUser();
+    return data.user ? `account:${data.user.id}` : null; // null skips rate limiting
+  },
+});
+```
+
+In tests, mock the rate limiter as a passthrough to avoid interference:
+
+```typescript
+vi.mock("@/lib/rate-limit", () => ({
+  withRateLimit: (handler: (...args: unknown[]) => unknown) => handler,
+  getClientIp: () => "127.0.0.1",
+}));
+```
+
+Note: the in-memory store resets on each serverless cold start. This protects against
+burst abuse within a single instance but not across instances. For production-grade
+protection, consider Vercel KV or Upstash Redis.
+
 ## Database Migrations
 
 ```bash

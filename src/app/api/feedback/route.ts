@@ -2,12 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { captureApiError, captureSupabaseError, isInsufficientPrivilegeError } from "@/lib/sentry";
 import { trackEvent } from "@/lib/track-event-server";
+import { withRateLimit, getClientIp } from "@/lib/rate-limit";
 import type { FeedbackType } from "@/lib/types";
 
 const VALID_TYPES: ReadonlySet<FeedbackType> = new Set(["bug", "feature", "general"]);
 const MAX_MESSAGE_LENGTH = 500;
 
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   if (
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||
     !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
@@ -94,3 +95,9 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export const POST = withRateLimit(handler, {
+  limit: 5,
+  windowMs: 60_000,
+  keyFn: (req) => `feedback:${getClientIp(req)}`,
+});
