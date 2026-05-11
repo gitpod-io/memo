@@ -64,6 +64,7 @@ export async function GET() {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
+  const start = performance.now();
   try {
     let bestLatency = Infinity;
     let lastOk = true;
@@ -82,7 +83,7 @@ export async function GET() {
       dbStatus = "degraded";
     }
   } catch (err) {
-    dbLatency = Math.round(performance.now());
+    dbLatency = Math.round(performance.now() - start);
     if (err instanceof DOMException && err.name === "AbortError") {
       dbStatus = "degraded";
     } else {
