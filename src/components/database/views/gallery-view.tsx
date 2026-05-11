@@ -127,47 +127,49 @@ export const GalleryView = memo(function GalleryView({
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4"
-      role="list"
-      aria-label="Database gallery"
-      data-testid="db-gallery-container"
-      onKeyDown={handleKeyDown}
-    >
-      {rows.map((row, index) => (
-        <GalleryCard
-          key={row.page.id}
-          row={row}
-          index={index}
-          coverPropertyId={coverPropertyId}
-          cardSizeClass={cardSizeClass}
-          workspaceSlug={workspaceSlug}
-          isFocused={focusedIndex === index}
-          onCardFocus={handleCardFocus}
-        />
-      ))}
+    <div>
+      <div
+        ref={containerRef}
+        className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4"
+        role="list"
+        aria-label="Database gallery"
+        data-testid="db-gallery-container"
+        onKeyDown={handleKeyDown}
+      >
+        {rows.map((row, index) => (
+          <GalleryCard
+            key={row.page.id}
+            row={row}
+            index={index}
+            coverPropertyId={coverPropertyId}
+            cardSizeClass={cardSizeClass}
+            workspaceSlug={workspaceSlug}
+            isFocused={focusedIndex === index}
+            onCardFocus={handleCardFocus}
+          />
+        ))}
+      </div>
       {onAddRow && (
-        <button
-          type="button"
-          onClick={handleAddRow}
-          aria-label="Add new page"
-          className={cn(
-            "flex items-center justify-center border border-dashed border-overlay-strong bg-muted/50",
-            "text-muted-foreground hover:border-overlay-heavy hover:text-foreground",
-            cardSizeClass,
-          )}
-        >
-          <Plus className="h-5 w-5" />
-        </button>
+        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+          <button
+            type="button"
+            onClick={handleAddRow}
+            aria-label="Add new page"
+            className={cn(
+              "flex items-center justify-center border border-dashed border-overlay-strong bg-muted/50",
+              "text-muted-foreground hover:border-overlay-heavy hover:text-foreground",
+              cardSizeClass,
+            )}
+          >
+            <Plus className="h-5 w-5" />
+          </button>
+        </div>
       )}
       {rows.length === 0 && onAddRow && (
-        <div className="col-span-full">
-          <DatabaseEmptyState
-            hasActiveFilters={false}
-            onAddRow={handleAddRow}
-          />
-        </div>
+        <DatabaseEmptyState
+          hasActiveFilters={false}
+          onAddRow={handleAddRow}
+        />
       )}
     </div>
   );
