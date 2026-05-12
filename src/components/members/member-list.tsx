@@ -91,7 +91,7 @@ export function MemberList({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3" data-testid="members-list">
       <p className="text-xs tracking-widest uppercase text-label-faint">
         Members ({members.length})
       </p>
@@ -105,7 +105,7 @@ export function MemberList({
         </TableHeader>
         <TableBody>
           {members.map((member) => (
-            <TableRow key={member.id}>
+            <TableRow key={member.id} data-testid={`member-row-${member.user_id}`}>
               <TableCell>
                 <div className="flex flex-col gap-0.5">
                   <span className="text-sm font-medium">
@@ -127,9 +127,10 @@ export function MemberList({
                     value={member.role}
                     onChange={(role) => onRoleChange(member.id, role)}
                     includeOwner={currentUserRole === "owner"}
+                    data-testid={`member-role-select-${member.user_id}`}
                   />
                 ) : (
-                  <Badge variant={roleBadgeVariant(member.role)}>
+                  <Badge variant={roleBadgeVariant(member.role)} data-testid={`member-role-badge-${member.user_id}`}>
                     {member.role}
                   </Badge>
                 )}
@@ -149,6 +150,7 @@ export function MemberList({
                             variant="ghost"
                             size="icon-sm"
                             aria-label={`Remove ${member.profiles.display_name}`}
+                            data-testid={`member-remove-btn-${member.user_id}`}
                           />
                         }
                       >

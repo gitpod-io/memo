@@ -1936,6 +1936,7 @@ Prefix with the domain to avoid collisions:
 |---|---|---|
 | Database | `db-` | `db-sort-button`, `db-filter-bar`, `db-row-{id}` |
 | Editor | `editor-` | `editor-toolbar`, `editor-slash-menu`, `editor-image` |
+| Members | `member-` / `invite-` / `pending-invite-` | `members-list`, `member-row-{userId}`, `invite-form`, `pending-invite-list` |
 | Sidebar | `sidebar-` | `sidebar-tree`, `sidebar-search` |
 
 For parameterized IDs, use kebab-case: `db-sort-rule-{index}`, `editor-slash-item-{name}`.

@@ -86,7 +86,7 @@ export function PendingInviteList({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3" data-testid="pending-invite-list">
       <p className="text-xs tracking-widest uppercase text-label-faint">
         Pending invites ({invites.length})
       </p>
@@ -101,7 +101,7 @@ export function PendingInviteList({
         </TableHeader>
         <TableBody>
           {invites.map((invite) => (
-            <TableRow key={invite.id}>
+            <TableRow key={invite.id} data-testid={`pending-invite-row-${invite.id}`}>
               <TableCell>
                 <span className="text-sm">{invite.email}</span>
               </TableCell>
@@ -127,6 +127,7 @@ export function PendingInviteList({
                     onClick={() => handleRevoke(invite.id)}
                     disabled={revokingId === invite.id}
                     aria-label={`Revoke invite for ${invite.email}`}
+                    data-testid={`pending-invite-revoke-btn-${invite.id}`}
                   >
                     <X className="h-4 w-4 text-muted-foreground" />
                   </Button>

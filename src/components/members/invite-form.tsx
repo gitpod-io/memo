@@ -166,7 +166,7 @@ export function InviteForm({
       <p className="text-xs tracking-widest uppercase text-label-faint">
         Invite
       </p>
-      <form onSubmit={handleSubmit} className="flex items-end gap-2">
+      <form onSubmit={handleSubmit} className="flex items-end gap-2" data-testid="invite-form">
         <div className="flex flex-1 flex-col gap-1.5">
           <Label htmlFor="invite-email">Email</Label>
           <Input
@@ -179,6 +179,7 @@ export function InviteForm({
               setInviteLink(null);
             }}
             required
+            data-testid="invite-email-input"
           />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -187,22 +188,22 @@ export function InviteForm({
             value={role}
             onValueChange={(val) => setRole(val as InviteRole)}
           >
-            <SelectTrigger size="sm" className="w-28" aria-label="Invite role">
+            <SelectTrigger size="sm" className="w-28" aria-label="Invite role" data-testid="invite-role-select">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="admin">admin</SelectItem>
-              <SelectItem value="member">member</SelectItem>
+              <SelectItem value="admin" data-testid="invite-role-option-admin">admin</SelectItem>
+              <SelectItem value="member" data-testid="invite-role-option-member">member</SelectItem>
             </SelectContent>
           </Select>
         </div>
-        <Button type="submit" size="sm" disabled={sending}>
+        <Button type="submit" size="sm" disabled={sending} data-testid="invite-submit-btn">
           <Send className="h-4 w-4" />
           {sending ? "Sending…" : "Invite"}
         </Button>
       </form>
       {inviteLink && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" data-testid="invite-link-section">
           <p className="min-w-0 flex-1 truncate text-xs text-accent">
             {inviteLink}
           </p>
@@ -211,6 +212,7 @@ export function InviteForm({
             size="icon-sm"
             onClick={handleCopyLink}
             aria-label="Copy invite link"
+            data-testid="invite-copy-link-btn"
           >
             {linkCopied ? (
               <Check className="h-4 w-4 text-accent" />
