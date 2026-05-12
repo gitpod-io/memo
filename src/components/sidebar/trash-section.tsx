@@ -218,7 +218,7 @@ export function TrashSection() {
   return (
     <div className="flex flex-col gap-0.5">
       <button
-        className="flex items-center gap-2 px-2 py-0.5 text-xs tracking-widest uppercase text-label-faint hover:text-label-muted"
+        className="flex items-center gap-2 px-2 py-0.5 text-xs tracking-widest uppercase text-label-faint hover:text-label-muted focus-visible:bg-overlay-active focus-visible:outline-none"
         onClick={() => setExpanded((prev) => !prev)}
         aria-expanded={expanded}
       >

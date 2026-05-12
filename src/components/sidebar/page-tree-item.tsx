@@ -124,7 +124,7 @@ export function PageTreeItem({
         </span>
 
         <button
-          className="flex h-4 w-4 shrink-0 items-center justify-center"
+          className="flex h-4 w-4 shrink-0 items-center justify-center focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           onClick={(e) => {
             e.stopPropagation();
             if (hasChildren) {
@@ -154,7 +154,7 @@ export function PageTreeItem({
         </span>
 
         <button
-          className="flex-1 truncate text-left"
+          className="flex-1 truncate text-left focus-visible:bg-overlay-active focus-visible:outline-none"
           onClick={() => onNavigate(page.id)}
           title={page.title || "Untitled"}
         >
