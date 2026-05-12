@@ -30,8 +30,14 @@ action:
                      search_events(organizationSlug, naturalLanguageQuery="count of errors last week")
                    Flag if error count increased >50%.
 
-                3. Build size: run `pnpm build` and check the output for page sizes.
-                   Flag any page over 200KB (first load JS).
+                3. Build size: run `pnpm build`, then run `pnpm test:bundle` to measure
+                   gzipped first-load JS per route. This script reads
+                   `.next/diagnostics/route-bundle-stats.json`, gzips each chunk file,
+                   and sums per route — the same method CI uses.
+                   Parse the table from its stdout (columns: Route, Size (gzip), Budget, Status).
+                   Flag any route marked ❌ (over 200kB gzipped budget).
+                   Do NOT estimate sizes from `pnpm build` console output — those numbers
+                   use a different methodology and will not match CI.
 
                 ## Output
 
@@ -51,11 +57,11 @@ action:
                 - Last week: Y errors
                 - Trend: ↑/↓/→
 
-                ## Build Size
-                | Page | First Load JS | Status |
-                |---|---|---|
-                | / | XkB | ✅/⚠️/❌ |
-                | /login | XkB | ✅/⚠️/❌ |
+                ## Build Size (via `pnpm test:bundle`)
+                | Route | First Load JS (gzip) | Budget | Status |
+                |---|---|---|---|
+                Copy the table rows directly from `pnpm test:bundle` output.
+                Do NOT re-measure or estimate sizes from build console output.
 
                 ## Action Items
                 - [list any issues that need fixing, or "No action needed"]
