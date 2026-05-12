@@ -1,0 +1,47 @@
+{
+  "date": "2026-05-12",
+  "day_number": 30,
+  "loc": {
+    "total": 74361,
+    "delta": 195,
+    "by_language": {
+      "TypeScript": 72536,
+      "SQL": 1544,
+      "CSS": 281
+    }
+  },
+  "files": {
+    "total": 251,
+    "delta": 7
+  },
+  "prs": {
+    "total": 599,
+    "delta": 15,
+    "currently_open": 0
+  },
+  "commits": {
+    "total": 622,
+    "delta": 15
+  },
+  "issues": {
+    "backlog": 1,
+    "in_progress": 1,
+    "in_review": 0,
+    "done": 417,
+    "opened_today": 4,
+    "closed_today": 4
+  },
+  "tests": {
+    "unit": 1877,
+    "e2e": 379
+  },
+  "ci": {
+    "runs_total": 20,
+    "runs_passed": 19,
+    "pass_rate_pct": 95.0
+  },
+  "test_coverage_pct": 36.86,
+  "autonomous_pct": 87,
+  "human_minutes": null,
+  "agent_minutes": null
+}
