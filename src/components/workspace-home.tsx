@@ -183,16 +183,18 @@ export function WorkspaceHome({
 
   return (
     <div className="mx-auto max-w-3xl p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">{workspace.name}</h1>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="min-w-0 text-2xl font-semibold">{workspace.name}</h1>
+        <div className="flex shrink-0 items-center gap-2">
           <Button size="sm" variant="outline" onClick={handleCreateDatabase}>
             <Table2 className="h-4 w-4" />
-            New Database
+            <span className="hidden sm:inline">New Database</span>
+            <span className="sm:hidden">Database</span>
           </Button>
           <Button size="sm" onClick={handleCreatePage}>
             <Plus className="h-4 w-4" />
-            New Page
+            <span className="hidden sm:inline">New Page</span>
+            <span className="sm:hidden">Page</span>
           </Button>
         </div>
       </div>

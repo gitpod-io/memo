@@ -151,6 +151,26 @@ const SORT_LABELS: Record<string, string> = {
   created_asc: "Date created (oldest)",
 };
 
+function WorkspaceHeader() {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <h1 className="min-w-0 text-2xl font-semibold">My Workspace</h1>
+      <div className="flex shrink-0 items-center gap-2">
+        <Button size="sm" variant="outline">
+          <Table2 className="h-4 w-4" />
+          <span className="hidden sm:inline">New Database</span>
+          <span className="sm:hidden">Database</span>
+        </Button>
+        <Button size="sm">
+          <Plus className="h-4 w-4" />
+          <span className="hidden sm:inline">New Page</span>
+          <span className="sm:hidden">Page</span>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function SortFilterBar() {
   return (
     <div className="mb-3 flex items-center gap-2">
@@ -193,19 +213,7 @@ function SortFilterBar() {
 export const WithPages: Story = {
   render: () => (
     <div className="mx-auto max-w-3xl p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">My Workspace</h1>
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline">
-            <Table2 className="h-4 w-4" />
-            New Database
-          </Button>
-          <Button size="sm">
-            <Plus className="h-4 w-4" />
-            New Page
-          </Button>
-        </div>
-      </div>
+      <WorkspaceHeader />
       <div className="mt-6">
         <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
           All Pages
@@ -230,19 +238,7 @@ export const WithPages: Story = {
 export const WithRecentVisits: Story = {
   render: () => (
     <div className="mx-auto max-w-3xl p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">My Workspace</h1>
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline">
-            <Table2 className="h-4 w-4" />
-            New Database
-          </Button>
-          <Button size="sm">
-            <Plus className="h-4 w-4" />
-            New Page
-          </Button>
-        </div>
-      </div>
+      <WorkspaceHeader />
       <div className="mt-6">
         <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
           Recently Visited
@@ -283,19 +279,7 @@ export const WithRecentVisits: Story = {
 export const FilterNoResults: Story = {
   render: () => (
     <div className="mx-auto max-w-3xl p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">My Workspace</h1>
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline">
-            <Table2 className="h-4 w-4" />
-            New Database
-          </Button>
-          <Button size="sm">
-            <Plus className="h-4 w-4" />
-            New Page
-          </Button>
-        </div>
-      </div>
+      <WorkspaceHeader />
       <div className="mt-6">
         <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
           All Pages
@@ -355,6 +339,35 @@ export const EmptyState: Story = {
           <Plus className="h-4 w-4" />
           Create first page
         </Button>
+      </div>
+    </div>
+  ),
+};
+
+export const MobileViewport: Story = {
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
+    chromatic: { viewports: [375] },
+  },
+  render: () => (
+    <div className="mx-auto max-w-3xl p-6">
+      <WorkspaceHeader />
+      <div className="mt-6">
+        <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
+          All Pages
+        </h2>
+        <SortFilterBar />
+        <div className="flex flex-col gap-0.5">
+          {mockPages.slice(0, 3).map((page) => (
+            <PageItem
+              key={page.id}
+              icon={page.icon}
+              title={page.title}
+              timeStr={page.updated_at}
+              isDatabase={page.is_database}
+            />
+          ))}
+        </div>
       </div>
     </div>
   ),
