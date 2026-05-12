@@ -335,6 +335,7 @@ export function PageSearch() {
           aria-expanded={showResults}
           role="combobox"
           aria-controls="search-results"
+          data-testid="as-search-input"
           aria-activedescendant={
             showResults && results[selectedIndex]
               ? `search-result-${results[selectedIndex].id}`

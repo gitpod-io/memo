@@ -49,7 +49,7 @@ async function waitForSidebarTree(page: Page) {
 async function createDatabaseFromSidebar(page: Page): Promise<string> {
   const sidebar = await waitForSidebarTree(page);
 
-  const newDbBtn = sidebar.getByRole("button", { name: /new database/i });
+  const newDbBtn = sidebar.getByTestId("sb-new-database-btn");
   await expect(newDbBtn).toBeVisible({ timeout: 5_000 });
   await newDbBtn.click();
 
@@ -87,7 +87,7 @@ async function addRowToDatabase(page: Page) {
 async function navigateToNewPage(page: Page): Promise<string> {
   const sidebar = await waitForSidebarTree(page);
 
-  const newPageBtn = sidebar.getByRole("button", { name: /new page/i });
+  const newPageBtn = sidebar.getByTestId("sb-new-page-btn");
   await expect(newPageBtn).toBeVisible({ timeout: 5_000 });
   await newPageBtn.click();
 

@@ -78,6 +78,7 @@ export function WorkspaceSwitcher({ userId }: WorkspaceSwitcherProps) {
             className="w-full justify-between gap-2 px-2"
             size="sm"
             aria-label="Switch workspace"
+            data-testid="as-workspace-switcher"
           />
         }
       >

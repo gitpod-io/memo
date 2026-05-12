@@ -2,15 +2,10 @@ import { test, expect } from "./fixtures/auth";
 import type { Locator } from "@playwright/test";
 
 /**
- * Returns the "All Pages" container — the div.mt-6 that holds the heading,
- * filter/sort toolbar, and the page list.
+ * Returns the "All Pages" container using its data-testid attribute.
  */
 function getAllPagesSection(main: Locator): Locator {
-  // The "All Pages" heading is inside a div.mt-6. Use the filter input's
-  // ancestor to scope precisely — the filter input only exists in "All Pages".
-  return main.locator("div.mt-6").filter({
-    hasText: /All Pages/,
-  });
+  return main.locator('[data-testid="wh-all-pages"]');
 }
 
 /**
@@ -42,7 +37,7 @@ async function collectTitles(
  * Waits for the workspace home page to fully load inside #main-content.
  */
 async function waitForWorkspaceHome(main: Locator): Promise<void> {
-  const filterInput = main.getByRole("textbox", { name: /filter pages/i });
+  const filterInput = main.getByTestId("wh-filter-input");
   await expect(filterInput).toBeVisible({ timeout: 15_000 });
 }
 
@@ -52,7 +47,7 @@ test.describe("Workspace home page interactions", () => {
   }) => {
     const main = page.locator("#main-content");
 
-    const newPageButton = main.getByRole("button", { name: /new page/i });
+    const newPageButton = main.getByTestId("wh-new-page-btn");
     await expect(newPageButton).toBeVisible({ timeout: 15_000 });
 
     await newPageButton.click();
@@ -76,7 +71,7 @@ test.describe("Workspace home page interactions", () => {
     const main = page.locator("#main-content");
     await waitForWorkspaceHome(main);
 
-    const filterInput = main.getByRole("textbox", { name: /filter pages/i });
+    const filterInput = main.getByTestId("wh-filter-input");
     const pageItems = getPageListItems(main);
 
     await expect(pageItems.first()).toBeVisible({ timeout: 10_000 });
@@ -130,7 +125,7 @@ test.describe("Workspace home page interactions", () => {
     const main = page.locator("#main-content");
     await waitForWorkspaceHome(main);
 
-    const sortTrigger = main.getByRole("combobox", { name: /sort pages/i });
+    const sortTrigger = main.getByTestId("wh-sort-dropdown");
     const pageItems = getPageListItems(main);
 
     await expect(pageItems.first()).toBeVisible({ timeout: 10_000 });
@@ -231,7 +226,7 @@ test.describe("Workspace home page interactions", () => {
     const main = page.locator("#main-content");
     await waitForWorkspaceHome(main);
 
-    const filterInput = main.getByRole("textbox", { name: /filter pages/i });
+    const filterInput = main.getByTestId("wh-filter-input");
     const pageItems = getPageListItems(main);
 
     await expect(pageItems.first()).toBeVisible({ timeout: 10_000 });

@@ -13,15 +13,12 @@ test.describe("Workspace home — mobile header layout", () => {
     await page.goto("/");
     const main = page.locator("#main-content");
 
-    // Wait for the workspace home to load — look for a heading
-    const heading = main.locator("h1").first();
-    await expect(heading).toBeVisible({ timeout: 15_000 });
+    // Wait for the workspace home to load — look for the header
+    const header = main.getByTestId("wh-header");
+    await expect(header).toBeVisible({ timeout: 15_000 });
 
-    // Scope to the header row (the container that holds the h1) to avoid
-    // matching sidebar page buttons like "Untitled Database just now".
-    const headerRow = heading.locator("..");
-    const dbButton = headerRow.getByRole("button", { name: /database/i });
-    const pageButton = headerRow.getByRole("button", { name: /page/i });
+    const dbButton = main.getByTestId("wh-new-database-btn");
+    const pageButton = main.getByTestId("wh-new-page-btn");
     await expect(dbButton).toBeVisible({ timeout: 5_000 });
     await expect(pageButton).toBeVisible({ timeout: 5_000 });
 
