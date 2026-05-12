@@ -108,21 +108,18 @@ test.describe("Workspace member management", () => {
     await goToMembersPage(page, workspaceSlug);
 
     // The invite form should be visible (owner has admin privileges)
-    const inviteSection = page.locator("text=Invite").first();
-    await expect(inviteSection).toBeVisible();
+    const inviteForm = page.locator('[data-testid="invite-form"]');
+    await expect(inviteForm).toBeVisible();
 
     // Fill in the invite form
-    await page.fill("#invite-email", INVITE_EMAIL);
+    await page.locator('[data-testid="invite-email-input"]').fill(INVITE_EMAIL);
 
     // Submit the invite
     await page.getByRole("button", { name: "Invite", exact: true }).click();
 
-    // Wait for the invite link URL to appear below the form. The invite form
-    // shows the link as text followed by a copy button. Scope to the form's
-    // parent to avoid matching the pending invites table's copy buttons.
-    const inviteFormSection = page.locator("form").locator("..");
+    // Wait for the invite link section to appear below the form
     await expect(
-      inviteFormSection.getByRole("button", { name: "Copy invite link" })
+      page.locator('[data-testid="invite-copy-link-btn"]')
     ).toBeVisible({ timeout: 10_000 });
 
     // The invite form triggers router.refresh() after insert. Wait for the
@@ -139,7 +136,7 @@ test.describe("Workspace member management", () => {
     await goToMembersPage(page, workspaceSlug);
 
     // The pending invites section should show the invited email
-    const pendingSection = page.locator("text=Pending invites").first();
+    const pendingSection = page.locator('[data-testid="pending-invite-list"]');
     await expect(pendingSection).toBeVisible({ timeout: 10_000 });
 
     // The invited email should appear in the pending invites table
@@ -178,15 +175,14 @@ test.describe("Workspace member management", () => {
 
     // Re-invite the same email. Wait for the form to be interactive before
     // filling — the page is a server component that hydrates the client form.
-    const emailInput = page.locator("#invite-email");
+    const emailInput = page.locator('[data-testid="invite-email-input"]');
     await expect(emailInput).toBeVisible({ timeout: 5_000 });
     await emailInput.fill(INVITE_EMAIL);
     await page.getByRole("button", { name: "Invite", exact: true }).click();
 
-    // Wait for the invite link URL to appear below the form
-    const reInviteFormSection = page.locator("form").locator("..");
+    // Wait for the invite link section to appear below the form
     await expect(
-      reInviteFormSection.getByRole("button", { name: "Copy invite link" })
+      page.locator('[data-testid="invite-copy-link-btn"]')
     ).toBeVisible({ timeout: 10_000 });
 
     // Create the test user via admin API so they can accept the invite
@@ -290,7 +286,7 @@ test.describe("Workspace member management", () => {
     ).toBeVisible({ timeout: 10_000 });
 
     // Member should NOT see the invite form
-    await expect(memberPage.locator("#invite-email")).not.toBeVisible();
+    await expect(memberPage.locator('[data-testid="invite-form"]')).not.toBeVisible();
 
     // Member should NOT see remove buttons (trash icons)
     const removeButtons = memberPage.getByRole("button", {
@@ -298,10 +294,10 @@ test.describe("Workspace member management", () => {
     });
     await expect(removeButtons).toHaveCount(0);
 
-    // Member should NOT see role select dropdowns in the members table
+    // Member should NOT see role select dropdowns in the members list
     // (roles are shown as badges, not selects, for non-admin users)
-    const membersTable = memberPage.getByRole("table").first();
-    const roleSelects = membersTable.getByRole("combobox");
+    const membersList = memberPage.locator('[data-testid="members-list"]');
+    const roleSelects = membersList.getByRole("combobox");
     await expect(roleSelects).toHaveCount(0);
 
     await memberPage.context().close();
