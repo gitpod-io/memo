@@ -164,7 +164,7 @@ export function FavoritesSection({ userId }: FavoritesSectionProps) {
             </span>
 
             <button
-              className="flex-1 truncate text-left"
+              className="flex-1 truncate text-left focus-visible:bg-overlay-active focus-visible:outline-none"
               onClick={() =>
                 router.push(`/${workspaceSlug}/${fav.page_id}`)
               }
@@ -173,7 +173,7 @@ export function FavoritesSection({ userId }: FavoritesSectionProps) {
             </button>
 
             <button
-              className="flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground opacity-0 hover:text-foreground group-hover:opacity-100"
+              className="flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground opacity-0 hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring group-hover:opacity-100"
               onClick={() => handleRemoveFavorite(fav.id)}
               aria-label="Remove from favorites"
             >
