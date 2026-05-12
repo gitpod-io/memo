@@ -207,7 +207,7 @@ export function WorkspaceHome({
             {recentVisits.map((visit) => (
               <button
                 key={visit.page_id}
-                className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-overlay-hover"
+                className="flex items-center gap-2 px-3 py-2 text-left text-sm transition-none hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
                 onClick={() =>
                   router.push(`/${workspace.slug}/${visit.page_id}`)
                 }
@@ -288,7 +288,7 @@ export function WorkspaceHome({
             {filteredAndSorted.map((page) => (
               <button
                 key={page.id}
-                className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-overlay-hover"
+                className="flex items-center gap-2 px-3 py-2 text-left text-sm transition-none hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
                 onClick={() =>
                   router.push(`/${workspace.slug}/${page.id}`)
                 }
