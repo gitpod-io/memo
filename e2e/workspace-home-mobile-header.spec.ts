@@ -17,9 +17,11 @@ test.describe("Workspace home — mobile header layout", () => {
     const heading = main.locator("h1").first();
     await expect(heading).toBeVisible({ timeout: 15_000 });
 
-    // Both action buttons should be visible (mobile labels: "Database" and "Page")
-    const dbButton = main.getByRole("button", { name: /database/i });
-    const pageButton = main.getByRole("button", { name: /page/i });
+    // Scope to the header row (the container that holds the h1) to avoid
+    // matching sidebar page buttons like "Untitled Database just now".
+    const headerRow = heading.locator("..");
+    const dbButton = headerRow.getByRole("button", { name: /database/i });
+    const pageButton = headerRow.getByRole("button", { name: /page/i });
     await expect(dbButton).toBeVisible({ timeout: 5_000 });
     await expect(pageButton).toBeVisible({ timeout: 5_000 });
 
