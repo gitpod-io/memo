@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import {
+  pageVisitsWithPages,
+  asPageVisitRows,
+} from "@/lib/supabase/typed-queries";
 import { WorkspaceHomeClient } from "@/components/workspace-home-client";
 
 export async function generateMetadata({
@@ -58,9 +62,7 @@ export default async function WorkspacePage({
       .is("parent_id", null)
       .is("deleted_at", null)
       .order("position", { ascending: true }),
-    supabase
-      .from("page_visits")
-      .select("page_id, visited_at, pages!inner(title, icon, is_database, deleted_at)")
+    pageVisitsWithPages(supabase)
       .eq("workspace_id", workspace.id)
       .eq("user_id", userId)
       .is("pages.deleted_at", null)
@@ -69,16 +71,13 @@ export default async function WorkspacePage({
   ]);
 
   // Normalize the joined rows into a flat shape
-  const recentVisits = (recentVisitRows ?? []).map((row) => {
-    const page = row.pages as unknown as { title: string; icon: string | null; is_database: boolean };
-    return {
-      page_id: row.page_id as string,
-      visited_at: row.visited_at as string,
-      title: page.title,
-      icon: page.icon,
-      is_database: page.is_database ?? false,
-    };
-  });
+  const recentVisits = asPageVisitRows(recentVisitRows).map((row) => ({
+    page_id: row.page_id,
+    visited_at: row.visited_at,
+    title: row.pages.title,
+    icon: row.pages.icon,
+    is_database: row.pages.is_database ?? false,
+  }));
 
   return (
     <WorkspaceHomeClient

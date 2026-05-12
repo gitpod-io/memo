@@ -4,6 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getClient } from "@/lib/supabase/lazy-client";
+import {
+  membersWithWorkspaceSlug,
+  asMemberWorkspaceSlugRow,
+} from "@/lib/supabase/typed-queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,16 +71,14 @@ export function SignUpForm() {
     // If email confirmation is disabled, the user is immediately active.
     // Fetch their workspace and redirect.
     if (data.user) {
-      const { data: membership } = await supabase
-        .from("members")
-        .select("workspace_id, workspaces(slug)")
+      const { data: membership } = await membersWithWorkspaceSlug(supabase)
         .eq("user_id", data.user.id)
         .limit(1)
         .maybeSingle();
 
-      if (membership?.workspaces) {
-        const ws = membership.workspaces as unknown as { slug: string };
-        router.push(`/${ws.slug}`);
+      const typed = asMemberWorkspaceSlugRow(membership);
+      if (typed?.workspaces) {
+        router.push(`/${typed.workspaces.slug}`);
         return;
       }
     }

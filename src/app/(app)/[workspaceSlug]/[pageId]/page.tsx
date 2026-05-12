@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
+import {
+  membersWithProfiles,
+  asMemberProfileRows,
+} from "@/lib/supabase/typed-queries";
 import { captureSupabaseError } from "@/lib/sentry";
 import { trackEvent } from "@/lib/track-event-server";
 import type { SerializedEditorState } from "lexical";
@@ -265,27 +269,17 @@ export default async function PageView({
       }));
 
       // Enrich person/created_by properties with workspace members
-      const { data: membersData } = await supabase
-        .from("members")
-        .select(
-          "user_id, profiles!members_user_id_fkey(id, display_name, email, avatar_url)",
-        )
-        .eq("workspace_id", workspace.id);
+      const { data: membersData } = await membersWithProfiles(supabase).eq(
+        "workspace_id",
+        workspace.id,
+      );
 
-      const members = (membersData ?? []).map((m) => {
-        const profile = m.profiles as unknown as {
-          id: string;
-          display_name: string;
-          email: string;
-          avatar_url: string | null;
-        };
-        return {
-          id: m.user_id,
-          display_name: profile.display_name,
-          email: profile.email,
-          avatar_url: profile.avatar_url,
-        };
-      });
+      const members = asMemberProfileRows(membersData).map((m) => ({
+        id: m.user_id,
+        display_name: m.profiles.display_name,
+        email: m.profiles.email,
+        avatar_url: m.profiles.avatar_url,
+      }));
 
       const enrichedProperties = properties.map((prop) => {
         if (prop.type === "person" || prop.type === "created_by") {

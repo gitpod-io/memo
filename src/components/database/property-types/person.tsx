@@ -5,6 +5,10 @@ import { Check, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getClient } from "@/lib/supabase/lazy-client";
 import {
+  membersWithProfiles,
+  asMemberProfileRows,
+} from "@/lib/supabase/typed-queries";
+import {
   captureSupabaseError,
   isInsufficientPrivilegeError,
 } from "@/lib/sentry";
@@ -173,12 +177,11 @@ export function PersonEditor({
         return;
       }
 
-      const { data: membersData, error: membersError } = await supabase
-        .from("members")
-        .select(
-          "user_id, profiles!members_user_id_fkey(id, display_name, email, avatar_url)",
-        )
-        .eq("workspace_id", dbPage.workspace_id);
+      const { data: membersData, error: membersError } =
+        await membersWithProfiles(supabase).eq(
+          "workspace_id",
+          dbPage.workspace_id,
+        );
 
       if (membersError) {
         if (!isInsufficientPrivilegeError(membersError)) {
@@ -189,21 +192,14 @@ export function PersonEditor({
       }
 
       if (!cancelled && membersData) {
-        const resolved: PersonInfo[] = membersData.map((m) => {
-          // Supabase join returns the relation as an opaque type
-          const profile = m.profiles as unknown as {
-            id: string;
-            display_name: string;
-            email: string;
-            avatar_url: string | null;
-          };
-          return {
+        const resolved: PersonInfo[] = asMemberProfileRows(membersData).map(
+          (m) => ({
             id: m.user_id,
-            display_name: profile.display_name,
-            email: profile.email,
-            avatar_url: profile.avatar_url,
-          };
-        });
+            display_name: m.profiles.display_name,
+            email: m.profiles.email,
+            avatar_url: m.profiles.avatar_url,
+          }),
+        );
         setMembers(resolved);
         setLoading(false);
       }

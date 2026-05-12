@@ -99,6 +99,40 @@ const supabase = createAdminClient();
 const { data, error } = await supabase.rpc("purge_old_trash");
 ```
 
+### Typed join queries
+
+Supabase without generated types returns joined relations as `unknown`. Use the
+helpers in `src/lib/supabase/typed-queries.ts` instead of inline `as unknown as`
+casts. Each helper pairs a query builder (encapsulating the select string) with a
+result caster (centralizing the type assertion).
+
+```typescript
+import {
+  membersWithProfiles,
+  asMemberProfileRows,
+} from "@/lib/supabase/typed-queries";
+
+// Query builder — chain filters as usual
+const { data, error } = await membersWithProfiles(supabase).eq(
+  "workspace_id",
+  workspaceId,
+);
+
+// Result caster — returns typed rows
+const members = asMemberProfileRows(data).map((m) => ({
+  id: m.user_id,
+  display_name: m.profiles.display_name,
+  email: m.profiles.email,
+  avatar_url: m.profiles.avatar_url,
+}));
+```
+
+Available helpers: `membersWithProfiles`, `membersWithProfileEmail`,
+`membersWithWorkspace`, `membersWithWorkspaceSlug`,
+`membersWithWorkspaceSlugPersonal`, `pageVisitsWithPages`. When adding a new
+join pattern, define the select string, row type, query builder, and result
+caster together in `typed-queries.ts`.
+
 ### Proxy (session refresh)
 
 Next.js 16 uses `src/proxy.ts` instead of `src/middleware.ts`. The proxy refreshes

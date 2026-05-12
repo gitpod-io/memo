@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { getClient } from "@/lib/supabase/lazy-client";
 import {
+  membersWithWorkspaceSlugPersonal,
+  asMemberWorkspaceSlugPersonalRows,
+} from "@/lib/supabase/typed-queries";
+import {
   captureSupabaseError,
   isInsufficientPrivilegeError,
 } from "@/lib/sentry";
@@ -54,24 +58,17 @@ export function DeleteWorkspaceSection({
       return;
     }
 
-    const { data: membership } = await supabase
-      .from("members")
-      .select("workspace_id, workspaces(slug, is_personal)")
+    const { data: membership } = await membersWithWorkspaceSlugPersonal(
+      supabase,
+    )
       .eq("user_id", userId)
       .limit(10);
 
-    // Supabase join returns the relation as an opaque type; casts are unavoidable
-    const personal = membership?.find((m) => {
-      const ws = m.workspaces as unknown as {
-        slug: string;
-        is_personal: boolean;
-      };
-      return ws?.is_personal;
-    });
+    const typedRows = asMemberWorkspaceSlugPersonalRows(membership);
+    const personal = typedRows.find((m) => m.workspaces?.is_personal);
 
     if (personal) {
-      const ws = personal.workspaces as unknown as { slug: string };
-      router.push(`/${ws.slug}`);
+      router.push(`/${personal.workspaces.slug}`);
     } else {
       router.push("/");
     }

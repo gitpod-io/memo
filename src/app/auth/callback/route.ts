@@ -1,5 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import {
+  membersWithWorkspaceSlug,
+  asMemberWorkspaceSlugRow,
+} from "@/lib/supabase/typed-queries";
 
 /**
  * Handles auth redirects from Supabase: email confirmation, OAuth callbacks,
@@ -47,14 +51,13 @@ export async function GET(request: NextRequest) {
 
   if (isOAuth) {
     // OAuth sign-in: session is active, redirect to the user's workspace
-    const { data: membership } = await supabase
-      .from("members")
-      .select("workspaces(slug)")
+    const { data: membership } = await membersWithWorkspaceSlug(supabase)
       .eq("user_id", data.user.id)
       .limit(1)
       .maybeSingle();
 
-    const slug = (membership?.workspaces as unknown as { slug: string } | null)?.slug;
+    const typed = asMemberWorkspaceSlugRow(membership);
+    const slug = typed?.workspaces?.slug;
     return NextResponse.redirect(`${origin}/${slug ?? ""}`);
   }
 

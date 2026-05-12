@@ -3,6 +3,10 @@
 
 import { createClient } from "@/lib/supabase/client";
 import {
+  membersWithProfiles,
+  asMemberProfileRows,
+} from "@/lib/supabase/typed-queries";
+import {
   getDatabaseCache,
   setDatabaseCache,
   invalidateDatabase,
@@ -878,31 +882,21 @@ export async function loadWorkspaceMembers(
   }
 
   const supabase = getClient();
-  const { data, error } = await supabase
-    .from("members")
-    .select(
-      "user_id, profiles!members_user_id_fkey(id, display_name, email, avatar_url)",
-    )
-    .eq("workspace_id", workspaceId);
+  const { data, error } = await membersWithProfiles(supabase).eq(
+    "workspace_id",
+    workspaceId,
+  );
 
   if (error) {
     return { data: null, error };
   }
 
-  const members: WorkspaceMember[] = (data ?? []).map((m) => {
-    const profile = m.profiles as unknown as {
-      id: string;
-      display_name: string;
-      email: string;
-      avatar_url: string | null;
-    };
-    return {
-      id: m.user_id,
-      display_name: profile.display_name,
-      email: profile.email,
-      avatar_url: profile.avatar_url,
-    };
-  });
+  const members: WorkspaceMember[] = asMemberProfileRows(data).map((m) => ({
+    id: m.user_id,
+    display_name: m.profiles.display_name,
+    email: m.profiles.email,
+    avatar_url: m.profiles.avatar_url,
+  }));
 
   setMembersCache(workspaceId, members);
 

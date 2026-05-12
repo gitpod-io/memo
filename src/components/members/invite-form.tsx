@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Copy, Send } from "lucide-react";
 import { getClient } from "@/lib/supabase/lazy-client";
+import {
+  membersWithProfileEmail,
+  asMemberProfileEmailRows,
+} from "@/lib/supabase/typed-queries";
 import { captureSupabaseError } from "@/lib/sentry";
 import { trackEventClient } from "@/lib/track-event";
 import { Button } from "@/components/ui/button";
@@ -74,15 +78,14 @@ export function InviteForm({
 
     // Check if user is already a member.
     // Disambiguate: members has two FKs to profiles (user_id, invited_by).
-    const { data: existingMember } = await supabase
-      .from("members")
-      .select("id, profiles!members_user_id_fkey(email)")
-      .eq("workspace_id", workspaceId);
+    const { data: existingMember } = await membersWithProfileEmail(supabase).eq(
+      "workspace_id",
+      workspaceId,
+    );
 
-    const alreadyMember = existingMember?.some((m) => {
-      const profile = m.profiles as unknown as { email: string } | null;
-      return profile?.email?.toLowerCase() === trimmedEmail;
-    });
+    const alreadyMember = asMemberProfileEmailRows(existingMember).some(
+      (m) => m.profiles?.email?.toLowerCase() === trimmedEmail,
+    );
 
     if (alreadyMember) {
       onError("This user is already a member of this workspace.");
