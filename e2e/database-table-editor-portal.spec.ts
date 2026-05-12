@@ -42,7 +42,7 @@ async function createDatabaseFromSidebar(
 ): Promise<string> {
   const sidebar = await waitForSidebarTree(page);
 
-  const newDbBtn = sidebar.getByRole("button", { name: /new database/i });
+  const newDbBtn = sidebar.getByTestId("sb-new-database-btn");
   await expect(newDbBtn).toBeVisible({ timeout: 5_000 });
   await newDbBtn.click();
 

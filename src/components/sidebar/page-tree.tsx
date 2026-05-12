@@ -213,7 +213,7 @@ export function PageTree({ userId }: PageTreeProps) {
   if (!workspaceSlug) return null;
 
   return (
-    <div className="flex flex-1 flex-col gap-1 overflow-y-auto">
+    <div className="flex flex-1 flex-col gap-1 overflow-y-auto" data-testid="sb-page-tree">
       <p className="px-2 text-xs tracking-widest uppercase text-label-faint">
         Pages
       </p>
@@ -276,6 +276,7 @@ export function PageTree({ userId }: PageTreeProps) {
         className="mt-1 w-full justify-start gap-2 px-2 text-muted-foreground"
         size="sm"
         onClick={() => actions.handleCreate(null)}
+        data-testid="sb-new-page-btn"
       >
         <Plus className="h-4 w-4" />
         New Page
@@ -285,6 +286,7 @@ export function PageTree({ userId }: PageTreeProps) {
         className="w-full justify-start gap-2 px-2 text-muted-foreground"
         size="sm"
         onClick={actions.handleCreateDatabase}
+        data-testid="sb-new-database-btn"
       >
         <Table2 className="h-4 w-4" />
         New Database

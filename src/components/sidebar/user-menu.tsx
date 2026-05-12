@@ -80,6 +80,7 @@ export function UserMenu({ displayName, email }: UserMenuProps) {
             variant="ghost"
             className="w-full justify-start gap-2 px-2"
             size="sm"
+            data-testid="as-user-menu"
           />
         }
       >

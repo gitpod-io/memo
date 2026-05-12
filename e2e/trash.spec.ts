@@ -21,7 +21,7 @@ async function createPage(page: import("@playwright/test").Page) {
   const sidebar = page.getByRole("complementary");
   await waitForTreeLoaded(page);
 
-  const newPageBtn = sidebar.getByRole("button", { name: /new page/i });
+  const newPageBtn = sidebar.getByTestId("sb-new-page-btn");
   await newPageBtn.click();
 
   // Wait for navigation to the new page

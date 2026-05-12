@@ -21,7 +21,7 @@ test.describe("Responsive sidebar behavior", () => {
     await expect(sheetContent).toBeHidden();
 
     // Mobile header with hamburger button should be visible
-    const toggleButton = page.getByRole("button", { name: "Toggle sidebar" });
+    const toggleButton = page.getByTestId("as-sidebar-toggle");
     await expect(toggleButton).toBeVisible({ timeout: 5_000 });
 
     // Click the hamburger to open the Sheet sidebar
@@ -53,7 +53,7 @@ test.describe("Responsive sidebar behavior", () => {
     expect(box!.width).toBeGreaterThan(0);
 
     // The mobile hamburger toggle should NOT be visible on desktop
-    const toggleButton = page.getByRole("button", { name: "Toggle sidebar" });
+    const toggleButton = page.getByTestId("as-sidebar-toggle");
     await expect(toggleButton).toBeHidden();
 
     // Sheet overlay should not be present
@@ -104,7 +104,7 @@ test.describe("Responsive sidebar behavior", () => {
     await expect(sheetContent).toBeHidden();
 
     // Open the sidebar Sheet
-    const toggleButton = page.getByRole("button", { name: "Toggle sidebar" });
+    const toggleButton = page.getByTestId("as-sidebar-toggle");
     await expect(toggleButton).toBeVisible({ timeout: 5_000 });
     await toggleButton.click();
     await expect(sheetContent).toBeVisible({ timeout: 5_000 });
@@ -115,7 +115,7 @@ test.describe("Responsive sidebar behavior", () => {
       await expect(treeItem).toBeVisible({ timeout: 10_000 });
     } catch {
       // No pages exist — create one so we can navigate
-      const newPageBtn = sheetContent.getByRole("button", { name: /new page/i });
+      const newPageBtn = sheetContent.getByTestId("sb-new-page-btn");
       if ((await newPageBtn.count()) > 0) {
         await newPageBtn.click();
         // Wait for navigation to the new page

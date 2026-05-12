@@ -26,7 +26,7 @@ test.describe("Sidebar Favorites", () => {
     title: string,
   ): Promise<string> {
     const sidebar = page.getByRole("complementary");
-    const newPageBtn = sidebar.getByRole("button", { name: /new page/i });
+    const newPageBtn = sidebar.getByTestId("sb-new-page-btn");
     await newPageBtn.click();
 
     await page.waitForURL(

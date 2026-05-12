@@ -18,7 +18,7 @@ test.describe("Page CRUD", () => {
       // Tree loaded but empty — that's fine
     }
 
-    const newPageBtn = sidebar.getByRole("button", { name: /new page/i });
+    const newPageBtn = sidebar.getByTestId("sb-new-page-btn");
     if ((await newPageBtn.count()) === 0) {
       test.skip(true, "New page button not found");
       return;
@@ -138,7 +138,7 @@ test.describe("Page CRUD", () => {
     }
 
     // Create a page first so we have something to delete
-    const newPageBtn = sidebar.getByRole("button", { name: /new page/i });
+    const newPageBtn = sidebar.getByTestId("sb-new-page-btn");
     if ((await newPageBtn.count()) === 0) {
       test.skip(true, "New page button not found");
       return;

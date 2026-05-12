@@ -76,6 +76,7 @@ export function AppSidebar(props: AppSidebarProps) {
   return (
     <aside
       className="h-full w-60 shrink-0 border-r border-overlay-border bg-muted transition-[width,opacity] duration-200 ease-out"
+      data-testid="as-sidebar"
       style={{
         width: open ? 240 : 0,
         opacity: open ? 1 : 0,
@@ -99,6 +100,7 @@ export function SidebarToggle() {
       className="shrink-0"
       onClick={toggle}
       aria-label="Toggle sidebar"
+      data-testid="as-sidebar-toggle"
     >
       <Menu className="h-4 w-4" />
     </Button>

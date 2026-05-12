@@ -8,7 +8,7 @@ test.describe("Workspace home — New Database button", () => {
     const main = page.locator("#main-content");
 
     // Wait for the workspace home page to load (the heading and buttons)
-    const newDbButton = main.getByRole("button", { name: /new database/i });
+    const newDbButton = main.getByTestId("wh-new-database-btn");
     await expect(newDbButton).toBeVisible({ timeout: 15_000 });
 
     // Click the "New Database" button

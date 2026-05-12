@@ -183,15 +183,15 @@ export function WorkspaceHome({
 
   return (
     <div className="mx-auto max-w-3xl p-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2" data-testid="wh-header">
         <h1 className="min-w-0 text-2xl font-semibold">{workspace.name}</h1>
         <div className="flex shrink-0 items-center gap-2">
-          <Button size="sm" variant="outline" onClick={handleCreateDatabase}>
+          <Button size="sm" variant="outline" onClick={handleCreateDatabase} data-testid="wh-new-database-btn">
             <Table2 className="h-4 w-4" />
             <span className="hidden sm:inline">New Database</span>
             <span className="sm:hidden">Database</span>
           </Button>
-          <Button size="sm" onClick={handleCreatePage}>
+          <Button size="sm" onClick={handleCreatePage} data-testid="wh-new-page-btn">
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">New Page</span>
             <span className="sm:hidden">Page</span>
@@ -199,7 +199,7 @@ export function WorkspaceHome({
         </div>
       </div>
       {recentVisits.length > 0 && (
-        <div className="mt-6">
+        <div className="mt-6" data-testid="wh-recently-visited">
           <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
             Recently Visited
           </h2>
@@ -207,6 +207,7 @@ export function WorkspaceHome({
             {recentVisits.map((visit) => (
               <button
                 key={visit.page_id}
+                data-testid={`wh-recent-item-${visit.page_id}`}
                 className="flex items-center gap-2 px-3 py-2 text-left text-sm transition-none hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
                 onClick={() =>
                   router.push(`/${workspace.slug}/${visit.page_id}`)
@@ -233,7 +234,7 @@ export function WorkspaceHome({
           </div>
         </div>
       )}
-      <div className="mt-6">
+      <div className="mt-6" data-testid="wh-all-pages">
         <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
           All Pages
         </h2>
@@ -246,6 +247,7 @@ export function WorkspaceHome({
               onChange={(e) => setFilter(e.target.value)}
               className="pl-8"
               aria-label="Filter pages by title"
+              data-testid="wh-filter-input"
             />
           </div>
           <Select
@@ -256,6 +258,7 @@ export function WorkspaceHome({
               size="sm"
               className="w-auto shrink-0"
               aria-label="Sort pages"
+              data-testid="wh-sort-dropdown"
             >
               <SelectValue>
                 {(value: string) => SORT_LABELS[value as SortOption] ?? value}
@@ -288,6 +291,7 @@ export function WorkspaceHome({
             {filteredAndSorted.map((page) => (
               <button
                 key={page.id}
+                data-testid={`wh-page-item-${page.id}`}
                 className="flex items-center gap-2 px-3 py-2 text-left text-sm transition-none hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
                 onClick={() =>
                   router.push(`/${workspace.slug}/${page.id}`)

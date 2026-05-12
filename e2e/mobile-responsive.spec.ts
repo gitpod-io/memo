@@ -236,7 +236,7 @@ test.describe("Mobile viewport responsive behavior", () => {
     await page.setViewportSize(MOBILE_VIEWPORT);
 
     // Open the mobile sidebar sheet
-    const toggleButton = page.getByRole("button", { name: "Toggle sidebar" });
+    const toggleButton = page.getByTestId("as-sidebar-toggle");
     await expect(toggleButton).toBeVisible({ timeout: 10_000 });
     await toggleButton.click();
 
@@ -250,7 +250,7 @@ test.describe("Mobile viewport responsive behavior", () => {
     await expect(treeLoaded).toBeVisible({ timeout: 10_000 });
 
     // Create a new page via the sidebar
-    const newPageBtn = sheetContent.getByRole("button", { name: /new page/i });
+    const newPageBtn = sheetContent.getByTestId("sb-new-page-btn");
     await expect(newPageBtn).toBeVisible({ timeout: 5_000 });
     await newPageBtn.click();
 

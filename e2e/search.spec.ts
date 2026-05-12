@@ -27,7 +27,7 @@ async function createPageWithTitle(
   title: string
 ): Promise<string> {
   const sidebar = page.getByRole("complementary");
-  const newPageBtn = sidebar.getByRole("button", { name: /new page/i });
+  const newPageBtn = sidebar.getByTestId("sb-new-page-btn");
   await newPageBtn.click();
 
   await page.waitForURL(
@@ -84,7 +84,7 @@ test.describe("Sidebar search", () => {
     authenticatedPage: page,
   }) => {
     const sidebar = page.getByRole("complementary");
-    const newPageBtn = sidebar.getByRole("button", { name: /new page/i });
+    const newPageBtn = sidebar.getByTestId("sb-new-page-btn");
     if ((await newPageBtn.count()) === 0) {
       test.skip(true, "New page button not found — cannot set up search test");
       return;
@@ -99,7 +99,7 @@ test.describe("Sidebar search", () => {
   }) => {
     // First create a page so we have something to search for
     const sidebar = page.getByRole("complementary");
-    const newPageBtn = sidebar.getByRole("button", { name: /new page/i });
+    const newPageBtn = sidebar.getByTestId("sb-new-page-btn");
     if ((await newPageBtn.count()) === 0) {
       test.skip(true, "New page button not found");
       return;
@@ -135,7 +135,7 @@ test.describe("Sidebar search", () => {
   }) => {
     // Create a page to search for
     const sidebar = page.getByRole("complementary");
-    const newPageBtn = sidebar.getByRole("button", { name: /new page/i });
+    const newPageBtn = sidebar.getByTestId("sb-new-page-btn");
     if ((await newPageBtn.count()) === 0) {
       test.skip(true, "New page button not found");
       return;
@@ -213,7 +213,7 @@ test.describe("Sidebar search", () => {
   }) => {
     // Create a page in the current workspace with a unique identifier
     const sidebar = page.getByRole("complementary");
-    const newPageBtn = sidebar.getByRole("button", { name: /new page/i });
+    const newPageBtn = sidebar.getByTestId("sb-new-page-btn");
     if ((await newPageBtn.count()) === 0) {
       test.skip(true, "New page button not found");
       return;

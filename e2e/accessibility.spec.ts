@@ -123,7 +123,7 @@ authTest.describe("Accessibility: page editor", () => {
         // Empty workspace — that's fine, we'll create a page
       }
 
-      const newPageBtn = sidebar.getByRole("button", { name: /new page/i });
+      const newPageBtn = sidebar.getByTestId("sb-new-page-btn");
       await newPageBtn.waitFor({ state: "visible", timeout: 10_000 });
       await newPageBtn.click();
 
