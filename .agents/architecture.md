@@ -620,11 +620,12 @@ src/
 │   ├── word-count.ts       # Word count and reading time calculation utilities
 │   ├── workspace.ts        # Workspace utilities: slug generation, validation, limits
 │   └── supabase/
-│       ├── admin.ts        # Service-role client for server-only operations (cron jobs)
-│       ├── client.ts       # Browser client (createBrowserClient)
-│       ├── lazy-client.ts  # Lazy-loaded browser client (defers SDK import to reduce initial bundle)
-│       ├── server.ts       # Server component client (createServerClient + cookies)
-│       └── proxy.ts        # Session refresh + auth redirect logic (updateSession)
+│       ├── admin.ts         # Service-role client for server-only operations (cron jobs)
+│       ├── client.ts        # Browser client (createBrowserClient)
+│       ├── lazy-client.ts   # Lazy-loaded browser client (defers SDK import to reduce initial bundle)
+│       ├── server.ts        # Server component client (createServerClient + cookies)
+│       ├── proxy.ts         # Session refresh + auth redirect logic (updateSession)
+│       └── typed-queries.ts # Typed helpers for Supabase join queries (centralizes select strings + casts)
 ├── proxy.ts                # Root proxy — calls updateSession, skips static/health routes
 └── instrumentation.ts      # Sentry server/edge init (register + onRequestError)
 

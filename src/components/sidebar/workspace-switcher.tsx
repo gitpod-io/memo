@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronsUpDown, Plus, Check } from "lucide-react";
 import { getClient } from "@/lib/supabase/lazy-client";
+import {
+  membersWithWorkspace,
+  asMemberWorkspaceFullRows,
+} from "@/lib/supabase/typed-queries";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -30,15 +34,14 @@ export function WorkspaceSwitcher({ userId }: WorkspaceSwitcherProps) {
   useEffect(() => {
     async function fetchWorkspaces() {
       const supabase = await getClient();
-      const { data: memberships } = await supabase
-        .from("members")
-        .select("workspace_id, workspaces(*)")
-        .eq("user_id", userId);
+      const { data: memberships } = await membersWithWorkspace(supabase).eq(
+        "user_id",
+        userId,
+      );
 
       if (memberships) {
-        // Supabase join returns the relation as an opaque type; cast is unavoidable
-        const ws = memberships
-          .map((m) => m.workspaces as unknown as Workspace)
+        const ws = asMemberWorkspaceFullRows(memberships)
+          .map((m) => m.workspaces)
           .filter(Boolean);
 
         // Personal first, then alphabetically by name
