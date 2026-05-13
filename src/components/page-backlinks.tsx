@@ -1,20 +1,15 @@
 import Link from "next/link";
 import { FileText, ArrowUpLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import {
+  pageLinksWithSourcePage,
+  asBacklinkRows,
+} from "@/lib/supabase/typed-queries";
 
 interface PageBacklinksProps {
   pageId: string;
   workspaceId: string;
   workspaceSlug: string;
-}
-
-interface BacklinkRow {
-  source_page_id: string;
-  pages: {
-    id: string;
-    title: string;
-    icon: string | null;
-  };
 }
 
 export async function PageBacklinks({
@@ -24,9 +19,7 @@ export async function PageBacklinks({
 }: PageBacklinksProps) {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from("page_links")
-    .select("source_page_id, pages!page_links_source_page_id_fkey(id, title, icon)")
+  const { data, error } = await pageLinksWithSourcePage(supabase)
     .eq("target_page_id", pageId)
     .eq("workspace_id", workspaceId);
 
@@ -34,8 +27,7 @@ export async function PageBacklinks({
     return null;
   }
 
-  // Supabase returns joined data; narrow the type
-  const backlinks = data as unknown as BacklinkRow[];
+  const backlinks = asBacklinkRows(data);
 
   return (
     <div className="mt-8 border-t border-overlay-border pt-4">

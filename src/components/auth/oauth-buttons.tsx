@@ -61,7 +61,7 @@ export function OAuthButtons() {
 
     if (oauthError) {
       import("@/lib/sentry").then(({ captureSupabaseError }) =>
-        captureSupabaseError(oauthError as unknown as Error, `oauth.signIn.${provider}`),
+        captureSupabaseError(oauthError, `oauth.signIn.${provider}`),
       );
       setError(oauthError.message);
       setLoadingProvider(null);

@@ -2,7 +2,13 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MembersPageClient } from "@/components/members/members-page-client";
-import type { MemberWithProfile, WorkspaceInviteWithInviter } from "@/lib/types";
+import type { WorkspaceInviteWithInviter } from "@/lib/types";
+import {
+  membersWithFullProfile,
+  asMemberWithProfileRows,
+  invitesWithInviter,
+  asInviteWithInviterRows,
+} from "@/lib/supabase/typed-queries";
 
 export async function generateMetadata({
   params,
@@ -62,17 +68,12 @@ export default async function WorkspaceMembersPage({
     notFound();
   }
 
-  // Fetch all members with profile info.
-  // Disambiguate the profiles join: members has two FKs to profiles
-  // (user_id and invited_by). We want the user's profile.
-  const { data: membersRaw } = await supabase
-    .from("members")
-    .select("*, profiles!members_user_id_fkey(email, display_name, avatar_url)")
+  // Fetch all members with profile info (email, display_name, avatar_url).
+  const { data: membersRaw } = await membersWithFullProfile(supabase)
     .eq("workspace_id", workspace.id)
     .order("created_at", { ascending: true });
 
-  // Supabase join returns the relation as an opaque type; cast is unavoidable
-  const members = (membersRaw ?? []) as unknown as MemberWithProfile[];
+  const members = asMemberWithProfileRows(membersRaw);
 
   // Extract current user's display name for optimistic invite UI
   const currentUserProfile = members.find((m) => m.user_id === user.id);
@@ -86,15 +87,12 @@ export default async function WorkspaceMembersPage({
   let pendingInvites: WorkspaceInviteWithInviter[] = [];
 
   if (isAdmin) {
-    const { data: invites } = await supabase
-      .from("workspace_invites")
-      .select("*, profiles:invited_by(display_name)")
+    const { data: invites } = await invitesWithInviter(supabase)
       .eq("workspace_id", workspace.id)
       .is("accepted_at", null)
       .order("created_at", { ascending: false });
 
-    // Supabase join returns the relation as an opaque type; cast is unavoidable
-    pendingInvites = (invites ?? []) as unknown as WorkspaceInviteWithInviter[];
+    pendingInvites = asInviteWithInviterRows(invites);
   }
 
   return (

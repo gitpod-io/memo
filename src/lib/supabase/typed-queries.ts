@@ -5,7 +5,11 @@
 // so call sites get properly typed results without `as unknown as` casts.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Workspace } from "@/lib/types";
+import type {
+  MemberWithProfile,
+  WorkspaceInviteWithInviter,
+  Workspace,
+} from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // Result row types for each join pattern
@@ -58,6 +62,16 @@ export interface PageVisitRow {
   };
 }
 
+/** Row from `page_links` with joined source `pages` via source_page_id FK. */
+export interface BacklinkRow {
+  source_page_id: string;
+  pages: {
+    id: string;
+    title: string;
+    icon: string | null;
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Select strings (single source of truth)
 // ---------------------------------------------------------------------------
@@ -77,6 +91,15 @@ const SELECT_MEMBERS_WORKSPACES_SLUG_PERSONAL =
 
 const SELECT_PAGE_VISITS_PAGES =
   "page_id, visited_at, pages!inner(title, icon, is_database, deleted_at)";
+
+const SELECT_MEMBERS_WITH_PROFILE_FULL =
+  "*, profiles!members_user_id_fkey(email, display_name, avatar_url)";
+
+const SELECT_INVITES_WITH_INVITER =
+  "*, profiles:invited_by(display_name)";
+
+const SELECT_BACKLINKS =
+  "source_page_id, pages!page_links_source_page_id_fkey(id, title, icon)";
 
 // ---------------------------------------------------------------------------
 // Query builders
@@ -117,6 +140,21 @@ export function membersWithWorkspaceSlugPersonal(client: SupabaseClient) {
 /** Page visits with joined page data (title, icon, is_database). */
 export function pageVisitsWithPages(client: SupabaseClient) {
   return client.from("page_visits").select(SELECT_PAGE_VISITS_PAGES);
+}
+
+/** Members with full profile (email, display_name, avatar_url) plus all member fields. */
+export function membersWithFullProfile(client: SupabaseClient) {
+  return client.from("members").select(SELECT_MEMBERS_WITH_PROFILE_FULL);
+}
+
+/** Workspace invites with inviter's display_name. */
+export function invitesWithInviter(client: SupabaseClient) {
+  return client.from("workspace_invites").select(SELECT_INVITES_WITH_INVITER);
+}
+
+/** Page links with source page info (id, title, icon) for backlinks. */
+export function pageLinksWithSourcePage(client: SupabaseClient) {
+  return client.from("page_links").select(SELECT_BACKLINKS);
 }
 
 // ---------------------------------------------------------------------------
@@ -166,4 +204,25 @@ export function asPageVisitRows(
   data: Record<string, unknown>[] | null,
 ): PageVisitRow[] {
   return (data ?? []) as unknown as PageVisitRow[];
+}
+
+/** Cast a raw members→profiles(email, display_name, avatar_url) row array. */
+export function asMemberWithProfileRows(
+  data: Record<string, unknown>[] | null,
+): MemberWithProfile[] {
+  return (data ?? []) as unknown as MemberWithProfile[];
+}
+
+/** Cast a raw workspace_invites→profiles(display_name) row array. */
+export function asInviteWithInviterRows(
+  data: Record<string, unknown>[] | null,
+): WorkspaceInviteWithInviter[] {
+  return (data ?? []) as unknown as WorkspaceInviteWithInviter[];
+}
+
+/** Cast a raw page_links→pages row array to typed backlink rows. */
+export function asBacklinkRows(
+  data: Record<string, unknown>[] | null,
+): BacklinkRow[] {
+  return (data ?? []) as unknown as BacklinkRow[];
 }
