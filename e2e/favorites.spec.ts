@@ -91,11 +91,10 @@ test.describe("Sidebar Favorites", () => {
   async function countFavorites(
     page: import("@playwright/test").Page,
   ): Promise<number> {
-    const favoritesHeading = getFavoritesHeading(page);
-    const isVisible = await favoritesHeading.isVisible().catch(() => false);
+    const favoritesSection = page.getByTestId("fav-section");
+    const isVisible = await favoritesSection.isVisible().catch(() => false);
     if (!isVisible) return 0;
-    const favoritesSection = favoritesHeading.locator("..");
-    return favoritesSection.locator("button.flex-1").count();
+    return favoritesSection.getByTestId("fav-item").count();
   }
 
   /**
@@ -104,21 +103,20 @@ test.describe("Sidebar Favorites", () => {
    * the row first to make it visible, then click.
    */
   async function removeAllFavorites(page: import("@playwright/test").Page) {
-    const favoritesHeading = getFavoritesHeading(page);
+    const favoritesSection = page.getByTestId("fav-section");
 
     // Keep removing until the section disappears or we run out of items
     for (let i = 0; i < 20; i++) {
-      const isVisible = await favoritesHeading.isVisible().catch(() => false);
+      const isVisible = await favoritesSection.isVisible().catch(() => false);
       if (!isVisible) break;
 
-      const favoritesSection = favoritesHeading.locator("..");
       const removeBtn = favoritesSection
-        .getByRole("button", { name: /remove from favorites/i })
+        .getByTestId("fav-remove-btn")
         .first();
 
       // The button exists in DOM but is invisible (opacity-0).
       // Hover the parent row to trigger group-hover.
-      const favoriteRow = favoritesSection.locator("div.group").first();
+      const favoriteRow = favoritesSection.getByTestId("fav-item").first();
       const rowExists = await favoriteRow.isVisible().catch(() => false);
       if (!rowExists) break;
 
@@ -177,11 +175,11 @@ test.describe("Sidebar Favorites", () => {
     await expect(favoritesHeading).toBeVisible({ timeout: 5_000 });
 
     // The favorited page should appear with its title
-    const favoritesSection = favoritesHeading.locator("..");
-    const favoriteBtn = favoritesSection.locator("button.flex-1", {
+    const favoritesSection = page.getByTestId("fav-section");
+    const favoriteItem = favoritesSection.getByTestId("fav-item").filter({
       hasText: title,
     });
-    await expect(favoriteBtn).toBeVisible({ timeout: 3_000 });
+    await expect(favoriteItem).toBeVisible({ timeout: 3_000 });
   });
 
   test("user can remove a page from favorites via context menu", async ({
@@ -232,13 +230,11 @@ test.describe("Sidebar Favorites", () => {
     await expect(favoritesHeading).toBeVisible({ timeout: 5_000 });
 
     // Hover over the favorite item to reveal the remove button
-    const favoritesSection = favoritesHeading.locator("..");
-    const favoriteRow = favoritesSection.locator("div.group").first();
+    const favoritesSection = page.getByTestId("fav-section");
+    const favoriteRow = favoritesSection.getByTestId("fav-item").first();
     await favoriteRow.hover();
 
-    const removeBtn = favoritesSection.getByRole("button", {
-      name: /remove from favorites/i,
-    });
+    const removeBtn = favoritesSection.getByTestId("fav-remove-btn");
     await expect(removeBtn).toBeVisible({ timeout: 3_000 });
     await removeBtn.click();
 
@@ -274,12 +270,12 @@ test.describe("Sidebar Favorites", () => {
     await expect(favoritesHeading).toBeVisible({ timeout: 10_000 });
 
     // Click the favorite with the matching title
-    const favoritesSection = favoritesHeading.locator("..");
-    const favoriteBtn = favoritesSection.locator("button.flex-1", {
+    const favoritesSection = page.getByTestId("fav-section");
+    const favoriteItem = favoritesSection.getByTestId("fav-item").filter({
       hasText: title,
     });
-    await expect(favoriteBtn).toBeVisible({ timeout: 3_000 });
-    await favoriteBtn.click();
+    await expect(favoriteItem).toBeVisible({ timeout: 3_000 });
+    await favoriteItem.locator("button.flex-1").click();
 
     // URL should contain the page ID
     await page.waitForURL((url) => url.pathname.includes(pageId), {
@@ -346,10 +342,10 @@ test.describe("Sidebar Favorites", () => {
     await expect(favoritesHeading).toBeVisible({ timeout: 10_000 });
 
     // The original favorite should still be listed with its title
-    const favoritesSection = favoritesHeading.locator("..");
-    const favoriteBtn = favoritesSection.locator("button.flex-1", {
+    const favoritesSection = page.getByTestId("fav-section");
+    const favoriteItem = favoritesSection.getByTestId("fav-item").filter({
       hasText: title,
     });
-    await expect(favoriteBtn).toBeVisible({ timeout: 3_000 });
+    await expect(favoriteItem).toBeVisible({ timeout: 3_000 });
   });
 });

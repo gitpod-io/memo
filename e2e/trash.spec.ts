@@ -152,8 +152,7 @@ test.describe("Trash and soft-delete operations", () => {
     await trashToggle.click();
 
     // The trash section should contain at least one item (the deleted page)
-    // Trash items show "Untitled" for pages without a title
-    const trashItem = sidebar.locator("text=Untitled").first();
+    const trashItem = sidebar.getByTestId("trash-item").first();
     await expect(trashItem).toBeVisible({ timeout: 5_000 });
   });
 

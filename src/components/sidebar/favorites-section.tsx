@@ -137,7 +137,7 @@ export function FavoritesSection({ userId }: FavoritesSectionProps) {
   if (favorites.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-0.5" data-testid="fav-section">
       <p className="px-2 text-xs tracking-widest uppercase text-label-faint">
         Favorites
       </p>
@@ -146,6 +146,7 @@ export function FavoritesSection({ userId }: FavoritesSectionProps) {
         return (
           <div
             key={fav.id}
+            data-testid="fav-item"
             className={`group flex items-center gap-2 px-2 py-0.5 text-sm ${
               isSelected
                 ? "bg-overlay-active font-medium text-label-subtle"
@@ -176,6 +177,7 @@ export function FavoritesSection({ userId }: FavoritesSectionProps) {
               className="flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground opacity-0 hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring group-hover:opacity-100"
               onClick={() => handleRemoveFavorite(fav.id)}
               aria-label="Remove from favorites"
+              data-testid="fav-remove-btn"
             >
               <StarOff className="h-3 w-3" />
             </button>
