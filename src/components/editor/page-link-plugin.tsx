@@ -421,6 +421,7 @@ export function PageLinkPlugin(): JSX.Element | null {
   return createPortal(
     <div
       ref={menuRef}
+      data-testid="pls-dropdown"
       className="fixed z-50 w-64 overflow-hidden rounded-sm border border-overlay-border bg-popover shadow-md"
       style={{
         top: anchorRect.bottom + 4,
@@ -443,6 +444,7 @@ export function PageLinkPlugin(): JSX.Element | null {
           readOnly={!isSlashCommandMode}
           className="h-6 w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
           aria-label="Search pages"
+          data-testid="pls-search-input"
         />
       </div>
       <div
@@ -464,6 +466,7 @@ export function PageLinkPlugin(): JSX.Element | null {
           <button
             key={page.id}
             id={`page-link-option-${page.id}`}
+            data-testid="pls-result-item"
             className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm outline-none ${
               selectedIndex === index
                 ? "bg-overlay-active text-foreground"

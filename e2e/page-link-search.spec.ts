@@ -24,7 +24,7 @@ test.describe("Page link dropdown search", () => {
     await linkOption.click();
     // The page link dropdown should appear with a search input
     // Use placeholder to disambiguate from the sidebar search
-    const searchInput = page.locator('input[placeholder="Search pages…"]');
+    const searchInput = page.getByTestId("pls-search-input");
     await expect(searchInput).toBeVisible({ timeout: 3_000 });
     await expect(searchInput).toBeFocused();
   });
@@ -44,7 +44,7 @@ test.describe("Page link dropdown search", () => {
     const linkOption = page.getByRole("option", { name: /link to page/i });
     await expect(linkOption).toBeVisible({ timeout: 3_000 });
     await linkOption.click();
-    const searchInput = page.locator('input[placeholder="Search pages…"]');
+    const searchInput = page.getByTestId("pls-search-input");
     await expect(searchInput).toBeVisible({ timeout: 3_000 });
 
     // Type a query that is unlikely to match any page
@@ -70,11 +70,11 @@ test.describe("Page link dropdown search", () => {
     const linkOption = page.getByRole("option", { name: /link to page/i });
     await expect(linkOption).toBeVisible({ timeout: 3_000 });
     await linkOption.click();
-    const searchInput = page.locator('input[placeholder="Search pages…"]');
+    const searchInput = page.getByTestId("pls-search-input");
     await expect(searchInput).toBeVisible({ timeout: 3_000 });
 
     // Wait for results to load — options are inside the page link dropdown
-    const dropdown = searchInput.locator("..").locator("..");
+    const dropdown = page.getByTestId("pls-dropdown");
     const firstOption = dropdown.getByRole("option").first();
     await expect(firstOption).toBeVisible({ timeout: 5_000 });
 
@@ -108,7 +108,7 @@ test.describe("Page link dropdown search", () => {
     // Type [[ to trigger page link menu
     await editor.pressSequentially("[[");
     // The search input should appear
-    const searchInput = page.locator('input[placeholder="Search pages…"]');
+    const searchInput = page.getByTestId("pls-search-input");
     await expect(searchInput).toBeVisible({ timeout: 3_000 });
 
     // The input should show the query (empty initially since nothing typed after [[)

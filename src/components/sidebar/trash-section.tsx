@@ -216,7 +216,7 @@ export function TrashSection() {
   if (trashedPages.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-0.5" data-testid="trash-section">
       <button
         className="flex items-center gap-2 px-2 py-0.5 text-xs tracking-widest uppercase text-label-faint hover:text-label-muted focus-visible:bg-overlay-active focus-visible:outline-none"
         onClick={() => setExpanded((prev) => !prev)}
@@ -232,6 +232,7 @@ export function TrashSection() {
           {trashedPages.map((page) => (
             <div
               key={page.id}
+              data-testid="trash-item"
               className="group flex items-center gap-2 px-2 py-0.5 text-sm text-muted-foreground hover:bg-overlay-hover"
             >
               <span className="flex h-4 w-4 shrink-0 items-center justify-center">
@@ -254,6 +255,7 @@ export function TrashSection() {
                   onClick={() => handleRestore(page)}
                   disabled={operating}
                   aria-label="Restore page"
+                  data-testid="trash-restore-btn"
                 >
                   <RotateCcw className="h-3 w-3" />
                 </Button>
@@ -264,6 +266,7 @@ export function TrashSection() {
                   onClick={() => setPermanentDeleteTarget(page)}
                   disabled={operating}
                   aria-label="Permanently delete page"
+                  data-testid="trash-delete-btn"
                 >
                   <X className="h-3 w-3" />
                 </Button>
