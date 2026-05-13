@@ -207,7 +207,7 @@ test.describe("Files property type", () => {
     await page.goto(`/${workspaceSlug}/${rowId}`);
 
     // Wait for the properties header to load
-    const attachmentsLabel = page.locator("text=Attachments").first();
+    const attachmentsLabel = page.getByTestId(`db-row-property-name-${filesPropertyId}`);
     await expect(attachmentsLabel).toBeVisible({ timeout: 15_000 });
 
     // The FilesRenderer should show the file thumbnail (img for image files)
