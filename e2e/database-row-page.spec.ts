@@ -153,14 +153,22 @@ test.describe("Database Row Page", () => {
     await waitForEditor(page);
 
     // The properties header should be visible with the property name label.
-    // Properties are rendered as rows with a label (w-32 text-right) and
-    // a value cell. The added column is named after its type label ("Text").
-    const propertyLabel = page.locator("text=Text").first();
+    // Properties are rendered as rows with a label and a value cell.
+    // The added column is named after its type label ("Text").
+    const propertiesHeader = page.getByTestId("db-row-properties");
+    await expect(propertiesHeader).toBeVisible({ timeout: 10_000 });
+
+    const propertyLabel = propertiesHeader.locator(
+      '[data-testid^="db-row-property-name-"]',
+      { hasText: "Text" },
+    );
     await expect(propertyLabel).toBeVisible({ timeout: 10_000 });
 
-    // The value cell should show "Empty" since no value has been set
-    const emptyValue = page.locator("text=Empty").first();
-    await expect(emptyValue).toBeVisible({ timeout: 5_000 });
+    // The value cell should show "Empty" since no value has been set.
+    // Navigate from the name cell to its sibling value cell in the same row.
+    const propertyRow = propertyLabel.locator("..");
+    const valueCell = propertyRow.locator('[data-testid^="db-row-property-value-"]');
+    await expect(valueCell).toContainText("Empty", { timeout: 5_000 });
   });
 
   test("edit a select property value from the row page properties header", async ({
@@ -206,23 +214,25 @@ test.describe("Database Row Page", () => {
     await waitForEditor(page);
 
     // The properties header should show the "Status" label
-    await expect(page.locator("text=Status").first()).toBeVisible({
-      timeout: 10_000,
-    });
+    const propertiesHeader = page.getByTestId("db-row-properties");
+    await expect(propertiesHeader).toBeVisible({ timeout: 10_000 });
+
+    const statusLabel = propertiesHeader.locator(
+      '[data-testid^="db-row-property-name-"]',
+      { hasText: "Status" },
+    );
+    await expect(statusLabel).toBeVisible({ timeout: 10_000 });
 
     // Click the "Empty" value next to "Status" to open the select editor.
-    // Target the value cell in the same row as the "Status" label.
-    const statusRow = page.locator("div.flex.items-start.gap-4", {
-      hasText: "Status",
-    });
-    const emptyValue = statusRow.locator("text=Empty");
-    await expect(emptyValue).toBeVisible({ timeout: 5_000 });
-    await emptyValue.click();
+    // Navigate from the name cell to its sibling value cell in the same row.
+    const statusRow = statusLabel.locator("..");
+    const statusValueCell = statusRow.locator('[data-testid^="db-row-property-value-"]');
+    await expect(statusValueCell).toContainText("Empty", { timeout: 5_000 });
+    // Click the button inside the value cell to trigger editing mode
+    await statusValueCell.locator("button").click();
 
     // The select dropdown should appear with a search input and options
-    const dropdownContainer = page.locator(
-      ".rounded-sm.border.border-border.bg-background",
-    );
+    const dropdownContainer = page.getByTestId("db-cell-editor-select");
     await expect(dropdownContainer).toBeVisible({ timeout: 5_000 });
 
     // Click "In Progress" to select it
@@ -232,8 +242,7 @@ test.describe("Database Row Page", () => {
 
     // The dropdown should close and the selected value should be displayed
     // as a badge with the option name
-    const badge = statusRow.locator("text=In Progress");
-    await expect(badge).toBeVisible({ timeout: 5_000 });
+    await expect(statusValueCell).toContainText("In Progress", { timeout: 5_000 });
   });
 
   test("edit the row page content using the Lexical editor", async ({
@@ -366,9 +375,11 @@ test.describe("Database Row Page", () => {
     // Wait for the Lexical editor to fully initialize behind the lazy-load boundary
     await waitForEditor(page);
 
-    // The property value should be visible on the row page (not "Empty")
-    await expect(
-      page.locator("text=Hello from table").first(),
-    ).toBeVisible({ timeout: 10_000 });
+    // The property value should be visible on the row page (not "Empty").
+    // Scope the assertion to the properties header container.
+    const propertiesHeader = page.getByTestId("db-row-properties");
+    await expect(propertiesHeader).toContainText("Hello from table", {
+      timeout: 10_000,
+    });
   });
 });

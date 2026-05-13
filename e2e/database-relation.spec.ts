@@ -320,7 +320,7 @@ test.describe("Relation property type", () => {
     await page.goto(`/${workspaceSlug}/${sourceRowId}`);
 
     // Wait for the row detail page to load — the properties header should appear
-    const linkedItemsLabel = page.locator("text=Linked Items").first();
+    const linkedItemsLabel = page.getByTestId(`db-row-property-name-${relationPropertyId}`);
     await expect(linkedItemsLabel).toBeVisible({ timeout: 15_000 });
 
     // The RelationRenderer renders pills as buttons with aria-label.
@@ -339,10 +339,9 @@ test.describe("Relation property type", () => {
       { timeout: 15_000 },
     );
 
-    // The page should show "Alpha Item"
-    await expect(
-      page.locator("text=Alpha Item").first(),
-    ).toBeVisible({ timeout: 10_000 });
+    // The page should show "Alpha Item" in the breadcrumb
+    const breadcrumb = page.locator('nav[aria-label="Breadcrumb"]');
+    await expect(breadcrumb).toContainText("Alpha Item", { timeout: 10_000 });
   });
 
   test("relation picker search filters target rows", async ({
@@ -354,7 +353,7 @@ test.describe("Relation property type", () => {
     const searchInput = await openRelationEditor(page);
 
     // Both rows should be visible initially — use the editor's container
-    const editorContainer = page.locator(".w-56").first();
+    const editorContainer = page.getByTestId("db-cell-editor-relation");
     await expect(
       editorContainer.locator("button", { hasText: "Alpha Item" }),
     ).toBeVisible({ timeout: 10_000 });
