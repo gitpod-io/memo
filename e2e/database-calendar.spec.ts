@@ -476,13 +476,14 @@ test.describe("Database calendar view", () => {
       hasText: "Untitled",
     }).count();
 
-    // Find the cell for day 20 via its gridcell role and day number
-    const day20Span = page.locator("span").filter({ hasText: /^20$/ }).first();
-    await expect(day20Span).toBeVisible({ timeout: 5_000 });
+    // Find the cell for day 20 via its data-testid (cal-day-YYYY-MM-DD)
+    const day20Cell = page.locator('[data-testid^="cal-day-"]').filter({
+      has: page.locator("span", { hasText: /^20$/ }),
+    }).first();
+    await expect(day20Cell).toBeVisible({ timeout: 5_000 });
 
     // Click the cell — the click may land on a child element (span, div),
     // which is fine since the handler no longer requires e.target === e.currentTarget.
-    const day20Cell = day20Span.locator("..");
     await day20Cell.click({ position: { x: 40, y: 60 } });
 
     // Wait for the async row creation to complete and the new "Untitled"

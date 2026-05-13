@@ -14,21 +14,7 @@ test.describe("theme toggle", () => {
     authenticatedPage: page,
   }) => {
     // Open user menu (bottom of sidebar)
-    const userMenuTrigger = page.locator(
-      '[data-slot="dropdown-menu-trigger"]',
-      { has: page.locator("text=Settings").first().locator("..").locator("..") },
-    );
-    // Find the user menu button — it's the one with the User icon in the sidebar
-    const sidebarUserButton = page
-      .locator("aside")
-      .locator('button:has-text("")')
-      .last();
-
-    // Click the user menu trigger at the bottom of the sidebar
-    await page
-      .locator("aside button")
-      .filter({ has: page.locator('svg.lucide-user') })
-      .click();
+    await page.getByTestId("as-user-menu").click();
 
     // Wait for the dropdown to appear
     await page.locator('[data-slot="dropdown-menu-content"]').waitFor();

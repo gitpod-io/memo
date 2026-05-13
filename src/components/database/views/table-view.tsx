@@ -350,7 +350,7 @@ export const TableView = memo(function TableView({
         aria-hidden="true"
       />
 
-      <div ref={scrollRef} className="w-full overflow-x-auto">
+      <div ref={scrollRef} className="w-full overflow-x-auto" data-testid="db-table-scroll">
         <div
           ref={gridRef}
           className="w-max min-w-full"
