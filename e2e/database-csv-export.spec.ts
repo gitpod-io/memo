@@ -103,8 +103,10 @@ test.describe("Database CSV Export", () => {
     await page.keyboard.type("Test Row Beta");
     await page.keyboard.press("Escape");
 
-    // Wait for auto-save
-    await page.waitForTimeout(1000);
+    // Wait for auto-save: verify the cell displays committed text outside edit mode
+    await expect(secondTitleCell).toContainText("Test Row Beta", {
+      timeout: 5_000,
+    });
 
     // Find and click the CSV export button
     const exportBtn = page.getByTestId("csv-export-button");

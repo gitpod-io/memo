@@ -203,8 +203,13 @@ test.describe("Database search filter", () => {
     await expect(boardOption).toBeVisible({ timeout: 5_000 });
     await boardOption.click();
 
-    // Wait for the new view to load
-    await page.waitForTimeout(500);
+    // Wait for the board view to render (shows either the board container
+    // or a "Group by" prompt when no select property is configured)
+    await expect(
+      page
+        .locator('[data-testid="db-board-container"], :text("Group by")')
+        .first(),
+    ).toBeVisible({ timeout: 5_000 });
 
     // Search input should be reset
     const newSearchInput = page.getByTestId("db-search-input");

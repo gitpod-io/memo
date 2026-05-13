@@ -109,15 +109,16 @@ test.describe("Demo editor on landing page", () => {
     await editable.click();
     await page.keyboard.type("Persistent content test");
 
-    // Wait for debounced save (500ms + buffer)
-    await page.waitForTimeout(1000);
-
-    // Verify sessionStorage has content
-    const stored = await page.evaluate(() =>
-      sessionStorage.getItem("memo-demo-editor-content"),
-    );
-    expect(stored).toBeTruthy();
-    expect(stored).toContain("Persistent content test");
+    // Wait for the debounced save to persist content to sessionStorage
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() =>
+            sessionStorage.getItem("memo-demo-editor-content"),
+          ),
+        { timeout: 5_000, message: "sessionStorage should contain typed content" },
+      )
+      .toContain("Persistent content test");
 
     // Reload the page
     await page.reload();
@@ -166,8 +167,17 @@ test.describe("Demo editor on landing page", () => {
     await editable.click();
     await page.keyboard.type("Testing no supabase calls");
 
-    // Wait for any potential debounced saves
-    await page.waitForTimeout(1500);
+    // Wait for the debounced save to fire (content appears in sessionStorage),
+    // which proves the save cycle completed without needing an arbitrary timeout.
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() =>
+            sessionStorage.getItem("memo-demo-editor-content"),
+          ),
+        { timeout: 5_000, message: "sessionStorage should contain typed content" },
+      )
+      .toContain("Testing no supabase calls");
 
     // Filter out auth-related calls (getUser on page load is expected)
     const nonAuthCalls = supabaseRequests.filter(
