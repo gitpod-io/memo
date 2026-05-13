@@ -388,6 +388,7 @@ function CalendarDayCell({
       aria-label={cell.date}
       tabIndex={isFocused ? 0 : -1}
       data-calendar-index={cellIndex}
+      data-testid={`cal-day-${cell.date}`}
       className={cn(
         "relative min-h-24 border border-overlay-border p-1 outline-none",
         "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",

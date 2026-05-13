@@ -314,8 +314,8 @@ test.describe("Workspace home page interactions", () => {
     // The visited page should appear in the recently visited list
     if (visitedTitle && visitedTitle.trim()) {
       const trimmedTitle = visitedTitle.trim();
-      // The recently visited section is the parent div of the heading
-      const recentContainer = recentHeading.locator("..").first();
+      // The recently visited section container (has data-testid)
+      const recentContainer = page.getByTestId("wh-recently-visited");
       const recentItem = recentContainer.locator("button", {
         hasText: trimmedTitle,
       });

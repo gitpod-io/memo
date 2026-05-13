@@ -300,7 +300,7 @@ test.describe("Mobile viewport responsive behavior", () => {
 
     // The table has a horizontal scroll container. Verify it exists and
     // that the table content is wider than the mobile viewport (requires scroll).
-    const scrollContainer = grid.locator("..").first();
+    const scrollContainer = page.getByTestId("db-table-scroll");
     const scrollBox = await scrollContainer.boundingBox();
     expect(scrollBox).not.toBeNull();
 

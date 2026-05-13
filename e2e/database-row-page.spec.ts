@@ -165,8 +165,10 @@ test.describe("Database Row Page", () => {
     await expect(propertyLabel).toBeVisible({ timeout: 10_000 });
 
     // The value cell should show "Empty" since no value has been set.
-    // Navigate from the name cell to its sibling value cell in the same row.
-    const propertyRow = propertyLabel.locator("..");
+    // Navigate from the name cell to its containing row via the row testid.
+    const propertyRow = propertiesHeader.locator('[data-testid^="db-row-property-"]').filter({
+      has: propertyLabel,
+    });
     const valueCell = propertyRow.locator('[data-testid^="db-row-property-value-"]');
     await expect(valueCell).toContainText("Empty", { timeout: 5_000 });
   });
@@ -224,8 +226,10 @@ test.describe("Database Row Page", () => {
     await expect(statusLabel).toBeVisible({ timeout: 10_000 });
 
     // Click the "Empty" value next to "Status" to open the select editor.
-    // Navigate from the name cell to its sibling value cell in the same row.
-    const statusRow = statusLabel.locator("..");
+    // Navigate from the name cell to its containing row via the row testid.
+    const statusRow = propertiesHeader.locator('[data-testid^="db-row-property-"]').filter({
+      has: statusLabel,
+    });
     const statusValueCell = statusRow.locator('[data-testid^="db-row-property-value-"]');
     await expect(statusValueCell).toContainText("Empty", { timeout: 5_000 });
     // Click the button inside the value cell to trigger editing mode
