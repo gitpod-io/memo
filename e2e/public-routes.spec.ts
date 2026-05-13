@@ -39,7 +39,8 @@ test.describe("Sign-in form validation", () => {
     await page.goto("/sign-in");
     // Wait for hydration so controlled inputs are ready
     await page.locator('input[type="email"]').waitFor({ state: "visible" });
-    await page.waitForTimeout(300);
+    // Ensure the submit button is also rendered and enabled (signals hydration complete)
+    await expect(page.getByRole("button", { name: /sign in/i })).toBeEnabled();
   });
 
   test("empty submit is blocked by browser validation", async ({ page }) => {
@@ -76,7 +77,8 @@ test.describe("Sign-up form validation", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/sign-up");
     await page.locator('input[type="email"]').waitFor({ state: "visible" });
-    await page.waitForTimeout(300);
+    // Ensure the submit button is also rendered and enabled (signals hydration complete)
+    await expect(page.getByRole("button", { name: /sign up/i })).toBeEnabled();
   });
 
   test("empty submit is blocked by browser validation", async ({ page }) => {

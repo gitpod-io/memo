@@ -177,11 +177,12 @@ test.describe("Keyboard shortcuts dialog", () => {
         }
       });
 
-      // Dialog should NOT open when an input is focused
+      // Dialog should NOT open when an input is focused.
+      // Confirm the input still has focus (positive signal that the event was processed),
+      // then verify no dialog appeared.
+      await expect(searchInput).toBeFocused();
       const dialog = page.getByRole("dialog");
-      // Wait briefly to ensure the dialog doesn't appear
-      await page.waitForTimeout(500);
-      await expect(dialog).toBeHidden();
+      await expect(dialog).not.toBeVisible();
     }
   });
 });

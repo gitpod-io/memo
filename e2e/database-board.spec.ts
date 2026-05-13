@@ -350,6 +350,17 @@ test.describe("Database board view", () => {
       return;
     }
 
+    // Helper: yield to React's render cycle by waiting two animation frames.
+    // React flushes synchronous state updates before the next paint, so two
+    // rAF callbacks guarantee the update is committed to the DOM.
+    const waitForReactRender = () =>
+      page.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          ),
+      );
+
     // Step 1: dragstart on the card — sets React dragState
     await page.evaluate((el) => {
       const dt = new DataTransfer();
@@ -365,7 +376,7 @@ test.describe("Database board view", () => {
     }, cardHandle);
 
     // Allow React to process the dragstart and update state
-    await page.waitForTimeout(300);
+    await waitForReactRender();
 
     // Step 2: dragover on the Done column — sets drop target
     await page.evaluate((el) => {
@@ -380,7 +391,7 @@ test.describe("Database board view", () => {
       );
     }, colHandle);
 
-    await page.waitForTimeout(100);
+    await waitForReactRender();
 
     // Step 3: drop on the Done column — triggers the card move
     await page.evaluate((el) => {
@@ -394,7 +405,7 @@ test.describe("Database board view", () => {
       );
     }, colHandle);
 
-    await page.waitForTimeout(100);
+    await waitForReactRender();
 
     // Step 4: dragend on the card — cleanup
     await page.evaluate((el) => {
