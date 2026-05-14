@@ -613,6 +613,7 @@ src/
 │   ├── track-event-server.ts # Server-side usage event tracking (trackEvent)
 │   ├── types.ts            # Database entity types
 │   ├── usage-tracking-guard.ts # isUsageTrackingDisabled — suppresses usage events in CI/test
+│   ├── use-markdown-import.ts # Hook for importing .md files as new pages (shared by page-menu and workspace-home)
 │   ├── use-media-query.ts  # Hook for reactive CSS media query matching (useSyncExternalStore)
 │   ├── use-persisted-expanded.ts # Hook for persisting sidebar tree expansion state to localStorage
 │   ├── use-screenshot.ts   # Hook for capturing screenshots via html2canvas (feedback form)

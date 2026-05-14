@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Plus, Search, Table2 } from "lucide-react";
+import { FileText, Plus, Search, Table2, Upload } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { getClient } from "@/lib/supabase/lazy-client";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@/lib/sentry";
 import { createDatabase } from "@/lib/database";
 import { trackEventClient } from "@/lib/track-event";
+import { useMarkdownImport } from "@/lib/use-markdown-import";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -95,6 +96,16 @@ export function WorkspaceHome({
   const router = useRouter();
   const [sortBy, setSortBy] = useState<SortOption>("updated_desc");
   const [filter, setFilter] = useState("");
+  const {
+    fileInputRef,
+    triggerFileInput: handleImportMarkdown,
+    handleFileChange: handleImportFileChange,
+  } = useMarkdownImport({
+    workspaceId: workspace.id,
+    workspaceSlug: workspace.slug,
+    userId,
+    source: "workspace-home",
+  });
 
   const filteredAndSorted = useMemo(() => {
     const trimmed = filter.trim().toLowerCase();
@@ -163,6 +174,18 @@ export function WorkspaceHome({
     router.refresh();
   }
 
+  const fileInput = (
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept=".md,.markdown"
+      className="hidden"
+      onChange={handleImportFileChange}
+      aria-label="Import markdown file"
+      data-testid="wh-import-file-input"
+    />
+  );
+
   if (pages.length === 0) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center p-6">
@@ -177,7 +200,13 @@ export function WorkspaceHome({
             <Plus className="h-4 w-4" />
             Create first page
           </Button>
+          <Button variant="outline" size="sm" onClick={handleImportMarkdown} data-testid="wh-import-markdown-btn">
+            <Upload className="h-4 w-4" />
+            <span className="hidden sm:inline">Import Markdown</span>
+            <span className="sm:hidden">Import</span>
+          </Button>
         </div>
+        {fileInput}
       </div>
     );
   }
@@ -187,6 +216,11 @@ export function WorkspaceHome({
       <div className="flex flex-wrap items-center justify-between gap-2" data-testid="wh-header">
         <h1 className="min-w-0 text-2xl font-semibold">{workspace.name}</h1>
         <div className="flex shrink-0 items-center gap-2">
+          <Button size="sm" variant="outline" onClick={handleImportMarkdown} data-testid="wh-import-markdown-btn">
+            <Upload className="h-4 w-4" />
+            <span className="hidden sm:inline">Import Markdown</span>
+            <span className="sm:hidden">Import</span>
+          </Button>
           <Button size="sm" variant="outline" onClick={handleCreateDatabase} data-testid="wh-new-database-btn">
             <Table2 className="h-4 w-4" />
             <span className="hidden sm:inline">New Database</span>
@@ -337,6 +371,7 @@ export function WorkspaceHome({
           </div>
         )}
       </div>
+      {fileInput}
     </div>
   );
 }
