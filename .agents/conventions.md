@@ -480,8 +480,12 @@ filter these out:
   Both checks are needed because manually captured exceptions skip request
   header enrichment. Always check both paths when filtering E2E test noise.
 
-When adding new Sentry config files or `beforeSend` filters, always include
-both `isNextjsInternalNoise` and `isE2ETestRequest` checks.
+When adding new Sentry config files or `beforeSend` filters, use the
+consolidated filter functions: `shouldDropClientEvent` for client-side and
+`shouldDropServerEvent` for server-side/edge. These combine all noise filters
+(transient network errors, auth lock contention, Next.js internal noise, E2E
+test sessions) into a single call. When adding a new noise filter, add it to
+the appropriate consolidated function so all runtimes stay in sync.
 
 ## Environment Variable Guards
 
@@ -1727,7 +1731,8 @@ Two error shapes exist:
    `isSupabaseAuthLockError`.
 2. **Unhandled rejection** — Supabase auth internals throw `Lock "lock:sb-..."
    was released because another request stole it`. Dropped by `beforeSend` in
-   `instrumentation-client.ts` via `isSupabaseAuthLockContention`.
+   all runtimes (client via `shouldDropClientEvent`, server/edge via
+   `shouldDropServerEvent`) via `isSupabaseAuthLockContention`.
 
 For client-side code that checks errors before calling `captureSupabaseError`,
 also skip `isSupabaseAuthLockError`:

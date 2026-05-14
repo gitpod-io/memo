@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
-import { isE2ETestRequest, isNextjsInternalNoise } from "@/lib/sentry";
+import { shouldDropServerEvent } from "@/lib/sentry";
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
@@ -12,12 +12,6 @@ Sentry.init({
   enableLogs: true,
 
   beforeSend(event) {
-    if (isNextjsInternalNoise(event)) {
-      return null;
-    }
-    if (isE2ETestRequest(event)) {
-      return null;
-    }
-    return event;
+    return shouldDropServerEvent(event) ? null : event;
   },
 });

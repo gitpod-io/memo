@@ -27,6 +27,7 @@ import {
   isReactLexicalDomConflict,
   isE2ETestSession,
   isE2ETestRequest,
+  shouldDropServerEvent,
 } from ".";
 
 function makePostgrestError(
@@ -1665,5 +1666,72 @@ describe("isE2ETestRequest", () => {
       extra: { operation: "page-versions:create" },
     } as unknown as ErrorEvent;
     expect(isE2ETestRequest(event)).toBe(false);
+  });
+});
+
+describe("shouldDropServerEvent", () => {
+  it("drops transient network events (fetch failed)", () => {
+    const event = {
+      type: undefined,
+      exception: {
+        values: [{ value: "TypeError: fetch failed" }],
+      },
+    } as unknown as ErrorEvent;
+    expect(shouldDropServerEvent(event)).toBe(true);
+  });
+
+  it("drops transient network events (Failed to fetch)", () => {
+    const event = {
+      type: undefined,
+      exception: {
+        values: [{ value: "TypeError: Failed to fetch" }],
+      },
+    } as unknown as ErrorEvent;
+    expect(shouldDropServerEvent(event)).toBe(true);
+  });
+
+  it("drops Supabase auth lock contention events", () => {
+    const event = {
+      type: undefined,
+      exception: {
+        values: [
+          { value: "Lock broken by another request with the 'steal' option." },
+        ],
+      },
+    } as unknown as ErrorEvent;
+    expect(shouldDropServerEvent(event)).toBe(true);
+  });
+
+  it("drops Next.js internal noise events", () => {
+    const event = {
+      type: undefined,
+      exception: {
+        values: [
+          {
+            value:
+              "The router state header was sent but could not be parsed",
+          },
+        ],
+      },
+    } as unknown as ErrorEvent;
+    expect(shouldDropServerEvent(event)).toBe(true);
+  });
+
+  it("keeps application errors", () => {
+    const event = {
+      type: undefined,
+      exception: {
+        values: [{ value: "Cannot read properties of undefined" }],
+      },
+    } as unknown as ErrorEvent;
+    expect(shouldDropServerEvent(event)).toBe(false);
+  });
+
+  it("keeps events with no exception values", () => {
+    const event = {
+      type: undefined,
+      exception: { values: [] },
+    } as unknown as ErrorEvent;
+    expect(shouldDropServerEvent(event)).toBe(false);
   });
 });

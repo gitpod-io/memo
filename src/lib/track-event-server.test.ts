@@ -13,6 +13,10 @@ vi.mock("@/lib/supabase/server", () => ({
 vi.mock("@/lib/sentry", () => ({
   captureSupabaseError: (error: unknown, operation: unknown) =>
     captureSupabaseErrorMock(error, operation),
+  isTransientNetworkError: (error: Error) =>
+    error.message === "fetch failed" ||
+    error.message === "Failed to fetch" ||
+    error.message === "TypeError: fetch failed",
 }));
 
 vi.mock("@/lib/usage-tracking-guard", () => ({
@@ -106,5 +110,56 @@ describe("trackEvent (server)", () => {
     expect(createClientMock).not.toHaveBeenCalled();
     expect(fromMock).not.toHaveBeenCalled();
     expect(insertMock).not.toHaveBeenCalled();
+  });
+
+  it("retries once on transient fetch failure then succeeds (#1084)", async () => {
+    const fetchError = Object.assign(new Error("fetch failed"), {
+      code: "",
+      details: "",
+      hint: "",
+    });
+    insertMock
+      .mockResolvedValueOnce({ error: fetchError })
+      .mockResolvedValueOnce({ error: null });
+
+    await trackEvent("feedback.submitted", "user-123");
+
+    expect(insertMock).toHaveBeenCalledTimes(2);
+    expect(captureSupabaseErrorMock).not.toHaveBeenCalled();
+  });
+
+  it("reports to Sentry after retry exhaustion on transient error (#1084)", async () => {
+    const fetchError = Object.assign(new Error("fetch failed"), {
+      code: "",
+      details: "",
+      hint: "",
+    });
+    insertMock.mockResolvedValue({ error: fetchError });
+
+    await trackEvent("feedback.submitted", "user-123");
+
+    // 1 initial + 1 retry = 2 calls
+    expect(insertMock).toHaveBeenCalledTimes(2);
+    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
+      fetchError,
+      "trackEvent:feedback.submitted",
+    );
+  });
+
+  it("does not retry on non-transient errors (#1084)", async () => {
+    const dbError = Object.assign(new Error("permission denied"), {
+      code: "42501",
+      details: "",
+      hint: "",
+    });
+    insertMock.mockResolvedValue({ error: dbError });
+
+    await trackEvent("feedback.submitted", "user-123");
+
+    expect(insertMock).toHaveBeenCalledTimes(1);
+    expect(captureSupabaseErrorMock).toHaveBeenCalledWith(
+      dbError,
+      "trackEvent:feedback.submitted",
+    );
   });
 });
