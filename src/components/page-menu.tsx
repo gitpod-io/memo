@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Copy, Download, History, Maximize2, MoreHorizontal, Star, StarOff, Upload } from "lucide-react";
 import { toast } from "@/lib/toast";
@@ -15,8 +15,6 @@ import {
 import {
   exportEditorToMarkdown,
   downloadMarkdown,
-  readFileAsText,
-  parseMarkdownToEditorState,
 } from "@/components/editor/markdown-utils";
 import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError, lazyCaptureException } from "@/lib/sentry";
@@ -24,6 +22,7 @@ import { trackEventClient } from "@/lib/track-event";
 import { duplicateDatabase } from "@/lib/database";
 import { useFavorite } from "@/components/sidebar/favorites-section";
 import { useSidebar } from "@/components/sidebar/sidebar-context";
+import { useMarkdownImport } from "@/lib/use-markdown-import";
 
 interface PageMenuProps {
   pageId: string;
@@ -47,8 +46,17 @@ export function PageMenu({
   onVersionHistoryOpen,
 }: PageMenuProps) {
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toggleFocusMode, isMac } = useSidebar();
+  const {
+    fileInputRef,
+    triggerFileInput: handleImportClick,
+    handleFileChange,
+  } = useMarkdownImport({
+    workspaceId,
+    workspaceSlug,
+    userId,
+    source: "page-menu",
+  });
   const { isFavorited, toggle: toggleFavorite } = useFavorite({
     workspaceId,
     userId,
@@ -173,87 +181,6 @@ export function PageMenu({
       });
     }
   }, [editorRef, pageTitle, userId, workspaceId, pageId]);
-
-  const handleImportClick = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
-
-  const handleFileChange = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      // Reset the input so the same file can be re-selected
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-
-      if (!file) return;
-
-      if (!file.name.endsWith(".md") && !file.name.endsWith(".markdown")) {
-        toast.error("Invalid file type. Please select a .md or .markdown file.", {
-          duration: 8000,
-        });
-        return;
-      }
-
-      try {
-        const markdown = await readFileAsText(file);
-        const editorState = parseMarkdownToEditorState(markdown);
-
-        // Derive page title from filename (strip extension)
-        const importedTitle = file.name.replace(/\.(md|markdown)$/, "");
-
-        const supabase = await getClient();
-
-        // Count existing pages to determine position
-        const { count } = await supabase
-          .from("pages")
-          .select("id", { count: "exact", head: true })
-          .eq("workspace_id", workspaceId)
-          .is("deleted_at", null);
-
-        const { data: newPage, error } = await supabase
-          .from("pages")
-          .insert({
-            workspace_id: workspaceId,
-            parent_id: null,
-            title: importedTitle,
-            content: editorState,
-            position: count ?? 0,
-            created_by: userId,
-          })
-          .select("id")
-          .single();
-
-        if (error) {
-          captureSupabaseError(error, "page-menu:import-create-page");
-          toast.error("Failed to create page from import", {
-            duration: 8000,
-          });
-          return;
-        }
-        if (!newPage) {
-          toast.error("Failed to create page from import", {
-            duration: 8000,
-          });
-          return;
-        }
-
-        trackEventClient(supabase, "editor.import", userId, {
-          workspaceId,
-          metadata: { page_id: newPage.id },
-        });
-
-        router.push(`/${workspaceSlug}/${newPage.id}`);
-        router.refresh();
-      } catch (error) {
-        captureSupabaseError(error instanceof Error ? error : new Error(String(error)), "page-menu:import");
-        toast.error("Failed to read or parse the markdown file", {
-          duration: 8000,
-        });
-      }
-    },
-    [workspaceId, workspaceSlug, userId, router]
-  );
 
   // ⌘D / Ctrl+D — duplicate page
   useEffect(() => {

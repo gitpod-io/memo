@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { FileText, Plus, Search, Table2 } from "lucide-react";
+import { FileText, Plus, Search, Table2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -178,6 +178,11 @@ function WorkspaceHeader() {
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h1 className="min-w-0 text-2xl font-semibold">My Workspace</h1>
       <div className="flex shrink-0 items-center gap-2">
+        <Button size="sm" variant="outline">
+          <Upload className="h-4 w-4" />
+          <span className="hidden sm:inline">Import Markdown</span>
+          <span className="sm:hidden">Import</span>
+        </Button>
         <Button size="sm" variant="outline">
           <Table2 className="h-4 w-4" />
           <span className="hidden sm:inline">New Database</span>
@@ -363,6 +368,10 @@ export const EmptyState: Story = {
         <Button>
           <Plus className="h-4 w-4" />
           Create first page
+        </Button>
+        <Button variant="outline" size="sm">
+          <Upload className="h-4 w-4" />
+          Import Markdown
         </Button>
       </div>
     </div>
