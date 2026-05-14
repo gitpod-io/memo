@@ -54,6 +54,10 @@ vi.mock("@/components/database/views/table-cell-renderer", () => ({
 
 // Mock @floating-ui/react to avoid layout computation in jsdom
 vi.mock("@floating-ui/react", () => ({
+  autoUpdate: vi.fn((_anchor: Element, _floating: Element, update: () => void) => {
+    update();
+    return vi.fn(); // cleanup function
+  }),
   computePosition: vi.fn(() =>
     Promise.resolve({ x: 100, y: 200, placement: "bottom-start", middlewareData: {} }),
   ),
