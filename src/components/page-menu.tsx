@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Copy, Download, History, Maximize2, MoreHorizontal, Star, StarOff, Upload } from "lucide-react";
 import { toast } from "@/lib/toast";
@@ -255,6 +255,49 @@ export function PageMenu({
     [workspaceId, workspaceSlug, userId, router]
   );
 
+  // ⌘D / Ctrl+D — duplicate page
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "d" && (e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
+        // Skip when a text input, textarea, or contenteditable is focused
+        if (e.target instanceof HTMLElement) {
+          const tag = e.target.tagName;
+          if (tag === "INPUT" || tag === "TEXTAREA" || e.target.isContentEditable) {
+            return;
+          }
+        }
+        e.preventDefault();
+        handleDuplicate();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleDuplicate]);
+
+  // ⌘⇧E / Ctrl+Shift+E — export as Markdown
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (
+        e.key === "E" &&
+        e.shiftKey &&
+        (e.metaKey || e.ctrlKey) &&
+        !e.altKey
+      ) {
+        // Skip when a text input, textarea, or contenteditable is focused
+        if (e.target instanceof HTMLElement) {
+          const tag = e.target.tagName;
+          if (tag === "INPUT" || tag === "TEXTAREA" || e.target.isContentEditable) {
+            return;
+          }
+        }
+        e.preventDefault();
+        handleExport();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleExport]);
+
   return (
     <>
       <DropdownMenu>
@@ -282,6 +325,9 @@ export function PageMenu({
           <DropdownMenuItem onClick={handleDuplicate}>
             <Copy className="h-4 w-4" />
             Duplicate
+            <span className="ml-auto text-xs text-muted-foreground">
+              {isMac ? "⌘D" : "Ctrl+D"}
+            </span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={onVersionHistoryOpen}>
             <History className="h-4 w-4" />
@@ -297,6 +343,9 @@ export function PageMenu({
           <DropdownMenuItem onClick={handleExport}>
             <Download className="h-4 w-4" />
             Export as Markdown
+            <span className="ml-auto text-xs text-muted-foreground">
+              {isMac ? "⌘⇧E" : "Ctrl+Shift+E"}
+            </span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleImportClick}>
             <Upload className="h-4 w-4" />

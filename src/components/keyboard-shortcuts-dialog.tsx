@@ -33,6 +33,13 @@ function getShortcutSections(isMac: boolean): ShortcutSection[] {
       ],
     },
     {
+      title: "Page",
+      shortcuts: [
+        { keys: [mod, "D"], description: "Duplicate page" },
+        { keys: [mod, "Shift", "E"], description: "Export as Markdown" },
+      ],
+    },
+    {
       title: "Editor — Formatting",
       shortcuts: [
         { keys: [mod, "B"], description: "Bold" },

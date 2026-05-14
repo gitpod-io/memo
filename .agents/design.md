@@ -547,6 +547,7 @@ When a database row is opened as a full page, properties display above the Lexic
 - Display in tooltips and menu items.
 - Format: `⌘` for Mac, `Ctrl` for others. Detect OS.
 - Global shortcuts: `⌘+K` (search), `⌘+N` (new page), `⌘+\` (toggle sidebar).
+- Page shortcuts: `⌘+D` (duplicate page), `⌘+Shift+E` (export as Markdown).
 
 ### Drag and Drop
 

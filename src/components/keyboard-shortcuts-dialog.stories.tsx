@@ -44,6 +44,13 @@ const macSections: ShortcutSection[] = [
     ],
   },
   {
+    title: "Page",
+    shortcuts: [
+      { keys: ["⌘", "D"], description: "Duplicate page" },
+      { keys: ["⌘", "Shift", "E"], description: "Export as Markdown" },
+    ],
+  },
+  {
     title: "Editor — Formatting",
     shortcuts: [
       { keys: ["⌘", "B"], description: "Bold" },
