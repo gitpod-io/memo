@@ -60,6 +60,7 @@ test.describe("Keyboard shortcuts dialog", () => {
     // Verify all section categories are displayed
     const expectedSections = [
       "Global",
+      "Page",
       "Editor — Formatting",
       "Editor — Blocks",
       "Database Table",
@@ -85,6 +86,9 @@ test.describe("Keyboard shortcuts dialog", () => {
     // Verify a representative shortcut from each category
     // Global
     await expect(dialog.getByText("Search pages")).toBeVisible();
+    // Page
+    await expect(dialog.getByText("Duplicate page")).toBeVisible();
+    await expect(dialog.getByText("Export as Markdown")).toBeVisible();
     // Editor — Formatting
     await expect(dialog.getByText("Bold")).toBeVisible();
     // Editor — Blocks
