@@ -17,6 +17,7 @@ interface WorkspaceHomeClientProps {
     is_database: boolean;
     created_at: string;
     updated_at: string;
+    child_count: number;
   }[];
   userId: string;
   recentVisits?: RecentPageVisit[];

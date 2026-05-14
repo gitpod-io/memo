@@ -87,6 +87,7 @@ export interface RecentPageVisit {
   title: string;
   icon: string | null;
   is_database: boolean;
+  child_count: number;
 }
 
 export interface Favorite {

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { FileText, Clock, Table2 } from "lucide-react";
+import { FileText, Clock } from "lucide-react";
 
 // WorkspaceHomeClient is a thin dynamic import wrapper for WorkspaceHome.
 // Stories show the visual layout of the workspace home page.
@@ -51,10 +51,10 @@ export const Default: Story = {
         </h2>
         <div className="mt-3 space-y-1">
           {[
-            { title: "Meeting Notes", icon: "📝", isDb: false, updated: "2 hours ago" },
-            { title: "Project Tasks", icon: "📊", isDb: true, updated: "Yesterday" },
-            { title: "Design Spec", icon: "🎨", isDb: false, updated: "3 days ago" },
-            { title: "Reading List", icon: "📚", isDb: true, updated: "Last week" },
+            { title: "Meeting Notes", icon: "📝", isDb: false, childCount: 2, updated: "2 hours ago" },
+            { title: "Project Tasks", icon: "📊", isDb: true, childCount: 0, updated: "Yesterday" },
+            { title: "Design Spec", icon: "🎨", isDb: false, childCount: 0, updated: "3 days ago" },
+            { title: "Reading List", icon: "📚", isDb: true, childCount: 0, updated: "Last week" },
           ].map((page) => (
             <div
               key={page.title}
@@ -64,9 +64,13 @@ export const Default: Story = {
               <span className="flex-1 truncate text-sm text-foreground">
                 {page.title}
               </span>
-              {page.isDb && (
-                <Table2 className="h-3 w-3 text-muted-foreground" />
-              )}
+              {page.isDb ? (
+                <span className="text-xs text-muted-foreground">Database</span>
+              ) : page.childCount > 0 ? (
+                <span className="text-xs text-muted-foreground">
+                  {page.childCount} sub-page{page.childCount !== 1 ? "s" : ""}
+                </span>
+              ) : null}
               <span className="text-xs text-muted-foreground">
                 {page.updated}
               </span>
