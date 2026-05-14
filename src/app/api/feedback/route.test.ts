@@ -30,7 +30,21 @@ vi.mock("@/lib/sentry", () => ({
   isInsufficientPrivilegeError: (err: Error & { code?: string }) =>
     err.code === "42501" ||
     err.message?.includes("violates row-level security policy"),
+  isTransientNetworkError: (err: Error) =>
+    err.message === "fetch failed" ||
+    err.message === "TypeError: fetch failed" ||
+    err.message?.startsWith("TypeError: Failed to fetch"),
 }));
+
+// Mock retry to run synchronously in tests (no actual delays)
+vi.mock("@/lib/retry", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/retry")>(
+    "@/lib/retry",
+  );
+  return {
+    retryOnNetworkError: actual.retryOnNetworkError,
+  };
+});
 
 import { POST } from "./route";
 import { createClient } from "@/lib/supabase/server";
@@ -302,6 +316,59 @@ describe("POST /api/feedback", () => {
     expect(captureApiErrorMock).toHaveBeenCalledWith(
       unexpectedError,
       "feedback:submit",
+    );
+  });
+
+  it("retries auth.getUser on transient network error (#1087)", async () => {
+    const mockGetUser = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockResolvedValueOnce({ data: { user: { id: "user-123" } } });
+    const mockInsert = vi.fn().mockResolvedValue({ data: null, error: null });
+    const mockFrom = vi.fn().mockReturnValue({ insert: mockInsert });
+
+    mockedCreateClient.mockResolvedValue({
+      auth: { getUser: mockGetUser },
+      from: mockFrom,
+    } as unknown as Awaited<ReturnType<typeof createClient>>);
+
+    const response = await POST(makeRequest(validBody()));
+
+    expect(response.status).toBe(201);
+    expect(mockGetUser).toHaveBeenCalledTimes(2);
+  });
+
+  it("retries insert on transient network error (#1087)", async () => {
+    const mockInsert = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockResolvedValueOnce({ data: null, error: null });
+    const mockFrom = vi.fn().mockReturnValue({ insert: mockInsert });
+    const mockGetUser = vi
+      .fn()
+      .mockResolvedValue({ data: { user: { id: "user-123" } } });
+
+    mockedCreateClient.mockResolvedValue({
+      auth: { getUser: mockGetUser },
+      from: mockFrom,
+    } as unknown as Awaited<ReturnType<typeof createClient>>);
+
+    const response = await POST(makeRequest(validBody()));
+
+    expect(response.status).toBe(201);
+    expect(mockInsert).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns user-friendly message for transient network errors (#1087)", async () => {
+    const fetchError = new TypeError("fetch failed");
+    mockedCreateClient.mockRejectedValue(fetchError);
+
+    const response = await POST(makeRequest(validBody()));
+    const body = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(body.error).toBe(
+      "Feedback submission temporarily unavailable, please try again",
     );
   });
 });

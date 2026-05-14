@@ -59,7 +59,21 @@ vi.mock("@/lib/sentry", () => ({
   isInsufficientPrivilegeError: (err: Error & { code?: string }) =>
     err.code === "42501" ||
     err.message?.includes("violates row-level security policy"),
+  isTransientNetworkError: (err: Error) =>
+    err.message === "fetch failed" ||
+    err.message === "TypeError: fetch failed" ||
+    err.message?.startsWith("TypeError: Failed to fetch"),
 }));
+
+// Mock retry to run synchronously in tests (no actual delays)
+vi.mock("@/lib/retry", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/retry")>(
+    "@/lib/retry",
+  );
+  return {
+    retryOnNetworkError: actual.retryOnNetworkError,
+  };
+});
 
 const { GET, POST } = await import("./route");
 
@@ -243,5 +257,67 @@ describe("POST /api/pages/[pageId]/versions/[versionId] (restore)", () => {
     const body = await res.json();
     expect(body.error).toBe("Invalid JSON in request body");
     expect(captureApiErrorMock).not.toHaveBeenCalled();
+  });
+
+  it("retries auth.getUser on transient network error (#1087)", async () => {
+    const restoredContent = { root: { children: [{ type: "paragraph" }] } };
+    const currentContent = { root: { children: [{ type: "heading" }] } };
+
+    mockGetUser
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockResolvedValueOnce({ data: { user: { id: "user-1" } } });
+    getVersionResult = { data: { content: restoredContent }, error: null };
+    getPageResult = { data: { content: currentContent }, error: null };
+    insertVersionResult = { data: null, error: null };
+    updatePageResult = { data: null, error: null };
+
+    const res = await POST(
+      makeRequest("/api/pages/page-123/versions/version-456", {
+        method: "POST",
+        body: JSON.stringify({ action: "restore" }),
+      }),
+      { params: mockParams },
+    );
+    expect(res.status).toBe(200);
+    expect(mockGetUser).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns user-friendly message for transient network errors in GET (#1087)", async () => {
+    // auth.getUser exhausts all retries with transient errors, reaching the catch block
+    mockGetUser
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockRejectedValueOnce(new TypeError("fetch failed"));
+
+    const res = await GET(
+      makeRequest("/api/pages/page-123/versions/version-456"),
+      { params: mockParams },
+    );
+    const body = await res.json();
+    expect(res.status).toBe(500);
+    expect(body.error).toBe(
+      "Version retrieval temporarily unavailable, please try again",
+    );
+  });
+
+  it("returns user-friendly message for transient network errors in POST (#1087)", async () => {
+    // auth.getUser exhausts all retries with transient errors, reaching the catch block
+    mockGetUser
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockRejectedValueOnce(new TypeError("fetch failed"));
+
+    const res = await POST(
+      makeRequest("/api/pages/page-123/versions/version-456", {
+        method: "POST",
+        body: JSON.stringify({ action: "restore" }),
+      }),
+      { params: mockParams },
+    );
+    const body = await res.json();
+    expect(res.status).toBe(500);
+    expect(body.error).toBe(
+      "Version restore temporarily unavailable, please try again",
+    );
   });
 });

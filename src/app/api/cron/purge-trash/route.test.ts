@@ -7,7 +7,21 @@ vi.mock("@/lib/supabase/admin", () => ({
 vi.mock("@/lib/sentry", () => ({
   captureApiError: vi.fn(),
   captureSupabaseError: vi.fn(),
+  isTransientNetworkError: (err: Error) =>
+    err.message === "fetch failed" ||
+    err.message === "TypeError: fetch failed" ||
+    err.message?.startsWith("TypeError: Failed to fetch"),
 }));
+
+// Mock retry to run synchronously in tests (no actual delays)
+vi.mock("@/lib/retry", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/retry")>(
+    "@/lib/retry",
+  );
+  return {
+    retryOnNetworkError: actual.retryOnNetworkError,
+  };
+});
 
 import { GET } from "./route";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -126,6 +140,39 @@ describe("GET /api/cron/purge-trash", () => {
     expect(captureApiError).toHaveBeenCalledWith(
       fetchError,
       "cron:purge-trash",
+    );
+  });
+
+  it("retries RPC call on transient network error (#1087)", async () => {
+    const mockRpc = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockResolvedValueOnce({ data: 3, error: null });
+    mockedCreateAdminClient.mockReturnValue({
+      rpc: mockRpc,
+    } as unknown as ReturnType<typeof createAdminClient>);
+
+    const response = await GET(makeRequest("Bearer test-cron-secret"));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(body.deleted).toBe(3);
+    expect(mockRpc).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns user-friendly message for transient network errors (#1087)", async () => {
+    const fetchError = new TypeError("fetch failed");
+    mockedCreateAdminClient.mockImplementation(() => {
+      throw fetchError;
+    });
+
+    const response = await GET(makeRequest("Bearer test-cron-secret"));
+    const body = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(body.error).toBe(
+      "Purge temporarily unavailable, please try again",
     );
   });
 });

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { captureApiError, captureSupabaseError, isForeignKeyViolationError, isInsufficientPrivilegeError } from "@/lib/sentry";
+import { captureApiError, captureSupabaseError, isForeignKeyViolationError, isInsufficientPrivilegeError, isTransientNetworkError } from "@/lib/sentry";
+import { retryOnNetworkError } from "@/lib/retry";
 import { withRateLimit, getClientIp } from "@/lib/rate-limit";
 
 /**
@@ -17,17 +18,24 @@ export async function GET(
   try {
     const supabase = await createClient();
 
-    const { data: authData } = await supabase.auth.getUser();
+    const { data: authData } = await retryOnNetworkError(
+      () => supabase.auth.getUser(),
+      { maxRetries: 1, baseDelayMs: 500 },
+    );
     if (!authData.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data, error } = await supabase
-      .from("page_versions")
-      .select("id, page_id, created_at, created_by")
-      .eq("page_id", pageId)
-      .order("created_at", { ascending: false })
-      .limit(50);
+    const { data, error } = await retryOnNetworkError(
+      () =>
+        supabase
+          .from("page_versions")
+          .select("id, page_id, created_at, created_by")
+          .eq("page_id", pageId)
+          .order("created_at", { ascending: false })
+          .limit(50),
+      { maxRetries: 1, baseDelayMs: 500 },
+    );
 
     if (error) {
       if (isInsufficientPrivilegeError(error)) {
@@ -43,7 +51,17 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     captureApiError(error, "page-versions:list", userAgent);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+
+    const isTransient =
+      error instanceof Error && isTransientNetworkError(error);
+    return NextResponse.json(
+      {
+        error: isTransient
+          ? "Version listing temporarily unavailable, please try again"
+          : "Internal server error",
+      },
+      { status: 500 },
+    );
   }
 }
 
@@ -62,7 +80,10 @@ async function postHandler(
   try {
     const supabase = await createClient();
 
-    const { data: authData } = await supabase.auth.getUser();
+    const { data: authData } = await retryOnNetworkError(
+      () => supabase.auth.getUser(),
+      { maxRetries: 1, baseDelayMs: 500 },
+    );
     if (!authData.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -86,27 +107,35 @@ async function postHandler(
     }
 
     // Check if the latest version has identical content (deduplication)
-    const { data: latest } = await supabase
-      .from("page_versions")
-      .select("content")
-      .eq("page_id", pageId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const { data: latest } = await retryOnNetworkError(
+      () =>
+        supabase
+          .from("page_versions")
+          .select("content")
+          .eq("page_id", pageId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      { maxRetries: 1, baseDelayMs: 500 },
+    );
 
     if (latest && JSON.stringify(latest.content) === JSON.stringify(body.content)) {
       return NextResponse.json({ skipped: true });
     }
 
-    const { data, error } = await supabase
-      .from("page_versions")
-      .insert({
-        page_id: pageId,
-        content: body.content,
-        created_by: authData.user.id,
-      })
-      .select("id, created_at")
-      .single();
+    const { data, error } = await retryOnNetworkError(
+      () =>
+        supabase
+          .from("page_versions")
+          .insert({
+            page_id: pageId,
+            content: body.content,
+            created_by: authData.user!.id,
+          })
+          .select("id, created_at")
+          .single(),
+      { maxRetries: 1, baseDelayMs: 500 },
+    );
 
     if (error) {
       if (isInsufficientPrivilegeError(error)) {
@@ -128,7 +157,17 @@ async function postHandler(
       return NextResponse.json({ error: "Page not found" }, { status: 404 });
     }
     captureApiError(error, "page-versions:create", userAgent);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+
+    const isTransient =
+      error instanceof Error && isTransientNetworkError(error);
+    return NextResponse.json(
+      {
+        error: isTransient
+          ? "Version creation temporarily unavailable, please try again"
+          : "Internal server error",
+      },
+      { status: 500 },
+    );
   }
 }
 
