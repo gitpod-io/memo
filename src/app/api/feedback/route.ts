@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { captureApiError, captureSupabaseError, isInsufficientPrivilegeError } from "@/lib/sentry";
+import { captureApiError, captureSupabaseError, isInsufficientPrivilegeError, isTransientNetworkError } from "@/lib/sentry";
+import { retryOnNetworkError } from "@/lib/retry";
 import { trackEvent } from "@/lib/track-event-server";
 import { withRateLimit, getClientIp } from "@/lib/rate-limit";
 import type { FeedbackType } from "@/lib/types";
@@ -53,20 +54,27 @@ async function handler(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    const { data: user } = await supabase.auth.getUser();
+    const { data: user } = await retryOnNetworkError(
+      () => supabase.auth.getUser(),
+      { maxRetries: 1, baseDelayMs: 500 },
+    );
     if (!user.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { error } = await supabase.from("user_feedback").insert({
-      user_id: user.user.id,
-      type: type as FeedbackType,
-      message: message.trim(),
-      page_path: (page_path as string) ?? null,
-      page_title: (page_title as string) ?? null,
-      screenshot_url: (screenshot_url as string) ?? null,
-      metadata: (metadata as Record<string, unknown>) ?? null,
-    });
+    const { error } = await retryOnNetworkError(
+      () =>
+        supabase.from("user_feedback").insert({
+          user_id: user.user!.id,
+          type: type as FeedbackType,
+          message: message.trim(),
+          page_path: (page_path as string) ?? null,
+          page_title: (page_title as string) ?? null,
+          screenshot_url: (screenshot_url as string) ?? null,
+          metadata: (metadata as Record<string, unknown>) ?? null,
+        }),
+      { maxRetries: 1, baseDelayMs: 500 },
+    );
 
     if (error) {
       if (isInsufficientPrivilegeError(error)) {
@@ -89,8 +97,15 @@ async function handler(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     captureApiError(error, "feedback:submit");
+
+    const isTransient =
+      error instanceof Error && isTransientNetworkError(error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error: isTransient
+          ? "Feedback submission temporarily unavailable, please try again"
+          : "Internal server error",
+      },
       { status: 500 },
     );
   }

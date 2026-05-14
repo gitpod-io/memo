@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { captureApiError, captureSupabaseError, isInsufficientPrivilegeError } from "@/lib/sentry";
+import { captureApiError, captureSupabaseError, isInsufficientPrivilegeError, isTransientNetworkError } from "@/lib/sentry";
+import { retryOnNetworkError } from "@/lib/retry";
 import { withRateLimit, getClientIp } from "@/lib/rate-limit";
 
 /**
@@ -16,17 +17,24 @@ export async function GET(
   try {
     const supabase = await createClient();
 
-    const { data: authData } = await supabase.auth.getUser();
+    const { data: authData } = await retryOnNetworkError(
+      () => supabase.auth.getUser(),
+      { maxRetries: 1, baseDelayMs: 500 },
+    );
     if (!authData.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data, error } = await supabase
-      .from("page_versions")
-      .select("id, page_id, content, created_at, created_by")
-      .eq("id", versionId)
-      .eq("page_id", pageId)
-      .single();
+    const { data, error } = await retryOnNetworkError(
+      () =>
+        supabase
+          .from("page_versions")
+          .select("id, page_id, content, created_at, created_by")
+          .eq("id", versionId)
+          .eq("page_id", pageId)
+          .single(),
+      { maxRetries: 1, baseDelayMs: 500 },
+    );
 
     if (error) {
       if (isInsufficientPrivilegeError(error)) {
@@ -45,7 +53,17 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     captureApiError(error, "page-versions:get");
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+
+    const isTransient =
+      error instanceof Error && isTransientNetworkError(error);
+    return NextResponse.json(
+      {
+        error: isTransient
+          ? "Version retrieval temporarily unavailable, please try again"
+          : "Internal server error",
+      },
+      { status: 500 },
+    );
   }
 }
 
@@ -64,7 +82,10 @@ async function postHandler(
   try {
     const supabase = await createClient();
 
-    const { data: authData } = await supabase.auth.getUser();
+    const { data: authData } = await retryOnNetworkError(
+      () => supabase.auth.getUser(),
+      { maxRetries: 1, baseDelayMs: 500 },
+    );
     if (!authData.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -85,12 +106,16 @@ async function postHandler(
     }
 
     // Fetch the version to restore
-    const { data: version, error: versionError } = await supabase
-      .from("page_versions")
-      .select("content")
-      .eq("id", versionId)
-      .eq("page_id", pageId)
-      .single();
+    const { data: version, error: versionError } = await retryOnNetworkError(
+      () =>
+        supabase
+          .from("page_versions")
+          .select("content")
+          .eq("id", versionId)
+          .eq("page_id", pageId)
+          .single(),
+      { maxRetries: 1, baseDelayMs: 500 },
+    );
 
     if (versionError) {
       if (versionError.code === "PGRST116") {
@@ -101,11 +126,15 @@ async function postHandler(
     }
 
     // Fetch current page content to save as a new version before overwriting
-    const { data: currentPage, error: pageError } = await supabase
-      .from("pages")
-      .select("content")
-      .eq("id", pageId)
-      .single();
+    const { data: currentPage, error: pageError } = await retryOnNetworkError(
+      () =>
+        supabase
+          .from("pages")
+          .select("content")
+          .eq("id", pageId)
+          .single(),
+      { maxRetries: 1, baseDelayMs: 500 },
+    );
 
     if (pageError) {
       if (isInsufficientPrivilegeError(pageError)) {
@@ -116,13 +145,17 @@ async function postHandler(
     }
 
     // Save current content as a new version (so it's not lost)
-    const { error: snapshotError } = await supabase
-      .from("page_versions")
-      .insert({
-        page_id: pageId,
-        content: currentPage.content,
-        created_by: authData.user.id,
-      });
+    const { error: snapshotError } = await retryOnNetworkError(
+      () =>
+        supabase
+          .from("page_versions")
+          .insert({
+            page_id: pageId,
+            content: currentPage.content,
+            created_by: authData.user!.id,
+          }),
+      { maxRetries: 1, baseDelayMs: 500 },
+    );
 
     if (snapshotError) {
       captureSupabaseError(snapshotError, "page-versions:restore-snapshot");
@@ -133,10 +166,14 @@ async function postHandler(
     }
 
     // Update the page with the restored version's content
-    const { error: updateError } = await supabase
-      .from("pages")
-      .update({ content: version.content })
-      .eq("id", pageId);
+    const { error: updateError } = await retryOnNetworkError(
+      () =>
+        supabase
+          .from("pages")
+          .update({ content: version.content })
+          .eq("id", pageId),
+      { maxRetries: 1, baseDelayMs: 500 },
+    );
 
     if (updateError) {
       captureSupabaseError(updateError, "page-versions:restore-update");
@@ -149,7 +186,17 @@ async function postHandler(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     captureApiError(error, "page-versions:restore");
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+
+    const isTransient =
+      error instanceof Error && isTransientNetworkError(error);
+    return NextResponse.json(
+      {
+        error: isTransient
+          ? "Version restore temporarily unavailable, please try again"
+          : "Internal server error",
+      },
+      { status: 500 },
+    );
   }
 }
 

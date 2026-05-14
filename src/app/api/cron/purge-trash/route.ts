@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { captureApiError, captureSupabaseError } from "@/lib/sentry";
+import { captureApiError, captureSupabaseError, isTransientNetworkError } from "@/lib/sentry";
+import { retryOnNetworkError } from "@/lib/retry";
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -19,7 +20,10 @@ export async function GET(request: Request) {
 
   try {
     const supabase = createAdminClient();
-    const { data, error } = await supabase.rpc("purge_old_trash");
+    const { data, error } = await retryOnNetworkError(
+      () => supabase.rpc("purge_old_trash"),
+      { maxRetries: 1, baseDelayMs: 500 },
+    );
 
     if (error) {
       captureSupabaseError(error, "cron:purge-trash");
@@ -33,8 +37,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: true, deleted: deletedCount });
   } catch (error) {
     captureApiError(error, "cron:purge-trash");
+
+    const isTransient =
+      error instanceof Error && isTransientNetworkError(error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error: isTransient
+          ? "Purge temporarily unavailable, please try again"
+          : "Internal server error",
+      },
       { status: 500 },
     );
   }

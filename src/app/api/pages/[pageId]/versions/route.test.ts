@@ -77,7 +77,21 @@ vi.mock("@/lib/sentry", () => ({
   isForeignKeyViolationError: (err: Error & { code?: string; message?: string }) =>
     err.code === "23503" ||
     (err.message?.includes("violates foreign key constraint") ?? false),
+  isTransientNetworkError: (err: Error) =>
+    err.message === "fetch failed" ||
+    err.message === "TypeError: fetch failed" ||
+    err.message?.startsWith("TypeError: Failed to fetch"),
 }));
+
+// Mock retry to run synchronously in tests (no actual delays)
+vi.mock("@/lib/retry", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/retry")>(
+    "@/lib/retry",
+  );
+  return {
+    retryOnNetworkError: actual.retryOnNetworkError,
+  };
+});
 
 const { GET, POST } = await import("./route");
 
@@ -362,5 +376,43 @@ describe("POST /api/pages/[pageId]/versions", () => {
     const body = await res.json();
     expect(body.error).toBe("Forbidden");
     expect(captureApiErrorMock).not.toHaveBeenCalled();
+  });
+
+  it("retries auth.getUser on transient network error (#1087)", async () => {
+    mockGetUser
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockResolvedValueOnce({ data: { user: { id: "user-1" } } });
+    listResult = { data: null, error: null };
+
+    const res = await POST(
+      makeRequest("/api/pages/page-123/versions", {
+        method: "POST",
+        body: JSON.stringify({ content: { root: { children: [] } } }),
+      }),
+      { params: mockParams },
+    );
+    expect(res.status).toBe(200);
+    expect(mockGetUser).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns user-friendly message for transient network errors in POST (#1087)", async () => {
+    // auth.getUser exhausts all retries with transient errors, reaching the catch block
+    mockGetUser
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockRejectedValueOnce(new TypeError("fetch failed"));
+
+    const res = await POST(
+      makeRequest("/api/pages/page-123/versions", {
+        method: "POST",
+        body: JSON.stringify({ content: { root: { children: [] } } }),
+      }),
+      { params: mockParams },
+    );
+    const body = await res.json();
+    expect(res.status).toBe(500);
+    expect(body.error).toBe(
+      "Version creation temporarily unavailable, please try again",
+    );
   });
 });
