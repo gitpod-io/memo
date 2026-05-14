@@ -164,6 +164,21 @@ The `updateSession` function in `src/lib/supabase/proxy.ts` creates a server cli
 that reads cookies from the request and writes refreshed cookies to the response.
 It calls `supabase.auth.getUser()` to trigger the refresh.
 
+### Cookie null-safety (required for ALL Supabase client creation sites)
+
+`@supabase/ssr`'s client-side `combineChunks` → `getItem` path calls
+`chunkedCookie.startsWith()` without a `typeof` guard. During session teardown
+(account deletion, auth expiry, HTTP 500 from Supabase), cookie values can be
+`null`. Every `getAll` callback in every Supabase client creation site must apply
+`value ?? ""` to prevent `TypeError: Cannot read properties of null`.
+
+This applies to all three files:
+- `src/lib/supabase/server.ts` — `cookieStore.getAll().map(…)`
+- `src/lib/supabase/client.ts` — `document.cookie` parsing
+- `src/lib/supabase/proxy.ts` — `request.cookies.getAll().map(…)`
+
+When adding a new Supabase client creation site, always include the null guard.
+
 ## Async State in Effects
 
 When a `useCallback` closes over async state (e.g. a resolved ID), putting that
@@ -447,8 +462,13 @@ E2E tests (Playwright with HeadlessChrome) can trigger server-side errors that
 are not application bugs. Both client-side and server-side Sentry configs must
 filter these out:
 
-- **Client-side** — Playwright's auth fixture sets `window.__SENTRY_DISABLED__`
-  via `addInitScript`. The `beforeSend` filter checks `isE2ETestSession()`.
+- **Client-side** — `isE2ETestSession()` uses two synchronous checks:
+  1. `window.__SENTRY_DISABLED__` flag set by Playwright's `addInitScript`.
+  2. `navigator.userAgent` containing `HeadlessChrome/` — fallback that works
+     even if the flag hasn't been set yet during early page load.
+  Both checks are synchronous, eliminating race conditions with async Sentry
+  initialization (the SDK is loaded via dynamic `import()` in
+  `instrumentation-client.ts`).
 - **Server-side** — `sentry.server.config.ts` and `sentry.edge.config.ts` use
   `isE2ETestRequest(event)` which checks two sources:
   1. `event.request.headers` for `HeadlessChrome/` in the User-Agent — works for

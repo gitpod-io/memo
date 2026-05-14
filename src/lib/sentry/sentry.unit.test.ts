@@ -1511,9 +1511,17 @@ describe("captureApiError", () => {
 
 describe("isE2ETestSession", () => {
   const win = window as unknown as Record<string, unknown>;
+  let originalUserAgent: PropertyDescriptor | undefined;
+
+  beforeEach(() => {
+    originalUserAgent = Object.getOwnPropertyDescriptor(navigator, "userAgent");
+  });
 
   afterEach(() => {
     delete win.__SENTRY_DISABLED__;
+    if (originalUserAgent) {
+      Object.defineProperty(navigator, "userAgent", originalUserAgent);
+    }
   });
 
   it("returns true when __SENTRY_DISABLED__ is set on window", () => {
@@ -1528,6 +1536,24 @@ describe("isE2ETestSession", () => {
 
   it("returns false when __SENTRY_DISABLED__ is a non-true value", () => {
     win.__SENTRY_DISABLED__ = "true";
+    expect(isE2ETestSession()).toBe(false);
+  });
+
+  it("returns true when navigator.userAgent contains HeadlessChrome/ (race condition fallback)", () => {
+    delete win.__SENTRY_DISABLED__;
+    Object.defineProperty(navigator, "userAgent", {
+      value: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/147.0.0.0 Safari/537.36",
+      configurable: true,
+    });
+    expect(isE2ETestSession()).toBe(true);
+  });
+
+  it("returns false for normal Chrome userAgent without __SENTRY_DISABLED__", () => {
+    delete win.__SENTRY_DISABLED__;
+    Object.defineProperty(navigator, "userAgent", {
+      value: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+      configurable: true,
+    });
     expect(isE2ETestSession()).toBe(false);
   });
 });

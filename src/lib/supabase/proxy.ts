@@ -17,7 +17,14 @@ export async function updateSession(request: NextRequest) {
     {
       cookies: {
         getAll() {
-          return request.cookies.getAll();
+          // Guard against null cookie values during session teardown.
+          // @supabase/ssr's client-side combineChunks calls startsWith()
+          // without a typeof guard, causing a TypeError when cookies are
+          // partially deleted. Matches the guard in server.ts and client.ts.
+          return request.cookies.getAll().map(({ name, value }) => ({
+            name,
+            value: value ?? "",
+          }));
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) =>
