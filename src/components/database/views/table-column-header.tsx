@@ -199,6 +199,7 @@ export function TableColumnHeader({
         onMouseDown={(e) => onResizeStart(property.id, e)}
         role="separator"
         aria-orientation="vertical"
+        data-testid={`db-table-resize-handle-${colIndex}`}
       />
 
       {/* Delete confirmation dialog */}
