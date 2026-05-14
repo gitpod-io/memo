@@ -2,15 +2,33 @@ import type { ErrorEvent } from "@sentry/nextjs";
 
 /**
  * Returns true when the current browser session is an E2E test run.
- * Playwright's auth fixture sets `window.__SENTRY_DISABLED__` via
- * `addInitScript` to prevent simulated errors from generating real
- * Sentry events in production.
+ *
+ * Two detection methods (both synchronous, no race conditions):
+ * 1. `window.__SENTRY_DISABLED__` — set by Playwright's `addInitScript`
+ * 2. `navigator.userAgent` containing "HeadlessChrome/" — fallback that
+ *    works even if the flag hasn't been set yet (e.g. during early page
+ *    load before addInitScript executes on a navigation)
  */
 export function isE2ETestSession(): boolean {
-  return (
-    typeof window !== "undefined" &&
+  if (typeof window === "undefined") return false;
+
+  if (
     (window as unknown as Record<string, unknown>).__SENTRY_DISABLED__ === true
-  );
+  ) {
+    return true;
+  }
+
+  // Synchronous fallback: HeadlessChrome is only used by Playwright/Puppeteer.
+  // This eliminates the race condition where the __SENTRY_DISABLED__ flag may
+  // not be set before Sentry initializes and captures an early error.
+  if (
+    typeof navigator !== "undefined" &&
+    navigator.userAgent.includes("HeadlessChrome/")
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
