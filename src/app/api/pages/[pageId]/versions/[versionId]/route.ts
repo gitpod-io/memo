@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { captureApiError, captureSupabaseError, isInsufficientPrivilegeError } from "@/lib/sentry";
+import { withRateLimit, getClientIp } from "@/lib/rate-limit";
 
 /**
  * GET /api/pages/[pageId]/versions/[versionId]
@@ -54,11 +55,11 @@ export async function GET(
  * replaces page content with the selected version's content.
  * Body: { action: "restore" }
  */
-export async function POST(
+async function postHandler(
   request: NextRequest,
-  { params }: { params: Promise<{ pageId: string; versionId: string }> },
+  context: unknown,
 ) {
-  const { pageId, versionId } = await params;
+  const { pageId, versionId } = await (context as { params: Promise<{ pageId: string; versionId: string }> }).params;
 
   try {
     const supabase = await createClient();
@@ -151,3 +152,10 @@ export async function POST(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+export const POST = withRateLimit(postHandler, {
+  limit: 10,
+  windowMs: 60_000,
+  keyFn: (req) => `page-versions:restore:${getClientIp(req)}`,
+});
+

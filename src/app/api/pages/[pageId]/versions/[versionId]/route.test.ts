@@ -45,6 +45,12 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
+// Mock rate limiter as passthrough so existing tests aren't affected
+vi.mock("@/lib/rate-limit", () => ({
+  withRateLimit: (handler: (...args: unknown[]) => unknown) => handler,
+  getClientIp: () => "127.0.0.1",
+}));
+
 const captureApiErrorMock = vi.fn();
 
 vi.mock("@/lib/sentry", () => ({
