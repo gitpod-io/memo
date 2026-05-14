@@ -35,3 +35,7 @@ export { captureApiError, captureSupabaseError } from "./capture";
 // Importing one name instead of five reduces the property-name overhead in the
 // shared framework chunk where the instrumentation code is inlined.
 export { shouldDropClientEvent } from "./client-filter";
+
+// Consolidated server-side beforeSend filter used by sentry.server.config.ts
+// and sentry.edge.config.ts.
+export { shouldDropServerEvent } from "./server-filter";
