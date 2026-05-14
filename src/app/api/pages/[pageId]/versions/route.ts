@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { captureApiError, captureSupabaseError, isForeignKeyViolationError, isInsufficientPrivilegeError } from "@/lib/sentry";
+import { withRateLimit, getClientIp } from "@/lib/rate-limit";
 
 /**
  * GET /api/pages/[pageId]/versions
@@ -51,11 +52,11 @@ export async function GET(
  * Creates a new version snapshot. Called by the auto-save mechanism.
  * Body: { content: object }
  */
-export async function POST(
+async function postHandler(
   request: NextRequest,
-  { params }: { params: Promise<{ pageId: string }> },
+  context: unknown,
 ) {
-  const { pageId } = await params;
+  const { pageId } = await (context as { params: Promise<{ pageId: string }> }).params;
   const userAgent = request.headers.get("user-agent") ?? undefined;
 
   try {
@@ -130,3 +131,10 @@ export async function POST(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+export const POST = withRateLimit(postHandler, {
+  limit: 20,
+  windowMs: 60_000,
+  keyFn: (req) => `page-versions:create:${getClientIp(req)}`,
+});
+
