@@ -48,6 +48,7 @@ interface WorkspaceHomeProps {
     is_database: boolean;
     created_at: string;
     updated_at: string;
+    child_count: number;
   }[];
   userId: string;
   recentVisits?: RecentPageVisit[];
@@ -225,9 +226,18 @@ export function WorkspaceHome({
                 <span className="flex-1 truncate" title={visit.title || "Untitled"}>
                   {visit.title || "Untitled"}
                 </span>
+                {visit.is_database ? (
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    Database
+                  </span>
+                ) : visit.child_count > 0 ? (
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {visit.child_count} sub-page{visit.child_count !== 1 ? "s" : ""}
+                  </span>
+                ) : null}
                 <RelativeTime
                   dateStr={visit.visited_at}
-                  className="text-xs text-muted-foreground"
+                  className="shrink-0 text-xs text-muted-foreground"
                 />
               </button>
             ))}
@@ -309,9 +319,18 @@ export function WorkspaceHome({
                 <span className="flex-1 truncate" title={page.title || "Untitled"}>
                   {page.title || "Untitled"}
                 </span>
+                {page.is_database ? (
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    Database
+                  </span>
+                ) : page.child_count > 0 ? (
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {page.child_count} sub-page{page.child_count !== 1 ? "s" : ""}
+                  </span>
+                ) : null}
                 <RelativeTime
                   dateStr={page.updated_at}
-                  className="text-xs text-muted-foreground"
+                  className="shrink-0 text-xs text-muted-foreground"
                 />
               </button>
             ))}

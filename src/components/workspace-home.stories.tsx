@@ -28,6 +28,7 @@ const mockPages = [
     title: "Getting Started",
     icon: "🚀",
     is_database: false,
+    child_count: 3,
     created_at: new Date(Date.now() - 10 * 86_400_000).toISOString(),
     updated_at: new Date(Date.now() - 2 * 3_600_000).toISOString(),
   },
@@ -36,6 +37,7 @@ const mockPages = [
     title: "API Reference",
     icon: null,
     is_database: false,
+    child_count: 0,
     created_at: new Date(Date.now() - 7 * 86_400_000).toISOString(),
     updated_at: new Date(Date.now() - 86_400_000).toISOString(),
   },
@@ -44,6 +46,7 @@ const mockPages = [
     title: "Design System",
     icon: "🎨",
     is_database: false,
+    child_count: 1,
     created_at: new Date(Date.now() - 5 * 86_400_000).toISOString(),
     updated_at: new Date(Date.now() - 3 * 86_400_000).toISOString(),
   },
@@ -52,6 +55,7 @@ const mockPages = [
     title: "",
     icon: null,
     is_database: false,
+    child_count: 0,
     created_at: new Date(Date.now() - 2 * 86_400_000).toISOString(),
     updated_at: new Date(Date.now() - 5 * 86_400_000).toISOString(),
   },
@@ -60,6 +64,7 @@ const mockPages = [
     title: "Architecture Overview",
     icon: "🏗️",
     is_database: false,
+    child_count: 5,
     created_at: new Date(Date.now() - 14 * 86_400_000).toISOString(),
     updated_at: new Date(Date.now() - 6 * 3_600_000).toISOString(),
   },
@@ -68,6 +73,7 @@ const mockPages = [
     title: "Meeting Notes",
     icon: "📝",
     is_database: false,
+    child_count: 0,
     created_at: new Date(Date.now() - 1 * 86_400_000).toISOString(),
     updated_at: new Date(Date.now() - 30 * 60_000).toISOString(),
   },
@@ -76,6 +82,7 @@ const mockPages = [
     title: "Bug Tracker",
     icon: null,
     is_database: true,
+    child_count: 0,
     created_at: new Date(Date.now() - 3 * 86_400_000).toISOString(),
     updated_at: new Date(Date.now() - 1 * 3_600_000).toISOString(),
   },
@@ -87,6 +94,7 @@ const mockRecentVisits = [
     title: "Bug Tracker",
     icon: null,
     is_database: true,
+    child_count: 0,
     visited_at: new Date(Date.now() - 5 * 60_000).toISOString(),
   },
   {
@@ -94,6 +102,7 @@ const mockRecentVisits = [
     title: "Design System",
     icon: "🎨",
     is_database: false,
+    child_count: 1,
     visited_at: new Date(Date.now() - 10 * 60_000).toISOString(),
   },
   {
@@ -101,6 +110,7 @@ const mockRecentVisits = [
     title: "Getting Started",
     icon: "🚀",
     is_database: false,
+    child_count: 3,
     visited_at: new Date(Date.now() - 45 * 60_000).toISOString(),
   },
   {
@@ -108,6 +118,7 @@ const mockRecentVisits = [
     title: "API Reference",
     icon: null,
     is_database: false,
+    child_count: 0,
     visited_at: new Date(Date.now() - 3 * 3_600_000).toISOString(),
   },
 ];
@@ -117,11 +128,13 @@ function PageItem({
   title,
   timeStr,
   isDatabase = false,
+  childCount = 0,
 }: {
   icon: string | null;
   title: string;
   timeStr: string;
   isDatabase?: boolean;
+  childCount?: number;
 }) {
   return (
     <button className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-overlay-hover">
@@ -135,9 +148,18 @@ function PageItem({
         )}
       </span>
       <span className="flex-1 truncate">{title || "Untitled"}</span>
+      {isDatabase ? (
+        <span className="shrink-0 text-xs text-muted-foreground">
+          Database
+        </span>
+      ) : childCount > 0 ? (
+        <span className="shrink-0 text-xs text-muted-foreground">
+          {childCount} sub-page{childCount !== 1 ? "s" : ""}
+        </span>
+      ) : null}
       <RelativeTime
         dateStr={timeStr}
-        className="text-xs text-muted-foreground"
+        className="shrink-0 text-xs text-muted-foreground"
       />
     </button>
   );
@@ -227,6 +249,7 @@ export const WithPages: Story = {
               title={page.title}
               timeStr={page.updated_at}
               isDatabase={page.is_database}
+              childCount={page.child_count}
             />
           ))}
         </div>
@@ -251,6 +274,7 @@ export const WithRecentVisits: Story = {
               title={visit.title}
               timeStr={visit.visited_at}
               isDatabase={visit.is_database}
+              childCount={visit.child_count}
             />
           ))}
         </div>
@@ -268,6 +292,7 @@ export const WithRecentVisits: Story = {
               title={page.title}
               timeStr={page.updated_at}
               isDatabase={page.is_database}
+              childCount={page.child_count}
             />
           ))}
         </div>
@@ -365,6 +390,7 @@ export const MobileViewport: Story = {
               title={page.title}
               timeStr={page.updated_at}
               isDatabase={page.is_database}
+              childCount={page.child_count}
             />
           ))}
         </div>
