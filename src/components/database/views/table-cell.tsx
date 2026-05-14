@@ -11,7 +11,7 @@ import {
 import type { ErrorInfo, ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "@/lib/toast";
-import { computePosition, flip, shift, offset } from "@floating-ui/react";
+import { autoUpdate, computePosition, flip, shift, offset } from "@floating-ui/react";
 import { captureSupabaseError, lazyCaptureException } from "@/lib/sentry";
 import { cn } from "@/lib/utils";
 import type {
@@ -381,21 +381,27 @@ function RegistryEditorCell({
     }
   }, [rowId, propertyId, propertyType, onBlur]);
 
-  // Position the portaled editor below the cell anchor
+  // Position the portaled editor below the cell anchor and keep it in sync
+  // with scroll/resize via autoUpdate so it is never clipped by the viewport.
   useLayoutEffect(() => {
     if (!needsPortal) return;
     const anchor = cellRef.current;
     const floating = floatingRef.current;
     if (!anchor || !floating) return;
 
-    void computePosition(anchor, floating, {
-      placement: "bottom-start",
-      middleware: [offset(2), flip({ padding: 8 }), shift({ padding: 8 })],
-    }).then(({ x, y }) => {
-      floating.style.left = `${x}px`;
-      floating.style.top = `${y}px`;
-    });
-  });
+    function updatePosition() {
+      void computePosition(anchor!, floating!, {
+        placement: "bottom-start",
+        middleware: [offset(2), flip({ padding: 8 }), shift({ padding: 8 })],
+      }).then(({ x, y }) => {
+        floating!.style.left = `${x}px`;
+        floating!.style.top = `${y}px`;
+      });
+    }
+
+    const cleanup = autoUpdate(anchor, floating, updatePosition);
+    return cleanup;
+  }, [needsPortal]);
 
   if (needsPortal) {
     return (

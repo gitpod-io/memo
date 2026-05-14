@@ -149,6 +149,85 @@ test.describe("Table editor portals", () => {
     await expect(calendar).not.toBeVisible({ timeout: 3_000 });
   });
 
+  test("date picker repositions when cell is near the bottom viewport edge (#1098)", async ({
+    authenticatedPage: page,
+  }) => {
+    // Use a small viewport so the rows fill the screen and the last row
+    // is near the bottom edge, triggering the flip/shift repositioning.
+    await page.setViewportSize({ width: 1280, height: 500 });
+
+    await createDatabaseFromSidebar(page);
+
+    // Add a row first to exit the empty state
+    const addRowBtn = page.getByTestId("db-table-add-row");
+    await expect(addRowBtn).toBeVisible({ timeout: 10_000 });
+    await addRowBtn.click();
+    await expect(page.locator('[role="grid"]')).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Add a date column
+    await addColumnViaTypePicker(page, "Date");
+
+    const dateHeader = page.locator('[role="columnheader"]', {
+      hasText: /date/i,
+    });
+    await expect(dateHeader.first()).toBeVisible({ timeout: 5_000 });
+
+    // Add more rows so the last row is near the bottom of the small viewport.
+    for (let i = 0; i < 6; i++) {
+      await addRowBtn.scrollIntoViewIfNeeded();
+      await addRowBtn.click();
+      await page.waitForTimeout(600);
+    }
+
+    // Wait for rows to settle
+    await page.waitForTimeout(1000);
+
+    // Scroll to the bottom of the page so the last row is near the viewport edge
+    await addRowBtn.scrollIntoViewIfNeeded();
+
+    // Find the date cell in the last row. Resolve cells fresh, scroll into
+    // view, and click. Retry the click if the calendar doesn't appear (the
+    // cell click can race with React state updates).
+    const calendar = page.locator(".grid-cols-7").first();
+    let calendarVisible = false;
+    for (let attempt = 0; attempt < 3 && !calendarVisible; attempt++) {
+      const allCells = await page.locator('[role="gridcell"]').all();
+      const dateCell = allCells[allCells.length - 2];
+      await dateCell.scrollIntoViewIfNeeded();
+      await dateCell.click();
+      calendarVisible = await calendar
+        .waitFor({ state: "visible", timeout: 3_000 })
+        .then(() => true)
+        .catch(() => false);
+    }
+    await expect(calendar).toBeVisible({ timeout: 5_000 });
+
+    // Verify the calendar is fully within the viewport — the autoUpdate +
+    // flip middleware should reposition it above the cell if needed.
+    const calendarBox = await calendar.boundingBox();
+    expect(calendarBox).not.toBeNull();
+    if (calendarBox) {
+      const viewport = page.viewportSize();
+      expect(viewport).not.toBeNull();
+      if (viewport) {
+        expect(calendarBox.x).toBeGreaterThanOrEqual(0);
+        expect(calendarBox.y).toBeGreaterThanOrEqual(0);
+        expect(calendarBox.x + calendarBox.width).toBeLessThanOrEqual(
+          viewport.width + 1,
+        );
+        expect(calendarBox.y + calendarBox.height).toBeLessThanOrEqual(
+          viewport.height + 1,
+        );
+      }
+    }
+
+    // Dismiss with Escape
+    await page.keyboard.press("Escape");
+    await expect(calendar).not.toBeVisible({ timeout: 3_000 });
+  });
+
   test("select dropdown is fully visible when opened in a table cell", async ({
     authenticatedPage: page,
   }) => {
