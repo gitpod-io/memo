@@ -76,6 +76,41 @@ baseTest.describe("Accessibility: sign-in page", () => {
   });
 });
 
+baseTest.describe("Accessibility: forgot-password page", () => {
+  baseTest("has no critical or serious axe violations", async ({ page }) => {
+    baseTest.slow();
+    await page.goto("/forgot-password");
+    await page.locator('input[type="email"]').waitFor({ state: "visible" });
+
+    const results = await createAxeBuilder(page).analyze();
+    const severe = filterSevereViolations(results.violations);
+
+    baseExpect(
+      severe,
+      `Found ${severe.length} accessibility violation(s):\n${formatViolations(severe)}`,
+    ).toHaveLength(0);
+  });
+});
+
+baseTest.describe("Accessibility: reset-password page", () => {
+  baseTest("has no critical or serious axe violations", async ({ page }) => {
+    baseTest.slow();
+    await page.goto("/reset-password");
+    await page
+      .locator('input[type="password"]')
+      .first()
+      .waitFor({ state: "visible" });
+
+    const results = await createAxeBuilder(page).analyze();
+    const severe = filterSevereViolations(results.violations);
+
+    baseExpect(
+      severe,
+      `Found ${severe.length} accessibility violation(s):\n${formatViolations(severe)}`,
+    ).toHaveLength(0);
+  });
+});
+
 // --- Authenticated pages ---
 
 authTest.describe("Accessibility: workspace home", () => {
@@ -178,6 +213,27 @@ authTest.describe("Accessibility: members page", () => {
       await page.goto(`/${slug}/settings/members`);
       await page
         .getByRole("heading", { name: /members/i })
+        .waitFor({ state: "visible", timeout: 10_000 });
+
+      const results = await createAxeBuilder(page).analyze();
+      const severe = filterSevereViolations(results.violations);
+
+      authExpect(
+        severe,
+        `Found ${severe.length} accessibility violation(s):\n${formatViolations(severe)}`,
+      ).toHaveLength(0);
+    },
+  );
+});
+
+authTest.describe("Accessibility: account settings page", () => {
+  authTest(
+    "has no critical or serious axe violations",
+    async ({ authenticatedPage: page }) => {
+      authTest.slow();
+      await page.goto("/account");
+      await page
+        .getByRole("heading", { name: "Account settings" })
         .waitFor({ state: "visible", timeout: 10_000 });
 
       const results = await createAxeBuilder(page).analyze();
