@@ -53,10 +53,10 @@ import { trackEvent } from "@/lib/track-event-server";
 const mockedCreateClient = vi.mocked(createClient);
 const mockedTrackEvent = vi.mocked(trackEvent);
 
-function makeRequest(body: unknown): NextRequest {
+function makeRequest(body: unknown, headers?: Record<string, string>): NextRequest {
   return new NextRequest("http://localhost:3000/api/feedback", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...headers },
     body: JSON.stringify(body),
   });
 }
@@ -118,6 +118,38 @@ describe("POST /api/feedback", () => {
 
     expect(response.status).toBe(400);
     expect(body.error).toBe("Invalid JSON body");
+  });
+
+  it("silently discards HeadlessChrome submissions without inserting", async () => {
+    const { mockFrom } = mockAuthenticatedClient();
+
+    const response = await POST(
+      makeRequest(validBody(), {
+        "User-Agent":
+          "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/125.0.0.0 Safari/537.36",
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(body).toEqual({ success: true });
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+
+  it("inserts feedback normally for non-HeadlessChrome user agents", async () => {
+    const { mockInsert } = mockAuthenticatedClient();
+
+    const response = await POST(
+      makeRequest(validBody(), {
+        "User-Agent":
+          "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(body).toEqual({ success: true });
+    expect(mockInsert).toHaveBeenCalled();
   });
 
   it("returns 401 if user is not authenticated", async () => {

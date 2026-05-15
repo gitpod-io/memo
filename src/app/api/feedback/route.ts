@@ -30,6 +30,12 @@ async function handler(request: NextRequest) {
     );
   }
 
+  // Silently discard submissions from automated browser sessions (e.g. smoke tests)
+  const userAgent = request.headers.get("user-agent") ?? "";
+  if (userAgent.includes("HeadlessChrome")) {
+    return NextResponse.json({ success: true }, { status: 201 });
+  }
+
   const { type, message, page_path, page_title, screenshot_url, metadata } =
     body as Record<string, unknown>;
 
