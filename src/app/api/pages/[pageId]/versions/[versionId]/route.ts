@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { captureApiError, captureSupabaseError, isInsufficientPrivilegeError, isTransientNetworkError } from "@/lib/sentry";
+import { captureApiError, captureSupabaseError, isForeignKeyViolationError, isInsufficientPrivilegeError, isTransientNetworkError } from "@/lib/sentry";
 import { retryOnNetworkError } from "@/lib/retry";
 import { withRateLimit, getClientIp } from "@/lib/rate-limit";
 
@@ -158,6 +158,9 @@ async function postHandler(
     );
 
     if (snapshotError) {
+      if (isForeignKeyViolationError(snapshotError)) {
+        return NextResponse.json({ error: "Page not found" }, { status: 404 });
+      }
       captureSupabaseError(snapshotError, "page-versions:restore-snapshot");
       return NextResponse.json(
         { error: "Failed to save current version before restore" },
@@ -184,6 +187,9 @@ async function postHandler(
   } catch (error) {
     if (error instanceof Error && isInsufficientPrivilegeError(error)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (error instanceof Error && isForeignKeyViolationError(error)) {
+      return NextResponse.json({ error: "Page not found" }, { status: 404 });
     }
     captureApiError(error, "page-versions:restore");
 

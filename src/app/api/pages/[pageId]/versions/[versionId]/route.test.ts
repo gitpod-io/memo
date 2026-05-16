@@ -56,6 +56,9 @@ const captureApiErrorMock = vi.fn();
 vi.mock("@/lib/sentry", () => ({
   captureApiError: (...args: unknown[]) => captureApiErrorMock(...args),
   captureSupabaseError: vi.fn(),
+  isForeignKeyViolationError: (err: Error & { code?: string }) =>
+    err.code === "23503" ||
+    err.message?.includes("violates foreign key constraint"),
   isInsufficientPrivilegeError: (err: Error & { code?: string }) =>
     err.code === "42501" ||
     err.message?.includes("violates row-level security policy"),
@@ -319,5 +322,32 @@ describe("POST /api/pages/[pageId]/versions/[versionId] (restore)", () => {
     expect(body.error).toBe(
       "Version restore temporarily unavailable, please try again",
     );
+  });
+
+  it("returns 404 when snapshot insert hits FK violation (page deleted, #1114)", async () => {
+    mockGetUser.mockReset();
+    mockGetUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
+    getVersionResult = { data: { content: { root: {} } }, error: null };
+    getPageResult = { data: { content: { root: {} } }, error: null };
+    insertVersionResult = {
+      data: null,
+      error: {
+        code: "23503",
+        message: 'insert or update on table "page_versions" violates foreign key constraint "page_versions_page_id_fkey"',
+        details: "Key (page_id)=(40cd1f0a-63a0-4b11-aee6-6fc5b6dab600) is not present in table \"pages\".",
+        hint: null,
+      },
+    };
+
+    const res = await POST(
+      makeRequest("/api/pages/page-123/versions/version-456", {
+        method: "POST",
+        body: JSON.stringify({ action: "restore" }),
+      }),
+      { params: mockParams },
+    );
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.error).toBe("Page not found");
   });
 });
