@@ -546,7 +546,7 @@ src/
 │   ├── emoji-picker.tsx         # Floating emoji grid with search, used by page icon picker
 │   ├── page-cover.tsx           # Page cover image: upload, display, change, remove (saves to pages.cover_url)
 │   ├── page-icon.tsx            # Page icon display + emoji picker trigger (saves to pages.icon)
-│   ├── page-title.tsx           # Inline-editable page title (saves on blur/Enter)
+│   ├── page-title.tsx           # Inline-editable page title (saves on blur/Enter/Tab, advances focus to editor via onAdvance)
 │   ├── page-breadcrumb.tsx       # Server component: breadcrumb nav (workspace → ancestors → current page)
 │   ├── page-backlinks.tsx        # Server component: backlinks section (queries page_links, shows linking pages)
 │   ├── page-content-client.tsx   # Client wrapper: lazy-loads DatabaseViewClient, RowPropertiesHeader, PageViewClient via next/dynamic
