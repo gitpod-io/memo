@@ -134,26 +134,54 @@ export const SidebarCollapsed: Story = {
   ),
 };
 
-/** Mobile layout — sidebar as overlay sheet. */
+/** Mobile layout — sidebar as overlay sheet with page title in header. */
 export const MobileLayout: Story = {
   render: () => (
     <div className="h-[500px] w-[375px] overflow-hidden bg-background">
       <header className="flex h-10 items-center gap-2 border-b border-overlay-border px-4">
         <button
           type="button"
-          className="flex h-8 w-8 items-center justify-center rounded-sm text-muted-foreground hover:bg-overlay-hover"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-overlay-hover"
           aria-label="Toggle sidebar"
         >
           <PanelLeft className="h-4 w-4" />
         </button>
-        <span className="text-sm font-medium text-foreground">
-          My Workspace
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+          Getting Started
         </span>
       </header>
       <main className="flex-1 overflow-y-auto p-4">
-        <h1 className="text-xl font-bold text-foreground">Page Title</h1>
+        <h1 className="text-xl font-bold text-foreground">Getting Started</h1>
         <p className="mt-4 text-sm text-foreground">
-          Mobile layout with sidebar toggle in the header.
+          Mobile layout with sidebar toggle and page title in the header.
+        </p>
+      </main>
+    </div>
+  ),
+};
+
+/** Mobile layout — long title truncated with ellipsis. */
+export const MobileLongTitle: Story = {
+  render: () => (
+    <div className="h-[500px] w-[375px] overflow-hidden bg-background">
+      <header className="flex h-10 items-center gap-2 border-b border-overlay-border px-4">
+        <button
+          type="button"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-overlay-hover"
+          aria-label="Toggle sidebar"
+        >
+          <PanelLeft className="h-4 w-4" />
+        </button>
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+          This Is a Very Long Page Title That Should Be Truncated
+        </span>
+      </header>
+      <main className="flex-1 overflow-y-auto p-4">
+        <h1 className="text-xl font-bold text-foreground">
+          This Is a Very Long Page Title That Should Be Truncated
+        </h1>
+        <p className="mt-4 text-sm text-foreground">
+          The header title truncates with ellipsis when it overflows.
         </p>
       </main>
     </div>

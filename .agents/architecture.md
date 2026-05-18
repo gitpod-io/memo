@@ -449,6 +449,7 @@ src/
 │   │   ├── page-search.tsx      # Full-text search input + results dropdown (debounced, 300ms)
 │   │   ├── favorites-section.tsx # Per-user favorites list + useFavorite hook for toggle
 │   │   ├── focus-mode-hint.tsx  # Floating hint shown when sidebar is hidden in focus mode
+│   │   ├── mobile-header-title.tsx # Observes document.title and displays current page title in mobile header
 │   │   ├── page-tree.tsx        # Orchestrator: data fetching, state, delete dialog (uses extracted sub-modules)
 │   │   ├── page-tree-item.tsx  # Single tree node rendering + context menu
 │   │   ├── page-tree-drag-layer.ts # usePageTreeDrag hook: drag-and-drop state + handlers

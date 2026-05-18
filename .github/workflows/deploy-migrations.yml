@@ -42,13 +42,10 @@ jobs:
       - uses: actions/checkout@v6
         if: steps.check-secrets.outputs.skip == 'false'
 
-      # supabase/setup-cli@v1 still targets node20; keep FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 until they ship a node24 version
-      # Pinned to 2.98.2: v2.99.0 changed asset naming (added version in filename),
-      # breaking setup-cli@v1's download URL construction for `latest`.
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v2
         if: steps.check-secrets.outputs.skip == 'false'
         with:
-          version: 2.98.2
+          version: 2.99.0
 
       - name: Link staging project
         if: steps.check-secrets.outputs.skip == 'false'
@@ -77,11 +74,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      # supabase/setup-cli@v1 still targets node20; keep FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 until they ship a node24 version
-      # Pinned to 2.98.2: v2.99.0 changed asset naming, breaking setup-cli@v1.
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v2
         with:
-          version: 2.98.2
+          version: 2.99.0
 
       - name: Link Supabase project
         run: supabase link --project-ref $SUPABASE_PROJECT_ID
