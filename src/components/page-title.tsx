@@ -7,13 +7,15 @@ import { captureSupabaseError } from "@/lib/sentry";
 interface PageTitleProps {
   pageId: string;
   initialTitle: string;
+  /** Called when the user presses Enter or Tab to advance focus to the editor. */
+  onAdvance?: () => void;
 }
 
 /**
  * Inline-editable page title. Parent should use `key={pageId}` to reset
  * state when navigating between pages.
  */
-export function PageTitle({ pageId, initialTitle }: PageTitleProps) {
+export function PageTitle({ pageId, initialTitle, onAdvance }: PageTitleProps) {
   const [title, setTitle] = useState(initialTitle);
   const inputRef = useRef<HTMLInputElement>(null);
   const lastSavedRef = useRef(initialTitle);
@@ -50,10 +52,14 @@ export function PageTitle({ pageId, initialTitle }: PageTitleProps) {
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" || e.key === "Tab") {
       e.preventDefault();
       saveTitle(title);
-      inputRef.current?.blur();
+      if (onAdvance) {
+        onAdvance();
+      } else {
+        inputRef.current?.blur();
+      }
     }
   }
 

@@ -88,6 +88,10 @@ export function PageViewClient({
     setVersionHistoryOpen(true);
   }, []);
 
+  const handleTitleAdvance = useCallback(() => {
+    editorRef.current?.focus();
+  }, []);
+
   // When previewing a version, show a read-only editor with that content
   const isPreviewMode = previewContent !== null;
 
@@ -102,7 +106,7 @@ export function PageViewClient({
         <PageIcon key={`icon-${pageId}`} pageId={pageId} initialIcon={pageIcon} />
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
-            <PageTitle key={pageId} pageId={pageId} initialTitle={pageTitle} />
+            <PageTitle key={pageId} pageId={pageId} initialTitle={pageTitle} onAdvance={handleTitleAdvance} />
           </div>
           <PageMenu
             pageId={pageId}
