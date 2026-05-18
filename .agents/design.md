@@ -592,7 +592,8 @@ When a database row is opened as a full page, properties display above the Lexic
 ## Accessibility
 
 - All interactive elements are keyboard-accessible.
-- Focus rings: `ring-2 ring-ring ring-offset-2`.
+- Focus rings: `ring-2 ring-ring ring-offset-2` for buttons and inputs.
+- Focus highlight for list items (sidebar tree, workspace home rows): `focus-visible:bg-overlay-active focus-visible:outline-none` — background highlight instead of ring to match hover style.
 - Color contrast: minimum 4.5:1 for text, 3:1 for UI elements.
 - Images: always have `alt` text.
 - Icon-only buttons: always have `aria-label`.
