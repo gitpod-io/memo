@@ -4,8 +4,14 @@ import { PostgrestError } from "@supabase/supabase-js";
 
 const captureExceptionMock = vi.fn();
 
+// Mock isolation scope for isE2ETestFromScope tests
+let mockScopeData: Record<string, unknown> = {};
+
 vi.mock("@sentry/nextjs", () => ({
   captureException: (...args: unknown[]) => captureExceptionMock(...args),
+  getIsolationScope: () => ({
+    getScopeData: () => mockScopeData,
+  }),
 }));
 
 import {
@@ -1030,6 +1036,27 @@ describe("isNextjsInternalNoise", () => {
     const event = makeSentryEvent([{ type: "Error" }]);
     expect(isNextjsInternalNoise(event)).toBe(false);
   });
+
+  it("detects Node.js TransformStream race condition (MEMO-2G)", () => {
+    const event = makeSentryEvent([
+      {
+        type: "TypeError",
+        value: "controller[kState].transformAlgorithm is not a function",
+      },
+    ]);
+    expect(isNextjsInternalNoise(event)).toBe(true);
+  });
+
+  it("detects TransformStream error as substring in chained exceptions", () => {
+    const event = makeSentryEvent([
+      { type: "Error", value: "Some wrapper error" },
+      {
+        type: "TypeError",
+        value: "controller[kState].transformAlgorithm is not a function",
+      },
+    ]);
+    expect(isNextjsInternalNoise(event)).toBe(true);
+  });
 });
 
 /**
@@ -1667,6 +1694,65 @@ describe("isE2ETestRequest", () => {
     } as unknown as ErrorEvent;
     expect(isE2ETestRequest(event)).toBe(false);
   });
+
+  it("returns true when isolation scope has HeadlessChrome in normalizedRequest headers (MEMO-2G on_request_error)", () => {
+    mockScopeData = {
+      sdkProcessingMetadata: {
+        normalizedRequest: {
+          headers: {
+            "user-agent": "Mozilla/5.0 HeadlessChrome/147.0.0.0 Safari/537.36",
+          },
+        },
+      },
+    };
+    const event = { type: undefined } as ErrorEvent;
+    expect(isE2ETestRequest(event)).toBe(true);
+    mockScopeData = {};
+  });
+
+  it("returns true when isolation scope has HeadlessChrome in User-Agent (capitalized)", () => {
+    mockScopeData = {
+      sdkProcessingMetadata: {
+        normalizedRequest: {
+          headers: {
+            "User-Agent": "Mozilla/5.0 HeadlessChrome/147.0.0.0 Safari/537.36",
+          },
+        },
+      },
+    };
+    const event = { type: undefined } as ErrorEvent;
+    expect(isE2ETestRequest(event)).toBe(true);
+    mockScopeData = {};
+  });
+
+  it("returns false when isolation scope has normal Chrome in normalizedRequest headers", () => {
+    mockScopeData = {
+      sdkProcessingMetadata: {
+        normalizedRequest: {
+          headers: {
+            "user-agent": "Mozilla/5.0 Chrome/147.0.0.0 Safari/537.36",
+          },
+        },
+      },
+    };
+    const event = { type: undefined } as ErrorEvent;
+    expect(isE2ETestRequest(event)).toBe(false);
+    mockScopeData = {};
+  });
+
+  it("returns false when isolation scope has no normalizedRequest", () => {
+    mockScopeData = { sdkProcessingMetadata: {} };
+    const event = { type: undefined } as ErrorEvent;
+    expect(isE2ETestRequest(event)).toBe(false);
+    mockScopeData = {};
+  });
+
+  it("returns false when isolation scope has no sdkProcessingMetadata", () => {
+    mockScopeData = {};
+    const event = { type: undefined } as ErrorEvent;
+    expect(isE2ETestRequest(event)).toBe(false);
+    mockScopeData = {};
+  });
 });
 
 describe("shouldDropServerEvent", () => {
@@ -1733,5 +1819,40 @@ describe("shouldDropServerEvent", () => {
       exception: { values: [] },
     } as unknown as ErrorEvent;
     expect(shouldDropServerEvent(event)).toBe(false);
+  });
+
+  it("drops Node.js TransformStream race condition errors (MEMO-2G)", () => {
+    const event = {
+      type: undefined,
+      exception: {
+        values: [
+          {
+            type: "TypeError",
+            value: "controller[kState].transformAlgorithm is not a function",
+          },
+        ],
+      },
+    } as unknown as ErrorEvent;
+    expect(shouldDropServerEvent(event)).toBe(true);
+  });
+
+  it("drops on_request_error events from E2E tests via isolation scope (MEMO-2G)", () => {
+    mockScopeData = {
+      sdkProcessingMetadata: {
+        normalizedRequest: {
+          headers: {
+            "user-agent": "Mozilla/5.0 HeadlessChrome/147.0.0.0 Safari/537.36",
+          },
+        },
+      },
+    };
+    const event = {
+      type: undefined,
+      exception: {
+        values: [{ value: "Some server error" }],
+      },
+    } as unknown as ErrorEvent;
+    expect(shouldDropServerEvent(event)).toBe(true);
+    mockScopeData = {};
   });
 });

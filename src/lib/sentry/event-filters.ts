@@ -1,12 +1,17 @@
 import type { ErrorEvent } from "@sentry/nextjs";
 
 /**
- * Error messages from Next.js internals that are caused by clients sending
- * malformed headers (e.g. RSC router state). These are not application bugs —
- * they originate from bots, crawlers, or browser quirks (Mobile Safari 17).
+ * Error messages from Next.js/Node.js internals that are not application bugs.
+ * Includes malformed client headers (bots, crawlers, Mobile Safari 17) and
+ * Node.js web streams race conditions during SSR.
  */
 const NEXTJS_INTERNAL_NOISE_PATTERNS = [
   "The router state header was sent but could not be parsed",
+  // Node.js internal web streams race condition during SSR. The TransformStream
+  // controller's state is torn down before the transform algorithm runs.
+  // Known issue: vercel/next.js#68319, vercel/next.js#75994.
+  // Stack trace contains only Node.js internals — no app code is involved.
+  "transformAlgorithm is not a function",
 ];
 
 /**

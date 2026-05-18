@@ -1,4 +1,5 @@
 import type { ErrorEvent } from "@sentry/nextjs";
+import { getIsolationScope } from "@sentry/nextjs";
 
 /**
  * Returns true when the current browser session is an E2E test run.
@@ -62,5 +63,36 @@ export function isE2ETestRequest(event: ErrorEvent): boolean {
   const extraUa = event.extra?.userAgent;
   if (typeof extraUa === "string" && extraUa.includes("HeadlessChrome/")) return true;
 
+  // Fallback: check the isolation scope's normalizedRequest headers.
+  // Next.js's `captureRequestError` (on_request_error hook) sets request
+  // headers in sdkProcessingMetadata.normalizedRequest but does NOT populate
+  // event.request — the requestDataIntegration applies it after beforeSend.
+  // event.contexts.browser is also unavailable because Sentry's ingestion
+  // pipeline enriches it after the SDK sends the event.
+  if (isE2ETestFromScope()) return true;
+
   return false;
+}
+
+/**
+ * Checks the current isolation scope's normalizedRequest headers for
+ * HeadlessChrome. This catches on_request_error events where event.request
+ * is null and event.contexts.browser is not yet populated.
+ */
+function isE2ETestFromScope(): boolean {
+  try {
+    const scopeData = getIsolationScope().getScopeData();
+    const headers = scopeData.sdkProcessingMetadata?.normalizedRequest?.headers;
+    if (!headers) return false;
+
+    const scopeUa =
+      (headers as Record<string, string>)["user-agent"] ??
+      (headers as Record<string, string>)["User-Agent"] ??
+      "";
+    return scopeUa.includes("HeadlessChrome/");
+  } catch (_err: unknown) {
+    // getIsolationScope may not be available in all contexts (e.g. tests).
+    // Swallowing is intentional — this is a best-effort detection fallback.
+    return false;
+  }
 }
