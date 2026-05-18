@@ -72,6 +72,15 @@ async function addRows(page: import("@playwright/test").Page, count: number) {
       page.locator(`[data-testid="db-table-row-${i}"]`),
     ).toBeVisible({ timeout: 5_000 });
   }
+  // Wait for optimistic rows to be replaced with real server data.
+  // The add-row handler inserts a temp-* placeholder immediately, then
+  // replaces it once the server responds. Selection relies on stable IDs,
+  // so we must wait until no temp rows remain before interacting with
+  // checkboxes or select-all.
+  await expect(async () => {
+    const tempCount = await page.locator('[data-row-id^="temp-"]').count();
+    expect(tempCount).toBe(0);
+  }).toPass({ timeout: 15_000 });
 }
 
 // ---------------------------------------------------------------------------
@@ -85,6 +94,13 @@ test.describe("Database bulk row selection", () => {
     await createDatabaseFromSidebar(page);
     await addRows(page, 3);
 
+    // Wait for all row checkboxes to be visible before interacting
+    for (let i = 0; i < 3; i++) {
+      await expect(
+        page.locator(`[data-testid="db-table-row-checkbox-${i}"]`),
+      ).toBeVisible({ timeout: 5_000 });
+    }
+
     // The select-all checkbox should be visible
     const selectAll = page.locator('[data-testid="db-table-select-all"]');
     await expect(selectAll).toBeVisible({ timeout: 5_000 });
@@ -92,28 +108,28 @@ test.describe("Database bulk row selection", () => {
     // Click select-all
     await selectAll.click();
 
+    // Bulk action bar should appear with correct count
+    const actionBar = page.locator('[data-testid="db-bulk-action-bar"]');
+    await expect(actionBar).toBeVisible({ timeout: 10_000 });
+    await expect(
+      page.locator('[data-testid="db-bulk-selection-count"]'),
+    ).toHaveText("3 rows selected", { timeout: 10_000 });
+
     // All row checkboxes should be checked
     for (let i = 0; i < 3; i++) {
       const rowCheckbox = page.locator(
         `[data-testid="db-table-row-checkbox-${i}"]`,
       );
-      await expect(rowCheckbox).toHaveAttribute("data-checked", "", {
+      await expect(rowCheckbox).toHaveAttribute("aria-checked", "true", {
         timeout: 5_000,
       });
     }
-
-    // Bulk action bar should appear
-    const actionBar = page.locator('[data-testid="db-bulk-action-bar"]');
-    await expect(actionBar).toBeVisible({ timeout: 5_000 });
-    await expect(
-      page.locator('[data-testid="db-bulk-selection-count"]'),
-    ).toHaveText("3 rows selected");
 
     // Click select-all again to deselect
     await selectAll.click();
 
     // Action bar should disappear
-    await expect(actionBar).not.toBeVisible({ timeout: 5_000 });
+    await expect(actionBar).not.toBeVisible({ timeout: 10_000 });
   });
 
   test("single row checkbox toggles selection", async ({
@@ -131,10 +147,10 @@ test.describe("Database bulk row selection", () => {
 
     // Action bar should show 1 row selected
     const actionBar = page.locator('[data-testid="db-bulk-action-bar"]');
-    await expect(actionBar).toBeVisible({ timeout: 5_000 });
+    await expect(actionBar).toBeVisible({ timeout: 10_000 });
     await expect(
       page.locator('[data-testid="db-bulk-selection-count"]'),
-    ).toHaveText("1 row selected");
+    ).toHaveText("1 row selected", { timeout: 5_000 });
 
     // Click a second row's checkbox
     const rowCheckbox1 = page.locator(
@@ -144,14 +160,14 @@ test.describe("Database bulk row selection", () => {
 
     await expect(
       page.locator('[data-testid="db-bulk-selection-count"]'),
-    ).toHaveText("2 rows selected");
+    ).toHaveText("2 rows selected", { timeout: 5_000 });
 
     // Uncheck the first row
     await rowCheckbox0.click();
 
     await expect(
       page.locator('[data-testid="db-bulk-selection-count"]'),
-    ).toHaveText("1 row selected");
+    ).toHaveText("1 row selected", { timeout: 5_000 });
   });
 
   test("Escape clears selection", async ({ authenticatedPage: page }) => {
@@ -162,16 +178,17 @@ test.describe("Database bulk row selection", () => {
     const rowCheckbox = page.locator(
       '[data-testid="db-table-row-checkbox-0"]',
     );
+    await expect(rowCheckbox).toBeVisible({ timeout: 5_000 });
     await rowCheckbox.click();
 
     const actionBar = page.locator('[data-testid="db-bulk-action-bar"]');
-    await expect(actionBar).toBeVisible({ timeout: 5_000 });
+    await expect(actionBar).toBeVisible({ timeout: 10_000 });
 
     // Press Escape
     await page.keyboard.press("Escape");
 
     // Action bar should disappear
-    await expect(actionBar).not.toBeVisible({ timeout: 5_000 });
+    await expect(actionBar).not.toBeVisible({ timeout: 10_000 });
   });
 
   test("shift+click selects a range of rows", async ({
@@ -180,11 +197,21 @@ test.describe("Database bulk row selection", () => {
     await createDatabaseFromSidebar(page);
     await addRows(page, 4);
 
-    // Click first row checkbox (no shift)
+    // Wait for all row checkboxes to be visible
+    for (let i = 0; i < 4; i++) {
+      await expect(
+        page.locator(`[data-testid="db-table-row-checkbox-${i}"]`),
+      ).toBeVisible({ timeout: 5_000 });
+    }
+
+    // Click first row checkbox (no shift) and wait for action bar
     const rowCheckbox0 = page.locator(
       '[data-testid="db-table-row-checkbox-0"]',
     );
     await rowCheckbox0.click();
+    await expect(
+      page.locator('[data-testid="db-bulk-selection-count"]'),
+    ).toHaveText("1 row selected", { timeout: 5_000 });
 
     // Shift+click the third row checkbox
     const rowCheckbox2 = page.locator(
@@ -195,20 +222,22 @@ test.describe("Database bulk row selection", () => {
     // Rows 0, 1, 2 should be selected (3 rows)
     await expect(
       page.locator('[data-testid="db-bulk-selection-count"]'),
-    ).toHaveText("3 rows selected");
+    ).toHaveText("3 rows selected", { timeout: 5_000 });
 
     // Verify individual checkboxes
     for (let i = 0; i < 3; i++) {
       await expect(
         page.locator(`[data-testid="db-table-row-checkbox-${i}"]`),
-      ).toHaveAttribute("data-checked", "", { timeout: 5_000 });
+      ).toHaveAttribute("aria-checked", "true", { timeout: 5_000 });
     }
 
     // Row 3 should NOT be selected
     const rowCheckbox3 = page.locator(
       '[data-testid="db-table-row-checkbox-3"]',
     );
-    await expect(rowCheckbox3).not.toHaveAttribute("data-checked", "");
+    await expect(rowCheckbox3).toHaveAttribute("aria-checked", "false", {
+      timeout: 5_000,
+    });
   });
 
   test("bulk delete shows confirmation dialog and removes row on confirm", async ({
@@ -222,6 +251,9 @@ test.describe("Database bulk row selection", () => {
     await expect(cb0).toBeVisible({ timeout: 5_000 });
     await cb0.click();
 
+    // Wait for action bar and selection count to stabilize
+    const actionBar = page.locator('[data-testid="db-bulk-action-bar"]');
+    await expect(actionBar).toBeVisible({ timeout: 10_000 });
     await expect(
       page.locator('[data-testid="db-bulk-selection-count"]'),
     ).toHaveText("1 row selected", { timeout: 5_000 });

@@ -152,6 +152,7 @@ export const TableRow = memo(function TableRow({
       className={gridTemplateColumns ? "grid" : undefined}
       style={gridTemplateColumns ? { gridTemplateColumns } : { display: "contents" }}
       data-testid={`db-table-row-${rowIndex}`}
+      data-row-id={row.page.id}
     >
       {/* Selection checkbox cell */}
       {onToggleSelect && (

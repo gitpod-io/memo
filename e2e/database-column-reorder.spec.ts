@@ -185,15 +185,18 @@ async function navigateToDatabase(page: import("@playwright/test").Page) {
   ).toBeVisible({ timeout: 15_000 });
 }
 
-/** Get all column header texts in order (excluding the Title header). */
+/** Get property column header texts in order (excluding checkbox, Title, and add-column). */
 async function getColumnOrder(page: import("@playwright/test").Page) {
-  // Column headers are [role="columnheader"] — first is Title, rest are property columns.
-  // The add-column button does not have role="columnheader".
+  // Column headers are [role="columnheader"]:
+  //   0: checkbox (selection column)
+  //   1: Title
+  //   2..N-2: property columns
+  //   N-1: add-column button
   const headers = page.locator('[role="columnheader"]');
   const count = await headers.count();
   const names: string[] = [];
-  // Skip first (Title)
-  for (let i = 1; i < count; i++) {
+  // Skip first two (checkbox + Title) and last (add-column)
+  for (let i = 2; i < count - 1; i++) {
     const text = await headers.nth(i).innerText();
     names.push(text.trim());
   }

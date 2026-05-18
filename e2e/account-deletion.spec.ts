@@ -34,12 +34,36 @@ function extractWorkspaceSlug(page: Page): string {
 
 /**
  * Navigate to workspace settings for a given slug.
+ * Waits for the danger zone section to be hydrated (interactive).
  */
 async function goToSettings(page: Page, slug: string): Promise<void> {
   await page.goto(`/${slug}/settings`);
   await expect(
     page.getByRole("heading", { name: "Workspace settings" })
   ).toBeVisible({ timeout: 10_000 });
+  // Wait for the dynamically-imported DangerZoneSettings to hydrate.
+  // The button is server-rendered but not interactive until JS loads.
+  await expect(
+    page.getByRole("button", { name: "Delete account", exact: true })
+  ).toBeVisible({ timeout: 10_000 });
+}
+
+/**
+ * Click the delete account button and wait for the dialog to open.
+ * Retries the click if the dialog doesn't appear (handles hydration lag
+ * from the double dynamic import of DangerZoneSettings → DeleteAccountSection).
+ */
+async function clickDeleteAndWaitForDialog(page: Page): Promise<void> {
+  const deleteBtn = page.getByRole("button", {
+    name: "Delete account",
+    exact: true,
+  });
+  const dialog = page.getByRole("alertdialog");
+
+  await expect(async () => {
+    await deleteBtn.click();
+    await expect(dialog).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 10_000 });
 }
 
 /**
@@ -141,13 +165,10 @@ test.describe("Account deletion — visibility and confirmation UX", () => {
       const userEmail = process.env.TEST_USER_EMAIL!;
 
       // Click the delete account button to open the dialog
-      await page
-        .getByRole("button", { name: "Delete account", exact: true })
-        .click();
+      await clickDeleteAndWaitForDialog(page);
 
       // Step 1: Email confirmation dialog should appear
       const dialog = page.getByRole("alertdialog");
-      await expect(dialog).toBeVisible({ timeout: 3_000 });
       await expect(
         dialog.getByRole("heading", { name: "Delete your account" })
       ).toBeVisible();
@@ -216,13 +237,10 @@ test.describe("Account deletion — full flow", () => {
         await goToSettings(page, personalSlug);
 
         // Click delete account
-        await page
-          .getByRole("button", { name: "Delete account", exact: true })
-          .click();
+        await clickDeleteAndWaitForDialog(page);
 
         // Step 1: Type email to confirm
         const dialog = page.getByRole("alertdialog");
-        await expect(dialog).toBeVisible({ timeout: 3_000 });
         await dialog.locator("#confirm-email").fill(email);
         await dialog.getByRole("button", { name: /continue/i }).click();
 
@@ -290,12 +308,9 @@ test.describe("Account deletion — sole-owner blocking", () => {
       await goToSettings(page, personalSlug);
 
       // Start the deletion flow
-      await page
-        .getByRole("button", { name: "Delete account", exact: true })
-        .click();
+      await clickDeleteAndWaitForDialog(page);
 
       const dialog = page.getByRole("alertdialog");
-      await expect(dialog).toBeVisible({ timeout: 3_000 });
 
       // Type email to confirm
       await dialog.locator("#confirm-email").fill(email);

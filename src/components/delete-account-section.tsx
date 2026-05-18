@@ -17,7 +17,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 interface DeleteAccountSectionProps {
@@ -101,16 +100,17 @@ export function DeleteAccountSection({ userEmail }: DeleteAccountSectionProps) {
         workspaces and their content will remain.
       </p>
 
-      <AlertDialog open={step !== "idle"} onOpenChange={handleOpenChange}>
-        <AlertDialogTrigger
-          render={<Button variant="destructive" size="sm" />}
-          onClick={() => setStep("confirm-email")}
-        >
-          <Trash2 className="h-4 w-4" />
-          Delete account
-        </AlertDialogTrigger>
+      <Button
+        variant="destructive"
+        size="sm"
+        onClick={() => setStep("confirm-email")}
+      >
+        <Trash2 className="h-4 w-4" />
+        Delete account
+      </Button>
 
-        {step === "confirm-email" && (
+      {step === "confirm-email" && (
+        <AlertDialog open onOpenChange={handleOpenChange}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Delete your account</AlertDialogTitle>
@@ -148,9 +148,11 @@ export function DeleteAccountSection({ userEmail }: DeleteAccountSectionProps) {
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
-        )}
+        </AlertDialog>
+      )}
 
-        {step === "final" && (
+      {step === "final" && (
+        <AlertDialog open onOpenChange={handleOpenChange}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
@@ -177,8 +179,8 @@ export function DeleteAccountSection({ userEmail }: DeleteAccountSectionProps) {
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
-        )}
-      </AlertDialog>
+        </AlertDialog>
+      )}
     </div>
   );
 }
