@@ -438,12 +438,19 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
         {editorRef && <EditorRefPlugin editorRef={editorRef} />}
       </LexicalComposer>
       {!readOnly && (
-        <div className="mt-2 h-5 text-xs text-muted-foreground" data-testid="editor-save-status">
+        <div
+          className="mt-2 h-5 text-xs text-muted-foreground"
+          data-testid="editor-save-status"
+        >
           {saveStatus === "saving" && "Saving..."}
           {saveStatus === "saved" && "Saved"}
           {saveStatus === "error" && (
             <span className="text-destructive">Save failed</span>
           )}
+          <span className="sr-only" role="status" data-testid="editor-save-status-live">
+            {saveStatus === "saved" && "Saved"}
+            {saveStatus === "error" && "Save failed"}
+          </span>
         </div>
       )}
       {readOnly && (

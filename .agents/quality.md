@@ -33,9 +33,9 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 
 | Category | Files | Tests |
 |---|---|---|
-| Unit/Integration (Vitest) | 144 | 1953 |
+| Unit/Integration (Vitest) | 144 | 1962 |
 | E2E (Playwright) | 85 | 415 |
-| **Total** | **229** | **2368** |
+| **Total** | **229** | **2377** |
 
 ### Test files by domain
 
@@ -163,5 +163,6 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | 2026-05-18 | Mobile header page title (#1136). Added `mobile-header-title.tsx` component and 1 new E2E spec: `e2e/mobile-header-title.spec.ts` (5 tests) — workspace name on home, title update on navigation, Settings on settings page, hidden on desktop, truncation styles. Added Storybook stories for MobileHeaderTitle (5 stories) and MobileLongTitle story in AppShell. Test totals: 144 Vitest files (1953 tests), 84 E2E specs (412 tests). |
 | 2026-05-18 | Fixed 11 E2E test failures (#1142). Fixed account-deletion tests (hydration timing with retry pattern), database-bulk-select tests (optimistic row ID race condition, aria-checked assertions), database-column-reorder tests (checkbox column offset in getColumnOrder), database-csv-export tests (gridcell count mismatch from checkbox column). Added `data-row-id` attribute to table rows for temp-ID detection. Fixed DeleteAccountSection component to avoid AlertDialogTrigger + controlled open pattern. Updated visual regression baselines. Test totals unchanged: 144 Vitest files (1953 tests), 84 E2E specs (412 tests). |
 | 2026-05-18 | Title Enter/Tab focuses editor (#1137). Added `onAdvance` callback to `PageTitle`, wired in `PageViewClient` to focus Lexical editor on Enter/Tab. Added 1 new E2E spec: `e2e/title-advance.spec.ts` (3 tests). Added `WithAdvance` Storybook story and visual regression baseline. Test totals: 144 Vitest files (1953 tests), 85 E2E specs (415 tests). |
+| 2026-05-18 | Add aria-live region to editor save status indicator (#1138). Added sr-only `role="status"` span to editor save status div so screen readers announce terminal states (Saved, Save failed) without noisy Saving... announcements. No new test files. Test totals: 144 Vitest files (1962 tests), 85 E2E specs (415 tests). |
 
 
