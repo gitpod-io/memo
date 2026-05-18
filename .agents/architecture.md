@@ -606,6 +606,7 @@ src/
 │   │   ├── network-errors.ts   # Transient network/storage/auth-lock error detection
 │   │   ├── event-filters.ts    # Sentry beforeSend filters (noise, DOM conflicts, network events)
 │   │   ├── client-filter.ts   # shouldDropClientEvent — consolidated client-side beforeSend filter
+│   │   ├── server-filter.ts   # shouldDropServerEvent — consolidated server/edge-side beforeSend filter
 │   │   └── capture.ts         # captureSupabaseError, captureApiError
 │   ├── theme.tsx            # ThemeProvider + useTheme hook (light/dark/system, localStorage persistence)
 │   ├── toast.ts            # Lazy-loaded sonner toast wrapper to reduce initial bundle size
