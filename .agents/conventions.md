@@ -480,15 +480,21 @@ filter these out:
   initialization (the SDK is loaded via dynamic `import()` in
   `instrumentation-client.ts`).
 - **Server-side** — `sentry.server.config.ts` and `sentry.edge.config.ts` use
-  `isE2ETestRequest(event)` which checks two sources:
+  `isE2ETestRequest(event)` which checks four sources:
   1. `event.request.headers` for `HeadlessChrome/` in the User-Agent — works for
      unhandled exceptions where Sentry auto-attaches request context.
   2. `event.contexts.browser.name` for `HeadlessChrome` — fallback for manually
      captured exceptions (via `captureException`/`lazyCaptureException`) where
      `event.request` is empty but the SDK enriches browser context.
+  3. `event.extra.userAgent` for `HeadlessChrome/` — fallback for errors captured
+     via `captureSupabaseError`/`captureApiError` which forward the request UA.
+  4. Isolation scope's `sdkProcessingMetadata.normalizedRequest.headers` — fallback
+     for `on_request_error` events (Next.js `captureRequestError`) where
+     `event.request` is null and `event.contexts.browser` is only populated by
+     Sentry's ingestion pipeline after `beforeSend` runs.
 
-  Both checks are needed because manually captured exceptions skip request
-  header enrichment. Always check both paths when filtering E2E test noise.
+  All four checks are needed because different capture mechanisms populate
+  different fields. Always check all paths when filtering E2E test noise.
 
 When adding new Sentry config files or `beforeSend` filters, use the
 consolidated filter functions: `shouldDropClientEvent` for client-side and
