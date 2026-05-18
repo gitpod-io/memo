@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { SidebarProvider } from "@/components/sidebar/sidebar-context";
 import { FocusModeHint } from "@/components/sidebar/focus-mode-hint";
+import { MobileHeaderTitle } from "@/components/sidebar/mobile-header-title";
 import type { ReactNode } from "react";
 
 const AppSidebar = dynamic(
@@ -59,6 +60,7 @@ function AppShellInner({
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-10 shrink-0 items-center gap-2 border-b border-overlay-border px-4 md:hidden">
           <SidebarToggle />
+          <MobileHeaderTitle />
         </header>
         <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto focus:outline-none">{children}</main>
       </div>
