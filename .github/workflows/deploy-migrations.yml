@@ -7,6 +7,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   # ---------------------------------------------------------------------------
   # PR check: reset staging DB then push migrations for real execution
@@ -39,7 +42,8 @@ jobs:
       - uses: actions/checkout@v6
         if: steps.check-secrets.outputs.skip == 'false'
 
-      - uses: supabase/setup-cli@v2
+      # supabase/setup-cli@v1 still targets node20; keep FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 until they ship a node24 version
+      - uses: supabase/setup-cli@v1
         if: steps.check-secrets.outputs.skip == 'false'
         with:
           version: latest
@@ -71,7 +75,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: supabase/setup-cli@v2
+      # supabase/setup-cli@v1 still targets node20; keep FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 until they ship a node24 version
+      - uses: supabase/setup-cli@v1
         with:
           version: latest
 
