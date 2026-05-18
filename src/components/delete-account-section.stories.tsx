@@ -12,7 +12,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 // DeleteAccountSection depends on next/navigation and Supabase.
@@ -40,40 +39,10 @@ export const Default: Story = {
         Your membership in other workspaces will be removed, but those
         workspaces and their content will remain.
       </p>
-      <AlertDialog>
-        <AlertDialogTrigger
-          render={<Button variant="destructive" size="sm" />}
-        >
-          <Trash2 className="h-4 w-4" />
-          Delete account
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete your account</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete your account, your personal workspace,
-              and all its pages. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="confirm-email" className="text-sm">
-              Type <span className="font-semibold">{USER_EMAIL}</span> to
-              confirm
-            </Label>
-            <Input
-              id="confirm-email"
-              placeholder={USER_EMAIL}
-              autoComplete="off"
-            />
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" disabled>
-              Continue
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <Button variant="destructive" size="sm">
+        <Trash2 className="h-4 w-4" />
+        Delete account
+      </Button>
     </div>
   ),
 };
@@ -87,14 +56,12 @@ export const EmailConfirmStep: Story = {
         Your membership in other workspaces will be removed, but those
         workspaces and their content will remain.
       </p>
+      <Button variant="destructive" size="sm">
+        <Trash2 className="h-4 w-4" />
+        Delete account
+      </Button>
       {/* Dialog shown open with email typed */}
       <AlertDialog defaultOpen>
-        <AlertDialogTrigger
-          render={<Button variant="destructive" size="sm" />}
-        >
-          <Trash2 className="h-4 w-4" />
-          Delete account
-        </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete your account</AlertDialogTitle>
@@ -135,13 +102,11 @@ export const FinalConfirmStep: Story = {
         Your membership in other workspaces will be removed, but those
         workspaces and their content will remain.
       </p>
+      <Button variant="destructive" size="sm">
+        <Trash2 className="h-4 w-4" />
+        Delete account
+      </Button>
       <AlertDialog defaultOpen>
-        <AlertDialogTrigger
-          render={<Button variant="destructive" size="sm" />}
-        >
-          <Trash2 className="h-4 w-4" />
-          Delete account
-        </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
