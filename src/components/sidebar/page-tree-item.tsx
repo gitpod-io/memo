@@ -30,6 +30,8 @@ export interface PageTreeItemProps {
   expanded: Set<string>;
   toggleExpand: (id: string) => void;
   selectedPageId: string | undefined;
+  focusedId?: string | null;
+  tabbableId?: string | null;
   onNavigate: (pageId: string) => void;
   onPrefetch: (pageId: string) => void;
   onCreate: (parentId: string | null) => void;
@@ -76,6 +78,8 @@ export function PageTreeItem({
   pages,
   favoriteMap,
   onToggleFavorite,
+  focusedId,
+  tabbableId,
 }: PageTreeItemProps) {
   const { page } = node;
   const hasChildren = node.children.length > 0;
@@ -84,6 +88,8 @@ export function PageTreeItem({
   const isDragged = draggedId === page.id;
   const isDropTarget = dropTarget?.id === page.id;
   const isFavorited = favoriteMap.has(page.id);
+  const isFocused = focusedId === page.id;
+  const isTabbable = tabbableId === page.id;
 
   const siblings = getSortedSiblings(pages, page.parent_id);
   const siblingIdx = siblings.findIndex((p) => p.id === page.id);
@@ -95,7 +101,11 @@ export function PageTreeItem({
   return (
     <div role="treeitem" aria-selected={isSelected} aria-expanded={hasChildren ? isExpanded : undefined}>
       <div
-        className={`group relative flex items-center gap-0.5 py-0.5 pr-1 text-sm ${
+        tabIndex={isTabbable ? 0 : -1}
+        data-page-id={page.id}
+        className={`group relative flex items-center gap-0.5 py-0.5 pr-1 text-sm outline-none ${
+          isFocused ? "ring-1 ring-accent" : ""
+        } ${
           isSelected
             ? "bg-overlay-active font-medium text-label-subtle"
             : "text-muted-foreground hover:bg-overlay-hover"
@@ -156,6 +166,7 @@ export function PageTreeItem({
         <button
           className="flex-1 truncate text-left focus-visible:bg-overlay-active focus-visible:outline-none"
           onClick={() => onNavigate(page.id)}
+          tabIndex={-1}
           title={page.title || "Untitled"}
         >
           {page.title || "Untitled"}
@@ -256,6 +267,8 @@ export function PageTreeItem({
               expanded={expanded}
               toggleExpand={toggleExpand}
               selectedPageId={selectedPageId}
+              focusedId={focusedId}
+              tabbableId={tabbableId}
               onNavigate={onNavigate}
               onPrefetch={onPrefetch}
               onCreate={onCreate}

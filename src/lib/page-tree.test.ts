@@ -4,8 +4,10 @@ import {
   buildTree,
   getDescendantIds,
   findNode,
+  findParentNode,
   getNextSiblingPosition,
   getSortedSiblings,
+  getVisibleItems,
   computeSwapPositions,
   computeNest,
   computeUnnest,
@@ -177,6 +179,100 @@ describe("findNode", () => {
     const tree = buildTree([makePage({ id: "a", position: 0 })]);
 
     expect(findNode(tree, "missing")).toBeNull();
+  });
+});
+
+describe("getVisibleItems", () => {
+  it("returns all roots when nothing is expanded", () => {
+    const pages = [
+      makePage({ id: "a", position: 0 }),
+      makePage({ id: "b", position: 1 }),
+      makePage({ id: "child", parent_id: "a", position: 0 }),
+    ];
+    const tree = buildTree(pages);
+    const visible = getVisibleItems(tree, new Set());
+
+    expect(visible.map((n) => n.page.id)).toEqual(["a", "b"]);
+  });
+
+  it("includes children of expanded nodes", () => {
+    const pages = [
+      makePage({ id: "a", position: 0 }),
+      makePage({ id: "child1", parent_id: "a", position: 0 }),
+      makePage({ id: "child2", parent_id: "a", position: 1 }),
+      makePage({ id: "b", position: 1 }),
+    ];
+    const tree = buildTree(pages);
+    const visible = getVisibleItems(tree, new Set(["a"]));
+
+    expect(visible.map((n) => n.page.id)).toEqual(["a", "child1", "child2", "b"]);
+  });
+
+  it("handles deeply nested expanded nodes", () => {
+    const pages = [
+      makePage({ id: "root", position: 0 }),
+      makePage({ id: "child", parent_id: "root", position: 0 }),
+      makePage({ id: "grandchild", parent_id: "child", position: 0 }),
+    ];
+    const tree = buildTree(pages);
+    const visible = getVisibleItems(tree, new Set(["root", "child"]));
+
+    expect(visible.map((n) => n.page.id)).toEqual(["root", "child", "grandchild"]);
+  });
+
+  it("hides grandchildren when only root is expanded", () => {
+    const pages = [
+      makePage({ id: "root", position: 0 }),
+      makePage({ id: "child", parent_id: "root", position: 0 }),
+      makePage({ id: "grandchild", parent_id: "child", position: 0 }),
+    ];
+    const tree = buildTree(pages);
+    const visible = getVisibleItems(tree, new Set(["root"]));
+
+    expect(visible.map((n) => n.page.id)).toEqual(["root", "child"]);
+  });
+
+  it("returns empty array for empty tree", () => {
+    expect(getVisibleItems([], new Set())).toEqual([]);
+  });
+});
+
+describe("findParentNode", () => {
+  it("returns null for root nodes", () => {
+    const pages = [
+      makePage({ id: "a", position: 0 }),
+      makePage({ id: "b", position: 1 }),
+    ];
+    const tree = buildTree(pages);
+
+    expect(findParentNode(tree, "a")).toBeNull();
+  });
+
+  it("finds the parent of a child node", () => {
+    const pages = [
+      makePage({ id: "root", position: 0 }),
+      makePage({ id: "child", parent_id: "root", position: 0 }),
+    ];
+    const tree = buildTree(pages);
+
+    expect(findParentNode(tree, "child")?.page.id).toBe("root");
+  });
+
+  it("finds the parent of a deeply nested node", () => {
+    const pages = [
+      makePage({ id: "root", position: 0 }),
+      makePage({ id: "child", parent_id: "root", position: 0 }),
+      makePage({ id: "grandchild", parent_id: "child", position: 0 }),
+    ];
+    const tree = buildTree(pages);
+
+    expect(findParentNode(tree, "grandchild")?.page.id).toBe("child");
+  });
+
+  it("returns null for non-existent ID", () => {
+    const tree = buildTree([makePage({ id: "a", position: 0 })]);
+
+    expect(findParentNode(tree, "missing")).toBeNull();
   });
 });
 
