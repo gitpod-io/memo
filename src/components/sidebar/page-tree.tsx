@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { FileText, Plus, Table2 } from "lucide-react";
 import { toast } from "@/lib/toast";
@@ -23,7 +23,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { SidebarPage } from "@/lib/types";
-import { buildTree, type TreeNode } from "@/lib/page-tree";
+import {
+  buildTree,
+  findParentNode,
+  getVisibleItems,
+  type TreeNode,
+} from "@/lib/page-tree";
 import { usePageTreeActions } from "@/components/sidebar/use-page-tree-actions";
 import { usePageTreeDrag } from "@/components/sidebar/page-tree-drag-layer";
 import { PageTreeItem } from "@/components/sidebar/page-tree-item";
@@ -202,6 +207,127 @@ export function PageTree({ userId }: PageTreeProps) {
     setExpanded,
   });
 
+  // --- Keyboard navigation (WAI-ARIA Treeview pattern) ---
+  const treeRef = useRef<HTMLDivElement>(null);
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+
+  const visibleItems = useMemo(
+    () => getVisibleItems(tree, expanded),
+    [tree, expanded],
+  );
+
+  // Focus the DOM element for the currently focused treeitem
+  const focusItem = useCallback((pageId: string) => {
+    setFocusedId(pageId);
+    const el = treeRef.current?.querySelector(
+      `[data-page-id="${pageId}"]`,
+    ) as HTMLElement | null;
+    el?.focus();
+  }, []);
+
+  // The item that should have tabIndex=0 (roving tabindex pattern).
+  // If a focusedId is set, that item is tabbable. Otherwise the first visible
+  // item is tabbable so the tree can receive focus via Tab.
+  const tabbableId = focusedId ?? (visibleItems.length > 0 ? visibleItems[0].page.id : null);
+
+  // Sync focusedId when any treeitem row receives focus (click, Tab, .focus())
+  const handleTreeFocus = useCallback(
+    (e: React.FocusEvent) => {
+      if (!(e.target instanceof HTMLElement)) return;
+      const pageId = e.target.getAttribute("data-page-id");
+      if (pageId) {
+        setFocusedId(pageId);
+      }
+    },
+    [],
+  );
+
+  const handleTreeKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (visibleItems.length === 0) return;
+
+      const currentIdx = focusedId
+        ? visibleItems.findIndex((n) => n.page.id === focusedId)
+        : -1;
+      const currentNode = currentIdx >= 0 ? visibleItems[currentIdx] : null;
+
+      switch (e.key) {
+        case "ArrowDown": {
+          e.preventDefault();
+          const nextIdx = currentIdx < visibleItems.length - 1
+            ? currentIdx + 1
+            : 0;
+          focusItem(visibleItems[nextIdx].page.id);
+          break;
+        }
+        case "ArrowUp": {
+          e.preventDefault();
+          const prevIdx = currentIdx > 0
+            ? currentIdx - 1
+            : visibleItems.length - 1;
+          focusItem(visibleItems[prevIdx].page.id);
+          break;
+        }
+        case "ArrowRight": {
+          e.preventDefault();
+          if (!currentNode) break;
+          const hasChildren = currentNode.children.length > 0;
+          const isExpanded = expanded.has(currentNode.page.id);
+          if (hasChildren && !isExpanded) {
+            // Expand collapsed parent
+            toggleExpand(currentNode.page.id);
+          } else if (hasChildren && isExpanded) {
+            // Move to first child
+            focusItem(currentNode.children[0].page.id);
+          }
+          // Leaf: do nothing
+          break;
+        }
+        case "ArrowLeft": {
+          e.preventDefault();
+          if (!currentNode) break;
+          const hasKids = currentNode.children.length > 0;
+          const isOpen = expanded.has(currentNode.page.id);
+          if (hasKids && isOpen) {
+            // Collapse expanded parent
+            toggleExpand(currentNode.page.id);
+          } else {
+            // Move to parent
+            const parent = findParentNode(tree, currentNode.page.id);
+            if (parent) {
+              focusItem(parent.page.id);
+            }
+          }
+          break;
+        }
+        case "Enter": {
+          e.preventDefault();
+          if (currentNode && workspaceSlug) {
+            router.push(`/${workspaceSlug}/${currentNode.page.id}`);
+          }
+          break;
+        }
+        case "Home": {
+          e.preventDefault();
+          if (visibleItems.length > 0) {
+            focusItem(visibleItems[0].page.id);
+          }
+          break;
+        }
+        case "End": {
+          e.preventDefault();
+          if (visibleItems.length > 0) {
+            focusItem(visibleItems[visibleItems.length - 1].page.id);
+          }
+          break;
+        }
+        default:
+          return; // Don't prevent default for unhandled keys
+      }
+    },
+    [visibleItems, focusedId, expanded, toggleExpand, tree, focusItem, workspaceSlug, router],
+  );
+
   async function handleDeleteConfirm() {
     if (!deleteTarget) return;
     setDeleting(true);
@@ -231,9 +357,12 @@ export function PageTree({ userId }: PageTreeProps) {
         </div>
       ) : (
         <div
+          ref={treeRef}
           className="flex flex-col gap-0.5"
           role="tree"
           aria-label="Page tree"
+          onFocus={handleTreeFocus}
+          onKeyDown={handleTreeKeyDown}
         >
           {tree.map((node) => (
             <PageTreeItem
@@ -243,6 +372,8 @@ export function PageTree({ userId }: PageTreeProps) {
               expanded={expanded}
               toggleExpand={toggleExpand}
               selectedPageId={params.pageId}
+              focusedId={focusedId}
+              tabbableId={tabbableId}
               onNavigate={(pageId) =>
                 router.push(`/${workspaceSlug}/${pageId}`)
               }

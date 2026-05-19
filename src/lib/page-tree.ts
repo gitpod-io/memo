@@ -176,6 +176,46 @@ export function computeUnnest(
   };
 }
 
+/**
+ * Compute the flat list of visible tree items in document order.
+ * A child is visible only when all its ancestors are expanded.
+ */
+export function getVisibleItems(
+  roots: TreeNode[],
+  expanded: Set<string>,
+): TreeNode[] {
+  const result: TreeNode[] = [];
+  function walk(nodes: TreeNode[]) {
+    for (const node of nodes) {
+      result.push(node);
+      if (node.children.length > 0 && expanded.has(node.page.id)) {
+        walk(node.children);
+      }
+    }
+  }
+  walk(roots);
+  return result;
+}
+
+/**
+ * Find the parent node of a given page ID in the tree.
+ * Returns null if the page is a root node or not found.
+ */
+export function findParentNode(
+  roots: TreeNode[],
+  pageId: string,
+): TreeNode | null {
+  function search(nodes: TreeNode[], parent: TreeNode | null): TreeNode | null {
+    for (const node of nodes) {
+      if (node.page.id === pageId) return parent;
+      const found = search(node.children, node);
+      if (found !== null) return found;
+    }
+    return null;
+  }
+  return search(roots, null);
+}
+
 export type DropPosition = "before" | "after" | "inside";
 
 /**

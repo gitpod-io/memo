@@ -2025,6 +2025,28 @@ submission or validation failure.
 on all elements. Do not add CSS transitions or animations without verifying they
 respect this rule. Tailwind's `animate-*` utilities are covered automatically.
 
+### Keyboard navigation — roving tabindex for composite widgets
+
+Composite widgets (`role="tree"`, `role="listbox"`, `role="toolbar"`) use the
+roving tabindex pattern so the widget is a single Tab stop. Only the currently
+focused item has `tabindex="0"`; all others have `tabindex="-1"`.
+
+Implementation pattern (see `page-tree.tsx` for a full example):
+
+1. **State**: maintain `focusedId` in the container component.
+2. **tabbableId**: compute which item gets `tabindex="0"` — the `focusedId` if set,
+   otherwise the first visible item (so the widget is reachable via Tab).
+3. **onKeyDown** on the container: handle Arrow keys, Home, End, Enter.
+   Call `setFocusedId(id)` then `element.focus()` to move focus.
+4. **onFocus** on the container (event delegation): sync `focusedId` when an item
+   receives focus via click or programmatic `.focus()`. Use `instanceof HTMLElement`
+   guard — never cast `e.target as HTMLElement`.
+5. **Focus ring**: apply `ring-1 ring-accent outline-none` on the focused item.
+6. **Child items**: receive `focusedId` (for focus ring) and `tabbableId` (for
+   tabIndex) as props. Inner interactive elements (buttons, links) use `tabIndex={-1}`.
+
+Reference: [WAI-ARIA Treeview pattern](https://www.w3.org/WAI/ARIA/apg/patterns/treeview/).
+
 ### axe-core audit
 
 `e2e/accessibility.spec.ts` runs axe-core on key pages (sign-in, workspace home,

@@ -237,6 +237,17 @@ export const Favorited: Story = {
   ),
 };
 
+export const Focused: Story = {
+  name: "Keyboard focused",
+  render: () => (
+    <div className="w-56 bg-muted p-2">
+      <div role="tree" aria-label="Page tree">
+        <PageTreeItem {...baseProps} focusedId="page-1" />
+      </div>
+    </div>
+  ),
+};
+
 export const Nested: Story = {
   name: "Nested at depth 2",
   render: () => (
