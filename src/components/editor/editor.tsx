@@ -143,6 +143,10 @@ interface EditorProps {
   initialContent: SerializedEditorState | null;
   editorRef?: React.MutableRefObject<LexicalEditor | null>;
   readOnly?: boolean;
+  /** Called when the user selects "Export as Markdown" from the slash menu. */
+  onSlashExport?: () => void;
+  /** Called when the user selects "Import Markdown" from the slash menu. */
+  onSlashImport?: () => void;
 }
 
 function validateUrl(url: string): boolean {
@@ -172,7 +176,7 @@ function EditorRefPlugin({
   return null;
 }
 
-export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnly }: EditorProps) {
+export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnly, onSlashExport, onSlashImport }: EditorProps) {
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
@@ -416,7 +420,7 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
               onChange={handleChange}
               ignoreSelectionChange
             />
-            <SlashCommandPlugin />
+            <SlashCommandPlugin onExport={onSlashExport} onImport={onSlashImport} />
             <TurnIntoPlugin />
             {floatingAnchorElem && (
               <>

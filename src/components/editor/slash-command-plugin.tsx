@@ -39,6 +39,8 @@ import {
   ChevronRight,
   Link,
   Grid3X3,
+  Download,
+  Upload,
 } from "lucide-react";
 import { INSERT_TABLE_COMMAND } from "@lexical/table";
 import type { JSX, ReactElement } from "react";
@@ -78,7 +80,14 @@ class SlashCommandOption extends MenuOption {
   }
 }
 
-export function SlashCommandPlugin(): JSX.Element | null {
+interface SlashCommandPluginProps {
+  /** Called when the user selects "Export as Markdown" from the slash menu. */
+  onExport?: () => void;
+  /** Called when the user selects "Import Markdown" from the slash menu. */
+  onImport?: () => void;
+}
+
+export function SlashCommandPlugin({ onExport, onImport }: SlashCommandPluginProps = {}): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [queryString, setQueryString] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -269,8 +278,31 @@ export function SlashCommandPlugin(): JSX.Element | null {
             },
           }),
       ),
+      // Export / Import — only shown when callbacks are provided
+      ...(onExport
+        ? [
+            new SlashCommandOption("Export as Markdown", {
+              description: "Download page as .md file",
+              icon: <Download className="h-5 w-5" />,
+              onSelect: () => {
+                onExport();
+              },
+            }),
+          ]
+        : []),
+      ...(onImport
+        ? [
+            new SlashCommandOption("Import Markdown", {
+              description: "Import content from a .md file",
+              icon: <Upload className="h-5 w-5" />,
+              onSelect: () => {
+                onImport();
+              },
+            }),
+          ]
+        : []),
     ],
-    [editor]
+    [editor, onExport, onImport]
   );
 
   // Filter separately so base option objects (and their refs) persist.

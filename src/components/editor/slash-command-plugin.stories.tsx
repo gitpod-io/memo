@@ -17,6 +17,8 @@ import {
   Link,
   Grid3X3,
   Table2,
+  Download,
+  Upload,
 } from "lucide-react";
 
 // Static representation of the slash command menu. The actual plugin uses
@@ -47,6 +49,8 @@ const allCommands: CommandOption[] = [
   { title: "Toggle", description: "Collapsible section", icon: <ChevronRight className="h-5 w-5" /> },
   { title: "Link to page", description: "Insert a link to another page", icon: <Link className="h-5 w-5" /> },
   { title: "Database", description: "Embed an inline database view", icon: <Table2 className="h-5 w-5" /> },
+  { title: "Export as Markdown", description: "Download page as .md file", icon: <Download className="h-5 w-5" /> },
+  { title: "Import Markdown", description: "Import content from a .md file", icon: <Upload className="h-5 w-5" /> },
 ];
 
 function StaticSlashCommandMenu({
@@ -144,6 +148,18 @@ export const EmptyFilterResult: Story = {
 /** Menu with a middle item highlighted (Code Block). */
 export const MiddleItemHighlighted: Story = {
   render: () => <StaticSlashCommandMenu items={allCommands} selectedIndex={7} />,
+};
+
+/** Menu filtered to show export/import options — typing "export" or "import". */
+export const FilteredExportImport: Story = {
+  render: () => {
+    const filtered = allCommands.filter(
+      (cmd) =>
+        cmd.title.toLowerCase().includes("export") ||
+        cmd.title.toLowerCase().includes("import"),
+    );
+    return <StaticSlashCommandMenu items={filtered} selectedIndex={0} />;
+  },
 };
 
 /** Menu shown in context below a slash trigger. */
