@@ -519,6 +519,100 @@ describe("usePageTreeActions", () => {
       expect(toastMock).toHaveBeenCalledWith("Page moved to trash", expect.any(Object));
     });
 
+    it("shows toast with Undo action button and 5s duration", async () => {
+      const page = makePage({ id: "page-1" });
+      const node = makeTreeNode(page);
+      supabaseRpcMock.mockResolvedValue({ error: null });
+
+      const { result } = setup({ pages: [page] });
+
+      await act(async () => {
+        await result.current.handleDelete(node);
+      });
+
+      expect(toastMock).toHaveBeenCalledWith("Page moved to trash", {
+        duration: 5000,
+        action: expect.objectContaining({ label: "Undo" }),
+      });
+    });
+
+    it("undo restores the page via restore_page RPC", async () => {
+      const page = makePage({ id: "page-1" });
+      const node = makeTreeNode(page);
+      supabaseRpcMock.mockResolvedValue({ error: null });
+
+      const { result, setPages } = setup({ pages: [page] });
+
+      await act(async () => {
+        await result.current.handleDelete(node);
+      });
+
+      // Extract the undo onClick handler from the toast call
+      const toastArgs = toastMock.mock.calls[0][1] as { action: { onClick: () => Promise<void> } };
+      const undoFn = toastArgs.action.onClick;
+
+      // Reset mocks to isolate undo behavior
+      supabaseRpcMock.mockResolvedValue({ error: null });
+      setPages.mockClear();
+
+      await act(async () => {
+        await undoFn();
+      });
+
+      expect(supabaseRpcMock).toHaveBeenCalledWith("restore_page", { page_id: "page-1" });
+      // setPages should be called to re-add the removed pages
+      expect(setPages).toHaveBeenCalled();
+    });
+
+    it("undo navigates back to the page when user was on the deleted page", async () => {
+      const page = makePage({ id: "page-1" });
+      const node = makeTreeNode(page);
+      supabaseRpcMock.mockResolvedValue({ error: null });
+
+      const { result } = setup({ pages: [page], currentPageId: "page-1" });
+
+      await act(async () => {
+        await result.current.handleDelete(node);
+      });
+
+      // First push navigates away from the deleted page
+      expect(routerPushMock).toHaveBeenCalledWith("/test-ws");
+      routerPushMock.mockClear();
+
+      // Extract and invoke undo
+      const toastArgs = toastMock.mock.calls[0][1] as { action: { onClick: () => Promise<void> } };
+      supabaseRpcMock.mockResolvedValue({ error: null });
+
+      await act(async () => {
+        await toastArgs.action.onClick();
+      });
+
+      expect(routerPushMock).toHaveBeenCalledWith("/test-ws/page-1");
+    });
+
+    it("undo shows error toast when restore fails", async () => {
+      const page = makePage({ id: "page-1" });
+      const node = makeTreeNode(page);
+      supabaseRpcMock.mockResolvedValue({ error: null });
+
+      const { result } = setup({ pages: [page] });
+
+      await act(async () => {
+        await result.current.handleDelete(node);
+      });
+
+      const toastArgs = toastMock.mock.calls[0][1] as { action: { onClick: () => Promise<void> } };
+      const restoreError = { code: "XXXXX", message: "restore failed" };
+      supabaseRpcMock.mockResolvedValue({ error: restoreError });
+
+      await act(async () => {
+        await toastArgs.action.onClick();
+      });
+
+      expect(captureSupabaseErrorMock).toHaveBeenCalledWith(restoreError, "page-tree:undo-delete");
+      expect(toastErrorMock).toHaveBeenCalledWith("Failed to undo delete", expect.any(Object));
+    });
+
     it("removes descendants from state", async () => {
       const parent = makePage({ id: "parent-1" });
       const child = makePage({ id: "child-1", parent_id: "parent-1" });

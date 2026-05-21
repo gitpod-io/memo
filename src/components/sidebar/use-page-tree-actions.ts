@@ -305,17 +305,47 @@ export function usePageTreeActions({
         deleteTarget.page.id,
         ...getDescendantIds(deleteTarget),
       ]);
+
+      // Snapshot removed pages for undo
+      const removedPages = pages.filter((p) => removedIds.has(p.id));
+      const navigatedAway = currentPageId != null && removedIds.has(currentPageId);
+
       setPages((prev) => prev.filter((p) => !removedIds.has(p.id)));
       removeFromPersisted(removedIds);
 
-      if (currentPageId && removedIds.has(currentPageId)) {
+      if (navigatedAway) {
         router.push(`/${workspaceSlug}`);
       }
 
-      toast("Page moved to trash", { duration: 4000 });
+      toast("Page moved to trash", {
+        duration: 5000,
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            const client = await getClient();
+            const { error: restoreError } = await client.rpc("restore_page", {
+              page_id: deleteTarget.page.id,
+            });
+
+            if (restoreError) {
+              captureSupabaseError(restoreError, "page-tree:undo-delete");
+              toast.error("Failed to undo delete", { duration: 8000 });
+              return;
+            }
+
+            setPages((prev) => [...prev, ...removedPages]);
+            window.dispatchEvent(new CustomEvent("pages-changed"));
+            window.dispatchEvent(new CustomEvent("trash-changed"));
+
+            if (navigatedAway) {
+              router.push(`/${workspaceSlug}/${deleteTarget.page.id}`);
+            }
+          },
+        },
+      });
       window.dispatchEvent(new CustomEvent("trash-changed"));
     },
-    [userId, workspaceId, workspaceSlug, currentPageId, router, setPages, removeFromPersisted],
+    [userId, workspaceId, workspaceSlug, currentPageId, pages, router, setPages, removeFromPersisted],
   );
 
   const applySwap = useCallback(

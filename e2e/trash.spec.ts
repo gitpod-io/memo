@@ -272,6 +272,76 @@ test.describe("Trash and soft-delete operations", () => {
     await expect(trashToggle).not.toBeVisible({ timeout: 10_000 });
   });
 
+  test("soft-delete toast shows Undo button that restores the page", async ({
+    authenticatedPage: page,
+  }) => {
+    const sidebar = page.getByRole("complementary");
+
+    // Create a page to delete
+    await createPage(page);
+    await waitForTreeLoaded(page);
+
+    const treeItems = sidebar.locator('[role="treeitem"]');
+    const countBefore = await treeItems.count();
+
+    // Soft-delete the page
+    await softDeleteCurrentPage(page);
+
+    // The tree should have one fewer item after deletion
+    if (countBefore === 1) {
+      await expect(treeItems).toHaveCount(0, { timeout: 5_000 });
+    } else {
+      await expect(treeItems).toHaveCount(countBefore - 1, { timeout: 5_000 });
+    }
+
+    // The toast should appear with an Undo button
+    const undoBtn = page
+      .locator('[data-sonner-toast]', { hasText: "Page moved to trash" })
+      .getByRole("button", { name: "Undo" });
+    await expect(undoBtn).toBeVisible({ timeout: 5_000 });
+
+    // Click Undo
+    await undoBtn.click();
+
+    // The page should be restored in the tree
+    await expect(treeItems).toHaveCount(countBefore, { timeout: 10_000 });
+  });
+
+  test("undo navigates back to the restored page when user was on it", async ({
+    authenticatedPage: page,
+  }) => {
+    // Create a page and capture its URL
+    const pageUrl = await createPage(page);
+    await waitForTreeLoaded(page);
+
+    // Soft-delete the page (user is currently viewing it)
+    await softDeleteCurrentPage(page);
+
+    // User should be navigated away from the deleted page
+    await page.waitForURL(
+      (url) => url.pathname.split("/").filter(Boolean).length < 2,
+      { timeout: 10_000 },
+    );
+
+    // Click Undo in the toast
+    const undoBtn = page
+      .locator('[data-sonner-toast]', { hasText: "Page moved to trash" })
+      .getByRole("button", { name: "Undo" });
+    await expect(undoBtn).toBeVisible({ timeout: 5_000 });
+    await undoBtn.click();
+
+    // User should be navigated back to the restored page
+    const expectedPageId = new URL(pageUrl).pathname.split("/").pop();
+    await page.waitForURL(
+      (url) => url.pathname.includes(expectedPageId!),
+      { timeout: 10_000 },
+    );
+
+    // The editor should be visible on the restored page
+    const editor = page.locator('[contenteditable="true"]');
+    await expect(editor).toBeVisible({ timeout: 10_000 });
+  });
+
   test("soft-deleted page is not visible in the main page tree", async ({
     authenticatedPage: page,
   }) => {
