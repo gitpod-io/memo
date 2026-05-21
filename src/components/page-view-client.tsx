@@ -3,6 +3,15 @@
 import { useCallback, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { LexicalEditor, SerializedEditorState } from "lexical";
+import { toast } from "@/lib/toast";
+import { lazyCaptureException } from "@/lib/sentry";
+import { getClient } from "@/lib/supabase/lazy-client";
+import { trackEventClient } from "@/lib/track-event";
+import {
+  exportEditorToMarkdown,
+  downloadMarkdown,
+} from "@/components/editor/markdown-utils";
+import { useMarkdownImport } from "@/lib/use-markdown-import";
 import { PageTitle } from "@/components/page-title";
 import { PageIcon } from "@/components/page-icon";
 import { PageCover } from "@/components/page-cover";
@@ -92,6 +101,47 @@ export function PageViewClient({
     editorRef.current?.focus();
   }, []);
 
+  // Slash-menu export: reuses the same flow as the page menu export
+  const handleSlashExport = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) {
+      toast.error("Editor not ready", { duration: 8000 });
+      return;
+    }
+
+    try {
+      const markdown = exportEditorToMarkdown(editor);
+      const filename = (pageTitle.trim() || "Untitled") + ".md";
+      downloadMarkdown(markdown, filename);
+
+      getClient()
+        .then((supabase) => {
+          trackEventClient(supabase, "editor.export", userId, {
+            workspaceId,
+            metadata: { page_id: pageId, source: "slash-menu" },
+          });
+        })
+        .catch(() => {
+          // Client init failed — skip tracking silently
+        });
+    } catch (error) {
+      lazyCaptureException(error);
+      toast.error("Export failed", { duration: 8000 });
+    }
+  }, [pageTitle, userId, workspaceId, pageId]);
+
+  // Slash-menu import: reuses the same useMarkdownImport hook as the page menu
+  const {
+    fileInputRef: slashImportInputRef,
+    triggerFileInput: handleSlashImport,
+    handleFileChange: handleSlashImportFileChange,
+  } = useMarkdownImport({
+    workspaceId,
+    workspaceSlug,
+    userId,
+    source: "slash-menu",
+  });
+
   // When previewing a version, show a read-only editor with that content
   const isPreviewMode = previewContent !== null;
 
@@ -135,6 +185,8 @@ export function PageViewClient({
             workspaceId={workspaceId}
             initialContent={initialContent}
             editorRef={editorRef}
+            onSlashExport={handleSlashExport}
+            onSlashImport={handleSlashImport}
           />
         )}
       </div>
@@ -145,6 +197,14 @@ export function PageViewClient({
         onPreview={handlePreview}
         onRestore={handleRestore}
         onExitPreview={handleExitPreview}
+      />
+      <input
+        ref={slashImportInputRef}
+        type="file"
+        accept=".md,.markdown"
+        className="hidden"
+        onChange={handleSlashImportFileChange}
+        aria-label="Import markdown file from slash menu"
       />
     </>
   );
