@@ -453,7 +453,7 @@ src/
 │   │   ├── page-tree.tsx        # Orchestrator: data fetching, state, delete dialog (uses extracted sub-modules)
 │   │   ├── page-tree-item.tsx  # Single tree node rendering + context menu
 │   │   ├── page-tree-drag-layer.ts # usePageTreeDrag hook: drag-and-drop state + handlers
-│   │   ├── use-page-tree-actions.ts # usePageTreeActions hook: CRUD operations (create, delete, duplicate, move, nest, favorites)
+│   │   ├── use-page-tree-actions.ts # usePageTreeActions hook: CRUD operations (create, delete, duplicate, rename, move, nest, favorites)
 │   │   ├── trash-section.tsx    # Trash bin: lists soft-deleted pages, restore, permanent delete, empty trash
 │   │   └── user-menu.tsx        # User dropdown with settings link + sign-out
 │   ├── editor/                  # Lexical block editor
