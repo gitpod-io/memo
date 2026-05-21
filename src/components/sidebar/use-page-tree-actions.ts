@@ -45,6 +45,7 @@ export interface PageTreeActions {
   handleNest: (page: SidebarPage) => Promise<void>;
   handleUnnest: (page: SidebarPage) => Promise<void>;
   handleToggleFavorite: (pageId: string) => Promise<void>;
+  handleRename: (pageId: string, newTitle: string) => Promise<void>;
 }
 
 export function usePageTreeActions({
@@ -472,6 +473,39 @@ export function usePageTreeActions({
     [pages, setPages],
   );
 
+  const handleRename = useCallback(
+    async (pageId: string, newTitle: string) => {
+      const trimmed = newTitle.trim();
+
+      // Optimistically update local state
+      setPages((prev) =>
+        prev.map((p) => (p.id === pageId ? { ...p, title: trimmed } : p)),
+      );
+
+      const supabase = await getClient();
+      const { error } = await supabase
+        .from("pages")
+        .update({ title: trimmed })
+        .eq("id", pageId);
+
+      if (error) {
+        captureSupabaseError(error, "page-tree:rename-page");
+        toast.error("Failed to rename page", { duration: 8000 });
+        return;
+      }
+
+      trackEventClient(supabase, "page.renamed", userId, {
+        workspaceId: workspaceId ?? undefined,
+        metadata: { page_id: pageId, source: "sidebar" },
+      });
+
+      // Sync server components (breadcrumb, editor title) and other listeners
+      router.refresh();
+      window.dispatchEvent(new CustomEvent("pages-changed"));
+    },
+    [userId, workspaceId, router, setPages],
+  );
+
   return {
     handleCreate,
     handleCreateDatabase,
@@ -482,5 +516,6 @@ export function usePageTreeActions({
     handleNest,
     handleUnnest,
     handleToggleFavorite,
+    handleRename,
   };
 }

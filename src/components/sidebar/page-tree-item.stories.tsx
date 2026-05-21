@@ -41,6 +41,7 @@ function makeNode(
 
 const noop = () => {};
 const noopAsync = () => Promise.resolve();
+const noopString = (_id: string | null) => {};
 
 const pages: SidebarPage[] = [
   makePage({ id: "page-1", title: "Meeting Notes", position: 0 }),
@@ -54,11 +55,14 @@ const baseProps: PageTreeItemProps = {
   expanded: new Set<string>(),
   toggleExpand: noop,
   selectedPageId: undefined,
+  renamingId: null,
   onNavigate: noop,
   onPrefetch: noop,
   onCreate: noop,
   onDuplicate: noopAsync as unknown as (page: SidebarPage) => void,
   onDelete: noop,
+  onRename: noop,
+  onStartRename: noopString,
   onMoveUp: noopAsync as unknown as (page: SidebarPage) => void,
   onMoveDown: noopAsync as unknown as (page: SidebarPage) => void,
   onNest: noopAsync as unknown as (page: SidebarPage) => void,
@@ -261,6 +265,20 @@ export const Nested: Story = {
             parent_id: "page-1",
           })}
           depth={2}
+        />
+      </div>
+    </div>
+  ),
+};
+
+export const Renaming: Story = {
+  name: "Inline rename active",
+  render: () => (
+    <div className="w-56 bg-muted p-2">
+      <div role="tree" aria-label="Page tree">
+        <PageTreeItem
+          {...baseProps}
+          renamingId="page-1"
         />
       </div>
     </div>

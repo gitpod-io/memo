@@ -44,6 +44,7 @@ export function PageTree({ userId }: PageTreeProps) {
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<TreeNode | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
 
   // Map of page_id → favorite row id for quick lookup and deletion
   const [favoriteMap, setFavoriteMap] = useState<Map<string, string>>(new Map());
@@ -374,6 +375,7 @@ export function PageTree({ userId }: PageTreeProps) {
               selectedPageId={params.pageId}
               focusedId={focusedId}
               tabbableId={tabbableId}
+              renamingId={renamingId}
               onNavigate={(pageId) =>
                 router.push(`/${workspaceSlug}/${pageId}`)
               }
@@ -383,6 +385,8 @@ export function PageTree({ userId }: PageTreeProps) {
               onCreate={actions.handleCreate}
               onDuplicate={actions.handleDuplicate}
               onDelete={setDeleteTarget}
+              onRename={actions.handleRename}
+              onStartRename={setRenamingId}
               onMoveUp={actions.handleMoveUp}
               onMoveDown={actions.handleMoveDown}
               onNest={actions.handleNest}

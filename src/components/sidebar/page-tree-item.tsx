@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import {
   ChevronRight,
   Copy,
   FileText,
   GripVertical,
   MoreHorizontal,
+  Pencil,
   Plus,
   Star,
   StarOff,
@@ -32,11 +34,14 @@ export interface PageTreeItemProps {
   selectedPageId: string | undefined;
   focusedId?: string | null;
   tabbableId?: string | null;
+  renamingId?: string | null;
   onNavigate: (pageId: string) => void;
   onPrefetch: (pageId: string) => void;
   onCreate: (parentId: string | null) => void;
   onDuplicate: (page: SidebarPage) => void;
   onDelete: (node: TreeNode) => void;
+  onRename: (pageId: string, newTitle: string) => void;
+  onStartRename: (pageId: string | null) => void;
   onMoveUp: (page: SidebarPage) => void;
   onMoveDown: (page: SidebarPage) => void;
   onNest: (page: SidebarPage) => void;
@@ -64,6 +69,8 @@ export function PageTreeItem({
   onCreate,
   onDuplicate,
   onDelete,
+  onRename,
+  onStartRename,
   onMoveUp,
   onMoveDown,
   onNest,
@@ -80,6 +87,7 @@ export function PageTreeItem({
   onToggleFavorite,
   focusedId,
   tabbableId,
+  renamingId,
 }: PageTreeItemProps) {
   const { page } = node;
   const hasChildren = node.children.length > 0;
@@ -90,6 +98,40 @@ export function PageTreeItem({
   const isFavorited = favoriteMap.has(page.id);
   const isFocused = focusedId === page.id;
   const isTabbable = tabbableId === page.id;
+  const isRenaming = renamingId === page.id;
+
+  const renameInputRef = useRef<HTMLInputElement>(null);
+  const [renameValue, setRenameValue] = useState(page.title);
+  const prevRenamingRef = useRef(false);
+
+  // Reset value and focus when entering rename mode
+  useEffect(() => {
+    const wasRenaming = prevRenamingRef.current;
+    prevRenamingRef.current = isRenaming;
+
+    if (isRenaming && !wasRenaming) {
+      // Entering rename mode — schedule state update + focus for next frame
+      // to avoid synchronous setState inside an effect
+      requestAnimationFrame(() => {
+        setRenameValue(page.title);
+        renameInputRef.current?.focus();
+        renameInputRef.current?.select();
+      });
+    }
+  }, [isRenaming, page.title]);
+
+  function commitRename() {
+    const trimmed = renameValue.trim();
+    if (trimmed !== page.title) {
+      onRename(page.id, trimmed);
+    }
+    onStartRename(null);
+  }
+
+  function cancelRename() {
+    setRenameValue(page.title);
+    onStartRename(null);
+  }
 
   const siblings = getSortedSiblings(pages, page.parent_id);
   const siblingIdx = siblings.findIndex((p) => p.id === page.id);
@@ -163,14 +205,39 @@ export function PageTreeItem({
           )}
         </span>
 
-        <button
-          className="flex-1 truncate text-left focus-visible:bg-overlay-active focus-visible:outline-none"
-          onClick={() => onNavigate(page.id)}
-          tabIndex={-1}
-          title={page.title || "Untitled"}
-        >
-          {page.title || "Untitled"}
-        </button>
+        {isRenaming ? (
+          <input
+            ref={renameInputRef}
+            type="text"
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onBlur={commitRename}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commitRename();
+              } else if (e.key === "Escape") {
+                e.preventDefault();
+                cancelRename();
+              }
+              // Stop propagation to prevent tree keyboard navigation
+              e.stopPropagation();
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className="flex-1 truncate bg-transparent text-left text-sm outline-none ring-1 ring-accent rounded-sm px-0.5"
+            aria-label="Rename page"
+            data-testid="rename-input"
+          />
+        ) : (
+          <button
+            className="flex-1 truncate text-left focus-visible:bg-overlay-active focus-visible:outline-none"
+            onClick={() => onNavigate(page.id)}
+            tabIndex={-1}
+            title={page.title || "Untitled"}
+          >
+            {page.title || "Untitled"}
+          </button>
+        )}
 
         <div className="flex shrink-0 items-center gap-0.5 opacity-0 group-hover:opacity-100">
           <Button
@@ -221,6 +288,10 @@ export function PageTreeItem({
                 <Copy className="h-4 w-4" />
                 Duplicate
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onStartRename(page.id)}>
+                <Pencil className="h-4 w-4" />
+                Rename
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               {canMoveUp && (
                 <DropdownMenuItem onClick={() => onMoveUp(page)}>
@@ -269,11 +340,14 @@ export function PageTreeItem({
               selectedPageId={selectedPageId}
               focusedId={focusedId}
               tabbableId={tabbableId}
+              renamingId={renamingId}
               onNavigate={onNavigate}
               onPrefetch={onPrefetch}
               onCreate={onCreate}
               onDuplicate={onDuplicate}
               onDelete={onDelete}
+              onRename={onRename}
+              onStartRename={onStartRename}
               onMoveUp={onMoveUp}
               onMoveDown={onMoveDown}
               onNest={onNest}
