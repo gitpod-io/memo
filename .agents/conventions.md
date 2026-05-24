@@ -596,6 +596,7 @@ Theme is managed by `src/lib/theme.tsx` which provides `ThemeProvider` and `useT
 - **Flash prevention:** Inline `<script>` in `<head>` reads localStorage before React hydrates.
 - **System detection:** `prefers-color-scheme` media query listener when preference is `"system"`.
 - **Default:** `"dark"` (existing users who haven't set a preference get dark mode).
+- **localStorage safety:** All `localStorage` calls must be wrapped in try-catch. Browsers may throw `SecurityError` when storage access is denied (privacy settings, embedded contexts, enterprise policies). Fall back to `"dark"` on read, silently ignore on write.
 
 ```typescript
 // Reading theme in a client component

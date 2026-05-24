@@ -28,17 +28,25 @@ function applyTheme(theme: ResolvedTheme) {
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [preference, setPreferenceState] = useState<ThemePreference>(() => {
     if (typeof window === "undefined") return "dark";
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored === "light" || stored === "dark" || stored === "system"
-      ? stored
-      : "dark";
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored === "light" || stored === "dark" || stored === "system"
+        ? stored
+        : "dark";
+    } catch {
+      return "dark";
+    }
   });
   const [resolved, setResolved] = useState<ResolvedTheme>(() =>
     preference === "system" ? getSystemTheme() : preference,
   );
 
   function setPreference(pref: ThemePreference) {
-    localStorage.setItem(STORAGE_KEY, pref);
+    try {
+      localStorage.setItem(STORAGE_KEY, pref);
+    } catch {
+      // Storage unavailable (SecurityError in restricted browsers)
+    }
     setPreferenceState(pref);
     const next = pref === "system" ? getSystemTheme() : pref;
     setResolved(next);
