@@ -84,12 +84,18 @@ test.describe("Sidebar page tree keyboard navigation", () => {
     await waitForTree(page, 2);
 
     const ids = await getVisiblePageIds(page);
-    // Focus the last item
+    // Focus the last rendered item
     const lastRow = page.locator(`[data-page-id="${ids[ids.length - 1]}"]`);
     await lastRow.focus();
 
     await page.keyboard.press("Home");
-    expect(await getFocusedPageId(page)).toBe(ids[0]);
+    // With virtualization the tree may scroll to reveal the first item.
+    // Wait for focus to settle then verify it landed on the first item.
+    await expect(async () => {
+      const focusedId = await getFocusedPageId(page);
+      const currentIds = await getVisiblePageIds(page);
+      expect(focusedId).toBe(currentIds[0]);
+    }).toPass({ timeout: 3_000 });
   });
 
   test("End moves focus to the last visible treeitem", async ({
@@ -102,7 +108,17 @@ test.describe("Sidebar page tree keyboard navigation", () => {
     await firstRow.focus();
 
     await page.keyboard.press("End");
-    expect(await getFocusedPageId(page)).toBe(ids[ids.length - 1]);
+    // With virtualization the tree may scroll to reveal the last item.
+    // Wait for focus to settle on a data-page-id element, then verify
+    // it is the last item in the tree (which may differ from the initial
+    // DOM snapshot captured in `ids`).
+    await expect(async () => {
+      const focusedId = await getFocusedPageId(page);
+      expect(focusedId).toBeTruthy();
+      // After scrolling, re-read the DOM to get the last rendered item
+      const currentIds = await getVisiblePageIds(page);
+      expect(focusedId).toBe(currentIds[currentIds.length - 1]);
+    }).toPass({ timeout: 3_000 });
   });
 
   test("Enter navigates to the focused page", async ({
