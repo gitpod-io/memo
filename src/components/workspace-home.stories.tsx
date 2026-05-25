@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RelativeTime } from "@/components/relative-time";
+import { PageCountStatusBar } from "@/components/page-count-status-bar";
 
 const meta: Meta = {
   title: "Components/WorkspaceHome",
@@ -243,9 +244,13 @@ export const WithPages: Story = {
       <WorkspaceHeader />
       <div className="mt-6">
         <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
-          All Pages
+          All Pages ({mockPages.length})
         </h2>
         <SortFilterBar />
+        <PageCountStatusBar
+          filteredCount={mockPages.length}
+          totalCount={mockPages.length}
+        />
         <div className="flex flex-col gap-0.5">
           {mockPages.map((page) => (
             <PageItem
@@ -286,9 +291,13 @@ export const WithRecentVisits: Story = {
       </div>
       <div className="mt-6">
         <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
-          All Pages
+          All Pages ({mockPages.length})
         </h2>
         <SortFilterBar />
+        <PageCountStatusBar
+          filteredCount={mockPages.length}
+          totalCount={mockPages.length}
+        />
         <div className="flex flex-col gap-0.5">
           {mockPages.map((page) => (
             <PageItem
@@ -312,7 +321,7 @@ export const FilterNoResults: Story = {
       <WorkspaceHeader />
       <div className="mt-6">
         <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
-          All Pages
+          All Pages ({mockPages.length})
         </h2>
         <div className="mb-3 flex items-center gap-2">
           <div className="relative flex-1">
@@ -340,6 +349,10 @@ export const FilterNoResults: Story = {
             </SelectContent>
           </Select>
         </div>
+        <PageCountStatusBar
+          filteredCount={0}
+          totalCount={mockPages.length}
+        />
         <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
           <Search className="h-12 w-12 text-muted-foreground" />
           <h3 className="text-lg font-medium">No matches</h3>
@@ -388,9 +401,13 @@ export const MobileViewport: Story = {
       <WorkspaceHeader />
       <div className="mt-6">
         <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
-          All Pages
+          All Pages ({mockPages.length})
         </h2>
         <SortFilterBar />
+        <PageCountStatusBar
+          filteredCount={mockPages.length}
+          totalCount={mockPages.length}
+        />
         <div className="flex flex-col gap-0.5">
           {mockPages.slice(0, 3).map((page) => (
             <PageItem
