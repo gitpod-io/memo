@@ -1942,6 +1942,25 @@ Key patterns:
 - `ROW_HEIGHT_PX` maps row height settings to pixel values for the virtualizer's
   `estimateSize`. These must stay in sync with the Tailwind height classes.
 
+### Sidebar page tree virtualization
+
+The sidebar page tree uses the same `@tanstack/react-virtual` library to virtualize
+tree items. Unlike the table view (which has a threshold), the tree always virtualizes.
+
+Key patterns:
+- `getVisibleItems()` in `page-tree.ts` returns a flat `FlatTreeItem[]` with
+  `{ node, depth }` — this is the virtualizer's data source. Depth drives
+  `paddingLeft` for indentation instead of nested DOM elements.
+- `PageTreeItem` renders only its own row (no recursive children). The parent
+  `PageTree` component renders all items flat via the virtualizer.
+- When the selected page changes (URL navigation), an effect scrolls the
+  virtualizer to the selected item's index so it's always in the rendered window.
+- Keyboard navigation (`focusItem`) calls `virtualizer.scrollToIndex` before
+  focusing, then retries focus after `requestAnimationFrame` to handle the case
+  where the target element isn't in the DOM yet.
+- E2E tests that check Home/End key behavior use `toPass` polling assertions
+  to wait for the virtualizer to scroll and re-render before checking focus.
+
 ## Event Handler Argument Leaks
 
 Never pass a callback that accepts optional business arguments directly to `onClick`.

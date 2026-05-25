@@ -192,7 +192,8 @@ describe("getVisibleItems", () => {
     const tree = buildTree(pages);
     const visible = getVisibleItems(tree, new Set());
 
-    expect(visible.map((n) => n.page.id)).toEqual(["a", "b"]);
+    expect(visible.map((item) => item.node.page.id)).toEqual(["a", "b"]);
+    expect(visible.map((item) => item.depth)).toEqual([0, 0]);
   });
 
   it("includes children of expanded nodes", () => {
@@ -205,7 +206,8 @@ describe("getVisibleItems", () => {
     const tree = buildTree(pages);
     const visible = getVisibleItems(tree, new Set(["a"]));
 
-    expect(visible.map((n) => n.page.id)).toEqual(["a", "child1", "child2", "b"]);
+    expect(visible.map((item) => item.node.page.id)).toEqual(["a", "child1", "child2", "b"]);
+    expect(visible.map((item) => item.depth)).toEqual([0, 1, 1, 0]);
   });
 
   it("handles deeply nested expanded nodes", () => {
@@ -217,7 +219,8 @@ describe("getVisibleItems", () => {
     const tree = buildTree(pages);
     const visible = getVisibleItems(tree, new Set(["root", "child"]));
 
-    expect(visible.map((n) => n.page.id)).toEqual(["root", "child", "grandchild"]);
+    expect(visible.map((item) => item.node.page.id)).toEqual(["root", "child", "grandchild"]);
+    expect(visible.map((item) => item.depth)).toEqual([0, 1, 2]);
   });
 
   it("hides grandchildren when only root is expanded", () => {
@@ -229,7 +232,8 @@ describe("getVisibleItems", () => {
     const tree = buildTree(pages);
     const visible = getVisibleItems(tree, new Set(["root"]));
 
-    expect(visible.map((n) => n.page.id)).toEqual(["root", "child"]);
+    expect(visible.map((item) => item.node.page.id)).toEqual(["root", "child"]);
+    expect(visible.map((item) => item.depth)).toEqual([0, 1]);
   });
 
   it("returns empty array for empty tree", () => {

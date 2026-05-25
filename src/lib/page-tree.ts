@@ -176,24 +176,30 @@ export function computeUnnest(
   };
 }
 
+export interface FlatTreeItem {
+  node: TreeNode;
+  depth: number;
+}
+
 /**
  * Compute the flat list of visible tree items in document order.
  * A child is visible only when all its ancestors are expanded.
+ * Each item includes its depth for indentation in flat/virtualized rendering.
  */
 export function getVisibleItems(
   roots: TreeNode[],
   expanded: Set<string>,
-): TreeNode[] {
-  const result: TreeNode[] = [];
-  function walk(nodes: TreeNode[]) {
+): FlatTreeItem[] {
+  const result: FlatTreeItem[] = [];
+  function walk(nodes: TreeNode[], depth: number) {
     for (const node of nodes) {
-      result.push(node);
+      result.push({ node, depth });
       if (node.children.length > 0 && expanded.has(node.page.id)) {
-        walk(node.children);
+        walk(node.children, depth + 1);
       }
     }
   }
-  walk(roots);
+  walk(roots, 0);
   return result;
 }
 

@@ -3,7 +3,7 @@ import { FileText, Plus, Table2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageTreeItem } from "./page-tree-item";
 import type { SidebarPage } from "@/lib/types";
-import type { TreeNode } from "@/lib/page-tree";
+import { getVisibleItems, type TreeNode } from "@/lib/page-tree";
 
 // PageTree depends on next/navigation and Supabase for data fetching.
 // These stories compose PageTreeItem (which is pure-presentational) to
@@ -188,14 +188,16 @@ export const Nested: Story = {
   render: () => {
     const props = baseItemProps(nestedPages);
     const expandedSet = new Set(["n1", "n1-1", "n2"]);
+    const flatItems = getVisibleItems(nestedTree, expandedSet);
     return (
       <TreeShell>
         <div className="flex flex-col gap-0.5" role="tree" aria-label="Page tree">
-          {nestedTree.map((node) => (
+          {flatItems.map(({ node, depth }) => (
             <PageTreeItem
               key={node.page.id}
               {...props}
               node={node}
+              depth={depth}
               expanded={expandedSet}
             />
           ))}

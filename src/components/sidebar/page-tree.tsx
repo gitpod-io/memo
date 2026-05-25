@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { FileText, Plus, Table2 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { getClient } from "@/lib/supabase/lazy-client";
@@ -217,19 +218,54 @@ export function PageTree({ userId }: PageTreeProps) {
     [tree, expanded],
   );
 
-  // Focus the DOM element for the currently focused treeitem
+  // Virtualization — only render visible rows in the DOM
+  const ITEM_HEIGHT = 28;
+  const OVERSCAN = 10;
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const virtualizer = useVirtualizer({
+    count: visibleItems.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ITEM_HEIGHT,
+    overscan: OVERSCAN,
+  });
+
+  // Scroll the selected page into view when navigation changes.
+  // Without this, a newly created or navigated-to page at the bottom of a
+  // long list would be outside the virtualizer's rendered window.
+  const selectedPageId = params.pageId;
+  useEffect(() => {
+    if (!selectedPageId) return;
+    const idx = visibleItems.findIndex(
+      (item) => item.node.page.id === selectedPageId,
+    );
+    if (idx >= 0) {
+      virtualizer.scrollToIndex(idx, { align: "auto" });
+    }
+  }, [selectedPageId, visibleItems, virtualizer]);
+
+  // Focus the DOM element for the currently focused treeitem.
+  // With virtualization, the target element may not be in the DOM yet,
+  // so scroll it into view first and retry focus after a frame.
   const focusItem = useCallback((pageId: string) => {
     setFocusedId(pageId);
-    const el = treeRef.current?.querySelector(
-      `[data-page-id="${pageId}"]`,
-    ) as HTMLElement | null;
-    el?.focus();
-  }, []);
+    const idx = visibleItems.findIndex((item) => item.node.page.id === pageId);
+    if (idx >= 0) {
+      virtualizer.scrollToIndex(idx, { align: "auto" });
+    }
+    // The element may not be rendered yet after scrollToIndex; retry after paint
+    requestAnimationFrame(() => {
+      const el = treeRef.current?.querySelector(
+        `[data-page-id="${pageId}"]`,
+      ) as HTMLElement | null;
+      el?.focus();
+    });
+  }, [visibleItems, virtualizer]);
 
   // The item that should have tabIndex=0 (roving tabindex pattern).
   // If a focusedId is set, that item is tabbable. Otherwise the first visible
   // item is tabbable so the tree can receive focus via Tab.
-  const tabbableId = focusedId ?? (visibleItems.length > 0 ? visibleItems[0].page.id : null);
+  const tabbableId = focusedId ?? (visibleItems.length > 0 ? visibleItems[0].node.page.id : null);
 
   // Sync focusedId when any treeitem row receives focus (click, Tab, .focus())
   const handleTreeFocus = useCallback(
@@ -248,9 +284,10 @@ export function PageTree({ userId }: PageTreeProps) {
       if (visibleItems.length === 0) return;
 
       const currentIdx = focusedId
-        ? visibleItems.findIndex((n) => n.page.id === focusedId)
+        ? visibleItems.findIndex((item) => item.node.page.id === focusedId)
         : -1;
-      const currentNode = currentIdx >= 0 ? visibleItems[currentIdx] : null;
+      const currentItem = currentIdx >= 0 ? visibleItems[currentIdx] : null;
+      const currentNode = currentItem?.node ?? null;
 
       switch (e.key) {
         case "ArrowDown": {
@@ -258,7 +295,7 @@ export function PageTree({ userId }: PageTreeProps) {
           const nextIdx = currentIdx < visibleItems.length - 1
             ? currentIdx + 1
             : 0;
-          focusItem(visibleItems[nextIdx].page.id);
+          focusItem(visibleItems[nextIdx].node.page.id);
           break;
         }
         case "ArrowUp": {
@@ -266,7 +303,7 @@ export function PageTree({ userId }: PageTreeProps) {
           const prevIdx = currentIdx > 0
             ? currentIdx - 1
             : visibleItems.length - 1;
-          focusItem(visibleItems[prevIdx].page.id);
+          focusItem(visibleItems[prevIdx].node.page.id);
           break;
         }
         case "ArrowRight": {
@@ -311,14 +348,14 @@ export function PageTree({ userId }: PageTreeProps) {
         case "Home": {
           e.preventDefault();
           if (visibleItems.length > 0) {
-            focusItem(visibleItems[0].page.id);
+            focusItem(visibleItems[0].node.page.id);
           }
           break;
         }
         case "End": {
           e.preventDefault();
           if (visibleItems.length > 0) {
-            focusItem(visibleItems[visibleItems.length - 1].page.id);
+            focusItem(visibleItems[visibleItems.length - 1].node.page.id);
           }
           break;
         }
@@ -340,8 +377,8 @@ export function PageTree({ userId }: PageTreeProps) {
   if (!workspaceSlug) return null;
 
   return (
-    <div className="flex flex-1 flex-col gap-1 overflow-y-auto" data-testid="sb-page-tree">
-      <p className="px-2 text-xs tracking-widest uppercase text-label-faint">
+    <div className="flex flex-1 flex-col gap-1 overflow-hidden" data-testid="sb-page-tree">
+      <p className="shrink-0 px-2 text-xs tracking-widest uppercase text-label-faint">
         Pages
       </p>
 
@@ -358,57 +395,80 @@ export function PageTree({ userId }: PageTreeProps) {
         </div>
       ) : (
         <div
-          ref={treeRef}
-          className="flex flex-col gap-0.5"
-          role="tree"
-          aria-label="Page tree"
-          onFocus={handleTreeFocus}
-          onKeyDown={handleTreeKeyDown}
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto"
         >
-          {tree.map((node) => (
-            <PageTreeItem
-              key={node.page.id}
-              node={node}
-              depth={0}
-              expanded={expanded}
-              toggleExpand={toggleExpand}
-              selectedPageId={params.pageId}
-              focusedId={focusedId}
-              tabbableId={tabbableId}
-              renamingId={renamingId}
-              onNavigate={(pageId) =>
-                router.push(`/${workspaceSlug}/${pageId}`)
-              }
-              onPrefetch={(pageId) =>
-                router.prefetch(`/${workspaceSlug}/${pageId}`)
-              }
-              onCreate={actions.handleCreate}
-              onDuplicate={actions.handleDuplicate}
-              onDelete={setDeleteTarget}
-              onRename={actions.handleRename}
-              onStartRename={setRenamingId}
-              onMoveUp={actions.handleMoveUp}
-              onMoveDown={actions.handleMoveDown}
-              onNest={actions.handleNest}
-              onUnnest={actions.handleUnnest}
-              draggedId={drag.draggedId}
-              dropTarget={drag.dropTarget}
-              onDragStart={drag.onDragStart}
-              onDragOver={drag.onDragOver}
-              onDragLeave={drag.onDragLeave}
-              onDrop={drag.onDrop}
-              onDragEnd={drag.onDragEnd}
-              pages={pages}
-              favoriteMap={favoriteMap}
-              onToggleFavorite={actions.handleToggleFavorite}
-            />
-          ))}
+          <div
+            ref={treeRef}
+            role="tree"
+            aria-label="Page tree"
+            onFocus={handleTreeFocus}
+            onKeyDown={handleTreeKeyDown}
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              width: "100%",
+              position: "relative",
+            }}
+          >
+            {virtualizer.getVirtualItems().map((virtualItem) => {
+              const { node, depth } = visibleItems[virtualItem.index];
+              return (
+                <div
+                  key={node.page.id}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: `${virtualItem.size}px`,
+                    transform: `translateY(${virtualItem.start}px)`,
+                  }}
+                >
+                  <PageTreeItem
+                    node={node}
+                    depth={depth}
+                    expanded={expanded}
+                    toggleExpand={toggleExpand}
+                    selectedPageId={selectedPageId}
+                    focusedId={focusedId}
+                    tabbableId={tabbableId}
+                    renamingId={renamingId}
+                    onNavigate={(pageId) =>
+                      router.push(`/${workspaceSlug}/${pageId}`)
+                    }
+                    onPrefetch={(pageId) =>
+                      router.prefetch(`/${workspaceSlug}/${pageId}`)
+                    }
+                    onCreate={actions.handleCreate}
+                    onDuplicate={actions.handleDuplicate}
+                    onDelete={setDeleteTarget}
+                    onRename={actions.handleRename}
+                    onStartRename={setRenamingId}
+                    onMoveUp={actions.handleMoveUp}
+                    onMoveDown={actions.handleMoveDown}
+                    onNest={actions.handleNest}
+                    onUnnest={actions.handleUnnest}
+                    draggedId={drag.draggedId}
+                    dropTarget={drag.dropTarget}
+                    onDragStart={drag.onDragStart}
+                    onDragOver={drag.onDragOver}
+                    onDragLeave={drag.onDragLeave}
+                    onDrop={drag.onDrop}
+                    onDragEnd={drag.onDragEnd}
+                    pages={pages}
+                    favoriteMap={favoriteMap}
+                    onToggleFavorite={actions.handleToggleFavorite}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
       <Button
         variant="ghost"
-        className="mt-1 w-full justify-start gap-2 px-2 text-muted-foreground"
+        className="mt-1 w-full shrink-0 justify-start gap-2 px-2 text-muted-foreground"
         size="sm"
         onClick={() => actions.handleCreate(null)}
         data-testid="sb-new-page-btn"
@@ -418,7 +478,7 @@ export function PageTree({ userId }: PageTreeProps) {
       </Button>
       <Button
         variant="ghost"
-        className="w-full justify-start gap-2 px-2 text-muted-foreground"
+        className="w-full shrink-0 justify-start gap-2 px-2 text-muted-foreground"
         size="sm"
         onClick={actions.handleCreateDatabase}
         data-testid="sb-new-database-btn"

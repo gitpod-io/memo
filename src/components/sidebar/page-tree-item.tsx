@@ -141,7 +141,7 @@ export function PageTreeItem({
   const canMoveDown = siblingIdx < siblings.length - 1;
 
   return (
-    <div role="treeitem" aria-selected={isSelected} aria-expanded={hasChildren ? isExpanded : undefined}>
+    <div role="treeitem" aria-selected={isSelected} aria-expanded={hasChildren ? isExpanded : undefined} aria-level={depth + 1}>
       <div
         tabIndex={isTabbable ? 0 : -1}
         data-page-id={page.id}
@@ -328,44 +328,6 @@ export function PageTreeItem({
         </div>
       </div>
 
-      {hasChildren && isExpanded && (
-        <div role="group">
-          {node.children.map((child) => (
-            <PageTreeItem
-              key={child.page.id}
-              node={child}
-              depth={depth + 1}
-              expanded={expanded}
-              toggleExpand={toggleExpand}
-              selectedPageId={selectedPageId}
-              focusedId={focusedId}
-              tabbableId={tabbableId}
-              renamingId={renamingId}
-              onNavigate={onNavigate}
-              onPrefetch={onPrefetch}
-              onCreate={onCreate}
-              onDuplicate={onDuplicate}
-              onDelete={onDelete}
-              onRename={onRename}
-              onStartRename={onStartRename}
-              onMoveUp={onMoveUp}
-              onMoveDown={onMoveDown}
-              onNest={onNest}
-              onUnnest={onUnnest}
-              draggedId={draggedId}
-              dropTarget={dropTarget}
-              onDragStart={onDragStart}
-              onDragOver={onDragOver}
-              onDragLeave={onDragLeave}
-              onDrop={onDrop}
-              onDragEnd={onDragEnd}
-              pages={pages}
-              favoriteMap={favoriteMap}
-              onToggleFavorite={onToggleFavorite}
-            />
-          ))}
-        </div>
-      )}
     </div>
   );
 }
