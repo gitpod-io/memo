@@ -23,6 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RelativeTime } from "@/components/relative-time";
+import { PageCountStatusBar } from "@/components/page-count-status-bar";
+import { PageCountAnnouncer } from "@/components/page-count-announcer";
 import type { RecentPageVisit } from "@/lib/types";
 
 type SortOption =
@@ -279,8 +281,8 @@ export function WorkspaceHome({
         </div>
       )}
       <div className="mt-6" data-testid="wh-all-pages">
-        <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
-          All Pages
+        <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint" data-testid="wh-all-pages-heading">
+          All Pages ({pages.length})
         </h2>
         <div className="mb-3 flex items-center gap-2">
           <div className="relative flex-1">
@@ -319,6 +321,14 @@ export function WorkspaceHome({
             </SelectContent>
           </Select>
         </div>
+        <PageCountStatusBar
+          filteredCount={filteredAndSorted.length}
+          totalCount={pages.length}
+        />
+        <PageCountAnnouncer
+          filteredCount={filteredAndSorted.length}
+          totalCount={pages.length}
+        />
         {filteredAndSorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
             <Search className="h-12 w-12 text-muted-foreground" />

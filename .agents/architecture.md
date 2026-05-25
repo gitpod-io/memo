@@ -558,6 +558,8 @@ src/
 │   ├── lazy-route-error.tsx    # Dynamic-import wrapper for route-error (keeps error boundary JS out of first load)
 │   ├── workspace-home.tsx       # Workspace home: page list or empty state with create CTA
 │   ├── workspace-home-client.tsx # Client wrapper: lazy-loads WorkspaceHome via next/dynamic
+│   ├── page-count-status-bar.tsx # "X of Y pages" status bar for workspace home (mirrors RowCountStatusBar)
+│   ├── page-count-announcer.tsx  # Screen-reader live region for page count changes (mirrors RowCountAnnouncer)
 │   ├── settings-page-client.tsx  # Client wrapper: lazy-loads SettingsPageContent via next/dynamic
 │   ├── settings-page-content.tsx # Settings page layout: form + change password + danger zone
 │   ├── workspace-settings-form.tsx # Edit workspace name/slug, lazy-loads delete workspace section
