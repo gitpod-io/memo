@@ -33,9 +33,9 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 
 | Category | Files | Tests |
 |---|---|---|
-| Unit/Integration (Vitest) | 143 | 1981 |
+| Unit/Integration (Vitest) | 145 | 1981 |
 | E2E (Playwright) | 87 | 430 |
-| **Total** | **230** | **2411** |
+| **Total** | **232** | **2411** |
 
 ### Test files by domain
 
@@ -170,5 +170,6 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | 2026-05-21 | Add export/import actions to slash command menu (#1165). Added "Export as Markdown" and "Import Markdown" options to `slash-command-plugin.tsx` via optional `onExport`/`onImport` callbacks. Wired callbacks in `page-view-client.tsx` reusing existing `exportEditorToMarkdown`/`downloadMarkdown` and `useMarkdownImport`. Added `FilteredExportImport` Storybook story and visual regression baseline. No new test files. Test totals: 144 Vitest files (1975 tests), 87 E2E specs (432 tests). |
 | 2026-05-24 | Guard ThemeProvider localStorage access against SecurityError (#1177). Added 1 new Vitest file: `theme.test.tsx` (6 tests) — covers default dark theme, stored preference reading, invalid value handling, preference persistence, SecurityError handling for getItem and setItem. Fixed Vitest file count (144→143 — was overcounted). Updated E2E test count (432→430 — test consolidation in existing specs). Test totals: 143 Vitest files (1981 tests), 87 E2E specs (430 tests). |
 | 2026-05-25 | Virtualize sidebar page tree (#1187). Updated `getVisibleItems` to return `FlatTreeItem[]` with depth. Updated `page-tree.test.ts` assertions for new return type (depth assertions added, same test count). Updated `sidebar-keyboard-nav.spec.ts` Home/End tests for virtualized scroll behavior. No new test files. Test totals unchanged: 143 Vitest files (1981 tests), 87 E2E specs (430 tests). |
+| 2026-05-25 | Add keyboard shortcut tooltips to sidebar buttons (#1188). Added Tooltip wrappers to New Page (⌘N), New Database, and SidebarToggle (⌘\\) buttons. Updated `page-tree-shortcut.test.tsx` to wrap renders in SidebarProvider. Updated stories for PageTree and AppSidebar. Added `SidebarToggleWithTooltip` story. Corrected Vitest file count (143→145). Test totals: 145 Vitest files (1981 tests), 87 E2E specs (430 tests). |
 
 
