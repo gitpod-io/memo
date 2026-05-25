@@ -3,6 +3,7 @@ import {
   Check,
   ChevronsUpDown,
   FileText,
+  Menu,
   MessageSquarePlus,
   Plus,
   Search,
@@ -14,6 +15,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -166,22 +173,43 @@ function PageTreeStatic({
           </div>
         ))}
       </div>
-      <Button
-        variant="ghost"
-        className="mt-1 w-full justify-start gap-2 px-2 text-muted-foreground"
-        size="sm"
-      >
-        <Plus className="h-4 w-4" />
-        New Page
-      </Button>
-      <Button
-        variant="ghost"
-        className="w-full justify-start gap-2 px-2 text-muted-foreground"
-        size="sm"
-      >
-        <Table2 className="h-4 w-4" />
-        New Database
-      </Button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="ghost"
+                className="mt-1 w-full justify-start gap-2 px-2 text-muted-foreground"
+                size="sm"
+              />
+            }
+          >
+            <Plus className="h-4 w-4" />
+            New Page
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            New Page
+            <kbd data-slot="kbd">⌘N</kbd>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-2 px-2 text-muted-foreground"
+                size="sm"
+              />
+            }
+          >
+            <Table2 className="h-4 w-4" />
+            New Database
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            New Database
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 }
@@ -375,6 +403,37 @@ export const Mobile: Story = {
           <UserMenuStatic />
         </div>
       </div>
+    </div>
+  ),
+};
+
+export const SidebarToggleWithTooltip: Story = {
+  name: "Sidebar toggle (mobile, with tooltip)",
+  render: () => (
+    <div className="flex items-center gap-2 bg-background p-4">
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="shrink-0"
+                aria-label="Toggle sidebar"
+              />
+            }
+          >
+            <Menu className="h-4 w-4" />
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            Toggle sidebar
+            <kbd data-slot="kbd">⌘\</kbd>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      <span className="text-sm text-muted-foreground">
+        Hover the icon to see the tooltip
+      </span>
     </div>
   ),
 };

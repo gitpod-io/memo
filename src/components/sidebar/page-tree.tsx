@@ -14,6 +14,12 @@ import { retryOnNetworkError } from "@/lib/retry";
 import { usePersistedExpanded } from "@/lib/use-persisted-expanded";
 import { Button } from "@/components/ui/button";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -24,6 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { SidebarPage } from "@/lib/types";
+import { useSidebar } from "@/components/sidebar/sidebar-context";
 import {
   buildTree,
   findParentNode,
@@ -41,6 +48,7 @@ interface PageTreeProps {
 export function PageTree({ userId }: PageTreeProps) {
   const router = useRouter();
   const params = useParams<{ workspaceSlug?: string; pageId?: string }>();
+  const { isMac } = useSidebar();
   const [pages, setPages] = useState<SidebarPage[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<TreeNode | null>(null);
@@ -466,26 +474,47 @@ export function PageTree({ userId }: PageTreeProps) {
         </div>
       )}
 
-      <Button
-        variant="ghost"
-        className="mt-1 w-full shrink-0 justify-start gap-2 px-2 text-muted-foreground"
-        size="sm"
-        onClick={() => actions.handleCreate(null)}
-        data-testid="sb-new-page-btn"
-      >
-        <Plus className="h-4 w-4" />
-        New Page
-      </Button>
-      <Button
-        variant="ghost"
-        className="w-full shrink-0 justify-start gap-2 px-2 text-muted-foreground"
-        size="sm"
-        onClick={actions.handleCreateDatabase}
-        data-testid="sb-new-database-btn"
-      >
-        <Table2 className="h-4 w-4" />
-        New Database
-      </Button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="ghost"
+                className="mt-1 w-full shrink-0 justify-start gap-2 px-2 text-muted-foreground"
+                size="sm"
+                onClick={() => actions.handleCreate(null)}
+                data-testid="sb-new-page-btn"
+              />
+            }
+          >
+            <Plus className="h-4 w-4" />
+            New Page
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            New Page
+            <kbd data-slot="kbd">{isMac ? "⌘" : "Ctrl+"}N</kbd>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="ghost"
+                className="w-full shrink-0 justify-start gap-2 px-2 text-muted-foreground"
+                size="sm"
+                onClick={actions.handleCreateDatabase}
+                data-testid="sb-new-database-btn"
+              />
+            }
+          >
+            <Table2 className="h-4 w-4" />
+            New Database
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            New Database
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       <AlertDialog
         open={deleteTarget !== null}

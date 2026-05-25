@@ -8,8 +8,9 @@ const mockPush = vi.fn();
 const mockWorkspaceSlug = "test-workspace";
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, prefetch: vi.fn() }),
   useParams: () => ({ workspaceSlug: mockWorkspaceSlug }),
+  usePathname: () => "/test-workspace",
 }));
 
 const mockInsertSingle = vi.fn();
@@ -83,6 +84,7 @@ vi.mock("sonner", () => ({
 }));
 
 import { PageTree } from "./page-tree";
+import { SidebarProvider } from "./sidebar-context";
 
 function createMockMatchMedia(matches: boolean) {
   return vi.fn().mockImplementation((query: string) => ({
@@ -121,7 +123,7 @@ describe("PageTree ⌘+N shortcut", () => {
   });
 
   it("⌘+N creates a new page and navigates to it", async () => {
-    render(<PageTree userId="user-123" />);
+    render(<SidebarProvider><PageTree userId="user-123" /></SidebarProvider>);
 
     // Wait for workspace resolution and page fetch
     await act(async () => {
@@ -147,7 +149,7 @@ describe("PageTree ⌘+N shortcut", () => {
   });
 
   it("Ctrl+N creates a new page and navigates to it", async () => {
-    render(<PageTree userId="user-123" />);
+    render(<SidebarProvider><PageTree userId="user-123" /></SidebarProvider>);
 
     await act(async () => {
       await new Promise((r) => setTimeout(r, 50));
@@ -171,7 +173,7 @@ describe("PageTree ⌘+N shortcut", () => {
   });
 
   it("ignores N keydown without meta or ctrl modifier", async () => {
-    render(<PageTree userId="user-123" />);
+    render(<SidebarProvider><PageTree userId="user-123" /></SidebarProvider>);
 
     await act(async () => {
       await new Promise((r) => setTimeout(r, 50));
@@ -192,7 +194,7 @@ describe("PageTree ⌘+N shortcut", () => {
   });
 
   it("ignores ⌘+Shift+N (does not intercept browser new-window-incognito)", async () => {
-    render(<PageTree userId="user-123" />);
+    render(<SidebarProvider><PageTree userId="user-123" /></SidebarProvider>);
 
     await act(async () => {
       await new Promise((r) => setTimeout(r, 50));
@@ -215,7 +217,7 @@ describe("PageTree ⌘+N shortcut", () => {
   });
 
   it("calls preventDefault to suppress browser default new-window behavior", async () => {
-    render(<PageTree userId="user-123" />);
+    render(<SidebarProvider><PageTree userId="user-123" /></SidebarProvider>);
 
     await act(async () => {
       await new Promise((r) => setTimeout(r, 50));

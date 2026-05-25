@@ -4,6 +4,12 @@ import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Sheet,
   SheetContent,
   SheetTitle,
@@ -89,20 +95,32 @@ export function AppSidebar(props: AppSidebarProps) {
 }
 
 export function SidebarToggle() {
-  const { toggle, isMobile } = useSidebar();
+  const { toggle, isMobile, isMac } = useSidebar();
 
   if (!isMobile) return null;
 
   return (
-    <Button
-      variant="ghost"
-      size="icon-sm"
-      className="shrink-0"
-      onClick={toggle}
-      aria-label="Toggle sidebar"
-      data-testid="as-sidebar-toggle"
-    >
-      <Menu className="h-4 w-4" />
-    </Button>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="shrink-0"
+              onClick={toggle}
+              aria-label="Toggle sidebar"
+              data-testid="as-sidebar-toggle"
+            />
+          }
+        >
+          <Menu className="h-4 w-4" />
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          Toggle sidebar
+          <kbd data-slot="kbd">{isMac ? "⌘" : "Ctrl+"}&#92;</kbd>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

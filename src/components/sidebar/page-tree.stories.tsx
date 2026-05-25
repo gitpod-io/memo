@@ -1,6 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { FileText, Plus, Table2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { PageTreeItem } from "./page-tree-item";
 import type { SidebarPage } from "@/lib/types";
 import { getVisibleItems, type TreeNode } from "@/lib/page-tree";
@@ -146,22 +152,43 @@ function TreeShell({ children }: { children: React.ReactNode }) {
           Pages
         </p>
         {children}
-        <Button
-          variant="ghost"
-          className="mt-1 w-full justify-start gap-2 px-2 text-muted-foreground"
-          size="sm"
-        >
-          <Plus className="h-4 w-4" />
-          New Page
-        </Button>
-        <Button
-          variant="ghost"
-          className="w-full justify-start gap-2 px-2 text-muted-foreground"
-          size="sm"
-        >
-          <Table2 className="h-4 w-4" />
-          New Database
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  className="mt-1 w-full justify-start gap-2 px-2 text-muted-foreground"
+                  size="sm"
+                />
+              }
+            >
+              <Plus className="h-4 w-4" />
+              New Page
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              New Page
+              <kbd data-slot="kbd">⌘N</kbd>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-2 px-2 text-muted-foreground"
+                  size="sm"
+                />
+              }
+            >
+              <Table2 className="h-4 w-4" />
+              New Database
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              New Database
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </div>
   );
@@ -271,22 +298,43 @@ export const ManyPages: Story = {
               <PageTreeItem key={node.page.id} {...props} node={node} />
             ))}
           </div>
-          <Button
-            variant="ghost"
-            className="mt-1 w-full justify-start gap-2 px-2 text-muted-foreground"
-            size="sm"
-          >
-            <Plus className="h-4 w-4" />
-            New Page
-          </Button>
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-2 px-2 text-muted-foreground"
-            size="sm"
-          >
-            <Table2 className="h-4 w-4" />
-            New Database
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    className="mt-1 w-full justify-start gap-2 px-2 text-muted-foreground"
+                    size="sm"
+                  />
+                }
+              >
+                <Plus className="h-4 w-4" />
+                New Page
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                New Page
+                <kbd data-slot="kbd">⌘N</kbd>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-2 px-2 text-muted-foreground"
+                    size="sm"
+                  />
+                }
+              >
+                <Table2 className="h-4 w-4" />
+                New Database
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                New Database
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
     );
