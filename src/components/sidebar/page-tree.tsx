@@ -11,6 +11,7 @@ import {
   isSchemaNotFoundError,
 } from "@/lib/sentry";
 import { retryOnNetworkError } from "@/lib/retry";
+import { useWorkspace } from "@/components/sidebar/workspace-context";
 import { usePersistedExpanded } from "@/lib/use-persisted-expanded";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +50,7 @@ export function PageTree({ userId }: PageTreeProps) {
   const router = useRouter();
   const params = useParams<{ workspaceSlug?: string; pageId?: string }>();
   const { isMac } = useSidebar();
+  const { workspaceId, workspaceSlug } = useWorkspace();
   const [pages, setPages] = useState<SidebarPage[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<TreeNode | null>(null);
@@ -60,37 +62,8 @@ export function PageTree({ userId }: PageTreeProps) {
   const [favRefetchKey, setFavRefetchKey] = useState(0);
   const [pagesRefetchKey, setPagesRefetchKey] = useState(0);
 
-  const workspaceSlug = params.workspaceSlug;
-
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const { expanded, setExpanded, removeFromPersisted } =
     usePersistedExpanded(workspaceId);
-
-  useEffect(() => {
-    if (!workspaceSlug) return;
-
-    let cancelled = false;
-
-    retryOnNetworkError(async () => {
-      const supabase = await getClient();
-      return supabase
-        .from("workspaces")
-        .select("id")
-        .eq("slug", workspaceSlug)
-        .maybeSingle();
-    }).then(({ data, error }) => {
-      if (cancelled) return;
-      if (error) {
-        captureSupabaseError(error, "page-tree:workspace-lookup");
-        return;
-      }
-      if (data) setWorkspaceId(data.id);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [workspaceSlug]);
 
   useEffect(() => {
     if (!workspaceId) return;

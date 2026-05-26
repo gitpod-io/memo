@@ -12,6 +12,7 @@ import {
   isSupabaseAuthLockError,
 } from "@/lib/sentry";
 import { retryOnNetworkError } from "@/lib/retry";
+import { useWorkspace } from "@/components/sidebar/workspace-context";
 import type { FavoriteWithPage } from "@/lib/types";
 
 interface FavoritesSectionProps {
@@ -21,13 +22,11 @@ interface FavoritesSectionProps {
 export function FavoritesSection({ userId }: FavoritesSectionProps) {
   const router = useRouter();
   const params = useParams<{ workspaceSlug?: string; pageId?: string }>();
+  const { workspaceId, workspaceSlug } = useWorkspace();
   const [favorites, setFavorites] = useState<FavoriteWithPage[]>([]);
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
 
   // Increment to trigger re-fetch when other components change favorites
   const [favRefetchKey, setFavRefetchKey] = useState(0);
-
-  const workspaceSlug = params.workspaceSlug;
 
   // Re-sync when other components change favorites
   useEffect(() => {
@@ -37,33 +36,6 @@ export function FavoritesSection({ userId }: FavoritesSectionProps) {
     window.addEventListener("favorites-changed", handleFavoritesChanged);
     return () => window.removeEventListener("favorites-changed", handleFavoritesChanged);
   }, []);
-
-  // Resolve workspace slug → id (same pattern as page-tree)
-  useEffect(() => {
-    if (!workspaceSlug) return;
-
-    let cancelled = false;
-
-    retryOnNetworkError(async () => {
-      const supabase = await getClient();
-      return supabase
-        .from("workspaces")
-        .select("id")
-        .eq("slug", workspaceSlug)
-        .maybeSingle();
-    }).then(({ data, error }) => {
-      if (cancelled) return;
-      if (error) {
-        captureSupabaseError(error, "favorites:workspace-lookup");
-        return;
-      }
-      if (data) setWorkspaceId(data.id);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [workspaceSlug]);
 
   // Fetch favorites for this user + workspace
   useEffect(() => {

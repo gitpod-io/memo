@@ -47,6 +47,16 @@ vi.mock("@/components/sidebar/sidebar-context", () => ({
   }),
 }));
 
+const mockUseWorkspace = vi.fn().mockReturnValue({
+  workspaceId: "ws-uuid-123",
+  workspaceSlug: "test-workspace",
+  resolved: true,
+});
+
+vi.mock("@/components/sidebar/workspace-context", () => ({
+  useWorkspace: () => mockUseWorkspace(),
+}));
+
 // Track fetch calls
 let fetchMock: ReturnType<typeof vi.fn<typeof globalThis.fetch>>;
 
@@ -55,6 +65,12 @@ import { PageSearch } from "./page-search";
 describe("PageSearch", () => {
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
+    // Reset workspace context mock to default resolved state
+    mockUseWorkspace.mockReturnValue({
+      workspaceId: "ws-uuid-123",
+      workspaceSlug: "test-workspace",
+      resolved: true,
+    });
     // Reset workspace mock — vi.restoreAllMocks() in afterEach clears
     // the mock implementation, so we must re-set it each test.
     mockMaybeSingle.mockResolvedValue({
@@ -352,19 +368,18 @@ describe("PageSearch", () => {
   });
 
   it("shows skeletons while workspace is resolving even after search completes", async () => {
-    // Make workspace resolution hang
-    let resolveWorkspace: (value: unknown) => void;
-    mockMaybeSingle.mockReturnValue(
-      new Promise((resolve) => {
-        resolveWorkspace = resolve;
-      })
-    );
+    // Start with workspace unresolved
+    mockUseWorkspace.mockReturnValue({
+      workspaceId: null,
+      workspaceSlug: "test-workspace",
+      resolved: false,
+    });
 
     const user = userEvent.setup({
       advanceTimers: vi.advanceTimersByTime,
     });
 
-    render(<PageSearch />);
+    const { rerender } = render(<PageSearch />);
 
     const input = screen.getByRole("combobox", { name: /search pages/i });
     await user.click(input);
@@ -387,12 +402,14 @@ describe("PageSearch", () => {
     // No fetch should have been made (workspace not resolved)
     expect(fetchMock).not.toHaveBeenCalled();
 
-    // Resolve workspace — let the promise settle and React re-render.
+    // Simulate workspace resolving by updating the mock and re-rendering
+    mockUseWorkspace.mockReturnValue({
+      workspaceId: "ws-uuid-123",
+      workspaceSlug: "test-workspace",
+      resolved: true,
+    });
     await act(async () => {
-      resolveWorkspace!({
-        data: { id: "ws-uuid-123" },
-        error: null,
-      });
+      rerender(<PageSearch />);
       await vi.advanceTimersByTimeAsync(50);
     });
 
@@ -411,9 +428,10 @@ describe("PageSearch", () => {
     // Regression test for #162: when workspaceId is null and
     // workspaceResolved is true, the unified effect transitions
     // directly to "done" without firing a fetch.
-    mockMaybeSingle.mockResolvedValue({
-      data: null,
-      error: null,
+    mockUseWorkspace.mockReturnValue({
+      workspaceId: null,
+      workspaceSlug: "test-workspace",
+      resolved: true,
     });
 
     const user = userEvent.setup({
@@ -421,11 +439,6 @@ describe("PageSearch", () => {
     });
 
     render(<PageSearch />);
-
-    // Wait for workspace resolution (resolves to null)
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(50);
-    });
 
     const input = screen.getByRole("combobox", { name: /search pages/i });
     await user.click(input);
@@ -520,21 +533,19 @@ describe("PageSearch", () => {
     // Regression test for #178/#181: when workspace resolution is slow,
     // the unified effect stays in "loading" until the workspace resolves.
     // Once resolved, the effect re-runs, debounces, and fires the search.
-    // This eliminates the two-effect race condition that caused #178/#181.
 
-    // Make workspace resolution slow
-    let resolveWorkspace: (value: unknown) => void;
-    mockMaybeSingle.mockReturnValue(
-      new Promise((resolve) => {
-        resolveWorkspace = resolve;
-      })
-    );
+    // Start with workspace unresolved
+    mockUseWorkspace.mockReturnValue({
+      workspaceId: null,
+      workspaceSlug: "test-workspace",
+      resolved: false,
+    });
 
     const user = userEvent.setup({
       advanceTimers: vi.advanceTimersByTime,
     });
 
-    render(<PageSearch />);
+    const { rerender } = render(<PageSearch />);
 
     const input = screen.getByRole("combobox", { name: /search pages/i });
     await user.click(input);
@@ -554,12 +565,14 @@ describe("PageSearch", () => {
     // No fetch yet
     expect(fetchMock).not.toHaveBeenCalled();
 
-    // Resolve workspace — let the promise settle and React re-render.
+    // Simulate workspace resolving
+    mockUseWorkspace.mockReturnValue({
+      workspaceId: "ws-uuid-123",
+      workspaceSlug: "test-workspace",
+      resolved: true,
+    });
     await act(async () => {
-      resolveWorkspace!({
-        data: { id: "ws-uuid-123" },
-        error: null,
-      });
+      rerender(<PageSearch />);
       await vi.advanceTimersByTimeAsync(50);
     });
 
@@ -582,11 +595,13 @@ describe("PageSearch", () => {
   });
 
   it("shows empty state when workspace resolution rejects (#178)", async () => {
-    // Regression test for #178: if retryOnNetworkError rejects,
-    // workspaceResolved is set to true (from .catch()) and workspaceId
-    // stays null. The unified effect transitions directly to "done".
-    mockMaybeSingle.mockImplementation(() => {
-      throw new Error("Unexpected Supabase error");
+    // Regression test for #178: if workspace resolution fails,
+    // resolved is set to true and workspaceId stays null.
+    // The unified effect transitions directly to "done".
+    mockUseWorkspace.mockReturnValue({
+      workspaceId: null,
+      workspaceSlug: "test-workspace",
+      resolved: true,
     });
 
     const user = userEvent.setup({
@@ -594,11 +609,6 @@ describe("PageSearch", () => {
     });
 
     render(<PageSearch />);
-
-    // Wait for workspace resolution to reject and .catch() to fire
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(50);
-    });
 
     const input = screen.getByRole("combobox", { name: /search pages/i });
     await user.click(input);
@@ -609,13 +619,6 @@ describe("PageSearch", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(50);
     });
-
-    // The error should have been captured via captureSupabaseError
-    const { captureSupabaseError: mockCaptureSupabaseError } = await import("@/lib/sentry");
-    expect(mockCaptureSupabaseError).toHaveBeenCalledWith(
-      expect.objectContaining({ message: "Unexpected Supabase error" }),
-      "page-search:workspace-resolve",
-    );
 
     // Empty state should show (workspaceResolved=true, workspaceId=null)
     expect(
@@ -719,24 +722,20 @@ describe("PageSearch", () => {
 
   it("never leaves skeletons stuck when workspace resolves mid-debounce (#181)", async () => {
     // Regression test for #181/#192: workspace resolution mid-debounce
-    // must not leave searchStatus stuck at "loading". The cancelled flag
-    // ensures the old cycle's callbacks are discarded and the new cycle
-    // completes normally.
+    // must not leave searchStatus stuck at "loading".
 
-    // Make workspace resolution resolve after 150ms (mid-debounce)
-    mockMaybeSingle.mockReturnValue(
-      new Promise((resolve) => {
-        setTimeout(() => {
-          resolve({ data: { id: "ws-uuid-123" }, error: null });
-        }, 150);
-      })
-    );
+    // Start with workspace unresolved
+    mockUseWorkspace.mockReturnValue({
+      workspaceId: null,
+      workspaceSlug: "test-workspace",
+      resolved: false,
+    });
 
     const user = userEvent.setup({
       advanceTimers: vi.advanceTimersByTime,
     });
 
-    render(<PageSearch />);
+    const { rerender } = render(<PageSearch />);
 
     const input = screen.getByRole("combobox", { name: /search pages/i });
     await user.click(input);
@@ -745,8 +744,14 @@ describe("PageSearch", () => {
     // At this point: query is set, workspace is resolving, effect is
     // in "loading" state waiting for workspace.
 
-    // Advance 150ms — workspace resolves mid-debounce
+    // Advance 150ms — simulate workspace resolving mid-debounce
+    mockUseWorkspace.mockReturnValue({
+      workspaceId: "ws-uuid-123",
+      workspaceSlug: "test-workspace",
+      resolved: true,
+    });
     await act(async () => {
+      rerender(<PageSearch />);
       await vi.advanceTimersByTimeAsync(150);
     });
 
