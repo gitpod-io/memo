@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { FileText, Table2 } from "lucide-react";
 import { getClient } from "@/lib/supabase/lazy-client";
 import {
@@ -10,6 +10,7 @@ import {
   isSchemaNotFoundError,
 } from "@/lib/sentry";
 import { retryOnNetworkError } from "@/lib/retry";
+import { useWorkspace } from "@/components/sidebar/workspace-context";
 import {
   pageVisitsWithPages,
   asPageVisitRows,
@@ -91,12 +92,10 @@ function getParentBreadcrumb(
 
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const router = useRouter();
-  const params = useParams<{ workspaceSlug?: string }>();
-  const workspaceSlug = params.workspaceSlug;
+  const { workspaceId, workspaceSlug } = useWorkspace();
 
   const [pages, setPages] = useState<SidebarPage[]>([]);
   const [recentVisits, setRecentVisits] = useState<RecentVisitItem[]>([]);
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
   const handleOpenChange = useCallback(
@@ -108,33 +107,6 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     },
     [onOpenChange],
   );
-
-  // Resolve workspace slug to ID
-  useEffect(() => {
-    if (!workspaceSlug) return;
-
-    let cancelled = false;
-
-    retryOnNetworkError(async () => {
-      const supabase = await getClient();
-      return supabase
-        .from("workspaces")
-        .select("id")
-        .eq("slug", workspaceSlug)
-        .maybeSingle();
-    }).then(({ data, error }) => {
-      if (cancelled) return;
-      if (error) {
-        captureSupabaseError(error, "command-palette:workspace-lookup");
-        return;
-      }
-      if (data) setWorkspaceId(data.id);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [workspaceSlug]);
 
   // Fetch pages and recent visits when the palette opens
   useEffect(() => {

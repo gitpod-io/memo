@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { FileText, RotateCcw, Trash2, X } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { getClient } from "@/lib/supabase/lazy-client";
@@ -11,6 +11,7 @@ import {
   isSchemaNotFoundError,
 } from "@/lib/sentry";
 import { retryOnNetworkError } from "@/lib/retry";
+import { useWorkspace } from "@/components/sidebar/workspace-context";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -33,17 +34,14 @@ interface TrashedPage {
 
 export function TrashSection() {
   const router = useRouter();
-  const params = useParams<{ workspaceSlug?: string }>();
+  const { workspaceId } = useWorkspace();
   const [trashedPages, setTrashedPages] = useState<TrashedPage[]>([]);
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [permanentDeleteTarget, setPermanentDeleteTarget] =
     useState<TrashedPage | null>(null);
   const [emptyTrashConfirm, setEmptyTrashConfirm] = useState(false);
   const [operating, setOperating] = useState(false);
   const [refetchKey, setRefetchKey] = useState(0);
-
-  const workspaceSlug = params.workspaceSlug;
 
   // Listen for trash changes from page-tree soft-delete
   useEffect(() => {
@@ -53,38 +51,6 @@ export function TrashSection() {
     window.addEventListener("trash-changed", handleTrashChanged);
     return () => window.removeEventListener("trash-changed", handleTrashChanged);
   }, []);
-
-  // Resolve workspace slug → id
-  useEffect(() => {
-    if (!workspaceSlug) return;
-
-    let cancelled = false;
-
-    retryOnNetworkError(async () => {
-      const supabase = await getClient();
-      return supabase
-        .from("workspaces")
-        .select("id")
-        .eq("slug", workspaceSlug)
-        .maybeSingle();
-    }).then(({ data, error }) => {
-      if (cancelled) return;
-      if (error) {
-        if (
-          !isSchemaNotFoundError(error) &&
-          !isInsufficientPrivilegeError(error)
-        ) {
-          captureSupabaseError(error, "trash:workspace-lookup");
-        }
-        return;
-      }
-      if (data) setWorkspaceId(data.id);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [workspaceSlug]);
 
   // Fetch trashed pages for this workspace
   useEffect(() => {

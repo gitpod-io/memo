@@ -1,13 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { FileText, Search, Table2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { getClient } from "@/lib/supabase/lazy-client";
-import { captureApiError, captureSupabaseError } from "@/lib/sentry";
-import { retryOnNetworkError } from "@/lib/retry";
+import { captureApiError } from "@/lib/sentry";
 import { useSidebar } from "@/components/sidebar/sidebar-context";
+import { useWorkspace } from "@/components/sidebar/workspace-context";
 
 interface SearchResult {
   id: string;
@@ -33,15 +32,13 @@ type SearchStatus = "idle" | "loading" | "done";
 
 export function PageSearch() {
   const router = useRouter();
-  const params = useParams<{ workspaceSlug?: string }>();
+  const { workspaceId, workspaceSlug, resolved: workspaceResolved } = useWorkspace();
   const { registerSearchRef, isMac } = useSidebar();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [searchStatus, setSearchStatus] = useState<SearchStatus>("idle");
   const [open, setOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
-  const [workspaceResolved, setWorkspaceResolved] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -58,46 +55,6 @@ export function PageSearch() {
   useEffect(() => {
     registerSearchRef(inputRef);
   }, [registerSearchRef]);
-
-  // Resolve workspace slug to ID
-  useEffect(() => {
-    if (!params.workspaceSlug) {
-      setWorkspaceId(null);
-      setWorkspaceResolved(true);
-      return;
-    }
-
-    setWorkspaceResolved(false);
-    let cancelled = false;
-
-    retryOnNetworkError(async () => {
-      const supabase = await getClient();
-      return supabase
-        .from("workspaces")
-        .select("id")
-        .eq("slug", params.workspaceSlug)
-        .maybeSingle();
-    })
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        if (error) {
-          captureSupabaseError(error, "page-search:workspace-lookup");
-          setWorkspaceResolved(true);
-          return;
-        }
-        setWorkspaceId(data?.id ?? null);
-        setWorkspaceResolved(true);
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        captureSupabaseError(error instanceof Error ? error : new Error(String(error)), "page-search:workspace-resolve");
-        setWorkspaceResolved(true);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [params.workspaceSlug]);
 
   // Stable search function — accepts wsId as a parameter so the
   // callback identity never changes. Uses cancelledRef to discard
@@ -219,8 +176,8 @@ export function PageSearch() {
   }, []);
 
   function handleNavigate(result: SearchResult) {
-    if (!params.workspaceSlug) return;
-    router.push(`/${params.workspaceSlug}/${result.id}`);
+    if (!workspaceSlug) return;
+    router.push(`/${workspaceSlug}/${result.id}`);
     setOpen(false);
     setQuery("");
     setResults([]);

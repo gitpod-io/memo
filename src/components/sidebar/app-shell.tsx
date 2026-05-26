@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { SidebarProvider } from "@/components/sidebar/sidebar-context";
+import { WorkspaceProvider } from "@/components/sidebar/workspace-context";
 import { FocusModeHint } from "@/components/sidebar/focus-mode-hint";
 import { MobileHeaderTitle } from "@/components/sidebar/mobile-header-title";
 import type { ReactNode } from "react";
@@ -30,11 +31,13 @@ export function AppShell({
   children,
 }: AppShellProps) {
   return (
-    <SidebarProvider>
-      <AppShellInner userId={userId} displayName={displayName} email={email}>
-        {children}
-      </AppShellInner>
-    </SidebarProvider>
+    <WorkspaceProvider>
+      <SidebarProvider>
+        <AppShellInner userId={userId} displayName={displayName} email={email}>
+          {children}
+        </AppShellInner>
+      </SidebarProvider>
+    </WorkspaceProvider>
   );
 }
 
