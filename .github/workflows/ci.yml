@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v5
+      - run: corepack enable
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v5
+      - run: corepack enable
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -40,7 +40,7 @@ jobs:
     needs: [check]
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v5
+      - run: corepack enable
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -69,7 +69,7 @@ jobs:
     needs: [check, bundle]
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v5
+      - run: corepack enable
       - uses: actions/setup-node@v6
         with:
           node-version: 22

@@ -659,4 +659,4 @@ Root config files:
 
 - **Sentry client**: session replay (10% normal, 100% on error), route transition tracking
 - **Sentry server**: PII enabled, local variables, 10% trace sampling in production
-- **Health endpoint**: `GET /api/health` — checks DB connectivity, returns status + latency
+- **Health endpoint**: `GET /api/health` — checks DB connectivity via concurrent pings, returns status, latency (best-of-N), per-sample breakdown, threshold, and region co-location info

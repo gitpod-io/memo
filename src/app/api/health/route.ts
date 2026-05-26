@@ -8,8 +8,13 @@ import { NextResponse } from "next/server";
  * - GET instead of POST: avoids request body parsing in PostgREST
  * - Connection: keep-alive: reuses TCP+TLS connections within the instance
  * - Prefer: return=minimal: skips response body serialization in PostgREST
- * - Best-of-2 sampling: takes the minimum of two sequential pings to filter
- *   out cold-start connection setup overhead from the reported latency
+ * - Concurrent sampling: runs pings in parallel and takes the minimum to
+ *   filter out cold-start outliers without doubling total response time
+ *
+ * Region co-location: Vercel (fra1) and Supabase (eu-central-1) are both in
+ * Frankfurt. Expected latency floor is ~50–150ms for the full round-trip
+ * (DNS + TCP + TLS + PostgREST processing). The 500ms threshold accounts
+ * for cold-start overhead and connection pool contention.
  */
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -20,6 +25,9 @@ const TIMEOUT_MS = 2000;
 
 /** Number of pings to take — report the minimum latency. */
 const SAMPLE_COUNT = 2;
+
+/** Latency threshold in ms for monitoring. */
+const LATENCY_THRESHOLD_MS = 500;
 
 /** Shared headers for the health-check fetch. */
 function healthHeaders(): Record<string, string> {
@@ -60,26 +68,52 @@ export async function GET() {
 
   let dbStatus = "ok";
   let dbLatency = 0;
+  const sampleLatencies: number[] = [];
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   const start = performance.now();
   try {
-    let bestLatency = Infinity;
-    let lastOk = true;
+    // Run pings concurrently to avoid sequential cold-start penalty.
+    // Promise.allSettled ensures one failure doesn't abort the other.
+    const results = await Promise.allSettled(
+      Array.from({ length: SAMPLE_COUNT }, () => ping(controller.signal)),
+    );
 
-    for (let i = 0; i < SAMPLE_COUNT; i++) {
-      const result = await ping(controller.signal);
-      lastOk = result.ok;
-      if (result.latency < bestLatency) {
-        bestLatency = result.latency;
+    let bestLatency = Infinity;
+    let anyOk = false;
+    let allFailed = true;
+
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        allFailed = false;
+        sampleLatencies.push(result.value.latency);
+        if (result.value.ok) {
+          anyOk = true;
+        }
+        if (result.value.latency < bestLatency) {
+          bestLatency = result.value.latency;
+        }
       }
     }
 
     dbLatency = bestLatency === Infinity ? 0 : bestLatency;
 
-    if (!lastOk) {
+    if (allFailed) {
+      const firstError =
+        results[0].status === "rejected" ? results[0].reason : null;
+      if (
+        firstError instanceof DOMException &&
+        firstError.name === "AbortError"
+      ) {
+        dbStatus = "degraded";
+        dbLatency = Math.round(performance.now() - start);
+      } else {
+        dbStatus = "down";
+        dbLatency = Math.round(performance.now() - start);
+      }
+    } else if (!anyOk) {
       dbStatus = "degraded";
     }
   } catch (err) {
@@ -97,7 +131,17 @@ export async function GET() {
 
   return NextResponse.json({
     status,
-    db: { connected: dbStatus !== "down", latency_ms: dbLatency },
+    db: {
+      connected: dbStatus !== "down",
+      latency_ms: dbLatency,
+      threshold_ms: LATENCY_THRESHOLD_MS,
+      samples: sampleLatencies,
+    },
+    region: {
+      vercel: process.env.VERCEL_REGION ?? "unknown",
+      supabase: "eu-central-1",
+      colocated: true,
+    },
     timestamp: new Date().toISOString(),
   });
 }

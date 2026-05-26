@@ -50,7 +50,9 @@ describe("GET /api/health", () => {
     expect(body.status).toBe("ok");
     expect(body.db.connected).toBe(true);
     expect(body.db.latency_ms).toBeGreaterThanOrEqual(0);
-    // Best-of-2 sampling: fetch is called twice
+    expect(body.db.threshold_ms).toBe(500);
+    expect(body.db.samples).toHaveLength(2);
+    // Concurrent sampling: fetch is called twice
     expect(mockFetch).toHaveBeenCalledTimes(2);
     expect(mockFetch).toHaveBeenCalledWith(
       "https://example.supabase.co/rest/v1/rpc/health_check",
@@ -125,7 +127,7 @@ describe("GET /api/health", () => {
     expect(body.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
-  it("reports the minimum latency from best-of-2 sampling", async () => {
+  it("reports the minimum latency from concurrent sampling", async () => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "test-key");
 
@@ -135,9 +137,9 @@ describe("GET /api/health", () => {
     const response = await GET();
     const body = await response.json();
 
-    // Both pings resolve near-instantly in tests, so latency should be small
     expect(body.db.latency_ms).toBeGreaterThanOrEqual(0);
     expect(body.db.latency_ms).toBeLessThan(1000);
+    expect(body.db.samples).toHaveLength(2);
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 
@@ -153,5 +155,37 @@ describe("GET /api/health", () => {
     const callArgs = mockFetch.mock.calls[0][1];
     expect(callArgs.method).toBe("GET");
     expect(callArgs.body).toBeUndefined();
+  });
+
+  it("includes region information in the response", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "test-key");
+
+    mockFetch.mockResolvedValue({ ok: true });
+
+    const { GET } = await import("./route");
+    const response = await GET();
+    const body = await response.json();
+
+    expect(body.region).toBeDefined();
+    expect(body.region.supabase).toBe("eu-central-1");
+    expect(body.region.colocated).toBe(true);
+  });
+
+  it("succeeds when one ping fails but the other succeeds", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "test-key");
+
+    mockFetch
+      .mockResolvedValueOnce({ ok: true })
+      .mockRejectedValueOnce(new Error("Connection reset"));
+
+    const { GET } = await import("./route");
+    const response = await GET();
+    const body = await response.json();
+
+    expect(body.status).toBe("ok");
+    expect(body.db.connected).toBe(true);
+    expect(body.db.samples).toHaveLength(1);
   });
 });
