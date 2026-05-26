@@ -535,6 +535,7 @@ src/
 │   │   └── row-properties-header.tsx    # Properties displayed above editor when row opened as page
 │   ├── feedback/
 │   │   └── feedback-form.tsx        # User feedback form with type selector, screenshot capture, and submission
+│   ├── command-palette.tsx           # ⌘+P command palette for quick page switching (uses cmdk via shadcn Command)
 │   ├── keyboard-shortcuts-dialog.tsx # ⌘+? keyboard shortcuts reference dialog
 │   ├── providers.tsx                # Client-side providers wrapper (ThemeProvider + lazy LazyProviders)
 │   ├── lazy-providers.tsx           # Lazy-loaded TooltipProvider + Toaster (keeps chunk manifests out of shared baseline)
@@ -579,10 +580,12 @@ src/
 │       ├── button.tsx
 │       ├── card.tsx
 │       ├── checkbox.tsx
+│       ├── command.tsx      # Command palette primitives (wraps cmdk)
 │       ├── context-menu.tsx
 │       ├── dialog.tsx
 │       ├── dropdown-menu.tsx
 │       ├── input.tsx
+│       ├── input-group.tsx  # Input group with addons, buttons, and text
 │       ├── label.tsx
 │       ├── select.tsx
 │       ├── separator.tsx
