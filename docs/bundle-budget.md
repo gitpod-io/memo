@@ -5,7 +5,7 @@ Framework baseline budget: **160 kB** gzipped (shared by all routes).
 
 Enforced by `pnpm test:bundle` (runs `scripts/check-bundle.mjs`).
 
-## Current state (2026-05-11)
+## Current state (2026-05-26)
 
 All 12 routes are within budget. The heaviest route is `/account` at ~184 kB.
 

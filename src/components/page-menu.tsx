@@ -12,10 +12,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  exportEditorToMarkdown,
-  downloadMarkdown,
-} from "@/components/editor/markdown-utils";
 import { getClient } from "@/lib/supabase/lazy-client";
 import { captureSupabaseError, lazyCaptureException } from "@/lib/sentry";
 import { trackEventClient } from "@/lib/track-event";
@@ -154,7 +150,7 @@ export function PageMenu({
     router.refresh();
   }, [pageId, pageTitle, workspaceId, workspaceSlug, userId, isDatabase, router]);
 
-  const handleExport = useCallback(() => {
+  const handleExport = useCallback(async () => {
     const editor = editorRef.current;
     if (!editor) {
       toast.error("Editor not ready", { duration: 8000 });
@@ -162,6 +158,10 @@ export function PageMenu({
     }
 
     try {
+      // Lazy-load markdown-utils to keep Lexical out of the initial page chunk
+      const { exportEditorToMarkdown, downloadMarkdown } = await import(
+        "@/components/editor/markdown-utils"
+      );
       const markdown = exportEditorToMarkdown(editor);
       const filename = (pageTitle.trim() || "Untitled") + ".md";
       downloadMarkdown(markdown, filename);

@@ -1341,15 +1341,23 @@ in `src/components/editor/markdown-utils.ts`. The `MARKDOWN_TRANSFORMERS` array 
 stay in sync with the editor's registered node types — when adding a new block type,
 add its transformer here too.
 
+**Always lazy-load `markdown-utils`** via dynamic `import()` — never use a static
+import at the top of a file. `markdown-utils.ts` pulls in the full Lexical library;
+a static import would add Lexical to the page's first-load JS even if the user never
+triggers an export/import action.
+
 ```typescript
-import { MARKDOWN_TRANSFORMERS } from "@/components/editor/markdown-utils";
-import { $convertToMarkdownString, $convertFromMarkdownString } from "@lexical/markdown";
+// ✅ Correct — lazy-load inside the callback that needs it
+const handleExport = useCallback(async () => {
+  const { exportEditorToMarkdown, downloadMarkdown } = await import(
+    "@/components/editor/markdown-utils"
+  );
+  const markdown = exportEditorToMarkdown(editor);
+  downloadMarkdown(markdown, filename);
+}, [editor, filename]);
 
-// Export: inside editor.getEditorState().read()
-const markdown = $convertToMarkdownString(MARKDOWN_TRANSFORMERS);
-
-// Import: inside editor.update() or via parseMarkdownToEditorState() for headless conversion
-$convertFromMarkdownString(markdown, MARKDOWN_TRANSFORMERS, root, true);
+// ❌ Wrong — static import pulls Lexical into the page chunk
+import { exportEditorToMarkdown } from "@/components/editor/markdown-utils";
 ```
 
 For headless conversion (no mounted editor), use `parseMarkdownToEditorState(markdown)`

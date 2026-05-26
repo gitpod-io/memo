@@ -7,10 +7,6 @@ import { toast } from "@/lib/toast";
 import { lazyCaptureException } from "@/lib/sentry";
 import { getClient } from "@/lib/supabase/lazy-client";
 import { trackEventClient } from "@/lib/track-event";
-import {
-  exportEditorToMarkdown,
-  downloadMarkdown,
-} from "@/components/editor/markdown-utils";
 import { useMarkdownImport } from "@/lib/use-markdown-import";
 import { PageTitle } from "@/components/page-title";
 import { PageIcon } from "@/components/page-icon";
@@ -101,8 +97,9 @@ export function PageViewClient({
     editorRef.current?.focus();
   }, []);
 
-  // Slash-menu export: reuses the same flow as the page menu export
-  const handleSlashExport = useCallback(() => {
+  // Slash-menu export: reuses the same flow as the page menu export.
+  // Lazy-loads markdown-utils to keep Lexical out of the initial page chunk.
+  const handleSlashExport = useCallback(async () => {
     const editor = editorRef.current;
     if (!editor) {
       toast.error("Editor not ready", { duration: 8000 });
@@ -110,6 +107,9 @@ export function PageViewClient({
     }
 
     try {
+      const { exportEditorToMarkdown, downloadMarkdown } = await import(
+        "@/components/editor/markdown-utils"
+      );
       const markdown = exportEditorToMarkdown(editor);
       const filename = (pageTitle.trim() || "Untitled") + ".md";
       downloadMarkdown(markdown, filename);
