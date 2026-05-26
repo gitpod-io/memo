@@ -21,6 +21,14 @@ const KeyboardShortcutsDialog = dynamic(
   { ssr: false },
 );
 
+const CommandPalette = dynamic(
+  () =>
+    import("@/components/command-palette").then(
+      (mod) => mod.CommandPalette,
+    ),
+  { ssr: false },
+);
+
 interface SidebarContextValue {
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -31,6 +39,8 @@ interface SidebarContextValue {
   focusSearch: () => void;
   shortcutsOpen: boolean;
   setShortcutsOpen: (open: boolean) => void;
+  commandPaletteOpen: boolean;
+  setCommandPaletteOpen: (open: boolean) => void;
   focusMode: boolean;
   toggleFocusMode: () => void;
 }
@@ -51,6 +61,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   );
   const searchRef = useRef<RefObject<HTMLInputElement | null> | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const pathname = usePathname();
   const prevPathnameRef = useRef(pathname);
@@ -152,6 +163,29 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [focusSearch]);
 
+  // ⌘+P keyboard shortcut to open command palette — suppresses browser print dialog.
+  // Does not open when a text input, textarea, or contenteditable is focused.
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "p" && (e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
+        if (!(e.target instanceof HTMLElement)) return;
+        const tag = e.target.tagName;
+        if (
+          tag === "INPUT" ||
+          tag === "TEXTAREA" ||
+          e.target.isContentEditable ||
+          e.target.closest("[data-lexical-editor]")
+        ) {
+          return;
+        }
+        e.preventDefault();
+        setCommandPaletteOpen(true);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   // ? keyboard shortcut to open keyboard shortcuts dialog
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -185,6 +219,8 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
         focusSearch,
         shortcutsOpen,
         setShortcutsOpen,
+        commandPaletteOpen,
+        setCommandPaletteOpen,
         focusMode,
         toggleFocusMode,
       }}
@@ -193,6 +229,10 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
       <KeyboardShortcutsDialog
         open={shortcutsOpen}
         onOpenChange={setShortcutsOpen}
+      />
+      <CommandPalette
+        open={commandPaletteOpen}
+        onOpenChange={setCommandPaletteOpen}
       />
     </SidebarContext.Provider>
   );

@@ -25,6 +25,7 @@ function getShortcutSections(isMac: boolean): ShortcutSection[] {
     {
       title: "Global",
       shortcuts: [
+        { keys: [mod, "P"], description: "Quick page switcher" },
         { keys: [mod, "K"], description: "Search pages" },
         { keys: [mod, "N"], description: "New page" },
         { keys: [mod, "\\"], description: "Toggle sidebar" },
