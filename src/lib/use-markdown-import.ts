@@ -9,10 +9,6 @@ import {
   isInsufficientPrivilegeError,
 } from "@/lib/sentry";
 import { trackEventClient } from "@/lib/track-event";
-import {
-  readFileAsText,
-  parseMarkdownToEditorState,
-} from "@/components/editor/markdown-utils";
 
 interface UseMarkdownImportOptions {
   workspaceId: string;
@@ -60,6 +56,10 @@ export function useMarkdownImport({
       }
 
       try {
+        // Lazy-load markdown-utils to keep Lexical out of non-editor page chunks
+        const { readFileAsText, parseMarkdownToEditorState } = await import(
+          "@/components/editor/markdown-utils"
+        );
         const markdown = await readFileAsText(file);
         const editorState = parseMarkdownToEditorState(markdown);
 
