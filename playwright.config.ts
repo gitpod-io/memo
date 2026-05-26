@@ -19,6 +19,11 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
     {
+      name: "firefox",
+      testIgnore: /visual-regression/,
+      use: { ...devices["Desktop Firefox"] },
+    },
+    {
       name: "visual-regression",
       testMatch: /visual-regression/,
       use: {

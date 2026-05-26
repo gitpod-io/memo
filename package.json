@@ -11,7 +11,7 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
-    "test:e2e": "playwright test --project=chromium",
+    "test:e2e": "playwright test --project=chromium --project=firefox",
     "test:visual": "playwright test --project=visual-regression",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
