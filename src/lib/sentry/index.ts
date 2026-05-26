@@ -27,7 +27,10 @@ export {
   isReactLexicalDomConflict,
   isTransientSupabaseNetworkEvent,
   isSupabaseAuthLockContention,
-} from "./event-filters";
+  NOISE_REGISTRY,
+} from "./noise-registry";
+
+export type { NoisePattern } from "./noise-registry";
 
 export { captureApiError, captureSupabaseError } from "./capture";
 

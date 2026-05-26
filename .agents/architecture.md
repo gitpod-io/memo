@@ -610,9 +610,9 @@ src/
 │   │   ├── e2e-detection.ts    # isE2ETestSession, isE2ETestRequest
 │   │   ├── postgrest-errors.ts # PostgreSQL/PostgREST error classification (42501, 23503, etc.)
 │   │   ├── network-errors.ts   # Transient network/storage/auth-lock error detection
-│   │   ├── event-filters.ts    # Sentry beforeSend filters (noise, DOM conflicts, network events)
-│   │   ├── client-filter.ts   # shouldDropClientEvent — consolidated client-side beforeSend filter
-│   │   ├── server-filter.ts   # shouldDropServerEvent — consolidated server/edge-side beforeSend filter
+│   │   ├── noise-registry.ts   # NoisePattern type + NOISE_REGISTRY — declarative noise filter definitions
+│   │   ├── client-filter.ts   # shouldDropClientEvent — iterates registry for client/both-scoped patterns
+│   │   ├── server-filter.ts   # shouldDropServerEvent — iterates registry for server/both-scoped patterns
 │   │   └── capture.ts         # captureSupabaseError, captureApiError
 │   ├── theme.tsx            # ThemeProvider + useTheme hook (light/dark/system, localStorage persistence)
 │   ├── toast.ts            # Lazy-loaded sonner toast wrapper to reduce initial bundle size

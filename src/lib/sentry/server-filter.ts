@@ -1,21 +1,18 @@
 import type { ErrorEvent } from "@sentry/nextjs";
 import { isE2ETestRequest } from "./e2e-detection";
-import {
-  isNextjsInternalNoise,
-  isSupabaseAuthLockContention,
-  isTransientSupabaseNetworkEvent,
-} from "./event-filters";
+import { NOISE_REGISTRY } from "./noise-registry";
 
 /**
  * Returns true when a server-side Sentry event should be dropped.
- * Combines all server-side noise filters into a single call so the
- * server and edge Sentry configs only import one symbol.
+ * Iterates the noise registry for all patterns scoped to "server" or "both",
+ * plus the E2E test request check.
  */
 export function shouldDropServerEvent(event: ErrorEvent): boolean {
-  return (
-    isNextjsInternalNoise(event) ||
-    isE2ETestRequest(event) ||
-    isTransientSupabaseNetworkEvent(event) ||
-    isSupabaseAuthLockContention(event)
+  if (isE2ETestRequest(event)) return true;
+
+  return NOISE_REGISTRY.some(
+    (pattern) =>
+      (pattern.scope === "server" || pattern.scope === "both") &&
+      pattern.match(event),
   );
 }
