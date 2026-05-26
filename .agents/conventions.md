@@ -498,10 +498,41 @@ filter these out:
 
 When adding new Sentry config files or `beforeSend` filters, use the
 consolidated filter functions: `shouldDropClientEvent` for client-side and
-`shouldDropServerEvent` for server-side/edge. These combine all noise filters
-(transient network errors, auth lock contention, Next.js internal noise, E2E
-test sessions) into a single call. When adding a new noise filter, add it to
-the appropriate consolidated function so all runtimes stay in sync.
+`shouldDropServerEvent` for server-side/edge. These iterate the noise registry
+(`NOISE_REGISTRY` in `src/lib/sentry/noise-registry.ts`) plus E2E test detection.
+
+### Adding a new Sentry noise pattern
+
+To filter a new class of non-actionable Sentry events, add an entry to the
+`NOISE_REGISTRY` array in `src/lib/sentry/noise-registry.ts`. No other wiring
+is needed — `shouldDropClientEvent` and `shouldDropServerEvent` iterate the
+registry automatically.
+
+```typescript
+// src/lib/sentry/noise-registry.ts
+import type { NoisePattern } from "./noise-registry";
+
+// Add to the NOISE_REGISTRY array:
+{
+  name: "my-noise-pattern",          // short identifier for logs/tests
+  scope: "both",                     // "client" | "server" | "both"
+  match: (event) => {                // predicate — true means drop
+    const values = event.exception?.values;
+    if (!values) return false;
+    return values.some((ex) => ex.value?.includes("my noise string"));
+  },
+  reason: "Why this is noise and not actionable.",
+}
+```
+
+Each entry has:
+- **`name`** — short identifier (e.g. `"nextjs-internal-noise"`)
+- **`scope`** — `"client"` (browser only), `"server"` (Node/edge only), or `"both"`
+- **`match`** — predicate function receiving the `ErrorEvent`, returns `true` to drop
+- **`reason`** — documents why this pattern is noise (not used at runtime)
+
+For complex matching logic, define a named helper function above the registry
+and reference it in the `match` field. Keep the registry entries readable.
 
 ## Environment Variable Guards
 
