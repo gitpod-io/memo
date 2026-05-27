@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, Plus, Search, Table2, Upload } from "lucide-react";
 import { useRovingTabindex } from "@/lib/use-roving-tabindex";
@@ -14,6 +14,7 @@ import {
 import { createDatabase } from "@/lib/database";
 import { trackEventClient } from "@/lib/track-event";
 import { useMarkdownImport } from "@/lib/use-markdown-import";
+import { usePageActions } from "@/lib/use-page-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,6 +27,7 @@ import {
 import { RelativeTime } from "@/components/relative-time";
 import { PageCountStatusBar } from "@/components/page-count-status-bar";
 import { PageCountAnnouncer } from "@/components/page-count-announcer";
+import { PageItemContextMenu } from "@/components/page-item-context-menu";
 import type { RecentPageVisit } from "@/lib/types";
 
 type SortOption =
@@ -99,6 +101,10 @@ export function WorkspaceHome({
   const router = useRouter();
   const [sortBy, setSortBy] = useState<SortOption>("updated_desc");
   const [filter, setFilter] = useState("");
+  const [favoriteMap, setFavoriteMap] = useState<Map<string, string>>(
+    new Map(),
+  );
+  const [favRefetchKey, setFavRefetchKey] = useState(0);
   const {
     fileInputRef,
     triggerFileInput: handleImportMarkdown,
@@ -109,6 +115,63 @@ export function WorkspaceHome({
     userId,
     source: "workspace-home",
   });
+
+  const pageActions = usePageActions({
+    workspaceId: workspace.id,
+    workspaceSlug: workspace.slug,
+    userId,
+  });
+
+  // Fetch favorites for this user + workspace
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchFavorites() {
+      const supabase = await getClient();
+      const { data, error } = await supabase
+        .from("favorites")
+        .select("id, page_id")
+        .eq("workspace_id", workspace.id)
+        .eq("user_id", userId);
+
+      if (cancelled) return;
+
+      if (error) {
+        if (!isSchemaNotFoundError(error)) {
+          captureSupabaseError(error, "workspace-home:fetch-favorites");
+        }
+        return;
+      }
+
+      if (data) {
+        setFavoriteMap(new Map(data.map((f) => [f.page_id, f.id])));
+      }
+    }
+
+    fetchFavorites();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [workspace.id, userId, favRefetchKey]);
+
+  // Re-sync when other components change favorites
+  useEffect(() => {
+    function handleFavoritesChanged() {
+      setFavRefetchKey((k) => k + 1);
+    }
+    window.addEventListener("favorites-changed", handleFavoritesChanged);
+    return () =>
+      window.removeEventListener("favorites-changed", handleFavoritesChanged);
+  }, []);
+
+  const handleToggleFavoriteAndRefetch = useCallback(
+    async (pageId: string, favoriteId: string | undefined) => {
+      await pageActions.handleToggleFavorite(pageId, favoriteId);
+      setFavRefetchKey((k) => k + 1);
+    },
+    [pageActions],
+  );
 
   const filteredAndSorted = useMemo(() => {
     const trimmed = filter.trim().toLowerCase();
@@ -283,42 +346,75 @@ export function WorkspaceHome({
             className="flex flex-col gap-0.5"
           >
             {recentVisits.map((visit) => (
-              <button
+              <PageItemContextMenu
                 key={visit.page_id}
-                role="option"
-                aria-selected={recentRoving.focusedId === visit.page_id}
-                data-item-id={visit.page_id}
-                data-testid={`wh-recent-item-${visit.page_id}`}
-                tabIndex={recentRoving.tabbableId === visit.page_id ? 0 : -1}
-                className="flex items-center gap-2 px-3 py-2 text-left text-sm transition-none hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
-                onClick={() => navigateToPage(visit.page_id)}
+                pageId={visit.page_id}
+                pageTitle={visit.title}
+                pageIcon={visit.icon}
+                isDatabase={visit.is_database}
+                isFavorited={favoriteMap.has(visit.page_id)}
+                favoriteId={favoriteMap.get(visit.page_id)}
+                workspaceSlug={workspace.slug}
+                onOpen={navigateToPage}
+                onDuplicate={() =>
+                  pageActions.handleDuplicate({
+                    id: visit.page_id,
+                    title: visit.title,
+                    icon: visit.icon,
+                    is_database: visit.is_database,
+                  })
+                }
+                onDelete={() =>
+                  pageActions.handleDelete({
+                    id: visit.page_id,
+                    title: visit.title,
+                    icon: visit.icon,
+                    is_database: visit.is_database,
+                  })
+                }
+                onToggleFavorite={() =>
+                  handleToggleFavoriteAndRefetch(
+                    visit.page_id,
+                    favoriteMap.get(visit.page_id),
+                  )
+                }
               >
-                <span className="flex h-4 w-4 shrink-0 items-center justify-center">
-                  {visit.icon ? (
-                    <span className="text-sm">{visit.icon}</span>
-                  ) : visit.is_database ? (
-                    <Table2 className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </span>
-                <span className="flex-1 truncate" title={visit.title || "Untitled"}>
-                  {visit.title || "Untitled"}
-                </span>
-                {visit.is_database ? (
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    Database
+                <button
+                  role="option"
+                  aria-selected={recentRoving.focusedId === visit.page_id}
+                  data-item-id={visit.page_id}
+                  data-testid={`wh-recent-item-${visit.page_id}`}
+                  tabIndex={recentRoving.tabbableId === visit.page_id ? 0 : -1}
+                  className="flex items-center gap-2 px-3 py-2 text-left text-sm transition-none hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
+                  onClick={() => navigateToPage(visit.page_id)}
+                >
+                  <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+                    {visit.icon ? (
+                      <span className="text-sm">{visit.icon}</span>
+                    ) : visit.is_database ? (
+                      <Table2 className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                    )}
                   </span>
-                ) : visit.child_count > 0 ? (
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    {visit.child_count} sub-page{visit.child_count !== 1 ? "s" : ""}
+                  <span className="flex-1 truncate" title={visit.title || "Untitled"}>
+                    {visit.title || "Untitled"}
                   </span>
-                ) : null}
-                <RelativeTime
-                  dateStr={visit.visited_at}
-                  className="shrink-0 text-xs text-muted-foreground"
-                />
-              </button>
+                  {visit.is_database ? (
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      Database
+                    </span>
+                  ) : visit.child_count > 0 ? (
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {visit.child_count} sub-page{visit.child_count !== 1 ? "s" : ""}
+                    </span>
+                  ) : null}
+                  <RelativeTime
+                    dateStr={visit.visited_at}
+                    className="shrink-0 text-xs text-muted-foreground"
+                  />
+                </button>
+              </PageItemContextMenu>
             ))}
           </div>
         </div>
@@ -393,42 +489,75 @@ export function WorkspaceHome({
             className="flex flex-col gap-0.5"
           >
             {filteredAndSorted.map((page) => (
-              <button
+              <PageItemContextMenu
                 key={page.id}
-                role="option"
-                aria-selected={allPagesRoving.focusedId === page.id}
-                data-item-id={page.id}
-                data-testid={`wh-page-item-${page.id}`}
-                tabIndex={allPagesRoving.tabbableId === page.id ? 0 : -1}
-                className="flex items-center gap-2 px-3 py-2 text-left text-sm transition-none hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
-                onClick={() => navigateToPage(page.id)}
+                pageId={page.id}
+                pageTitle={page.title}
+                pageIcon={page.icon}
+                isDatabase={page.is_database}
+                isFavorited={favoriteMap.has(page.id)}
+                favoriteId={favoriteMap.get(page.id)}
+                workspaceSlug={workspace.slug}
+                onOpen={navigateToPage}
+                onDuplicate={() =>
+                  pageActions.handleDuplicate({
+                    id: page.id,
+                    title: page.title,
+                    icon: page.icon,
+                    is_database: page.is_database,
+                  })
+                }
+                onDelete={() =>
+                  pageActions.handleDelete({
+                    id: page.id,
+                    title: page.title,
+                    icon: page.icon,
+                    is_database: page.is_database,
+                  })
+                }
+                onToggleFavorite={() =>
+                  handleToggleFavoriteAndRefetch(
+                    page.id,
+                    favoriteMap.get(page.id),
+                  )
+                }
               >
-                <span className="flex h-4 w-4 shrink-0 items-center justify-center">
-                  {page.icon ? (
-                    <span className="text-sm">{page.icon}</span>
-                  ) : page.is_database ? (
-                    <Table2 className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </span>
-                <span className="flex-1 truncate" title={page.title || "Untitled"}>
-                  {page.title || "Untitled"}
-                </span>
-                {page.is_database ? (
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    Database
+                <button
+                  role="option"
+                  aria-selected={allPagesRoving.focusedId === page.id}
+                  data-item-id={page.id}
+                  data-testid={`wh-page-item-${page.id}`}
+                  tabIndex={allPagesRoving.tabbableId === page.id ? 0 : -1}
+                  className="flex items-center gap-2 px-3 py-2 text-left text-sm transition-none hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
+                  onClick={() => navigateToPage(page.id)}
+                >
+                  <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+                    {page.icon ? (
+                      <span className="text-sm">{page.icon}</span>
+                    ) : page.is_database ? (
+                      <Table2 className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                    )}
                   </span>
-                ) : page.child_count > 0 ? (
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    {page.child_count} sub-page{page.child_count !== 1 ? "s" : ""}
+                  <span className="flex-1 truncate" title={page.title || "Untitled"}>
+                    {page.title || "Untitled"}
                   </span>
-                ) : null}
-                <RelativeTime
-                  dateStr={page.updated_at}
-                  className="shrink-0 text-xs text-muted-foreground"
-                />
-              </button>
+                  {page.is_database ? (
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      Database
+                    </span>
+                  ) : page.child_count > 0 ? (
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {page.child_count} sub-page{page.child_count !== 1 ? "s" : ""}
+                    </span>
+                  ) : null}
+                  <RelativeTime
+                    dateStr={page.updated_at}
+                    className="shrink-0 text-xs text-muted-foreground"
+                  />
+                </button>
+              </PageItemContextMenu>
             ))}
           </div>
         )}

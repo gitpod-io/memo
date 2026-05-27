@@ -559,6 +559,7 @@ src/
 │   ├── lazy-route-error.tsx    # Dynamic-import wrapper for route-error (keeps error boundary JS out of first load)
 │   ├── workspace-home.tsx       # Workspace home: page list or empty state with create CTA
 │   ├── workspace-home-client.tsx # Client wrapper: lazy-loads WorkspaceHome via next/dynamic
+│   ├── page-item-context-menu.tsx # Right-click context menu for page items (Open, Favorite, Duplicate, Delete)
 │   ├── page-count-status-bar.tsx # "X of Y pages" status bar for workspace home (mirrors RowCountStatusBar)
 │   ├── page-count-announcer.tsx  # Screen-reader live region for page count changes (mirrors RowCountAnnouncer)
 │   ├── settings-page-client.tsx  # Client wrapper: lazy-loads SettingsPageContent via next/dynamic
@@ -621,6 +622,7 @@ src/
 │   ├── types.ts            # Database entity types
 │   ├── usage-tracking-guard.ts # isUsageTrackingDisabled — suppresses usage events in CI/test
 │   ├── use-markdown-import.ts # Hook for importing .md files as new pages (shared by page-menu and workspace-home)
+│   ├── use-page-actions.ts  # Hook for page actions (delete, duplicate, favorite) outside the sidebar tree
 │   ├── use-media-query.ts  # Hook for reactive CSS media query matching (useSyncExternalStore)
 │   ├── use-persisted-expanded.ts # Hook for persisting sidebar tree expansion state to localStorage
 │   ├── use-roving-tabindex.ts # Hook for roving tabindex in flat listbox widgets (ArrowUp/Down, Home/End, Enter)
