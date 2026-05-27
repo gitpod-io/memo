@@ -623,6 +623,7 @@ src/
 │   ├── use-markdown-import.ts # Hook for importing .md files as new pages (shared by page-menu and workspace-home)
 │   ├── use-media-query.ts  # Hook for reactive CSS media query matching (useSyncExternalStore)
 │   ├── use-persisted-expanded.ts # Hook for persisting sidebar tree expansion state to localStorage
+│   ├── use-roving-tabindex.ts # Hook for roving tabindex in flat listbox widgets (ArrowUp/Down, Home/End, Enter)
 │   ├── use-screenshot.ts   # Hook for capturing screenshots via html2canvas (feedback form)
 │   ├── utils.ts            # cn() utility (clsx + tailwind-merge)
 │   ├── word-count.ts       # Word count and reading time calculation utilities

@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, Plus, Search, Table2, Upload } from "lucide-react";
+import { useRovingTabindex } from "@/lib/use-roving-tabindex";
 import { toast } from "@/lib/toast";
 import { getClient } from "@/lib/supabase/lazy-client";
 import {
@@ -119,6 +120,36 @@ export function WorkspaceHome({
       : pages;
     return sortPages(filtered, sortBy);
   }, [pages, filter, sortBy]);
+
+  const recentItemIds = useMemo(
+    () => recentVisits.map((v) => v.page_id),
+    [recentVisits],
+  );
+
+  const allPagesItemIds = useMemo(
+    () => filteredAndSorted.map((p) => p.id),
+    [filteredAndSorted],
+  );
+
+  const navigateToPage = useCallback(
+    (pageId: string) => router.push(`/${workspace.slug}/${pageId}`),
+    [router, workspace.slug],
+  );
+
+  const recentListRef = useRef<HTMLDivElement>(null);
+  const allPagesListRef = useRef<HTMLDivElement>(null);
+
+  const recentRoving = useRovingTabindex({
+    itemIds: recentItemIds,
+    onActivate: navigateToPage,
+    containerRef: recentListRef,
+  });
+
+  const allPagesRoving = useRovingTabindex({
+    itemIds: allPagesItemIds,
+    onActivate: navigateToPage,
+    containerRef: allPagesListRef,
+  });
 
   async function handleCreatePage() {
     const supabase = await getClient();
@@ -237,18 +268,30 @@ export function WorkspaceHome({
       </div>
       {recentVisits.length > 0 && (
         <div className="mt-6" data-testid="wh-recently-visited">
-          <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
+          <h2
+            id="wh-recently-visited-label"
+            className="mb-2 text-xs uppercase tracking-widest text-label-faint"
+          >
             Recently Visited
           </h2>
-          <div className="flex flex-col gap-0.5">
+          <div
+            ref={recentListRef}
+            role="listbox"
+            aria-labelledby="wh-recently-visited-label"
+            onFocus={recentRoving.handleFocus}
+            onKeyDown={recentRoving.handleKeyDown}
+            className="flex flex-col gap-0.5"
+          >
             {recentVisits.map((visit) => (
               <button
                 key={visit.page_id}
+                role="option"
+                aria-selected={recentRoving.focusedId === visit.page_id}
+                data-item-id={visit.page_id}
                 data-testid={`wh-recent-item-${visit.page_id}`}
+                tabIndex={recentRoving.tabbableId === visit.page_id ? 0 : -1}
                 className="flex items-center gap-2 px-3 py-2 text-left text-sm transition-none hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
-                onClick={() =>
-                  router.push(`/${workspace.slug}/${visit.page_id}`)
-                }
+                onClick={() => navigateToPage(visit.page_id)}
               >
                 <span className="flex h-4 w-4 shrink-0 items-center justify-center">
                   {visit.icon ? (
@@ -281,7 +324,7 @@ export function WorkspaceHome({
         </div>
       )}
       <div className="mt-6" data-testid="wh-all-pages">
-        <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint" data-testid="wh-all-pages-heading">
+        <h2 id="wh-all-pages-heading" className="mb-2 text-xs uppercase tracking-widest text-label-faint" data-testid="wh-all-pages-heading">
           All Pages ({pages.length})
         </h2>
         <div className="mb-3 flex items-center gap-2">
@@ -341,15 +384,24 @@ export function WorkspaceHome({
             </Button>
           </div>
         ) : (
-          <div className="flex flex-col gap-0.5">
+          <div
+            ref={allPagesListRef}
+            role="listbox"
+            aria-labelledby="wh-all-pages-heading"
+            onFocus={allPagesRoving.handleFocus}
+            onKeyDown={allPagesRoving.handleKeyDown}
+            className="flex flex-col gap-0.5"
+          >
             {filteredAndSorted.map((page) => (
               <button
                 key={page.id}
+                role="option"
+                aria-selected={allPagesRoving.focusedId === page.id}
+                data-item-id={page.id}
                 data-testid={`wh-page-item-${page.id}`}
+                tabIndex={allPagesRoving.tabbableId === page.id ? 0 : -1}
                 className="flex items-center gap-2 px-3 py-2 text-left text-sm transition-none hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
-                onClick={() =>
-                  router.push(`/${workspace.slug}/${page.id}`)
-                }
+                onClick={() => navigateToPage(page.id)}
               >
                 <span className="flex h-4 w-4 shrink-0 items-center justify-center">
                   {page.icon ? (

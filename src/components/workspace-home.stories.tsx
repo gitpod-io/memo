@@ -125,20 +125,30 @@ const mockRecentVisits = [
 ];
 
 function PageItem({
+  id,
   icon,
   title,
   timeStr,
   isDatabase = false,
   childCount = 0,
+  isFirst = false,
 }: {
+  id: string;
   icon: string | null;
   title: string;
   timeStr: string;
   isDatabase?: boolean;
   childCount?: number;
+  isFirst?: boolean;
 }) {
   return (
-    <button className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-overlay-hover">
+    <button
+      role="option"
+      aria-selected={false}
+      data-item-id={id}
+      tabIndex={isFirst ? 0 : -1}
+      className="flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
+    >
       <span className="flex h-4 w-4 shrink-0 items-center justify-center">
         {icon ? (
           <span className="text-sm">{icon}</span>
@@ -243,7 +253,7 @@ export const WithPages: Story = {
     <div className="mx-auto max-w-3xl p-6">
       <WorkspaceHeader />
       <div className="mt-6">
-        <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
+        <h2 id="wh-all-pages-heading" className="mb-2 text-xs uppercase tracking-widest text-label-faint">
           All Pages ({mockPages.length})
         </h2>
         <SortFilterBar />
@@ -251,15 +261,17 @@ export const WithPages: Story = {
           filteredCount={mockPages.length}
           totalCount={mockPages.length}
         />
-        <div className="flex flex-col gap-0.5">
-          {mockPages.map((page) => (
+        <div role="listbox" aria-labelledby="wh-all-pages-heading" className="flex flex-col gap-0.5">
+          {mockPages.map((page, i) => (
             <PageItem
               key={page.id}
+              id={page.id}
               icon={page.icon}
               title={page.title}
               timeStr={page.updated_at}
               isDatabase={page.is_database}
               childCount={page.child_count}
+              isFirst={i === 0}
             />
           ))}
         </div>
@@ -273,24 +285,26 @@ export const WithRecentVisits: Story = {
     <div className="mx-auto max-w-3xl p-6">
       <WorkspaceHeader />
       <div className="mt-6">
-        <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
+        <h2 id="wh-recently-visited-label" className="mb-2 text-xs uppercase tracking-widest text-label-faint">
           Recently Visited
         </h2>
-        <div className="flex flex-col gap-0.5">
-          {mockRecentVisits.map((visit) => (
+        <div role="listbox" aria-labelledby="wh-recently-visited-label" className="flex flex-col gap-0.5">
+          {mockRecentVisits.map((visit, i) => (
             <PageItem
               key={visit.page_id}
+              id={visit.page_id}
               icon={visit.icon}
               title={visit.title}
               timeStr={visit.visited_at}
               isDatabase={visit.is_database}
               childCount={visit.child_count}
+              isFirst={i === 0}
             />
           ))}
         </div>
       </div>
       <div className="mt-6">
-        <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
+        <h2 id="wh-all-pages-heading-rv" className="mb-2 text-xs uppercase tracking-widest text-label-faint">
           All Pages ({mockPages.length})
         </h2>
         <SortFilterBar />
@@ -298,15 +312,17 @@ export const WithRecentVisits: Story = {
           filteredCount={mockPages.length}
           totalCount={mockPages.length}
         />
-        <div className="flex flex-col gap-0.5">
-          {mockPages.map((page) => (
+        <div role="listbox" aria-labelledby="wh-all-pages-heading-rv" className="flex flex-col gap-0.5">
+          {mockPages.map((page, i) => (
             <PageItem
               key={page.id}
+              id={page.id}
               icon={page.icon}
               title={page.title}
               timeStr={page.updated_at}
               isDatabase={page.is_database}
               childCount={page.child_count}
+              isFirst={i === 0}
             />
           ))}
         </div>
@@ -400,7 +416,7 @@ export const MobileViewport: Story = {
     <div className="mx-auto max-w-3xl p-6">
       <WorkspaceHeader />
       <div className="mt-6">
-        <h2 className="mb-2 text-xs uppercase tracking-widest text-label-faint">
+        <h2 id="wh-all-pages-heading-mv" className="mb-2 text-xs uppercase tracking-widest text-label-faint">
           All Pages ({mockPages.length})
         </h2>
         <SortFilterBar />
@@ -408,15 +424,17 @@ export const MobileViewport: Story = {
           filteredCount={mockPages.length}
           totalCount={mockPages.length}
         />
-        <div className="flex flex-col gap-0.5">
-          {mockPages.slice(0, 3).map((page) => (
+        <div role="listbox" aria-labelledby="wh-all-pages-heading-mv" className="flex flex-col gap-0.5">
+          {mockPages.slice(0, 3).map((page, i) => (
             <PageItem
               key={page.id}
+              id={page.id}
               icon={page.icon}
               title={page.title}
               timeStr={page.updated_at}
               isDatabase={page.is_database}
               childCount={page.child_count}
+              isFirst={i === 0}
             />
           ))}
         </div>
