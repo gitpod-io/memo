@@ -2104,6 +2104,12 @@ Implementation pattern (see `page-tree.tsx` for a full example):
 6. **Child items**: receive `focusedId` (for focus ring) and `tabbableId` (for
    tabIndex) as props. Inner interactive elements (buttons, links) use `tabIndex={-1}`.
 
+For **flat lists** (`role="listbox"`), use the `useRovingTabindex` hook from
+`src/lib/use-roving-tabindex.ts`. It handles ArrowUp/Down, Home/End, Enter, and
+focus sync. Items use `data-item-id` instead of `data-page-id`. See
+`workspace-home.tsx` for usage. For **tree widgets** (`role="tree"`) with
+expand/collapse, inline the logic as in `page-tree.tsx`.
+
 Reference: [WAI-ARIA Treeview pattern](https://www.w3.org/WAI/ARIA/apg/patterns/treeview/).
 
 ### axe-core audit
