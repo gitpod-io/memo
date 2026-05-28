@@ -131,6 +131,7 @@ export const TableCell = memo(function TableCell({
         )}
         role="gridcell"
         data-testid={`db-table-cell-${rowIndex}-${colIndex}`}
+        data-column-id={propertyId}
       >
         <input
           ref={inputRef}
@@ -172,6 +173,7 @@ export const TableCell = memo(function TableCell({
         )}
         role="gridcell"
         data-testid={`db-table-cell-${rowIndex}-${colIndex}`}
+        data-column-id={propertyId}
         data-row={rowIndex}
         data-col={colIndex}
         tabIndex={isFocused ? 0 : -1}
@@ -229,6 +231,7 @@ export const TableCell = memo(function TableCell({
           )}
           role="gridcell"
           data-testid={`db-table-cell-${rowIndex}-${colIndex}`}
+          data-column-id={propertyId}
           data-row={rowIndex}
           data-col={colIndex}
           tabIndex={isFocused ? 0 : -1}
@@ -251,6 +254,7 @@ export const TableCell = memo(function TableCell({
       )}
       role="gridcell"
       data-testid={`db-table-cell-${rowIndex}-${colIndex}`}
+      data-column-id={propertyId}
       data-row={rowIndex}
       data-col={colIndex}
       tabIndex={isFocused ? 0 : -1}

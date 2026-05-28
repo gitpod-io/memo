@@ -12,7 +12,8 @@ import type {
 // ---------------------------------------------------------------------------
 
 const DEFAULT_COLUMN_WIDTH = 180;
-const MIN_COLUMN_WIDTH = 80;
+export const MIN_COLUMN_WIDTH = 80;
+export const MAX_COLUMN_WIDTH = 500;
 
 interface UseColumnResizeParams {
   properties: DatabaseProperty[];
@@ -87,7 +88,32 @@ export function useColumnResize({
     prevResizingColumn.current = resizingColumn;
   }, [resizingColumn, columnWidths, onColumnWidthsChange]);
 
-  return { columnWidths, resizingColumn, handleResizeStart };
+  const handleResizeAutoFit = useCallback(
+    (propertyId: string) => {
+      // Measure the widest cell content in this column via DOM query.
+      // Cells and the header carry data-column-id for this purpose.
+      const cells = document.querySelectorAll(
+        `[data-column-id="${propertyId}"]`,
+      );
+      let maxWidth = 0;
+      cells.forEach((cell) => {
+        // Use scrollWidth to capture content that may overflow the cell.
+        maxWidth = Math.max(maxWidth, cell.scrollWidth);
+      });
+      // Add padding buffer so text doesn't touch the cell edge.
+      const PADDING_BUFFER = 16;
+      const clamped = Math.min(
+        MAX_COLUMN_WIDTH,
+        Math.max(MIN_COLUMN_WIDTH, maxWidth + PADDING_BUFFER),
+      );
+      setColumnWidths((prev) => ({ ...prev, [propertyId]: clamped }));
+      // Persist immediately since this is a one-shot action, not a drag.
+      onColumnWidthsChange?.({ ...columnWidths, [propertyId]: clamped });
+    },
+    [columnWidths, onColumnWidthsChange],
+  );
+
+  return { columnWidths, resizingColumn, handleResizeStart, handleResizeAutoFit };
 }
 
 // ---------------------------------------------------------------------------

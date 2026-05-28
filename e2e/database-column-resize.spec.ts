@@ -346,4 +346,98 @@ test.describe("Table view column resize", () => {
     const finalWidthA = await getColumnWidth(page, 0);
     expect(finalWidthA).toBeCloseTo(initialWidthA, -1);
   });
+
+  test("double-click resize handle auto-fits column width to content", async ({
+    authenticatedPage: page,
+  }) => {
+    // Add a row with long text in ColA so auto-fit has content to measure
+    const admin = getAdminClient();
+    const { data: longRow, error: longRowErr } = await admin
+      .from("pages")
+      .insert({
+        workspace_id: (
+          await admin
+            .from("pages")
+            .select("workspace_id")
+            .eq("id", databasePageId)
+            .single()
+        ).data!.workspace_id,
+        parent_id: databasePageId,
+        title: "Long Text Row",
+        is_database: false,
+        position: 1,
+        created_by: (
+          await admin
+            .from("pages")
+            .select("created_by")
+            .eq("id", databasePageId)
+            .single()
+        ).data!.created_by,
+      })
+      .select()
+      .single();
+
+    if (longRowErr || !longRow)
+      throw new Error(`Failed to create long row: ${longRowErr?.message}`);
+    rowPageIds.push(longRow.id);
+
+    // Insert a long text value for ColA
+    await admin.from("row_values").insert({
+      row_id: longRow.id,
+      property_id: propertyIds[0],
+      value: {
+        text: "This is a very long text value that should cause the column to widen when auto-fit is triggered",
+      },
+    });
+
+    await navigateToDatabase(page);
+
+    const colAHeader = page.getByTestId("db-table-column-header-0");
+    await expect(colAHeader).toBeVisible({ timeout: 10_000 });
+
+    // Record initial width of ColA (default 180px)
+    const initialWidthA = await getColumnWidth(page, 0);
+
+    // Double-click the resize handle for ColA
+    const resizeHandle = page.getByTestId("db-table-resize-handle-0");
+    await expect(resizeHandle).toBeVisible();
+    await resizeHandle.dblclick();
+
+    // Verify ColA width changed (should be wider than default to fit content)
+    await expect(async () => {
+      const newWidthA = await getColumnWidth(page, 0);
+      // The auto-fitted width should differ from the initial default
+      expect(newWidthA).not.toBeCloseTo(initialWidthA, -1);
+      // It should be at least MIN_COLUMN_WIDTH (80px)
+      expect(newWidthA).toBeGreaterThanOrEqual(80);
+      // It should not exceed MAX_COLUMN_WIDTH (500px)
+      expect(newWidthA).toBeLessThanOrEqual(500);
+    }).toPass({ timeout: 5_000 });
+
+    // Clean up the extra row
+    await admin.from("row_values").delete().eq("row_id", longRow.id);
+    await admin.from("pages").delete().eq("id", longRow.id);
+    rowPageIds.pop();
+  });
+
+  test("auto-fit respects minimum column width", async ({
+    authenticatedPage: page,
+  }) => {
+    // With only short/empty content, auto-fit should clamp to MIN_COLUMN_WIDTH
+    await navigateToDatabase(page);
+
+    const colBHeader = page.getByTestId("db-table-column-header-1");
+    await expect(colBHeader).toBeVisible({ timeout: 10_000 });
+
+    // Double-click the resize handle for ColB (which has no row values)
+    const resizeHandle = page.getByTestId("db-table-resize-handle-1");
+    await expect(resizeHandle).toBeVisible();
+    await resizeHandle.dblclick();
+
+    // Verify ColB width is at least MIN_COLUMN_WIDTH
+    await expect(async () => {
+      const newWidthB = await getColumnWidth(page, 1);
+      expect(newWidthB).toBeGreaterThanOrEqual(80);
+    }).toPass({ timeout: 5_000 });
+  });
 });

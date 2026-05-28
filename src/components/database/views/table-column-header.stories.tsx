@@ -48,6 +48,7 @@ const defaultHandlers = {
   onDragOver: fn(),
   onDrop: fn(),
   onResizeStart: fn(),
+  onResizeAutoFit: fn(),
 };
 
 // ---------------------------------------------------------------------------
