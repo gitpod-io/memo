@@ -17,6 +17,8 @@ import { RenamePropertyDialog } from "@/components/database/rename-property-dial
 import {
   ViewConfigDropdown,
   RowHeightToggle,
+  GalleryCardSizeDropdown,
+  GalleryCoverDropdown,
   ComingSoonPlaceholder,
   DatabaseSkeleton,
 } from "@/components/database/database-view-helpers";
@@ -399,6 +401,19 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                     selectedId={activeView.config.date_property ?? null}
                     options={properties.filter((p) => p.type === "date")}
                     onSelect={(id) => handleViewConfigChange({ date_property: id })}
+                  />
+                )}
+                {activeView.type === "gallery" && (
+                  <GalleryCardSizeDropdown
+                    cardSize={activeView.config.card_size ?? "medium"}
+                    onCardSizeChange={(size) => handleViewConfigChange({ card_size: size })}
+                  />
+                )}
+                {activeView.type === "gallery" && (
+                  <GalleryCoverDropdown
+                    selectedId={activeView.config.cover_property ?? null}
+                    options={properties.filter((p) => p.type === "files")}
+                    onSelect={(id) => handleViewConfigChange({ cover_property: id })}
                   />
                 )}
                 <div className="flex-1" />

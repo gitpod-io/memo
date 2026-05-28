@@ -4,9 +4,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Check, Rows3 } from "lucide-react";
+import { ChevronDown, Check, Rows3, LayoutGrid, ImageIcon } from "lucide-react";
 import type { DatabaseProperty, DatabaseViewConfig, DatabaseViewType } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -102,6 +104,108 @@ export function RowHeightToggle({ value, onChange }: RowHeightToggleProps) {
               <span className="size-3" />
             )}
             {option.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// GalleryCardSizeDropdown — toolbar dropdown for selecting gallery card size
+// ---------------------------------------------------------------------------
+
+const CARD_SIZE_OPTIONS: { value: NonNullable<DatabaseViewConfig["card_size"]>; label: string }[] = [
+  { value: "small", label: "Small" },
+  { value: "medium", label: "Medium" },
+  { value: "large", label: "Large" },
+];
+
+export interface GalleryCardSizeDropdownProps {
+  cardSize: NonNullable<DatabaseViewConfig["card_size"]>;
+  onCardSizeChange: (size: NonNullable<DatabaseViewConfig["card_size"]>) => void;
+}
+
+export function GalleryCardSizeDropdown({
+  cardSize,
+  onCardSizeChange,
+}: GalleryCardSizeDropdownProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className="inline-flex h-7 items-center gap-1 rounded-sm px-2 text-xs text-muted-foreground outline-none transition-colors hover:bg-overlay-border hover:text-foreground"
+        data-testid="gallery-card-size"
+      >
+        <LayoutGrid className="size-3.5" />
+        Card size
+        <ChevronDown className="size-3" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        <DropdownMenuRadioGroup
+          value={cardSize}
+          onValueChange={(value) =>
+            onCardSizeChange(value as NonNullable<DatabaseViewConfig["card_size"]>)
+          }
+        >
+          {CARD_SIZE_OPTIONS.map((option) => (
+            <DropdownMenuRadioItem
+              key={option.value}
+              value={option.value}
+              closeOnClick
+              className="text-xs"
+            >
+              {option.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// GalleryCoverDropdown — toolbar dropdown for selecting gallery cover property
+// ---------------------------------------------------------------------------
+
+export interface GalleryCoverDropdownProps {
+  selectedId: string | null;
+  options: DatabaseProperty[];
+  onSelect: (propertyId: string | null) => void;
+}
+
+export function GalleryCoverDropdown({
+  selectedId,
+  options,
+  onSelect,
+}: GalleryCoverDropdownProps) {
+  const selectedName = options.find((p) => p.id === selectedId)?.name;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className="inline-flex h-7 items-center gap-1 rounded-sm px-2 text-xs text-muted-foreground outline-none transition-colors hover:bg-overlay-border hover:text-foreground"
+        data-testid="gallery-cover-property"
+      >
+        <ImageIcon className="size-3.5" />
+        Cover: {selectedName ?? "None"}
+        <ChevronDown className="size-3" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        <DropdownMenuItem
+          onClick={() => onSelect(null)}
+          className="gap-2 text-xs"
+        >
+          {selectedId === null ? <Check className="size-3" /> : <span className="size-3" />}
+          None
+        </DropdownMenuItem>
+        {options.map((prop) => (
+          <DropdownMenuItem
+            key={prop.id}
+            onClick={() => onSelect(prop.id)}
+            className="gap-2 text-xs"
+          >
+            {prop.id === selectedId ? <Check className="size-3" /> : <span className="size-3" />}
+            {prop.name}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
