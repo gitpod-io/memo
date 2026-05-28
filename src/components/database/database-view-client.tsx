@@ -17,6 +17,7 @@ import { RenamePropertyDialog } from "@/components/database/rename-property-dial
 import {
   ViewConfigDropdown,
   RowHeightToggle,
+  WrapCellsToggle,
   GalleryCardSizeDropdown,
   GalleryCoverDropdown,
   ComingSoonPlaceholder,
@@ -384,6 +385,14 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                     value={activeView.config.row_height ?? "default"}
                     onChange={(height) =>
                       handleViewConfigChange({ row_height: height })
+                    }
+                  />
+                )}
+                {activeView.type === "table" && (
+                  <WrapCellsToggle
+                    value={activeView.config.wrap_cells ?? false}
+                    onChange={(wrap) =>
+                      handleViewConfigChange({ wrap_cells: wrap })
                     }
                   />
                 )}

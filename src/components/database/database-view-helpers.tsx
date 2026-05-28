@@ -8,7 +8,8 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Check, Rows3, LayoutGrid, ImageIcon } from "lucide-react";
+import { ChevronDown, Check, Rows3, LayoutGrid, ImageIcon, TextWrap } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { DatabaseProperty, DatabaseViewConfig, DatabaseViewType } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -109,6 +110,35 @@ export function RowHeightToggle({ value, onChange }: RowHeightToggleProps) {
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// WrapCellsToggle — toolbar toggle for enabling/disabling cell text wrapping
+// ---------------------------------------------------------------------------
+
+export interface WrapCellsToggleProps {
+  value: boolean;
+  onChange: (wrap: boolean) => void;
+}
+
+export function WrapCellsToggle({ value, onChange }: WrapCellsToggleProps) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        "inline-flex h-7 items-center gap-1 rounded-sm px-2 text-xs outline-none transition-colors",
+        value
+          ? "bg-overlay-active text-foreground"
+          : "text-muted-foreground hover:bg-overlay-border hover:text-foreground",
+      )}
+      onClick={() => onChange(!value)}
+      data-testid="wrap-cells-toggle"
+      aria-label="Wrap cells"
+      aria-pressed={value}
+    >
+      <TextWrap className="size-3.5" />
+    </button>
   );
 }
 

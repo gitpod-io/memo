@@ -36,6 +36,14 @@ const ROW_HEIGHT_CLASS: Record<NonNullable<DatabaseViewConfig["row_height"]>, st
   tall: "h-14",
 };
 
+// When wrap_cells is enabled, use min-height instead of fixed height so
+// content can expand. The row still respects the chosen density as a minimum.
+const ROW_HEIGHT_WRAP_CLASS: Record<NonNullable<DatabaseViewConfig["row_height"]>, string> = {
+  compact: "min-h-8",
+  default: "min-h-10",
+  tall: "min-h-14",
+};
+
 // Pixel heights for the virtualizer's estimateSize (desktop values).
 const ROW_HEIGHT_PX: Record<NonNullable<DatabaseViewConfig["row_height"]>, number> = {
   compact: 33, // 32px (h-8) + 1px border-b
@@ -134,7 +142,10 @@ export const TableView = memo(function TableView({
   selectionResetKey,
 }: TableViewProps) {
   const rowHeight = viewConfig.row_height ?? "default";
-  const rowHeightClass = ROW_HEIGHT_CLASS[rowHeight];
+  const wrapCells = viewConfig.wrap_cells ?? false;
+  const rowHeightClass = wrapCells
+    ? ROW_HEIGHT_WRAP_CLASS[rowHeight]
+    : ROW_HEIGHT_CLASS[rowHeight];
   const rowHeightPx = ROW_HEIGHT_PX[rowHeight];
 
   // Visible properties (filter by viewConfig.visible_properties if set)
@@ -469,6 +480,7 @@ export const TableView = memo(function TableView({
                         visibleProperties={visibleProperties}
                         allProperties={properties}
                         rowHeightClass={rowHeightClass}
+                        wrapCells={wrapCells}
                         workspaceSlug={workspaceSlug}
                         editingCell={editingCell}
                         focusedCell={focusedCell}
@@ -496,6 +508,7 @@ export const TableView = memo(function TableView({
                 visibleProperties={visibleProperties}
                 allProperties={properties}
                 rowHeightClass={rowHeightClass}
+                wrapCells={wrapCells}
                 workspaceSlug={workspaceSlug}
                 editingCell={editingCell}
                 focusedCell={focusedCell}
