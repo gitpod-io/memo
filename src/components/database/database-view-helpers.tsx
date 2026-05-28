@@ -86,6 +86,7 @@ export function RowHeightToggle({ value, onChange }: RowHeightToggleProps) {
       <DropdownMenuTrigger
         className="inline-flex h-7 items-center gap-1 rounded-sm px-2 text-xs text-muted-foreground outline-none transition-colors hover:bg-overlay-border hover:text-foreground"
         data-testid="row-height-toggle"
+        aria-label="Row height"
       >
         <Rows3 className="size-3.5" />
         <ChevronDown className="size-3" />
