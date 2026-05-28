@@ -493,3 +493,52 @@ export const SelectionDisabled: Story = {
     onBulkDeleteRows: undefined,
   },
 };
+
+// ---------------------------------------------------------------------------
+// Auto-fit column width stories
+// ---------------------------------------------------------------------------
+
+const autoFitRows: DatabaseRow[] = [
+  makeRow("row-af-1", "Short", null, {
+    "prop-status": { value: "Done", color: "green" },
+    "prop-priority": { value: "High", color: "red" },
+    "prop-url": { value: "https://x.co" },
+  }),
+  makeRow("row-af-2", "A much longer title to demonstrate varied widths", "📝", {
+    "prop-status": { value: "In Progress", color: "blue" },
+    "prop-priority": { value: "Medium — needs further review by the team", color: "yellow" },
+    "prop-url": { value: "https://example.com/very/long/path/to/resource/page" },
+  }),
+  makeRow("row-af-3", "Mid-length row title", "🔧", {
+    "prop-status": { value: "To Do", color: "gray" },
+    "prop-priority": { value: "Low", color: "blue" },
+    "prop-url": { value: "https://docs.example.com" },
+  }),
+];
+
+export const AutoFitDefaultWidths: Story = {
+  name: "Auto-fit: Before (default widths)",
+  args: {
+    rows: autoFitRows,
+    properties: mockProperties,
+    viewConfig: defaultConfig,
+  },
+};
+
+export const AutoFitVariedContent: Story = {
+  name: "Auto-fit: Varied content widths",
+  args: {
+    rows: autoFitRows,
+    properties: mockProperties,
+    viewConfig: {
+      column_widths: {
+        "prop-status": 100,
+        "prop-priority": 300,
+        "prop-due": 120,
+        "prop-url": 400,
+        "prop-done": 80,
+        "prop-stage": 100,
+      },
+    },
+  },
+};

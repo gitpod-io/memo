@@ -178,7 +178,7 @@ export const TableView = memo(function TableView({
   }, [onBulkDeleteRows, selectedIds, clearSelection]);
 
   // Column resize state
-  const { columnWidths, resizingColumn, handleResizeStart } = useColumnResize({
+  const { columnWidths, resizingColumn, handleResizeStart, handleResizeAutoFit } = useColumnResize({
     properties,
     initialWidths: viewConfig.column_widths,
     onColumnWidthsChange,
@@ -436,6 +436,7 @@ export const TableView = memo(function TableView({
                   onDragOver={handleColumnDragOver}
                   onDrop={handleColumnDrop}
                   onResizeStart={handleResizeStart}
+                  onResizeAutoFit={handleResizeAutoFit}
                 />
               );
             })}

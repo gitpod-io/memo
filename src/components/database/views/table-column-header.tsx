@@ -65,6 +65,7 @@ export interface TableColumnHeaderProps {
   onDragOver: (e: React.DragEvent, colIndex: number) => void;
   onDrop: (e: React.DragEvent) => void;
   onResizeStart: (propertyId: string, e: React.MouseEvent) => void;
+  onResizeAutoFit?: (propertyId: string) => void;
 }
 
 export function TableColumnHeader({
@@ -84,6 +85,7 @@ export function TableColumnHeader({
   onDragOver,
   onDrop,
   onResizeStart,
+  onResizeAutoFit,
 }: TableColumnHeaderProps) {
   const Icon = PROPERTY_TYPE_ICON[property.type];
 
@@ -127,7 +129,7 @@ export function TableColumnHeader({
       {showDropBefore && (
         <div className="absolute left-0 top-0 z-20 h-full w-0.5 bg-accent" />
       )}
-      <div className="flex w-full items-center gap-1.5">
+      <div className="flex w-full items-center gap-1.5" data-column-id={property.id}>
         <span className="flex min-w-0 flex-1 items-center gap-1.5 text-xs font-medium uppercase tracking-widest text-muted-foreground">
           <Icon className="h-3 w-3 shrink-0" />
           <span className="truncate">{property.name}</span>
@@ -197,6 +199,11 @@ export function TableColumnHeader({
             : "bg-transparent group-hover/header:bg-overlay-border",
         )}
         onMouseDown={(e) => onResizeStart(property.id, e)}
+        onDoubleClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onResizeAutoFit?.(property.id);
+        }}
         role="separator"
         aria-orientation="vertical"
         data-testid={`db-table-resize-handle-${colIndex}`}
