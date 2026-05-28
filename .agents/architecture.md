@@ -290,6 +290,8 @@ src/components/database/
   ├── database-view-client.tsx     # Main client component: loads data, composes hooks + JSX
   ├── database-view-helpers.tsx    # ViewConfigDropdown, ComingSoonPlaceholder, DatabaseSkeleton
   ├── csv-export-button.tsx        # Download CSV toolbar button with relation title resolution
+  ├── csv-import-button.tsx        # Import CSV toolbar button with file picker and import orchestration
+  ├── csv-import-dialog.tsx        # Preview/mapping dialog for CSV import (column matching, preview table)
   ├── database-search-input.tsx    # Search input for filtering rows by title substring
   ├── hooks/
   │   ├── use-database-views.ts    # View CRUD: add, rename, delete, duplicate, reorder, config
@@ -493,6 +495,8 @@ src/
 │   │   ├── database-view-client.tsx     # Main client component: loads data, composes hooks + JSX
 │   │   ├── database-view-helpers.tsx    # ViewConfigDropdown, ComingSoonPlaceholder, DatabaseSkeleton
 │   │   ├── csv-export-button.tsx        # Download CSV toolbar button with relation title resolution
+│   │   ├── csv-import-button.tsx        # Import CSV toolbar button with file picker and import orchestration
+│   │   ├── csv-import-dialog.tsx        # Preview/mapping dialog for CSV import
 │   │   ├── database-search-input.tsx    # Search input for filtering rows by title substring
 │   │   ├── hooks/                       # Domain hooks extracted from database-view-client
 │   │   │   ├── use-database-views.ts    # View CRUD callbacks
@@ -598,6 +602,7 @@ src/
 │   ├── capture.ts          # lazyCaptureException — dynamic import of Sentry to reduce bundle size
 │   ├── column-helpers.ts    # Pure helpers for column-add flow: name generation, config seeding, concurrency guard
 │   ├── csv-export.ts       # CSV serialization (RFC 4180) and download trigger for database export
+│   ├── csv-import.ts       # CSV parsing (RFC 4180), column mapping, type coercion for database import
 │   ├── database.ts         # Database CRUD: create/delete databases, property/row/view CRUD, data loading
 │   ├── database-cache.ts   # In-memory cache for database data and workspace members
 │   ├── database-filters.ts # Client-side filter engine for database views (text, number, date, select, etc.)
