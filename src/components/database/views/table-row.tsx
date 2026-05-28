@@ -47,6 +47,7 @@ export interface TableRowProps {
   visibleProperties: DatabaseProperty[];
   allProperties: DatabaseProperty[];
   rowHeightClass: string;
+  wrapCells?: boolean;
   workspaceSlug: string;
   editingCell: EditingCell | null;
   focusedCell: FocusedCell | null;
@@ -74,6 +75,7 @@ function areTableRowPropsEqual(prev: TableRowProps, next: TableRowProps): boolea
   if (prev.visibleProperties !== next.visibleProperties) return false;
   if (prev.allProperties !== next.allProperties) return false;
   if (prev.rowHeightClass !== next.rowHeightClass) return false;
+  if (prev.wrapCells !== next.wrapCells) return false;
   if (prev.workspaceSlug !== next.workspaceSlug) return false;
   if (prev.onStartEditing !== next.onStartEditing) return false;
   if (prev.onCellKeyDown !== next.onCellKeyDown) return false;
@@ -103,6 +105,7 @@ export const TableRow = memo(function TableRow({
   visibleProperties,
   allProperties,
   rowHeightClass,
+  wrapCells = false,
   workspaceSlug,
   editingCell,
   focusedCell,
@@ -122,7 +125,10 @@ export const TableRow = memo(function TableRow({
     <>
       <Link
         href={`/${workspaceSlug}/${row.page.id}`}
-        className="min-w-0 flex-1 truncate text-sm text-foreground hover:underline"
+        className={cn(
+          "min-w-0 flex-1 text-sm text-foreground hover:underline",
+          wrapCells ? "whitespace-normal break-words" : "truncate",
+        )}
       >
         {row.page.icon && <span className="mr-1.5">{row.page.icon}</span>}
         {row.page.title || "Untitled"}
@@ -141,7 +147,8 @@ export const TableRow = memo(function TableRow({
   );
 
   const titleCellClass = cn(
-    "group/row flex items-center border-b border-overlay-border p-2 hover:bg-overlay-subtle",
+    "group/row flex border-b border-overlay-border p-2 hover:bg-overlay-subtle",
+    wrapCells ? "items-start" : "items-center",
     isSelected && "bg-overlay-active",
     rowHeightClass,
   );
@@ -254,6 +261,7 @@ export const TableRow = memo(function TableRow({
             isEditing={isEditing}
             isFocused={isFocused}
             rowHeightClass={rowHeightClass}
+            wrapCells={wrapCells}
             rowIndex={rowIndex}
             colIndex={colIndex}
             onStartEditing={onStartEditing}

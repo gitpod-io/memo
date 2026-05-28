@@ -180,6 +180,7 @@ export interface DatabaseViewConfig {
   // Table-specific
   column_widths?: Record<string, number>;
   row_height?: "compact" | "default" | "tall";
+  wrap_cells?: boolean;
   // Board-specific
   group_by?: string;
   hide_empty_groups?: boolean;

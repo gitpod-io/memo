@@ -53,6 +53,8 @@ export interface TableCellProps {
   isEditing: boolean;
   isFocused: boolean;
   rowHeightClass: string;
+  /** When true, cell text wraps instead of truncating with ellipsis. */
+  wrapCells?: boolean;
   rowIndex: number;
   colIndex: number;
   onStartEditing: (rowId: string, propertyId: string) => void;
@@ -71,6 +73,7 @@ export const TableCell = memo(function TableCell({
   isEditing,
   isFocused,
   rowHeightClass,
+  wrapCells = false,
   rowIndex,
   colIndex,
   onStartEditing,
@@ -240,7 +243,8 @@ export const TableCell = memo(function TableCell({
   return (
     <div
       className={cn(
-        "flex items-center border-b border-overlay-border p-2 hover:bg-overlay-subtle",
+        "flex border-b border-overlay-border p-2 hover:bg-overlay-subtle",
+        wrapCells ? "items-start" : "items-center",
         isReadOnly ? "cursor-default" : "cursor-text",
         isFocused && "ring-1 ring-inset ring-ring",
         rowHeightClass,
@@ -258,6 +262,7 @@ export const TableCell = memo(function TableCell({
         property={property}
         propertyType={propertyType}
         displayValue={displayValue}
+        wrapCells={wrapCells}
       />
     </div>
   );

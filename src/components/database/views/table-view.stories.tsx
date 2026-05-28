@@ -248,6 +248,33 @@ export const TallRowHeight: Story = {
   },
 };
 
+export const WrapCellsEnabled: Story = {
+  name: "Wrap Cells (enabled)",
+  args: {
+    rows: mockRows,
+    properties: mockProperties,
+    viewConfig: { wrap_cells: true },
+  },
+};
+
+export const WrapCellsTallRows: Story = {
+  name: "Wrap Cells + Tall Rows",
+  args: {
+    rows: mockRows,
+    properties: mockProperties,
+    viewConfig: { wrap_cells: true, row_height: "tall" },
+  },
+};
+
+export const WrapCellsCompactRows: Story = {
+  name: "Wrap Cells + Compact Rows",
+  args: {
+    rows: mockRows,
+    properties: mockProperties,
+    viewConfig: { wrap_cells: true, row_height: "compact" },
+  },
+};
+
 export const CustomColumnWidths: Story = {
   args: {
     rows: mockRows,

@@ -294,3 +294,45 @@ export const UpdatedTime: Story = {
     displayValue: "2026-04-15",
   },
 };
+
+// ---------------------------------------------------------------------------
+// Wrapped text — wrapCells enabled
+// ---------------------------------------------------------------------------
+
+const longText =
+  "This is a very long text value that should wrap to multiple lines when the wrap cells toggle is enabled in the table view toolbar";
+
+export const TextWrapped: Story = {
+  name: "Text (wrapped)",
+  args: {
+    property: textProp,
+    propertyType: "text",
+    value: makeValue(textProp.id, { text: longText }),
+    displayValue: longText,
+    wrapCells: true,
+  },
+};
+
+export const TextTruncated: Story = {
+  name: "Text (truncated, default)",
+  args: {
+    property: textProp,
+    propertyType: "text",
+    value: makeValue(textProp.id, { text: longText }),
+    displayValue: longText,
+    wrapCells: false,
+  },
+};
+
+const longUrl = "https://example.com/very/long/path/to/some/resource/that/should/wrap/when/enabled";
+
+export const UrlWrapped: Story = {
+  name: "URL (wrapped)",
+  args: {
+    property: urlProp,
+    propertyType: "url",
+    value: makeValue(urlProp.id, { url: longUrl }),
+    displayValue: longUrl,
+    wrapCells: true,
+  },
+};

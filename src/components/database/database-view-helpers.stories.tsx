@@ -3,6 +3,7 @@ import { fn } from "@storybook/test";
 import {
   ViewConfigDropdown,
   RowHeightToggle,
+  WrapCellsToggle,
   GalleryCardSizeDropdown,
   GalleryCoverDropdown,
   ComingSoonPlaceholder,
@@ -225,6 +226,28 @@ export const CoverNoOptions: StoryObj<typeof GalleryCoverDropdown> = {
       onSelect={fn()}
     />
   ),
+  parameters: { layout: "centered" },
+};
+
+// ===========================================================================
+// WrapCellsToggle
+// ===========================================================================
+
+export const WrapCellsOff: StoryObj<typeof WrapCellsToggle> = {
+  render: (args) => <WrapCellsToggle {...args} />,
+  args: {
+    value: false,
+    onChange: fn(),
+  },
+  parameters: { layout: "centered" },
+};
+
+export const WrapCellsOn: StoryObj<typeof WrapCellsToggle> = {
+  render: (args) => <WrapCellsToggle {...args} />,
+  args: {
+    value: true,
+    onChange: fn(),
+  },
   parameters: { layout: "centered" },
 };
 

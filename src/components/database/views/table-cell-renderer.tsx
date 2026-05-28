@@ -50,9 +50,12 @@ export interface CellRendererProps {
   property: DatabaseProperty;
   propertyType: PropertyType;
   displayValue: string;
+  /** When true, text wraps instead of truncating with ellipsis. */
+  wrapCells?: boolean;
 }
 
-export const CellRenderer = memo(function CellRenderer({ value, property, propertyType, displayValue }: CellRendererProps) {
+export const CellRenderer = memo(function CellRenderer({ value, property, propertyType, displayValue, wrapCells = false }: CellRendererProps) {
+  const textOverflow = wrapCells ? "whitespace-normal break-words" : "truncate";
   switch (propertyType) {
     case "select":
     case "status": {
@@ -102,7 +105,7 @@ export const CellRenderer = memo(function CellRenderer({ value, property, proper
           href={displayValue}
           target="_blank"
           rel="noopener noreferrer"
-          className="truncate text-sm text-accent hover:underline"
+          className={cn(textOverflow, "text-sm text-accent hover:underline")}
           onClick={(e) => e.stopPropagation()}
         >
           {displayValue}
@@ -113,7 +116,7 @@ export const CellRenderer = memo(function CellRenderer({ value, property, proper
       return (
         <a
           href={`mailto:${displayValue}`}
-          className="truncate text-sm text-accent hover:underline"
+          className={cn(textOverflow, "text-sm text-accent hover:underline")}
           onClick={(e) => e.stopPropagation()}
         >
           {displayValue}
@@ -122,14 +125,14 @@ export const CellRenderer = memo(function CellRenderer({ value, property, proper
 
     case "number":
       return (
-        <span className="truncate text-sm text-foreground tabular-nums text-right w-full">
+        <span className={cn(textOverflow, "text-sm text-foreground tabular-nums text-right w-full")}>
           {displayValue}
         </span>
       );
 
     case "date":
       return (
-        <span className="truncate text-sm text-foreground">
+        <span className={cn(textOverflow, "text-sm text-foreground")}>
           {formatDate(displayValue)}
         </span>
       );
@@ -137,21 +140,21 @@ export const CellRenderer = memo(function CellRenderer({ value, property, proper
     case "created_time":
     case "updated_time":
       return (
-        <span className="truncate text-sm text-muted-foreground">
+        <span className={cn(textOverflow, "text-sm text-muted-foreground")}>
           {formatDate(displayValue)}
         </span>
       );
 
     case "formula":
       return (
-        <span className="truncate text-sm text-muted-foreground">
+        <span className={cn(textOverflow, "text-sm text-muted-foreground")}>
           {displayValue}
         </span>
       );
 
     default:
       return (
-        <span className="truncate text-sm text-foreground">
+        <span className={cn(textOverflow, "text-sm text-foreground")}>
           {displayValue}
         </span>
       );
