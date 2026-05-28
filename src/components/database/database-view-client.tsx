@@ -20,6 +20,7 @@ import {
   DatabaseSkeleton,
 } from "@/components/database/database-view-helpers";
 import { CSVExportButton } from "@/components/database/csv-export-button";
+import { CSVImportButton } from "@/components/database/csv-import-button";
 import { RowCountAnnouncer } from "@/components/database/views/row-count-announcer";
 import { Button } from "@/components/ui/button";
 import { loadDatabase, loadWorkspaceMembers } from "@/lib/database";
@@ -266,6 +267,21 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
 
   const hasActiveSearch = searchQuery.trim().length > 0;
 
+  // CSV import callbacks
+  const handleRowsImported = useCallback(
+    (newRows: DatabaseRow[]) => {
+      setRows((prev) => [...prev, ...newRows]);
+    },
+    [setRows],
+  );
+
+  const handlePropertiesAdded = useCallback(
+    (newProps: DatabaseProperty[]) => {
+      setProperties((prev) => [...prev, ...newProps]);
+    },
+    [setProperties],
+  );
+
   // Check if there's Lexical content to render above the database
   const hasContent =
     initialContent !== null &&
@@ -369,6 +385,14 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   />
                 )}
                 <div className="flex-1" />
+                <CSVImportButton
+                  pageId={pageId}
+                  userId={userId}
+                  workspaceId={workspaceId}
+                  properties={properties}
+                  onRowsImported={handleRowsImported}
+                  onPropertiesAdded={handlePropertiesAdded}
+                />
                 <CSVExportButton
                   rows={searchFilteredRows}
                   properties={properties}
