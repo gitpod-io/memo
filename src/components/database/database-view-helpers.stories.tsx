@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
 import {
   ViewConfigDropdown,
+  RowHeightToggle,
   ComingSoonPlaceholder,
   DatabaseSkeleton,
 } from "./database-view-helpers";
@@ -107,6 +108,37 @@ export const ComingSoonCalendar: StoryObj = {
 export const ComingSoonGallery: StoryObj = {
   render: () => <ComingSoonPlaceholder viewType="gallery" />,
   parameters: { layout: "padded" },
+};
+
+// ===========================================================================
+// RowHeightToggle
+// ===========================================================================
+
+export const RowHeightDefault: StoryObj<typeof RowHeightToggle> = {
+  render: (args) => <RowHeightToggle {...args} />,
+  args: {
+    value: "default",
+    onChange: fn(),
+  },
+  parameters: { layout: "centered" },
+};
+
+export const RowHeightCompact: StoryObj<typeof RowHeightToggle> = {
+  render: (args) => <RowHeightToggle {...args} />,
+  args: {
+    value: "compact",
+    onChange: fn(),
+  },
+  parameters: { layout: "centered" },
+};
+
+export const RowHeightTall: StoryObj<typeof RowHeightToggle> = {
+  render: (args) => <RowHeightToggle {...args} />,
+  args: {
+    value: "tall",
+    onChange: fn(),
+  },
+  parameters: { layout: "centered" },
 };
 
 // ===========================================================================

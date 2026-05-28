@@ -16,6 +16,7 @@ import { RenamePropertyDialog } from "@/components/database/rename-property-dial
 
 import {
   ViewConfigDropdown,
+  RowHeightToggle,
   ComingSoonPlaceholder,
   DatabaseSkeleton,
 } from "@/components/database/database-view-helpers";
@@ -376,6 +377,14 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                     handleViewConfigChange({ visible_properties: visibleIds })
                   }
                 />
+                {activeView.type === "table" && (
+                  <RowHeightToggle
+                    value={activeView.config.row_height ?? "default"}
+                    onChange={(height) =>
+                      handleViewConfigChange({ row_height: height })
+                    }
+                  />
+                )}
                 {activeView.type === "board" && (
                   <ViewConfigDropdown
                     label="Group by"

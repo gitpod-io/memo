@@ -6,8 +6,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Check } from "lucide-react";
-import type { DatabaseProperty, DatabaseViewType } from "@/lib/types";
+import { ChevronDown, Check, Rows3 } from "lucide-react";
+import type { DatabaseProperty, DatabaseViewConfig, DatabaseViewType } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // ViewConfigDropdown — toolbar dropdown for selecting a property (group_by, date_property)
@@ -55,6 +55,55 @@ export function ViewConfigDropdown({
             </DropdownMenuItem>
           ))
         )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// RowHeightToggle — toolbar dropdown for selecting table row density
+// ---------------------------------------------------------------------------
+
+const ROW_HEIGHT_OPTIONS: {
+  value: NonNullable<DatabaseViewConfig["row_height"]>;
+  label: string;
+}[] = [
+  { value: "compact", label: "Compact" },
+  { value: "default", label: "Default" },
+  { value: "tall", label: "Tall" },
+];
+
+export interface RowHeightToggleProps {
+  value: NonNullable<DatabaseViewConfig["row_height"]>;
+  onChange: (height: NonNullable<DatabaseViewConfig["row_height"]>) => void;
+}
+
+export function RowHeightToggle({ value, onChange }: RowHeightToggleProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className="inline-flex h-7 items-center gap-1 rounded-sm px-2 text-xs text-muted-foreground outline-none transition-colors hover:bg-overlay-border hover:text-foreground"
+        data-testid="row-height-toggle"
+      >
+        <Rows3 className="size-3.5" />
+        <ChevronDown className="size-3" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        {ROW_HEIGHT_OPTIONS.map((option) => (
+          <DropdownMenuItem
+            key={option.value}
+            onClick={() => onChange(option.value)}
+            className="gap-2 text-xs"
+            data-testid={`row-height-option-${option.value}`}
+          >
+            {option.value === value ? (
+              <Check className="size-3" />
+            ) : (
+              <span className="size-3" />
+            )}
+            {option.label}
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

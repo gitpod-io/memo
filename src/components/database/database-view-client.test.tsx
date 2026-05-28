@@ -80,6 +80,7 @@ vi.mock("@/components/database/rename-property-dialog", () => ({
 
 vi.mock("@/components/database/database-view-helpers", () => ({
   ViewConfigDropdown: () => null,
+  RowHeightToggle: () => null,
   ComingSoonPlaceholder: () => null,
   DatabaseSkeleton: () => <div data-testid="database-skeleton">Loading...</div>,
 }));

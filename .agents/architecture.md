@@ -288,7 +288,7 @@ Database page (is_database = true)
 ```
 src/components/database/
   ├── database-view-client.tsx     # Main client component: loads data, composes hooks + JSX
-  ├── database-view-helpers.tsx    # ViewConfigDropdown, ComingSoonPlaceholder, DatabaseSkeleton
+  ├── database-view-helpers.tsx    # ViewConfigDropdown, RowHeightToggle, ComingSoonPlaceholder, DatabaseSkeleton
   ├── csv-export-button.tsx        # Download CSV toolbar button with relation title resolution
   ├── csv-import-button.tsx        # Import CSV toolbar button with file picker and import orchestration
   ├── csv-import-dialog.tsx        # Preview/mapping dialog for CSV import (column matching, preview table)
@@ -494,7 +494,7 @@ src/
 │   │   └── local-persistence-plugin.tsx # Lexical plugin: persist editor state to sessionStorage (100KB cap)
 │   ├── database/                # Database views system
 │   │   ├── database-view-client.tsx     # Main client component: loads data, composes hooks + JSX
-│   │   ├── database-view-helpers.tsx    # ViewConfigDropdown, ComingSoonPlaceholder, DatabaseSkeleton
+│   │   ├── database-view-helpers.tsx    # ViewConfigDropdown, RowHeightToggle, ComingSoonPlaceholder, DatabaseSkeleton
 │   │   ├── csv-export-button.tsx        # Download CSV toolbar button with relation title resolution
 │   │   ├── csv-import-button.tsx        # Import CSV toolbar button with file picker and import orchestration
 │   │   ├── csv-import-dialog.tsx        # Preview/mapping dialog for CSV import
