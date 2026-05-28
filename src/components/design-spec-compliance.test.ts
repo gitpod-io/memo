@@ -479,3 +479,42 @@ describe("design spec: no large text outside editor", () => {
     ).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Row height maps must enforce 44px mobile touch targets (#1233)
+// ---------------------------------------------------------------------------
+
+describe("design spec: row height touch targets", () => {
+  it("all row height class maps in table-view.tsx enforce 44px mobile minimum", () => {
+    const tableViewPath = join(COMPONENTS_DIR, "database", "views", "table-view.tsx");
+    const content = readFileSync(tableViewPath, "utf-8");
+
+    // Find all ROW_HEIGHT*CLASS constant blocks (both fixed and wrap variants).
+    // Each compact/default entry must include min-h-[44px] for mobile touch targets.
+    const classMapRe = /const (ROW_HEIGHT\w*CLASS)[^{]*\{([^}]+)\}/g;
+    const violations: string[] = [];
+
+    for (const match of content.matchAll(classMapRe)) {
+      const mapName = match[1];
+      const body = match[2];
+
+      for (const size of ["compact", "default"] as const) {
+        const lineRe = new RegExp(`${size}:\\s*"([^"]+)"`);
+        const lineMatch = body.match(lineRe);
+        if (!lineMatch) continue;
+
+        const classes = lineMatch[1];
+        if (!classes.includes("min-h-[44px]")) {
+          violations.push(
+            `${mapName}.${size}: "${classes}" — missing min-h-[44px] for mobile touch target`
+          );
+        }
+      }
+    }
+
+    expect(
+      violations,
+      `Row height maps must enforce ≥44px touch targets on mobile (design spec):\n${violations.join("\n")}`
+    ).toEqual([]);
+  });
+});

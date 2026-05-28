@@ -38,9 +38,10 @@ const ROW_HEIGHT_CLASS: Record<NonNullable<DatabaseViewConfig["row_height"]>, st
 
 // When wrap_cells is enabled, use min-height instead of fixed height so
 // content can expand. The row still respects the chosen density as a minimum.
+// On mobile, enforce 44px minimum touch target (same as ROW_HEIGHT_CLASS).
 const ROW_HEIGHT_WRAP_CLASS: Record<NonNullable<DatabaseViewConfig["row_height"]>, string> = {
-  compact: "min-h-8",
-  default: "min-h-10",
+  compact: "min-h-[44px] md:min-h-8",
+  default: "min-h-[44px] md:min-h-10",
   tall: "min-h-14",
 };
 
