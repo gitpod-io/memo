@@ -303,6 +303,7 @@ src/components/database/
   ├── filter-bar.tsx               # Active filter pills + add filter UI (composition only)
   ├── filter-value-editor.tsx      # Type-specific filter value editors, property picker, operator picker
   ├── sort-menu.tsx                # Sort configuration dropdown
+  ├── property-visibility-panel.tsx # Popover panel for toggling and reordering visible properties per view
   ├── property-types/              # Registry of type-specific renderers and editors
   │   ├── index.ts                 # PropertyTypeRegistry: Record<PropertyType, {Renderer, Editor}>
   │   ├── text.tsx
@@ -508,6 +509,7 @@ src/
 │   │   ├── filter-bar.tsx               # Active filter pills + add filter UI (composition only)
 │   │   ├── filter-value-editor.tsx      # Type-specific filter value editors, property picker, operator picker
 │   │   ├── sort-menu.tsx                # Sort configuration dropdown
+│   │   ├── property-visibility-panel.tsx # Popover panel for toggling and reordering visible properties per view
 │   │   ├── property-types/              # Registry of type-specific renderers and editors
 │   │   ├── views/
 │   │   │   ├── table-view.tsx           # Composition root — wires sub-components together, virtualizes rows >50
@@ -592,9 +594,11 @@ src/
 │       ├── input.tsx
 │       ├── input-group.tsx  # Input group with addons, buttons, and text
 │       ├── label.tsx
+│       ├── popover.tsx      # Popover primitive (wraps @base-ui/react)
 │       ├── select.tsx
 │       ├── separator.tsx
 │       ├── sheet.tsx
+│       ├── switch.tsx       # Toggle switch (wraps @base-ui/react)
 │       ├── table.tsx
 │       ├── textarea.tsx
 │       └── tooltip.tsx

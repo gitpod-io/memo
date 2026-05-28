@@ -21,6 +21,7 @@ import {
 } from "@/components/database/database-view-helpers";
 import { CSVExportButton } from "@/components/database/csv-export-button";
 import { CSVImportButton } from "@/components/database/csv-import-button";
+import { PropertyVisibilityPanel } from "@/components/database/property-visibility-panel";
 import { RowCountAnnouncer } from "@/components/database/views/row-count-announcer";
 import { Button } from "@/components/ui/button";
 import { loadDatabase, loadWorkspaceMembers } from "@/lib/database";
@@ -367,6 +368,13 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   properties={properties}
                   filters={activeFilters}
                   onFiltersChange={handleFiltersChange}
+                />
+                <PropertyVisibilityPanel
+                  properties={properties}
+                  visiblePropertyIds={activeView.config.visible_properties}
+                  onVisibilityChange={(visibleIds) =>
+                    handleViewConfigChange({ visible_properties: visibleIds })
+                  }
                 />
                 {activeView.type === "board" && (
                   <ViewConfigDropdown
