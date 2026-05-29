@@ -510,6 +510,7 @@ export function WorkspaceHome({
               ref={allPagesListRef}
               role="listbox"
               aria-labelledby="wh-all-pages-heading"
+              data-item-ids={JSON.stringify(allPagesItemIds)}
               onFocus={allPagesRoving.handleFocus}
               onKeyDown={allPagesRoving.handleKeyDown}
               style={{
