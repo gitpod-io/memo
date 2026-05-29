@@ -34,11 +34,22 @@ async function getFocusedItemId(page: Page): Promise<string | null> {
 
 /**
  * Collects data-item-id values from all visible options in DOM order.
+ * In a virtualized list, this only returns IDs of currently rendered items.
  */
 async function getOptionIds(options: Locator): Promise<string[]> {
   return options.evaluateAll((els) =>
     els.map((el) => el.getAttribute("data-item-id")!),
   );
+}
+
+/**
+ * Returns the full ordered list of item IDs from the listbox's data attribute.
+ * Works with virtualized lists where only a subset of items are in the DOM.
+ */
+async function getAllItemIds(listbox: Locator): Promise<string[]> {
+  const raw = await listbox.getAttribute("data-item-ids");
+  if (!raw) return [];
+  return JSON.parse(raw) as string[];
 }
 
 test.describe("Workspace home keyboard navigation", () => {
@@ -144,6 +155,7 @@ test.describe("Workspace home keyboard navigation", () => {
     const main = page.locator("#main-content");
     await waitForWorkspaceHome(main);
 
+    const listbox = getAllPagesListbox(main);
     const options = getAllPagesOptions(main);
     const count = await options.count();
     if (count < 2) {
@@ -151,15 +163,17 @@ test.describe("Workspace home keyboard navigation", () => {
       return;
     }
 
-    const ids = await getOptionIds(options);
+    // Use the full item ID list from the data attribute (virtualized lists
+    // only render a subset of items in the DOM)
+    const allIds = await getAllItemIds(listbox);
 
     // Focus the first option
     await options.first().focus();
 
-    // End should move to the last item
+    // End should move to the last item in the full list
     await page.keyboard.press("End");
     await expect(async () => {
-      expect(await getFocusedItemId(page)).toBe(ids[ids.length - 1]);
+      expect(await getFocusedItemId(page)).toBe(allIds[allIds.length - 1]);
     }).toPass({ timeout: 3_000 });
   });
 
@@ -241,6 +255,7 @@ test.describe("Workspace home keyboard navigation", () => {
     const main = page.locator("#main-content");
     await waitForWorkspaceHome(main);
 
+    const listbox = getAllPagesListbox(main);
     const options = getAllPagesOptions(main);
     const count = await options.count();
     if (count < 2) {
@@ -248,16 +263,23 @@ test.describe("Workspace home keyboard navigation", () => {
       return;
     }
 
-    const ids = await getOptionIds(options);
+    // Use the full item ID list — in a virtualized list, options.last() is
+    // only the last *rendered* item, not the actual last item.
+    const allIds = await getAllItemIds(listbox);
+    const lastId = allIds[allIds.length - 1];
+    const firstId = allIds[0];
 
-    // Focus the last option
-    await options.last().focus();
-    expect(await getFocusedItemId(page)).toBe(ids[ids.length - 1]);
+    // Press End to navigate to the actual last item (scrolls virtualizer)
+    await options.first().focus();
+    await page.keyboard.press("End");
+    await expect(async () => {
+      expect(await getFocusedItemId(page)).toBe(lastId);
+    }).toPass({ timeout: 3_000 });
 
     // ArrowDown should wrap to the first item
     await page.keyboard.press("ArrowDown");
     await expect(async () => {
-      expect(await getFocusedItemId(page)).toBe(ids[0]);
+      expect(await getFocusedItemId(page)).toBe(firstId);
     }).toPass({ timeout: 3_000 });
   });
 
@@ -295,15 +317,21 @@ test.describe("Workspace home keyboard navigation", () => {
       els.map((el) => el.getAttribute("data-item-id")!),
     );
 
-    // Focus first and ArrowDown
+    // Focus first and ArrowDown — use toPass to handle async focus via rAF
     await recentOptions.first().focus();
-    expect(await getFocusedItemId(page)).toBe(ids[0]);
+    await expect(async () => {
+      expect(await getFocusedItemId(page)).toBe(ids[0]);
+    }).toPass({ timeout: 3_000 });
 
     await page.keyboard.press("ArrowDown");
-    expect(await getFocusedItemId(page)).toBe(ids[1]);
+    await expect(async () => {
+      expect(await getFocusedItemId(page)).toBe(ids[1]);
+    }).toPass({ timeout: 3_000 });
 
     // ArrowUp back
     await page.keyboard.press("ArrowUp");
-    expect(await getFocusedItemId(page)).toBe(ids[0]);
+    await expect(async () => {
+      expect(await getFocusedItemId(page)).toBe(ids[0]);
+    }).toPass({ timeout: 3_000 });
   });
 });

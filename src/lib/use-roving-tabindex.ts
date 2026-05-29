@@ -47,12 +47,26 @@ export function useRovingTabindex({
       if (onScrollToItem && idx >= 0) {
         onScrollToItem(id, idx);
       }
-      requestAnimationFrame(() => {
+
+      // After scrolling, the virtualizer may need one or more render cycles
+      // before the target element appears in the DOM. Poll briefly to handle
+      // virtualized lists where the element isn't immediately available.
+      let attempts = 0;
+      const maxAttempts = 5;
+
+      function tryFocus() {
         const el = containerRef.current?.querySelector(
           `[data-item-id="${id}"]`,
         ) as HTMLElement | null;
-        el?.focus();
-      });
+        if (el) {
+          el.focus();
+        } else if (attempts < maxAttempts) {
+          attempts++;
+          requestAnimationFrame(tryFocus);
+        }
+      }
+
+      requestAnimationFrame(tryFocus);
     },
     [containerRef, itemIds, onScrollToItem],
   );
