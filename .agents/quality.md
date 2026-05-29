@@ -33,9 +33,9 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 
 | Category | Files | Tests |
 |---|---|---|
-| Unit/Integration (Vitest) | 149 | 2041 |
+| Unit/Integration (Vitest) | 149 | 2049 |
 | E2E (Playwright) | 95 | 465 |
-| **Total** | **244** | **2506** |
+| **Total** | **244** | **2514** |
 
 ### Test files by domain
 
@@ -51,7 +51,7 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 - **Feedback**: `feedback/route.test.ts` (22 tests), `feedback-form-design-spec.test.ts` (5 tests), `use-screenshot.test.ts` (2 tests), `e2e/feedback.spec.ts` (6 tests)
 - **API**: `health/route.test.ts` (11 tests), `search/route.test.ts` (14 tests), `account/route.test.ts` (9 tests), `cron/purge-trash/route.test.ts` (10 tests), `feedback/route.test.ts` (22 tests), `pages/[pageId]/versions/route.test.ts` (17 tests), `pages/[pageId]/versions/route.rate-limit.test.ts` (3 tests), `pages/[pageId]/versions/[versionId]/route.test.ts` (14 tests), `pages/[pageId]/versions/[versionId]/route.rate-limit.test.ts` (3 tests), `e2e/account-deletion.spec.ts` (4 tests), `e2e/account-settings.spec.ts` (5 tests)
 - **UI**: `overlay-opacity.test.ts` (2 tests), `toast-error-duration.test.ts` (1 test), `dialog-design-spec.test.ts` (3 tests), `design-spec-compliance.test.ts` (10 tests), `relative-time.test.ts` (7 tests), `reduced-motion.test.ts` (6 tests), `e2e/visual-regression.spec.ts` (1 test)
-- **Lib**: `sentry.test.ts` (4 tests), `sentry.unit.test.ts` (171 tests), `api-route-consistency.test.ts` (6 tests), `retry.test.ts` (9 tests), `rate-limit.test.ts` (17 tests), `track-event-server.test.ts` (9 tests), `track-event.test.ts` (4 tests), `usage-tracking-guard.test.ts` (5 tests), `use-roving-tabindex.test.ts` (13 tests)
+- **Lib**: `sentry.test.ts` (4 tests), `sentry.unit.test.ts` (171 tests), `api-route-consistency.test.ts` (6 tests), `retry.test.ts` (16 tests), `rate-limit.test.ts` (17 tests), `track-event-server.test.ts` (9 tests), `track-event.test.ts` (4 tests), `usage-tracking-guard.test.ts` (5 tests), `use-roving-tabindex.test.ts` (13 tests)
 - **Infrastructure**: `migrations.test.ts` (33 tests), `build-timeseries.test.mjs` (6 tests), `supabase/client.test.ts` (7 tests), `supabase/proxy.test.ts` (2 tests)
 
 ## Known Gaps
@@ -191,3 +191,4 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | 2026-05-28 | Add double-click auto-fit for database table column widths (#1223). Added `handleResizeAutoFit` callback to `useColumnResize` hook, `onDoubleClick` handler on resize handle in `TableColumnHeader`, `data-column-id` attributes on table cells and header content for DOM measurement. Added `MAX_COLUMN_WIDTH` (500px) constant. Added 2 new E2E tests to `database-column-resize.spec.ts` (4→6): auto-fit on double-click and minimum width constraint. Added 2 Storybook stories (AutoFitDefaultWidths, AutoFitVariedContent) and visual regression baselines. Test totals: 149 Vitest files (2041 tests), 95 E2E specs (464 tests). |
 | 2026-05-29 | Virtualize workspace home "All Pages" list (#1227). Added `useVirtualizer` to `workspace-home.tsx` for the "All Pages" list, matching the sidebar page-tree pattern. Added `onScrollToItem` callback to `useRovingTabindex` hook for virtualized keyboard navigation. Updated `.agents/conventions.md` with virtualization + roving tabindex integration pattern. No new test files. Test totals unchanged: 149 Vitest files (2041 tests), 95 E2E specs (464 tests). |
 | 2026-05-29 | Fix keyboard navigation End/wrap in virtualized All Pages list (#1238). Fixed `focusItem` in `use-roving-tabindex.ts` to retry DOM queries after virtualizer scroll (element may not be rendered yet). Added `data-item-ids` attribute to virtualized listbox for E2E test access to full item list. Updated `workspace-home-keyboard-nav.spec.ts` to use full item IDs instead of DOM-only snapshot for End/wrap/cross-section tests. Corrected E2E test count for this spec (9→10). Test totals: 149 Vitest files (2041 tests), 95 E2E specs (465 tests). |
+| 2026-05-29 | Fix statement timeout on pages query (#1240). Added `retryOnTransientError` to `retry.ts` (retries on both network errors and statement timeouts). Switched page-tree fetch to use it. Added partial index `pages_workspace_active_position` on `(workspace_id, position) WHERE deleted_at IS NULL`. Updated `retry.test.ts` (9→16): 7 new tests for `retryOnTransientError`. Test totals: 149 Vitest files (2049 tests), 95 E2E specs (465 tests). |
