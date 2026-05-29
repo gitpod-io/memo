@@ -15,6 +15,7 @@ export function useRovingTabindex({
   itemIds,
   onActivate,
   containerRef,
+  onScrollToItem,
 }: {
   /** Ordered list of item IDs currently visible in the list. */
   itemIds: string[];
@@ -22,6 +23,11 @@ export function useRovingTabindex({
   onActivate: (id: string) => void;
   /** Ref to the listbox container element. */
   containerRef: React.RefObject<HTMLDivElement | null>;
+  /**
+   * Called before focusing an item so the consumer can scroll it into view.
+   * Useful for virtualized lists where the target element may not be in the DOM.
+   */
+  onScrollToItem?: (id: string, index: number) => void;
 }) {
   const [focusedId, setFocusedId] = useState<string | null>(null);
 
@@ -37,6 +43,10 @@ export function useRovingTabindex({
   const focusItem = useCallback(
     (id: string) => {
       setFocusedId(id);
+      const idx = itemIds.indexOf(id);
+      if (onScrollToItem && idx >= 0) {
+        onScrollToItem(id, idx);
+      }
       requestAnimationFrame(() => {
         const el = containerRef.current?.querySelector(
           `[data-item-id="${id}"]`,
@@ -44,7 +54,7 @@ export function useRovingTabindex({
         el?.focus();
       });
     },
-    [containerRef],
+    [containerRef, itemIds, onScrollToItem],
   );
 
   const handleFocus = useCallback((e: React.FocusEvent) => {
