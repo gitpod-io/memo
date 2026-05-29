@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, X } from "lucide-react";
+import { Copy, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -19,6 +19,10 @@ export interface BulkActionBarProps {
   selectedCount: number;
   /** Called when the user confirms bulk deletion. */
   onBulkDelete: () => void;
+  /** Called when the user clicks the Duplicate button. */
+  onBulkDuplicate?: () => void;
+  /** Whether a bulk duplication is currently in progress. */
+  duplicating?: boolean;
   /** Called when the user dismisses the action bar. */
   onClear: () => void;
 }
@@ -26,6 +30,8 @@ export interface BulkActionBarProps {
 export function BulkActionBar({
   selectedCount,
   onBulkDelete,
+  onBulkDuplicate,
+  duplicating = false,
   onClear,
 }: BulkActionBarProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -45,6 +51,18 @@ export function BulkActionBar({
         <span className="text-sm text-muted-foreground" data-testid="db-bulk-selection-count">
           {selectedCount} {rowLabel} selected
         </span>
+        {onBulkDuplicate && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onBulkDuplicate}
+            disabled={duplicating}
+            data-testid="db-bulk-duplicate-button"
+          >
+            <Copy className="h-4 w-4" />
+            {duplicating ? "Duplicating…" : `Duplicate ${selectedCount} ${rowLabel}`}
+          </Button>
+        )}
         <Button
           variant="destructive"
           size="sm"

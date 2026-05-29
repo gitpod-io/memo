@@ -8,7 +8,9 @@ const meta: Meta<typeof BulkActionBar> = {
   parameters: { layout: "centered" },
   args: {
     onBulkDelete: fn(),
+    onBulkDuplicate: fn(),
     onClear: fn(),
+    duplicating: false,
   },
 };
 
@@ -38,6 +40,22 @@ export const Hidden: Story = {
   name: "Hidden (0 selected)",
   args: {
     selectedCount: 0,
+  },
+};
+
+export const Duplicating: Story = {
+  name: "Duplicating (loading state)",
+  args: {
+    selectedCount: 3,
+    duplicating: true,
+  },
+};
+
+export const WithoutDuplicate: Story = {
+  name: "Without Duplicate Button",
+  args: {
+    selectedCount: 2,
+    onBulkDuplicate: undefined,
   },
 };
 

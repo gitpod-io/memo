@@ -31,6 +31,7 @@ export interface UseDatabaseRowsParams {
 export interface UseDatabaseRowsReturn {
   handleAddRow: (initialValues?: Record<string, Record<string, unknown>>) => Promise<void>;
   handleDuplicateRow: (rowId: string) => Promise<void>;
+  handleBulkDuplicateRows: (rowIds: string[]) => Promise<{ succeeded: number; failed: number }>;
   handleCardMove: (rowId: string, propertyId: string, newOptionId: string | null) => Promise<void>;
   handleCellUpdate: (rowId: string, propertyId: string, value: Record<string, unknown>) => Promise<void>;
   handleDeleteRow: (rowId: string) => void;
@@ -210,6 +211,71 @@ export function useDatabaseRows({
       );
 
       toast.success("Row duplicated");
+    },
+    [pageId, userId, setRows],
+  );
+
+  const handleBulkDuplicateRows = useCallback(
+    async (rowIds: string[]): Promise<{ succeeded: number; failed: number }> => {
+      if (rowIds.length === 0) return { succeeded: 0, failed: 0 };
+
+      const currentRows = rowsRef.current;
+      const currentProperties = propertiesRef.current;
+
+      const results = await Promise.allSettled(
+        rowIds.map(async (rowId) => {
+          const sourceRow = currentRows.find((r) => r.page.id === rowId);
+          if (!sourceRow) throw new Error(`Row ${rowId} not found`);
+
+          const { data: newPage, error } = await duplicateRow(
+            pageId,
+            userId,
+            sourceRow,
+            currentProperties,
+          );
+
+          if (error || !newPage) {
+            if (error && !isInsufficientPrivilegeError(error)) {
+              captureSupabaseError(error, "database-rows:bulk-duplicate");
+            }
+            throw error ?? new Error("No data returned");
+          }
+
+          const realValues: DatabaseRow["values"] = {};
+          for (const [propertyId, rv] of Object.entries(sourceRow.values)) {
+            realValues[propertyId] = { ...rv, row_id: newPage.id };
+          }
+
+          return { page: newPage as DatabaseRow["page"], values: realValues } satisfies DatabaseRow;
+        }),
+      );
+
+      const newRows: DatabaseRow[] = [];
+      let failed = 0;
+      for (const result of results) {
+        if (result.status === "fulfilled") {
+          newRows.push(result.value);
+        } else {
+          failed++;
+        }
+      }
+
+      if (newRows.length > 0) {
+        setRows((prev) => [...prev, ...newRows]);
+      }
+
+      const succeeded = newRows.length;
+      if (succeeded > 0 && failed === 0) {
+        toast.success(`${succeeded} row${succeeded !== 1 ? "s" : ""} duplicated`);
+      } else if (succeeded > 0 && failed > 0) {
+        toast.success(
+          `${succeeded} row${succeeded !== 1 ? "s" : ""} duplicated, ${failed} failed`,
+        );
+      } else {
+        toast.error("Failed to duplicate rows", { duration: 8000 });
+      }
+
+      return { succeeded, failed };
     },
     [pageId, userId, setRows],
   );
@@ -495,6 +561,7 @@ export function useDatabaseRows({
   const handlers: UseDatabaseRowsReturn = {
     handleAddRow,
     handleDuplicateRow,
+    handleBulkDuplicateRows,
     handleCardMove,
     handleCellUpdate,
     handleDeleteRow,

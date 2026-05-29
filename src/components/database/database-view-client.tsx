@@ -217,6 +217,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
   const {
     handleAddRow,
     handleDuplicateRow,
+    handleBulkDuplicateRows,
     handleCardMove,
     handleCellUpdate,
     handleDeleteRow,
@@ -460,6 +461,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   onDeleteColumn={handleDeleteColumn}
                   onDeleteRow={handleDeleteRow}
                   onDuplicateRow={handleDuplicateRow}
+                  onBulkDuplicateRows={handleBulkDuplicateRows}
                   onBulkDeleteRows={handleBulkDeleteRows}
                   sorts={activeSorts}
                   onSortToggle={handleSortToggle}
