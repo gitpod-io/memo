@@ -10,7 +10,7 @@ import {
   captureSupabaseError,
   isSchemaNotFoundError,
 } from "@/lib/sentry";
-import { retryOnNetworkError } from "@/lib/retry";
+import { retryOnNetworkError, retryOnTransientError } from "@/lib/retry";
 import { useWorkspace } from "@/components/sidebar/workspace-context";
 import { usePersistedExpanded } from "@/lib/use-persisted-expanded";
 import { Button } from "@/components/ui/button";
@@ -71,7 +71,7 @@ export function PageTree({ userId }: PageTreeProps) {
     let cancelled = false;
 
     async function fetchPages() {
-      const { data, error } = await retryOnNetworkError(async () => {
+      const { data, error } = await retryOnTransientError(async () => {
         const supabase = await getClient();
         return supabase
           .from("pages")

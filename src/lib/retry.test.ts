@@ -5,7 +5,7 @@ vi.mock("@sentry/nextjs", () => ({
   captureException: vi.fn(),
 }));
 
-import { retryOnNetworkError } from "./retry";
+import { retryOnNetworkError, retryOnTransientError } from "./retry";
 
 function makePostgrestError(
   overrides: Partial<PostgrestError> = {},
@@ -193,3 +193,131 @@ describe("retryOnNetworkError", () => {
     expect(fn).toHaveBeenCalledOnce();
   });
 });
+
+function statementTimeoutError(): PostgrestError {
+  return makePostgrestError({
+    message: "canceling statement due to statement timeout",
+    code: "57014",
+  });
+}
+
+describe("retryOnTransientError", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  it("returns immediately on success (no retries)", async () => {
+    const fn = vi.fn().mockResolvedValue({ data: { id: "ws-1" }, error: null });
+
+    const result = await retryOnTransientError(fn, { baseDelayMs: 100 });
+
+    expect(fn).toHaveBeenCalledOnce();
+    expect(result).toEqual({ data: { id: "ws-1" }, error: null });
+  });
+
+  it("returns immediately on non-transient error (no retries)", async () => {
+    const rlsError = makePostgrestError({
+      message: "new row violates row-level security policy",
+      code: "42501",
+    });
+    const fn = vi.fn().mockResolvedValue({ data: null, error: rlsError });
+
+    const result = await retryOnTransientError(fn, { baseDelayMs: 100 });
+
+    expect(fn).toHaveBeenCalledOnce();
+    expect((result.error as PostgrestError | null)?.code).toBe("42501");
+  });
+
+  it("retries on statement timeout error and succeeds", async () => {
+    const fn = vi
+      .fn()
+      .mockResolvedValueOnce({ data: null, error: statementTimeoutError() })
+      .mockResolvedValueOnce({ data: [{ id: "page-1" }], error: null });
+
+    const promise = retryOnTransientError(fn, {
+      maxRetries: 2,
+      baseDelayMs: 100,
+    });
+
+    await vi.advanceTimersByTimeAsync(100);
+    const result = await promise;
+
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(result).toEqual({ data: [{ id: "page-1" }], error: null });
+  });
+
+  it("retries on statement timeout up to maxRetries and returns last error", async () => {
+    const fn = vi
+      .fn()
+      .mockResolvedValue({ data: null, error: statementTimeoutError() });
+
+    const promise = retryOnTransientError(fn, {
+      maxRetries: 2,
+      baseDelayMs: 100,
+    });
+
+    await vi.advanceTimersByTimeAsync(100);
+    await vi.advanceTimersByTimeAsync(200);
+
+    const result = await promise;
+
+    expect(fn).toHaveBeenCalledTimes(3);
+    expect(result.error?.message).toBe(
+      "canceling statement due to statement timeout",
+    );
+  });
+
+  it("retries on network error (same as retryOnNetworkError)", async () => {
+    const fn = vi
+      .fn()
+      .mockResolvedValueOnce({ data: null, error: networkError() })
+      .mockResolvedValueOnce({ data: { id: "ws-1" }, error: null });
+
+    const promise = retryOnTransientError(fn, {
+      maxRetries: 2,
+      baseDelayMs: 100,
+    });
+
+    await vi.advanceTimersByTimeAsync(100);
+    const result = await promise;
+
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(result).toEqual({ data: { id: "ws-1" }, error: null });
+  });
+
+  it("retries on thrown statement timeout error", async () => {
+    const timeoutErr = Object.assign(
+      new Error("canceling statement due to statement timeout"),
+      { code: "57014", details: "", hint: "" },
+    );
+    const fn = vi
+      .fn()
+      .mockRejectedValueOnce(timeoutErr)
+      .mockResolvedValueOnce({ data: [{ id: "page-1" }], error: null });
+
+    const promise = retryOnTransientError(fn, {
+      maxRetries: 1,
+      baseDelayMs: 100,
+    });
+
+    await vi.advanceTimersByTimeAsync(100);
+    const result = await promise;
+
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(result).toEqual({ data: [{ id: "page-1" }], error: null });
+  });
+
+  it("does not retry non-transient thrown errors", async () => {
+    const appError = new Error("Something unexpected");
+    const fn = vi.fn().mockRejectedValue(appError);
+
+    const promise = retryOnTransientError(fn, {
+      maxRetries: 2,
+      baseDelayMs: 100,
+    });
+
+    await expect(promise).rejects.toThrow("Something unexpected");
+    expect(fn).toHaveBeenCalledOnce();
+  });
+});
+
