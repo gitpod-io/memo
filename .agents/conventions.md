@@ -2000,6 +2000,24 @@ Key patterns:
 - E2E tests that check Home/End key behavior use `toPass` polling assertions
   to wait for the virtualizer to scroll and re-render before checking focus.
 
+### Workspace home "All Pages" virtualization
+
+The workspace home page virtualizes the "All Pages" list using the same
+`@tanstack/react-virtual` library. Unlike the sidebar tree (which manages its own
+keyboard navigation), the workspace home uses `useRovingTabindex` with the
+`onScrollToItem` callback to integrate virtualization with keyboard navigation.
+
+Key patterns:
+- A scroll container (`allPagesScrollRef`) wraps the listbox with
+  `max-h-[calc(100vh-20rem)] overflow-y-auto` to constrain height.
+- The listbox container uses absolute positioning with `translateY` for each
+  virtual item, matching the page-tree pattern.
+- Item height is 40px (vs 28px in the sidebar tree) to accommodate the wider
+  row layout with metadata columns.
+- The "Recently Visited" section (max 5 items) is not virtualized.
+- `PageCountStatusBar` and `PageCountAnnouncer` remain outside the virtualized
+  container.
+
 ## Event Handler Argument Leaks
 
 Never pass a callback that accepts optional business arguments directly to `onClick`.
@@ -2109,6 +2127,28 @@ For **flat lists** (`role="listbox"`), use the `useRovingTabindex` hook from
 focus sync. Items use `data-item-id` instead of `data-page-id`. See
 `workspace-home.tsx` for usage. For **tree widgets** (`role="tree"`) with
 expand/collapse, inline the logic as in `page-tree.tsx`.
+
+**Virtualized lists with `useRovingTabindex`**: when the list is virtualized via
+`@tanstack/react-virtual`, pass the `onScrollToItem` callback so the virtualizer
+scrolls the target item into view before the hook attempts to focus it. Without
+this, keyboard navigation to off-screen items fails because the DOM element
+doesn't exist yet. See `workspace-home.tsx` for the pattern:
+
+```typescript
+const handleScrollToItem = useCallback(
+  (_id: string, index: number) => {
+    virtualizer.scrollToIndex(index, { align: "auto" });
+  },
+  [virtualizer],
+);
+
+const roving = useRovingTabindex({
+  itemIds,
+  onActivate: navigateToPage,
+  containerRef: listRef,
+  onScrollToItem: handleScrollToItem,
+});
+```
 
 Reference: [WAI-ARIA Treeview pattern](https://www.w3.org/WAI/ARIA/apg/patterns/treeview/).
 
