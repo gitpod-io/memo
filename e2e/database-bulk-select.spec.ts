@@ -338,6 +338,61 @@ test.describe("Database bulk row selection", () => {
     await expect(actionBar).toBeVisible({ timeout: 5_000 });
   });
 
+  test("bulk duplicate creates copies of selected rows and clears selection", async ({
+    authenticatedPage: page,
+  }) => {
+    await createDatabaseFromSidebar(page);
+    await addRows(page, 2);
+
+    // Wait for all row checkboxes to be visible
+    for (let i = 0; i < 2; i++) {
+      await expect(
+        page.locator(`[data-testid="db-table-row-checkbox-${i}"]`),
+      ).toBeVisible({ timeout: 5_000 });
+    }
+
+    // Select both rows
+    const selectAll = page.locator('[data-testid="db-table-select-all"]');
+    await expect(selectAll).toBeVisible({ timeout: 5_000 });
+    await selectAll.click();
+
+    // Bulk action bar should appear with 2 rows selected
+    const actionBar = page.locator('[data-testid="db-bulk-action-bar"]');
+    await expect(actionBar).toBeVisible({ timeout: 10_000 });
+    await expect(
+      page.locator('[data-testid="db-bulk-selection-count"]'),
+    ).toHaveText("2 rows selected", { timeout: 5_000 });
+
+    // The duplicate button should be visible
+    const duplicateBtn = page.locator(
+      '[data-testid="db-bulk-duplicate-button"]',
+    );
+    await expect(duplicateBtn).toBeVisible({ timeout: 5_000 });
+
+    // Click duplicate
+    await duplicateBtn.click();
+
+    // Success toast should appear
+    const successToast = page.locator('[data-sonner-toast]', {
+      hasText: /2 rows duplicated/,
+    });
+    await expect(successToast).toBeVisible({ timeout: 15_000 });
+
+    // There should now be 4 rows total (2 original + 2 duplicated)
+    await expect(
+      page.locator('[data-testid="db-table-row-3"]'),
+    ).toBeVisible({ timeout: 10_000 });
+
+    // Selection should be cleared — action bar should disappear
+    await expect(actionBar).not.toBeVisible({ timeout: 10_000 });
+
+    // Verify the duplicated rows contain "(copy)" in their title cells
+    const copyCells = page.locator('[role="gridcell"]', {
+      hasText: "(copy)",
+    });
+    await expect(copyCells).toHaveCount(2, { timeout: 10_000 });
+  });
+
   test("clear selection button in action bar works", async ({
     authenticatedPage: page,
   }) => {

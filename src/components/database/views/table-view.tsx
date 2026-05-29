@@ -106,6 +106,8 @@ export interface TableViewProps {
   onSortToggle?: (propertyId: string) => void;
   onDeleteRow?: (rowId: string) => void;
   onDuplicateRow?: (rowId: string) => void;
+  /** Bulk duplicate handler — called with an array of row IDs to duplicate. */
+  onBulkDuplicateRows?: (rowIds: string[]) => Promise<{ succeeded: number; failed: number }>;
   /** Bulk delete handler — called with an array of row IDs to delete. */
   onBulkDeleteRows?: (rowIds: string[]) => void;
   loading?: boolean;
@@ -133,6 +135,7 @@ export const TableView = memo(function TableView({
   onDeleteColumn,
   onDeleteRow,
   onDuplicateRow,
+  onBulkDuplicateRows,
   onBulkDeleteRows,
   sorts = [],
   onSortToggle,
@@ -176,6 +179,19 @@ export const TableView = memo(function TableView({
     onBulkDeleteRows(Array.from(selectedIds));
     clearSelection();
   }, [onBulkDeleteRows, selectedIds, clearSelection]);
+
+  const [bulkDuplicating, setBulkDuplicating] = useState(false);
+
+  const handleBulkDuplicate = useCallback(async () => {
+    if (!onBulkDuplicateRows || selectedIds.size === 0) return;
+    setBulkDuplicating(true);
+    try {
+      await onBulkDuplicateRows(Array.from(selectedIds));
+    } finally {
+      setBulkDuplicating(false);
+      clearSelection();
+    }
+  }, [onBulkDuplicateRows, selectedIds, clearSelection]);
 
   // Column resize state
   const { columnWidths, resizingColumn, handleResizeStart, handleResizeAutoFit } = useColumnResize({
@@ -552,6 +568,8 @@ export const TableView = memo(function TableView({
         <BulkActionBar
           selectedCount={selectedIds.size}
           onBulkDelete={handleBulkDelete}
+          onBulkDuplicate={onBulkDuplicateRows ? handleBulkDuplicate : undefined}
+          duplicating={bulkDuplicating}
           onClear={clearSelection}
         />
       )}
