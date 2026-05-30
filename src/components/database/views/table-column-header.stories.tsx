@@ -120,6 +120,10 @@ export const WithSortAsc: Story = {
     sortRule: { property_id: selectProp.id, direction: "asc" },
     onSortToggle: fn(),
   },
+  play: async ({ canvasElement }) => {
+    const header = within(canvasElement).getByRole("columnheader");
+    await expect(header).toHaveAttribute("aria-sort", "ascending");
+  },
 };
 
 export const WithSortDesc: Story = {
@@ -128,6 +132,23 @@ export const WithSortDesc: Story = {
     property: selectProp,
     sortRule: { property_id: selectProp.id, direction: "desc" },
     onSortToggle: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    const header = within(canvasElement).getByRole("columnheader");
+    await expect(header).toHaveAttribute("aria-sort", "descending");
+  },
+};
+
+export const WithSortNone: Story = {
+  name: "No active sort (aria-sort=none)",
+  args: {
+    property: selectProp,
+    sortRule: undefined,
+    onSortToggle: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    const header = within(canvasElement).getByRole("columnheader");
+    await expect(header).toHaveAttribute("aria-sort", "none");
   },
 };
 

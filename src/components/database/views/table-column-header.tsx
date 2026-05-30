@@ -148,6 +148,13 @@ export function TableColumnHeader({
         isDragging && "opacity-50",
       )}
       role="columnheader"
+      aria-sort={
+        sortRule
+          ? sortRule.direction === "asc"
+            ? "ascending"
+            : "descending"
+          : "none"
+      }
       data-testid={`db-table-column-header-${colIndex}`}
       draggable={!!onColumnReorder}
       onDragStart={(e) => onDragStart(e, property.id)}
