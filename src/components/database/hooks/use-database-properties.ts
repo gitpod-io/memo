@@ -46,6 +46,10 @@ export interface UseDatabasePropertiesReturn {
   handleAddColumn: (type: PropertyType) => Promise<void>;
   handleColumnHeaderClick: (propertyId: string) => void;
   handlePropertyRename: (newName: string) => Promise<void>;
+  handlePropertyConfigChange: (
+    propertyId: string,
+    config: Record<string, unknown>,
+  ) => Promise<void>;
   handleColumnReorder: (orderedPropertyIds: string[]) => Promise<void>;
   handleDeleteColumn: (propertyId: string) => void;
 }
@@ -172,6 +176,45 @@ export function useDatabaseProperties({
       }
     },
     [renamingProperty, pageId, setProperties],
+  );
+
+  const handlePropertyConfigChange = useCallback(
+    async (propertyId: string, config: Record<string, unknown>) => {
+      const prop = properties.find((p) => p.id === propertyId);
+      if (!prop) return;
+
+      const prevConfig = prop.config;
+
+      // Optimistic update
+      setProperties((prev) =>
+        prev.map((p) => (p.id === propertyId ? { ...p, config } : p)),
+      );
+
+      const { error } = await updateProperty(propertyId, { config }, pageId);
+      if (error) {
+        if (!isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "database-properties:config-change");
+        }
+        toast.error("Failed to update property config", {
+          duration: 8000,
+          action: {
+            label: "Retry",
+            onClick: () =>
+              void handlersRef.current?.handlePropertyConfigChange(
+                propertyId,
+                config,
+              ),
+          },
+        });
+        // Revert
+        setProperties((prev) =>
+          prev.map((p) =>
+            p.id === propertyId ? { ...p, config: prevConfig } : p,
+          ),
+        );
+      }
+    },
+    [properties, pageId, setProperties],
   );
 
   const handleColumnReorder = useCallback(
@@ -315,6 +358,7 @@ export function useDatabaseProperties({
     handleAddColumn,
     handleColumnHeaderClick,
     handlePropertyRename,
+    handlePropertyConfigChange,
     handleColumnReorder,
     handleDeleteColumn,
   };

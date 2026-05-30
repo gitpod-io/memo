@@ -333,7 +333,7 @@ src/components/database/
   │   ├── table-columns.ts        # useColumnResize + useColumnDragReorder hooks
   │   ├── table-cell-renderer.tsx  # CellRenderer + SelectBadge — display-only value rendering
   │   ├── table-keyboard.ts       # handleCellKeyDown — editing-mode key handler
-  │   ├── table-defaults.ts       # Pure helpers: value keys, select options, display values, date formatting
+  │   ├── table-defaults.ts       # Pure helpers: value keys, select options, display values, date/number formatting
   │   ├── bulk-action-bar.tsx      # BulkActionBar — floating toolbar for bulk delete when rows are selected
   │   ├── row-count-status-bar.tsx # RowCountStatusBar — "X rows" / "X of Y rows" below the table
   │   ├── row-count-announcer.tsx  # RowCountAnnouncer — sr-only aria-live region for row count changes

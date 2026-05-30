@@ -8,6 +8,36 @@ import { DEFAULT_STATUS_OPTIONS } from "@/components/database/property-types/sta
 // ---------------------------------------------------------------------------
 
 /**
+ * Format a number value according to the property config format.
+ * Supports "number" (default), "currency", and "percent" formats.
+ */
+export function formatNumberValue(
+  raw: string,
+  config: Record<string, unknown>,
+): string {
+  if (!raw) return "";
+  const num = Number(raw);
+  if (Number.isNaN(num)) return raw;
+
+  const format = (config.format as string) ?? "number";
+  switch (format) {
+    case "currency":
+      return num.toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+      });
+    case "percent":
+      return num.toLocaleString("en-US", {
+        style: "percent",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      });
+    default:
+      return num.toLocaleString("en-US");
+  }
+}
+
+/**
  * Maps a property type to the key its registry editor/renderer expects inside
  * the value object. For example, "text" → "text", "number" → "number", etc.
  * Returns "value" for types without a specific key (fallback).
