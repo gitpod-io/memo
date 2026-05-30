@@ -648,6 +648,7 @@ export const TableView = memo(function TableView({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
+              variant="destructive"
               data-testid="db-keyboard-delete-confirm"
               onClick={() => {
                 const ids = pendingDeleteIds.current;
