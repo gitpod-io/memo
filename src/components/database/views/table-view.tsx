@@ -102,6 +102,10 @@ export interface TableViewProps {
   onColumnHeaderClick?: (propertyId: string) => void;
   onColumnReorder?: (orderedPropertyIds: string[]) => void;
   onDeleteColumn?: (propertyId: string) => void;
+  onPropertyConfigChange?: (
+    propertyId: string,
+    config: Record<string, unknown>,
+  ) => void;
   sorts?: SortRule[];
   onSortToggle?: (propertyId: string) => void;
   onDeleteRow?: (rowId: string) => void;
@@ -133,6 +137,7 @@ export const TableView = memo(function TableView({
   onColumnHeaderClick,
   onColumnReorder,
   onDeleteColumn,
+  onPropertyConfigChange,
   onDeleteRow,
   onDuplicateRow,
   onBulkDuplicateRows,
@@ -446,6 +451,7 @@ export const TableView = memo(function TableView({
                   onColumnReorder={onColumnReorder}
                   onColumnHeaderClick={onColumnHeaderClick}
                   onDeleteColumn={onDeleteColumn}
+                  onPropertyConfigChange={onPropertyConfigChange}
                   onSortToggle={onSortToggle}
                   onDragStart={handleColumnDragStart}
                   onDragEnd={handleColumnDragEnd}

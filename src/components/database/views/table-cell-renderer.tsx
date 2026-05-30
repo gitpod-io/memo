@@ -7,6 +7,7 @@ import type {
 } from "@/lib/types";
 import {
   formatDate,
+  formatNumberValue,
   getSelectOptions,
 } from "@/components/database/views/table-defaults";
 
@@ -123,12 +124,14 @@ export const CellRenderer = memo(function CellRenderer({ value, property, proper
         </a>
       );
 
-    case "number":
+    case "number": {
+      const formatted = formatNumberValue(displayValue, property.config);
       return (
         <span className={cn(textOverflow, "text-sm text-foreground tabular-nums text-right w-full")}>
-          {displayValue}
+          {formatted}
         </span>
       );
+    }
 
     case "date":
       return (

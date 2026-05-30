@@ -42,6 +42,28 @@ const dateProp: DatabaseProperty = {
   updated_at: ts,
 };
 
+const numberProp: DatabaseProperty = {
+  id: "prop-amount",
+  database_id: "db-1",
+  name: "Amount",
+  type: "number",
+  config: {},
+  position: 3,
+  created_at: ts,
+  updated_at: ts,
+};
+
+const numberCurrencyProp: DatabaseProperty = {
+  id: "prop-price",
+  database_id: "db-1",
+  name: "Price",
+  type: "number",
+  config: { format: "currency" },
+  position: 4,
+  created_at: ts,
+  updated_at: ts,
+};
+
 const defaultHandlers = {
   onDragStart: fn(),
   onDragEnd: fn(),
@@ -173,6 +195,80 @@ export const TitleColumn: Story = {
     property: textProp,
     onColumnHeaderClick: fn(),
     onDeleteColumn: fn(),
+  },
+};
+
+export const NumberFormatMenu: Story = {
+  name: "Number column with format options",
+  args: {
+    property: numberProp,
+    colIndex: 3,
+    onColumnHeaderClick: fn(),
+    onDeleteColumn: fn(),
+    onPropertyConfigChange: fn(),
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-48 bg-background" style={{ minHeight: 300 }}>
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Open the column header dropdown menu
+    const menuTrigger = canvas.getByLabelText("Amount column menu");
+    await userEvent.click(menuTrigger);
+
+    // Verify "Number format" label and format options are visible
+    await waitFor(() => {
+      expect(
+        within(document.body).getByText("Number format"),
+      ).toBeInTheDocument();
+      expect(within(document.body).getByText("Number")).toBeInTheDocument();
+      expect(
+        within(document.body).getByText("Currency ($)"),
+      ).toBeInTheDocument();
+      expect(
+        within(document.body).getByText("Percent (%)"),
+      ).toBeInTheDocument();
+    });
+  },
+};
+
+export const NumberFormatCurrencySelected: Story = {
+  name: "Number format with currency selected",
+  args: {
+    property: numberCurrencyProp,
+    colIndex: 4,
+    onColumnHeaderClick: fn(),
+    onDeleteColumn: fn(),
+    onPropertyConfigChange: fn(),
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-48 bg-background" style={{ minHeight: 300 }}>
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Open the column header dropdown menu
+    const menuTrigger = canvas.getByLabelText("Price column menu");
+    await userEvent.click(menuTrigger);
+
+    // Verify the format options are visible with currency checked
+    await waitFor(() => {
+      expect(
+        within(document.body).getByText("Number format"),
+      ).toBeInTheDocument();
+      expect(
+        within(document.body).getByText("Currency ($)"),
+      ).toBeInTheDocument();
+    });
   },
 };
 

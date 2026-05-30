@@ -4,6 +4,8 @@ import { useCallback, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
+  Check,
+  Hash,
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -45,6 +47,18 @@ export interface ColumnDropTarget {
 }
 
 // ---------------------------------------------------------------------------
+// Number format options
+// ---------------------------------------------------------------------------
+
+type NumberFormat = "number" | "currency" | "percent";
+
+const NUMBER_FORMAT_OPTIONS: { value: NumberFormat; label: string }[] = [
+  { value: "number", label: "Number" },
+  { value: "currency", label: "Currency ($)" },
+  { value: "percent", label: "Percent (%)" },
+];
+
+// ---------------------------------------------------------------------------
 // TableColumnHeader
 // ---------------------------------------------------------------------------
 
@@ -59,6 +73,10 @@ export interface TableColumnHeaderProps {
   onColumnReorder?: (orderedPropertyIds: string[]) => void;
   onColumnHeaderClick?: (propertyId: string) => void;
   onDeleteColumn?: (propertyId: string) => void;
+  onPropertyConfigChange?: (
+    propertyId: string,
+    config: Record<string, unknown>,
+  ) => void;
   onSortToggle?: (propertyId: string) => void;
   onDragStart: (e: React.DragEvent, propertyId: string) => void;
   onDragEnd: (e: React.DragEvent) => void;
@@ -79,6 +97,7 @@ export function TableColumnHeader({
   onColumnReorder,
   onColumnHeaderClick,
   onDeleteColumn,
+  onPropertyConfigChange,
   onSortToggle,
   onDragStart,
   onDragEnd,
@@ -154,8 +173,10 @@ export function TableColumnHeader({
             )}
           </button>
         )}
-        {/* Column header menu — rename / delete */}
-        {(onColumnHeaderClick || onDeleteColumn) && (
+        {/* Column header menu — rename / format / delete */}
+        {(onColumnHeaderClick ||
+          onDeleteColumn ||
+          (property.type === "number" && onPropertyConfigChange)) && (
           <DropdownMenu>
             <DropdownMenuTrigger
               className="shrink-0 text-transparent outline-none group-hover/header:text-muted-foreground/50"
@@ -170,9 +191,46 @@ export function TableColumnHeader({
                   Rename property
                 </DropdownMenuItem>
               )}
+              {property.type === "number" && onPropertyConfigChange && (
+                <>
+                  <DropdownMenuSeparator />
+                  <div className="px-1.5 py-1 text-xs font-medium text-muted-foreground">
+                    <Hash className="mr-1 inline-block h-3 w-3" />
+                    Number format
+                  </div>
+                  {NUMBER_FORMAT_OPTIONS.map((opt) => {
+                    const currentFormat =
+                      (property.config.format as string) ?? "number";
+                    const isActive = currentFormat === opt.value;
+                    return (
+                      <DropdownMenuItem
+                        key={opt.value}
+                        data-testid={`number-format-${opt.value}`}
+                        onClick={() => {
+                          void onPropertyConfigChange(property.id, {
+                            ...property.config,
+                            format: opt.value,
+                          });
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "h-4 w-4",
+                            !isActive && "invisible",
+                          )}
+                        />
+                        {opt.label}
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </>
+              )}
               {onDeleteColumn && property.position !== 0 && (
                 <>
-                  {onColumnHeaderClick && <DropdownMenuSeparator />}
+                  {(onColumnHeaderClick ||
+                    (property.type === "number" && onPropertyConfigChange)) && (
+                    <DropdownMenuSeparator />
+                  )}
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
                     onClick={requestDelete}
