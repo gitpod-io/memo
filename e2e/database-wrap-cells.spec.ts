@@ -244,8 +244,17 @@ test.describe("Wrap cells toggle", () => {
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-pressed", "true");
 
-    // Wait for the DOM to update
-    await page.waitForTimeout(300);
+    // Wait for the cell height to increase (wrap causes text to flow to multiple lines)
+    await page.waitForFunction(
+      (baseHeight) => {
+        const el = document.querySelector(
+          '[data-testid="db-table-cell-0-0"]',
+        );
+        return el ? el.getBoundingClientRect().height > baseHeight * 1.3 : false;
+      },
+      truncatedHeight,
+      { timeout: 5_000 },
+    );
 
     const wrappedHeight = await textCell.evaluate(
       (el) => el.getBoundingClientRect().height,
@@ -257,7 +266,19 @@ test.describe("Wrap cells toggle", () => {
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-pressed", "false");
 
-    await page.waitForTimeout(300);
+    // Wait for the cell height to shrink back
+    await page.waitForFunction(
+      (baseHeight) => {
+        const el = document.querySelector(
+          '[data-testid="db-table-cell-0-0"]',
+        );
+        return el
+          ? el.getBoundingClientRect().height <= baseHeight + 4
+          : false;
+      },
+      truncatedHeight,
+      { timeout: 5_000 },
+    );
 
     const truncatedAgainHeight = await textCell.evaluate(
       (el) => el.getBoundingClientRect().height,
@@ -266,11 +287,20 @@ test.describe("Wrap cells toggle", () => {
     expect(truncatedAgainHeight).toBeLessThanOrEqual(truncatedHeight + 4);
 
     // --- Step 4: Enable wrap, reload, verify persistence ---
+    // Set up the response listener before clicking so we don't miss the PATCH
+    const patchResponse = page.waitForResponse(
+      (resp) =>
+        resp.url().includes("rest/v1/database_views") &&
+        resp.request().method() === "PATCH" &&
+        resp.status() >= 200 &&
+        resp.status() < 300,
+      { timeout: 10_000 },
+    );
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-pressed", "true");
 
-    // Wait for the config to persist to Supabase
-    await page.waitForTimeout(500);
+    // Wait for the wrap config to persist to Supabase
+    await patchResponse;
 
     await page.reload();
     await expect(

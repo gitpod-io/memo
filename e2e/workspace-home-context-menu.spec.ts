@@ -143,11 +143,9 @@ test.describe("Workspace home context menu", () => {
     await undoButton.click();
 
     // Wait for the restore to complete — the trash-changed event fires
-    // and router.refresh() re-fetches the page list
-    await page.waitForTimeout(2_000);
-
-    // Verify the page list is still visible after undo
-    await expect(firstItem).toBeVisible({ timeout: 10_000 });
+    // and router.refresh() re-fetches the page list. The firstItem
+    // becoming visible confirms the restore succeeded.
+    await expect(firstItem).toBeVisible({ timeout: 15_000 });
   });
 
   test("'Add to favorites' toggles favorite status", async ({
@@ -182,8 +180,11 @@ test.describe("Workspace home context menu", () => {
     // Poll: re-open context menu until the text flips.
     // The favorites-changed event triggers a re-fetch, which is async.
     await expect(async () => {
-      // Small delay to let the menu close and state update
-      await page.waitForTimeout(500);
+      // Dismiss any open menu by pressing Escape, then wait for it to detach
+      await page.keyboard.press("Escape");
+      await expect(page.getByTestId("wh-context-menu")).not.toBeAttached({
+        timeout: 2_000,
+      });
 
       await openContextMenu(firstItem);
 
