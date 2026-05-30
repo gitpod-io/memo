@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 import type { DatabaseProperty } from "@/lib/types";
-import { DateRenderer, DateEditor } from "./date";
+import { DateRenderer, DateEditor, formatDate } from "./date";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -21,6 +21,36 @@ function makeProp(): DatabaseProperty {
     updated_at: "2025-01-01T00:00:00Z",
   };
 }
+
+// ---------------------------------------------------------------------------
+// formatDate
+// ---------------------------------------------------------------------------
+
+describe("formatDate", () => {
+  it("defaults to short format", () => {
+    expect(formatDate("2025-06-15")).toBe("Jun 15, 2025");
+  });
+
+  it("formats as full", () => {
+    expect(formatDate("2025-06-15", "full")).toBe("June 15, 2025");
+  });
+
+  it("formats as iso", () => {
+    expect(formatDate("2025-06-15", "iso")).toBe("2025-06-15");
+  });
+
+  it("formats as slash", () => {
+    expect(formatDate("2025-06-15", "slash")).toBe("6/15/2025");
+  });
+
+  it("formats as short explicitly", () => {
+    expect(formatDate("2025-01-01", "short")).toBe("Jan 1, 2025");
+  });
+
+  it("returns empty string for invalid date", () => {
+    expect(formatDate("not-a-date", "full")).toBe("");
+  });
+});
 
 // ---------------------------------------------------------------------------
 // DateRenderer
@@ -70,6 +100,45 @@ describe("DateRenderer", () => {
     );
     expect(screen.getByText("Mar 1, 2025")).toBeInTheDocument();
     expect(screen.queryByText(/→/)).toBeNull();
+  });
+
+  it("renders in full format when config.date_format is full", () => {
+    const prop = makeProp();
+    prop.config = { date_format: "full" };
+    render(
+      <DateRenderer value={{ date: "2025-06-15" }} property={prop} />,
+    );
+    expect(screen.getByText("June 15, 2025")).toBeInTheDocument();
+  });
+
+  it("renders in ISO format when config.date_format is iso", () => {
+    const prop = makeProp();
+    prop.config = { date_format: "iso" };
+    render(
+      <DateRenderer value={{ date: "2025-06-15" }} property={prop} />,
+    );
+    expect(screen.getByText("2025-06-15")).toBeInTheDocument();
+  });
+
+  it("renders in slash format when config.date_format is slash", () => {
+    const prop = makeProp();
+    prop.config = { date_format: "slash" };
+    render(
+      <DateRenderer value={{ date: "2025-06-15" }} property={prop} />,
+    );
+    expect(screen.getByText("6/15/2025")).toBeInTheDocument();
+  });
+
+  it("renders date range in the configured format", () => {
+    const prop = makeProp();
+    prop.config = { date_format: "iso" };
+    render(
+      <DateRenderer
+        value={{ date: "2025-06-15", end_date: "2025-06-20" }}
+        property={prop}
+      />,
+    );
+    expect(screen.getByText(/2025-06-15 → 2025-06-20/)).toBeInTheDocument();
   });
 });
 

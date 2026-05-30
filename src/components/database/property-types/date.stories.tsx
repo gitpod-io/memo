@@ -43,6 +43,34 @@ export const DateRange: Story = {
   },
 };
 
+export const FullFormat: Story = {
+  args: {
+    value: { date: "2026-04-21" },
+    property: { ...mockProperty, config: { date_format: "full" } },
+  },
+};
+
+export const ISOFormat: Story = {
+  args: {
+    value: { date: "2026-04-21" },
+    property: { ...mockProperty, config: { date_format: "iso" } },
+  },
+};
+
+export const SlashFormat: Story = {
+  args: {
+    value: { date: "2026-04-21" },
+    property: { ...mockProperty, config: { date_format: "slash" } },
+  },
+};
+
+export const DateRangeISO: Story = {
+  args: {
+    value: { date: "2026-04-21", end_date: "2026-05-15" },
+    property: { ...mockProperty, config: { date_format: "iso" } },
+  },
+};
+
 export const Empty: Story = {
   args: {
     value: {},

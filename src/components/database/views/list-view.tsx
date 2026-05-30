@@ -20,6 +20,8 @@ import type {
   SelectOption,
 } from "@/lib/types";
 import { useListKeyboardNavigation } from "./list-keyboard";
+import { formatDate as formatDateWithFormat } from "@/components/database/property-types/date";
+import type { DateFormat } from "@/components/database/property-types/date";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -336,12 +338,14 @@ function CompactPropertyValue({ value, property, propertyType }: CompactProperty
         </span>
       );
 
-    case "date":
+    case "date": {
+      const dateFormat = (property.config.date_format as DateFormat) ?? "short";
       return (
         <span className="text-xs text-muted-foreground">
-          {formatDate(displayValue)}
+          {formatDateWithFormat(displayValue, dateFormat)}
         </span>
       );
+    }
 
     case "number":
       return (

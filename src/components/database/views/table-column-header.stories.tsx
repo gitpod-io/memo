@@ -272,6 +272,82 @@ export const NumberFormatCurrencySelected: Story = {
   },
 };
 
+export const DateFormatMenu: Story = {
+  name: "Date format submenu",
+  args: {
+    property: dateProp,
+    onColumnHeaderClick: fn(),
+    onDeleteColumn: fn(),
+    onPropertyConfigChange: fn(),
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-48 bg-background" style={{ minHeight: 300 }}>
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Open the column header dropdown menu
+    const menuTrigger = canvas.getByLabelText("Due Date column menu");
+    await userEvent.click(menuTrigger);
+
+    // Open the "Date format" submenu
+    const dateFormatItem = await waitFor(() =>
+      within(document.body).getByText("Date format"),
+    );
+    await userEvent.click(dateFormatItem);
+
+    // Verify format options are visible
+    await waitFor(() => {
+      expect(within(document.body).getByText("Full")).toBeInTheDocument();
+      expect(within(document.body).getByText("Short")).toBeInTheDocument();
+      expect(within(document.body).getByText("ISO")).toBeInTheDocument();
+      expect(within(document.body).getByText("Slash")).toBeInTheDocument();
+    });
+  },
+};
+
+export const DateFormatMenuWithISOSelected: Story = {
+  name: "Date format submenu (ISO selected)",
+  args: {
+    property: {
+      ...dateProp,
+      config: { date_format: "iso" },
+    },
+    onColumnHeaderClick: fn(),
+    onDeleteColumn: fn(),
+    onPropertyConfigChange: fn(),
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-48 bg-background" style={{ minHeight: 300 }}>
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Open the column header dropdown menu
+    const menuTrigger = canvas.getByLabelText("Due Date column menu");
+    await userEvent.click(menuTrigger);
+
+    // Open the "Date format" submenu
+    const dateFormatItem = await waitFor(() =>
+      within(document.body).getByText("Date format"),
+    );
+    await userEvent.click(dateFormatItem);
+
+    // Verify all format options are visible
+    await waitFor(() => {
+      expect(within(document.body).getByText("ISO")).toBeInTheDocument();
+    });
+  },
+};
+
 export const DeleteConfirmation: Story = {
   name: "Delete confirmation dialog",
   args: {

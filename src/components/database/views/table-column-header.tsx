@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
+  Calendar,
   Check,
   Hash,
   MoreHorizontal,
@@ -16,6 +17,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -31,6 +37,8 @@ import {
 import type { SortRule } from "@/lib/database-filters";
 import { cn } from "@/lib/utils";
 import type { DatabaseProperty } from "@/lib/types";
+import { DATE_FORMAT_OPTIONS } from "@/components/database/property-types/date";
+import type { DateFormat } from "@/components/database/property-types/date";
 
 // ---------------------------------------------------------------------------
 // Column drag state (shared with TableView)
@@ -174,9 +182,7 @@ export function TableColumnHeader({
           </button>
         )}
         {/* Column header menu — rename / format / delete */}
-        {(onColumnHeaderClick ||
-          onDeleteColumn ||
-          (property.type === "number" && onPropertyConfigChange)) && (
+        {(onColumnHeaderClick || onDeleteColumn || onPropertyConfigChange) && (
           <DropdownMenu>
             <DropdownMenuTrigger
               className="shrink-0 text-transparent outline-none group-hover/header:text-muted-foreground/50"
@@ -225,10 +231,44 @@ export function TableColumnHeader({
                   })}
                 </>
               )}
+              {property.type === "date" && onPropertyConfigChange && (
+                <>
+                  {onColumnHeaderClick && <DropdownMenuSeparator />}
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Calendar className="h-4 w-4" />
+                      Date format
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuRadioGroup
+                        value={(property.config.date_format as DateFormat) ?? "short"}
+                        onValueChange={(value) =>
+                          onPropertyConfigChange(property.id, {
+                            ...property.config,
+                            date_format: value,
+                          })
+                        }
+                      >
+                        {DATE_FORMAT_OPTIONS.map((opt) => (
+                          <DropdownMenuRadioItem key={opt.value} value={opt.value}>
+                            <span className="flex items-center justify-between gap-4">
+                              <span>{opt.label}</span>
+                              <span className="text-muted-foreground text-xs">
+                                {opt.example}
+                              </span>
+                            </span>
+                          </DropdownMenuRadioItem>
+                        ))}
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                </>
+              )}
               {onDeleteColumn && property.position !== 0 && (
                 <>
                   {(onColumnHeaderClick ||
-                    (property.type === "number" && onPropertyConfigChange)) && (
+                    ((property.type === "number" || property.type === "date") &&
+                      onPropertyConfigChange)) && (
                     <DropdownMenuSeparator />
                   )}
                   <DropdownMenuItem
