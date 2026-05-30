@@ -384,3 +384,81 @@ export const DeleteConfirmation: Story = {
     });
   },
 };
+
+export const DuplicateAction: Story = {
+  name: "Duplicate property action",
+  args: {
+    property: selectProp,
+    onColumnHeaderClick: fn(),
+    onDuplicateColumn: fn(),
+    onDeleteColumn: fn(),
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-48 bg-background" style={{ minHeight: 300 }}>
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+
+    // Open the column header dropdown menu
+    const menuTrigger = canvas.getByLabelText("Status column menu");
+    await userEvent.click(menuTrigger);
+
+    // Verify "Duplicate property" is visible between rename and delete
+    await waitFor(() => {
+      expect(
+        within(document.body).getByText("Rename property"),
+      ).toBeInTheDocument();
+      expect(
+        within(document.body).getByText("Duplicate property"),
+      ).toBeInTheDocument();
+      expect(
+        within(document.body).getByText("Delete property"),
+      ).toBeInTheDocument();
+    });
+
+    // Click "Duplicate property" and verify callback fires
+    const duplicateItem = within(document.body).getByText("Duplicate property");
+    await userEvent.click(duplicateItem);
+    await waitFor(() => {
+      expect(args.onDuplicateColumn).toHaveBeenCalledWith(selectProp.id);
+    });
+  },
+};
+
+export const DuplicateHiddenForTitle: Story = {
+  name: "Duplicate hidden for title column (position 0)",
+  args: {
+    property: textProp,
+    onColumnHeaderClick: fn(),
+    onDuplicateColumn: fn(),
+    onDeleteColumn: fn(),
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-48 bg-background" style={{ minHeight: 300 }}>
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Open the column header dropdown menu
+    const menuTrigger = canvas.getByLabelText("Name column menu");
+    await userEvent.click(menuTrigger);
+
+    // Verify "Duplicate property" is NOT visible for position 0
+    await waitFor(() => {
+      expect(
+        within(document.body).getByText("Rename property"),
+      ).toBeInTheDocument();
+    });
+    expect(
+      within(document.body).queryByText("Duplicate property"),
+    ).not.toBeInTheDocument();
+  },
+};

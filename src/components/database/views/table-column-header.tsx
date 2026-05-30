@@ -6,6 +6,7 @@ import {
   ArrowUp,
   Calendar,
   Check,
+  Copy,
   Hash,
   MoreHorizontal,
   Pencil,
@@ -80,6 +81,7 @@ export interface TableColumnHeaderProps {
   resizingColumn: string | null;
   onColumnReorder?: (orderedPropertyIds: string[]) => void;
   onColumnHeaderClick?: (propertyId: string) => void;
+  onDuplicateColumn?: (propertyId: string) => void;
   onDeleteColumn?: (propertyId: string) => void;
   onPropertyConfigChange?: (
     propertyId: string,
@@ -104,6 +106,7 @@ export function TableColumnHeader({
   resizingColumn,
   onColumnReorder,
   onColumnHeaderClick,
+  onDuplicateColumn,
   onDeleteColumn,
   onPropertyConfigChange,
   onSortToggle,
@@ -181,8 +184,8 @@ export function TableColumnHeader({
             )}
           </button>
         )}
-        {/* Column header menu — rename / format / delete */}
-        {(onColumnHeaderClick || onDeleteColumn || onPropertyConfigChange) && (
+        {/* Column header menu — rename / duplicate / format / delete */}
+        {(onColumnHeaderClick || onDuplicateColumn || onDeleteColumn || onPropertyConfigChange) && (
           <DropdownMenu>
             <DropdownMenuTrigger
               className="shrink-0 text-transparent outline-none group-hover/header:text-muted-foreground/50"
@@ -195,6 +198,12 @@ export function TableColumnHeader({
                 <DropdownMenuItem onClick={() => onColumnHeaderClick(property.id)}>
                   <Pencil className="h-4 w-4" />
                   Rename property
+                </DropdownMenuItem>
+              )}
+              {onDuplicateColumn && property.position !== 0 && (
+                <DropdownMenuItem onClick={() => onDuplicateColumn(property.id)}>
+                  <Copy className="h-4 w-4" />
+                  Duplicate property
                 </DropdownMenuItem>
               )}
               {property.type === "number" && onPropertyConfigChange && (
@@ -233,7 +242,7 @@ export function TableColumnHeader({
               )}
               {property.type === "date" && onPropertyConfigChange && (
                 <>
-                  {onColumnHeaderClick && <DropdownMenuSeparator />}
+                  {(onColumnHeaderClick || (onDuplicateColumn && property.position !== 0)) && <DropdownMenuSeparator />}
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
                       <Calendar className="h-4 w-4" />
@@ -267,6 +276,7 @@ export function TableColumnHeader({
               {onDeleteColumn && property.position !== 0 && (
                 <>
                   {(onColumnHeaderClick ||
+                    onDuplicateColumn ||
                     ((property.type === "number" || property.type === "date") &&
                       onPropertyConfigChange)) && (
                     <DropdownMenuSeparator />
