@@ -518,3 +518,177 @@ describe("design spec: row height touch targets", () => {
     ).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// 8. Icon-only buttons must have aria-label (#1268, #1229)
+//
+// Design spec (Accessibility):
+//   Buttons that render only an icon (no visible text) must have an aria-label
+//   or aria-labelledby attribute so screen readers can announce their purpose.
+//
+// Detection: <Button with size="icon"|"icon-xs"|"icon-sm"|"icon-lg"
+//   These size variants produce square buttons intended for icon-only use.
+//   Each occurrence must have aria-label or aria-labelledby on the same JSX
+//   element (within the opening tag).
+// ---------------------------------------------------------------------------
+
+/**
+ * Extracts the full JSX opening tag starting at `startIndex` in `content`.
+ * Handles `>` inside attribute values (e.g., arrow functions in onClick)
+ * by tracking brace depth.
+ */
+function extractJsxOpeningTag(content: string, startIndex: number): string {
+  let i = startIndex;
+  let braceDepth = 0;
+  let inString: string | null = null;
+  let inTemplateLiteral = false;
+
+  while (i < content.length) {
+    const ch = content[i];
+
+    // Track string literals to avoid counting braces/angles inside them
+    if (!inTemplateLiteral && (ch === '"' || ch === "'")) {
+      if (inString === ch) {
+        inString = null;
+      } else if (!inString) {
+        inString = ch;
+      }
+      i++;
+      continue;
+    }
+    if (ch === "`") {
+      if (!inString) {
+        inTemplateLiteral = !inTemplateLiteral;
+      }
+      i++;
+      continue;
+    }
+    if (inString || inTemplateLiteral) {
+      i++;
+      continue;
+    }
+
+    if (ch === "{") {
+      braceDepth++;
+    } else if (ch === "}") {
+      braceDepth--;
+    } else if (ch === ">" && braceDepth === 0) {
+      // Check for self-closing />
+      return content.substring(startIndex, i + 1);
+    }
+    i++;
+  }
+  return content.substring(startIndex);
+}
+
+/** Matches the start of a <Button with an icon size variant. */
+const ICON_BUTTON_START_RE =
+  /<Button\b/g;
+
+/** Checks if a tag string contains an icon size variant. */
+const ICON_SIZE_RE =
+  /\bsize=["'{]"?(?:icon|icon-xs|icon-sm|icon-lg)["'}]?/;
+
+describe("design spec: icon-only buttons must have aria-label", () => {
+  const files = collectComponentFiles(COMPONENTS_DIR);
+
+  it("scans at least one component file", () => {
+    expect(files.length).toBeGreaterThan(0);
+  });
+
+  it("every icon-sized Button has aria-label or aria-labelledby", () => {
+    const violations: string[] = [];
+
+    for (const filePath of files) {
+      const content = readFileSync(filePath, "utf-8");
+
+      for (const match of content.matchAll(ICON_BUTTON_START_RE)) {
+        const tag = extractJsxOpeningTag(content, match.index);
+
+        // Only check buttons with icon size variants
+        if (!ICON_SIZE_RE.test(tag)) continue;
+
+        if (
+          tag.includes("aria-label=") ||
+          tag.includes("aria-labelledby=")
+        ) {
+          continue;
+        }
+
+        const lineNum =
+          content.substring(0, match.index).split("\n").length;
+        violations.push(
+          `${label(filePath)}:${lineNum} — icon-sized Button missing aria-label`
+        );
+      }
+    }
+
+    expect(
+      violations,
+      `Found ${violations.length} icon-only Button(s) without aria-label. Add aria-label="<purpose>" to each:\n${violations.join("\n")}`
+    ).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 9. Destructive actions must use variant="destructive" (#1268, #1264)
+//
+// Design spec (Components / AlertDialog):
+//   AlertDialogAction elements with delete/remove/destroy labels must use
+//   variant="destructive" to visually signal the destructive nature of the
+//   action. This prevents accidental clicks and matches user expectations.
+//
+// Detection: <AlertDialogAction elements whose text content (between opening
+//   and closing tags) contains "Delete", "Remove", or "Destroy" (case-
+//   insensitive) must have variant="destructive" on the opening tag.
+// ---------------------------------------------------------------------------
+
+/**
+ * Matches <AlertDialogAction ...>text</AlertDialogAction> blocks.
+ * Group 1: opening tag attributes, Group 2: inner text content.
+ */
+const ALERT_DIALOG_ACTION_RE =
+  /<AlertDialogAction\b([^>]*)>([\s\S]*?)<\/AlertDialogAction>/g;
+
+/** Words in the action label that indicate a destructive operation. */
+const DESTRUCTIVE_LABEL_RE = /\b(?:delete|remove|destroy|trash|empty\s+trash)\b/i;
+
+describe("design spec: destructive actions must use variant=\"destructive\"", () => {
+  const files = collectComponentFiles(COMPONENTS_DIR);
+
+  it("scans at least one component file", () => {
+    expect(files.length).toBeGreaterThan(0);
+  });
+
+  it("AlertDialogAction with delete/remove/destroy label uses variant=\"destructive\"", () => {
+    const violations: string[] = [];
+
+    for (const filePath of files) {
+      const content = readFileSync(filePath, "utf-8");
+
+      for (const match of content.matchAll(ALERT_DIALOG_ACTION_RE)) {
+        const attrs = match[1];
+        const innerText = match[2];
+
+        // Only check actions whose label indicates a destructive operation
+        if (!DESTRUCTIVE_LABEL_RE.test(innerText)) continue;
+
+        // Check that variant="destructive" is present in the opening tag
+        if (/variant=["'{]"?destructive["'}]?/.test(attrs)) continue;
+
+        const lineNum =
+          content.substring(0, match.index).split("\n").length;
+        // Extract a readable label from the inner text (strip JSX/whitespace)
+        const textLabel = innerText.replace(/\{[^}]*\}/g, "").replace(/\s+/g, " ").trim();
+        violations.push(
+          `${label(filePath)}:${lineNum} — AlertDialogAction "${textLabel}" missing variant="destructive"`
+        );
+      }
+    }
+
+    expect(
+      violations,
+      `Found ${violations.length} destructive AlertDialogAction(s) without variant="destructive". Add variant="destructive" to each:\n${violations.join("\n")}`
+    ).toEqual([]);
+  });
+});
