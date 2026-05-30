@@ -10,6 +10,15 @@ import type { RendererProps, EditorProps } from "./index";
 // Date formatting helpers
 // ---------------------------------------------------------------------------
 
+export type DateFormat = "short" | "full" | "iso" | "slash";
+
+export const DATE_FORMAT_OPTIONS: { value: DateFormat; label: string; example: string }[] = [
+  { value: "full", label: "Full", example: "January 1, 2026" },
+  { value: "short", label: "Short", example: "Jan 1, 2026" },
+  { value: "iso", label: "ISO", example: "2026-01-01" },
+  { value: "slash", label: "Slash", example: "1/1/2026" },
+];
+
 const MONTHS = [
   "Jan",
   "Feb",
@@ -40,10 +49,21 @@ const FULL_MONTHS = [
   "December",
 ];
 
-function formatDate(iso: string): string {
+export function formatDate(iso: string, format: DateFormat = "short"): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
-  return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+
+  switch (format) {
+    case "full":
+      return `${FULL_MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+    case "iso":
+      return toISODate(d.getFullYear(), d.getMonth(), d.getDate());
+    case "slash":
+      return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
+    case "short":
+    default:
+      return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  }
 }
 
 function toISODate(year: number, month: number, day: number): string {
@@ -64,17 +84,18 @@ function getFirstDayOfWeek(year: number, month: number): number {
 // Renderer
 // ---------------------------------------------------------------------------
 
-export function DateRenderer({ value }: RendererProps) {
+export function DateRenderer({ value, property }: RendererProps) {
   const start = typeof value.date === "string" ? value.date : null;
   const end = typeof value.end_date === "string" ? value.end_date : null;
+  const dateFormat = (property.config.date_format as DateFormat) ?? "short";
 
   if (!start) return null;
 
-  const formatted = formatDate(start);
+  const formatted = formatDate(start, dateFormat);
   if (!formatted) return null;
 
   if (end) {
-    const endFormatted = formatDate(end);
+    const endFormatted = formatDate(end, dateFormat);
     if (endFormatted) {
       return (
         <span className="truncate text-sm">

@@ -350,7 +350,6 @@ export function useDatabaseProperties({
     [properties, views, pageId, setProperties, setViews, setRows],
   );
 
-
   const handlers: UseDatabasePropertiesReturn = {
     renameDialogOpen,
     setRenameDialogOpen,

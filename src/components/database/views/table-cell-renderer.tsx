@@ -10,6 +10,8 @@ import {
   formatNumberValue,
   getSelectOptions,
 } from "@/components/database/views/table-defaults";
+import { formatDate as formatDateWithFormat } from "@/components/database/property-types/date";
+import type { DateFormat } from "@/components/database/property-types/date";
 
 // ---------------------------------------------------------------------------
 // SelectBadge
@@ -133,12 +135,14 @@ export const CellRenderer = memo(function CellRenderer({ value, property, proper
       );
     }
 
-    case "date":
+    case "date": {
+      const dateFormat = (property.config.date_format as DateFormat) ?? "short";
       return (
         <span className={cn(textOverflow, "text-sm text-foreground")}>
-          {formatDate(displayValue)}
+          {formatDateWithFormat(displayValue, dateFormat)}
         </span>
       );
+    }
 
     case "created_time":
     case "updated_time":
