@@ -29,7 +29,7 @@ export interface UseDatabaseRowsParams {
 }
 
 export interface UseDatabaseRowsReturn {
-  handleAddRow: (initialValues?: Record<string, Record<string, unknown>>) => Promise<void>;
+  handleAddRow: (initialValues?: Record<string, Record<string, unknown>>, atIndex?: number) => Promise<void>;
   handleDuplicateRow: (rowId: string) => Promise<void>;
   handleBulkDuplicateRows: (rowIds: string[]) => Promise<{ succeeded: number; failed: number }>;
   handleCardMove: (rowId: string, propertyId: string, newOptionId: string | null) => Promise<void>;
@@ -60,7 +60,7 @@ export function useDatabaseRows({
   useEffect(() => { propertiesRef.current = properties; });
 
   const handleAddRow = useCallback(
-    async (initialValues?: Record<string, Record<string, unknown>>) => {
+    async (initialValues?: Record<string, Record<string, unknown>>, atIndex?: number) => {
       // Generate a temporary ID for the optimistic row
       const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
       const now = new Date().toISOString();
@@ -93,7 +93,14 @@ export function useDatabaseRows({
         },
         values: optimisticValues,
       };
-      setRows((prev) => [...prev, optimisticRow]);
+      setRows((prev) => {
+        if (atIndex !== undefined && atIndex >= 0 && atIndex < prev.length) {
+          const copy = [...prev];
+          copy.splice(atIndex + 1, 0, optimisticRow);
+          return copy;
+        }
+        return [...prev, optimisticRow];
+      });
 
       const { data: rowPage, error } = await addRow(
         pageId,
