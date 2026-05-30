@@ -7,6 +7,16 @@ import { PROPERTY_TYPE_ICON } from "@/lib/property-icons";
 import { PropertyTypePicker } from "@/components/database/property-type-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BulkActionBar } from "@/components/database/views/bulk-action-bar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useRowSelection } from "@/components/database/hooks/use-row-selection";
 import type { SortRule } from "@/lib/database-filters";
 import { cn } from "@/lib/utils";
@@ -25,6 +35,7 @@ import {
   useColumnResize,
   useColumnDragReorder,
 } from "@/components/database/views/table-columns";
+import { useTableShortcuts } from "@/components/database/views/table-shortcuts";
 
 const TITLE_COLUMN_WIDTH = 260;
 const DEFAULT_COLUMN_WIDTH = 180;
@@ -97,6 +108,8 @@ export interface TableViewProps {
   workspaceSlug: string;
   onCellUpdate?: (rowId: string, propertyId: string, value: Record<string, unknown>) => void;
   onAddRow?: () => void;
+  /** Add a row after the given index (used by Ctrl+Shift+Enter shortcut). */
+  onAddRowAtIndex?: (index: number) => void;
   onAddColumn?: (type: PropertyType) => void;
   onColumnWidthsChange?: (widths: Record<string, number>) => void;
   onColumnHeaderClick?: (propertyId: string) => void;
@@ -132,6 +145,7 @@ export const TableView = memo(function TableView({
   workspaceSlug,
   onCellUpdate,
   onAddRow,
+  onAddRowAtIndex,
   onAddColumn,
   onColumnWidthsChange,
   onColumnHeaderClick,
@@ -226,6 +240,41 @@ export const TableView = memo(function TableView({
     handleCellBlur,
     handleCellFocus,
   } = useTableCellNavigation({ rows, visibleProperties, onCellUpdate });
+
+  // Bulk delete confirmation dialog state (lifted so keyboard shortcut can open it).
+  // We snapshot the selected IDs when the dialog opens because the selection
+  // state may be cleared by other effects before the user confirms.
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const pendingDeleteIds = useRef<string[]>([]);
+
+  const triggerBulkDelete = useCallback(() => {
+    if (selectedIds.size > 0) {
+      pendingDeleteIds.current = Array.from(selectedIds);
+      setConfirmDeleteOpen(true);
+    }
+  }, [selectedIds]);
+
+  // Structural keyboard shortcuts (add row, delete selected rows)
+  const handleTableShortcuts = useTableShortcuts({
+    focusedCell,
+    isEditing: editingCell !== null,
+    selectedCount: selectedIds.size,
+    onAddRow,
+    onAddRowAtIndex,
+    onBulkDelete: triggerBulkDelete,
+  });
+
+  // Compose the cell navigation handler with the structural shortcuts handler.
+  // Shortcuts run first so Ctrl+Enter is handled before the plain Enter case.
+  const handleGridKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      handleTableShortcuts(e);
+      if (!e.defaultPrevented) {
+        handleFocusedCellKeyDown(e);
+      }
+    },
+    [handleTableShortcuts, handleFocusedCellKeyDown],
+  );
 
   // Grid template: checkbox column (when selection enabled) + title column + property columns + flexible trailing column.
   const gridTemplateColumns = useMemo(() => {
@@ -390,7 +439,7 @@ export const TableView = memo(function TableView({
           role="grid"
           aria-label="Database table"
           aria-rowcount={rows.length + 1}
-          onKeyDown={handleFocusedCellKeyDown}
+          onKeyDown={handleGridKeyDown}
         >
           {/* Header row */}
           <div
@@ -579,6 +628,42 @@ export const TableView = memo(function TableView({
           onClear={clearSelection}
         />
       )}
+
+      {/* Keyboard-triggered delete confirmation dialog.
+          Rendered outside BulkActionBar so it persists even if selection
+          state changes during the dialog animation. */}
+      <AlertDialog
+        open={confirmDeleteOpen}
+        onOpenChange={(open: boolean) => {
+          if (!open) setConfirmDeleteOpen(false);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedIds.size} row{selectedIds.size !== 1 ? "s" : ""}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              data-testid="db-keyboard-delete-confirm"
+              onClick={() => {
+                const ids = pendingDeleteIds.current;
+                pendingDeleteIds.current = [];
+                setConfirmDeleteOpen(false);
+                if (ids.length > 0 && onBulkDeleteRows) {
+                  onBulkDeleteRows(ids);
+                  clearSelection();
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 });

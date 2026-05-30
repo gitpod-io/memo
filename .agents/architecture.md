@@ -333,6 +333,7 @@ src/components/database/
   │   ├── table-columns.ts        # useColumnResize + useColumnDragReorder hooks
   │   ├── table-cell-renderer.tsx  # CellRenderer + SelectBadge — display-only value rendering
   │   ├── table-keyboard.ts       # handleCellKeyDown — editing-mode key handler
+  │   ├── table-shortcuts.ts     # useTableShortcuts — structural shortcuts (add row, delete selected)
   │   ├── table-defaults.ts       # Pure helpers: value keys, select options, display values, date/number formatting
   │   ├── bulk-action-bar.tsx      # BulkActionBar — floating toolbar for bulk delete when rows are selected
   │   ├── row-count-status-bar.tsx # RowCountStatusBar — "X rows" / "X of Y rows" below the table
@@ -521,6 +522,7 @@ src/
 │   │   │   ├── table-columns.ts        # useColumnResize + useColumnDragReorder hooks
 │   │   │   ├── table-cell-renderer.tsx  # CellRenderer + SelectBadge — display-only value rendering
 │   │   │   ├── table-keyboard.ts       # handleCellKeyDown — editing-mode key handler
+│   │   │   ├── table-shortcuts.ts     # useTableShortcuts — structural shortcuts (add row, delete)
 │   │   │   ├── table-defaults.ts       # Pure helpers: value keys, select options, display values
 │   │   │   ├── bulk-action-bar.tsx      # BulkActionBar — floating toolbar for bulk delete when rows selected
 │   │   │   ├── row-count-status-bar.tsx # RowCountStatusBar — "X rows" / "X of Y rows" below the table

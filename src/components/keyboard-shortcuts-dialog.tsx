@@ -77,6 +77,9 @@ function getShortcutSections(isMac: boolean): ShortcutSection[] {
         { keys: ["Escape"], description: "Cancel editing / deselect cell" },
         { keys: ["Tab"], description: "Move to next cell" },
         { keys: ["Shift", "Tab"], description: "Move to previous cell" },
+        { keys: [mod, "Enter"], description: "Add new row at bottom" },
+        { keys: [mod, "Shift", "Enter"], description: "Add new row below focused row" },
+        { keys: ["Delete"], description: "Delete selected rows" },
       ],
     },
     {

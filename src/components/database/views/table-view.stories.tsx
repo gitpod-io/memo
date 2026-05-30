@@ -177,6 +177,7 @@ const meta: Meta<typeof TableView> = {
     workspaceSlug: "my-workspace",
     onCellUpdate: fn(),
     onAddRow: fn(),
+    onAddRowAtIndex: fn(),
     onAddColumn: fn(),
     onColumnWidthsChange: fn(),
     onColumnHeaderClick: fn(),
@@ -522,6 +523,36 @@ export const AutoFitDefaultWidths: Story = {
     rows: autoFitRows,
     properties: mockProperties,
     viewConfig: defaultConfig,
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Keyboard shortcuts story
+// ---------------------------------------------------------------------------
+
+export const KeyboardShortcuts: Story = {
+  name: "Keyboard Shortcuts",
+  parameters: {
+    docs: {
+      description: {
+        story: [
+          "The table supports structural keyboard shortcuts when a cell is focused (non-editing mode):",
+          "",
+          "- **Ctrl/⌘+Enter** — Add a new row at the bottom of the table",
+          "- **Ctrl/⌘+Shift+Enter** — Add a new row directly below the focused row",
+          "- **Backspace / Delete** — Open the delete confirmation dialog for selected rows (via bulk selection checkboxes)",
+          "",
+          "These shortcuts do not fire when a cell editor is active or when focus is outside the table grid.",
+        ].join("\n"),
+      },
+    },
+  },
+  args: {
+    rows: mockRows,
+    properties: mockProperties,
+    viewConfig: defaultConfig,
+    onBulkDeleteRows: fn(),
+    onAddRowAtIndex: fn(),
   },
 };
 

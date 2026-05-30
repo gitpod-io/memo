@@ -224,6 +224,11 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     handleBulkDeleteRows,
   } = useDatabaseRows({ pageId, userId, rows, properties, setRows, setProperties });
 
+  const handleAddRowAtIndex = useCallback(
+    (index: number) => void handleAddRow(undefined, index),
+    [handleAddRow],
+  );
+
   const {
     renameDialogOpen,
     setRenameDialogOpen,
@@ -455,6 +460,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   viewConfig={activeView.config}
                   workspaceSlug={workspaceSlug}
                   onAddRow={handleAddRow}
+                  onAddRowAtIndex={handleAddRowAtIndex}
                   onCellUpdate={handleCellUpdate}
                   onAddColumn={handleAddColumn}
                   onColumnHeaderClick={handleColumnHeaderClick}
