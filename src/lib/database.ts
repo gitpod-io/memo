@@ -433,13 +433,13 @@ export async function addProperty(
   name: string,
   type: PropertyType,
   config?: Record<string, unknown>,
+  /** When provided, inserts at this position instead of appending to the end. */
+  insertAtPosition?: number,
 ): Promise<{ data: DatabaseProperty | null; error: Error | null }> {
   const supabase = getClient();
-  const position = await nextPosition(
-    "database_properties",
-    "database_id",
-    databaseId,
-  );
+  const position =
+    insertAtPosition ??
+    (await nextPosition("database_properties", "database_id", databaseId));
 
   const { data, error } = await supabase
     .from("database_properties")

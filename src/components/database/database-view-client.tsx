@@ -238,6 +238,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     handlePropertyRename,
     handlePropertyConfigChange,
     handleColumnReorder,
+    handleDuplicateColumn,
     handleDeleteColumn,
   } = useDatabaseProperties({
     pageId,
@@ -465,6 +466,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   onAddColumn={handleAddColumn}
                   onColumnHeaderClick={handleColumnHeaderClick}
                   onColumnReorder={handleColumnReorder}
+                  onDuplicateColumn={handleDuplicateColumn}
                   onDeleteColumn={handleDeleteColumn}
                   onPropertyConfigChange={handlePropertyConfigChange}
                   onDeleteRow={handleDeleteRow}

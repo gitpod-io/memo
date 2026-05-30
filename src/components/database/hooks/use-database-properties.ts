@@ -51,6 +51,7 @@ export interface UseDatabasePropertiesReturn {
     config: Record<string, unknown>,
   ) => Promise<void>;
   handleColumnReorder: (orderedPropertyIds: string[]) => Promise<void>;
+  handleDuplicateColumn: (propertyId: string) => void;
   handleDeleteColumn: (propertyId: string) => void;
 }
 
@@ -249,6 +250,141 @@ export function useDatabaseProperties({
     [pageId, properties, setProperties],
   );
 
+  // Duplicate a column: copies type, config, and select options; inserts after source
+  const handleDuplicateColumn = useCallback(
+    (propertyId: string) => {
+      const source = properties.find((p) => p.id === propertyId);
+      if (!source || source.position === 0) return;
+
+      const duplicateName = `${source.name} (copy)`;
+      const insertPos = source.position + 1;
+      const now = new Date().toISOString();
+      const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+      // Build the expected ordered IDs after insertion (used for reorder call)
+      const sorted = [...properties].sort((a, b) => a.position - b.position);
+      const orderedIds: string[] = [];
+      for (const p of sorted) {
+        orderedIds.push(p.id);
+        if (p.id === propertyId) orderedIds.push(tempId);
+      }
+
+      // Optimistic: shift positions of properties after the source, then insert
+      setProperties((prev) => {
+        const shifted = prev.map((p) =>
+          p.position >= insertPos ? { ...p, position: p.position + 1 } : p,
+        );
+        const optimistic: DatabaseProperty = {
+          id: tempId,
+          database_id: pageId,
+          name: duplicateName,
+          type: source.type,
+          config: { ...source.config },
+          position: insertPos,
+          created_at: now,
+          updated_at: now,
+        };
+        return [...shifted, optimistic].sort((a, b) => a.position - b.position);
+      });
+
+      // Add to visible_properties in all views (insert after source property)
+      setViews((prev) =>
+        prev.map((v) => {
+          const vp = v.config.visible_properties;
+          if (!vp) return v;
+          const srcIdx = vp.indexOf(propertyId);
+          if (srcIdx === -1) return v;
+          const updated = [...vp];
+          updated.splice(srcIdx + 1, 0, tempId);
+          return { ...v, config: { ...v.config, visible_properties: updated } };
+        }),
+      );
+
+      // Persist: create the property then reorder
+      void (async () => {
+        const { data: newProp, error } = await addProperty(
+          pageId,
+          duplicateName,
+          source.type,
+          { ...source.config },
+          insertPos,
+        );
+
+        if (error || !newProp) {
+          // Rollback
+          setProperties((prev) =>
+            prev
+              .filter((p) => p.id !== tempId)
+              .map((p) =>
+                p.position > source.position
+                  ? { ...p, position: p.position - 1 }
+                  : p,
+              ),
+          );
+          setViews((prev) =>
+            prev.map((v) => {
+              const vp = v.config.visible_properties;
+              if (!vp) return v;
+              return {
+                ...v,
+                config: {
+                  ...v.config,
+                  visible_properties: vp.filter((id: string) => id !== tempId),
+                },
+              };
+            }),
+          );
+          if (error && !isInsufficientPrivilegeError(error)) {
+            captureSupabaseError(error, "database-properties:duplicate");
+          }
+          toast.error("Failed to duplicate column", { duration: 8000 });
+          return;
+        }
+
+        // Replace temp ID with real ID in properties and views
+        const finalOrderedIds = orderedIds.map((id) =>
+          id === tempId ? newProp.id : id,
+        );
+
+        setProperties((prev) =>
+          prev.map((p) => (p.id === tempId ? { ...newProp, position: insertPos } : p)),
+        );
+        setViews((prev) =>
+          prev.map((v) => {
+            const vp = v.config.visible_properties;
+            if (!vp) return v;
+            return {
+              ...v,
+              config: {
+                ...v.config,
+                visible_properties: vp.map((id: string) =>
+                  id === tempId ? newProp.id : id,
+                ),
+              },
+            };
+          }),
+        );
+
+        // Reorder all properties to fix positions on the server
+        await reorderProperties(pageId, finalOrderedIds);
+
+        // Persist visible_properties for affected views
+        for (const v of views) {
+          const vp = v.config.visible_properties;
+          if (vp && vp.includes(propertyId)) {
+            const updatedVp = [...vp];
+            const srcIdx = updatedVp.indexOf(propertyId);
+            updatedVp.splice(srcIdx + 1, 0, newProp.id);
+            void updateView(v.id, {
+              config: { ...v.config, visible_properties: updatedVp },
+            }, pageId);
+          }
+        }
+      })();
+    },
+    [properties, views, pageId, setProperties, setViews],
+  );
+
   // Deferred column deletion with undo toast — replaces the confirmation dialog
   const handleDeleteColumn = useCallback(
     (propertyId: string) => {
@@ -359,6 +495,7 @@ export function useDatabaseProperties({
     handlePropertyRename,
     handlePropertyConfigChange,
     handleColumnReorder,
+    handleDuplicateColumn,
     handleDeleteColumn,
   };
   useEffect(() => { handlersRef.current = handlers; });
