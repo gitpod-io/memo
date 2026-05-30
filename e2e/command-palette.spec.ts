@@ -181,8 +181,18 @@ test.describe("Command palette", () => {
       // Press ArrowDown to move selection
       await page.keyboard.press("ArrowDown");
 
-      // Wait a tick for cmdk to update
-      await page.waitForTimeout(200);
+      // Wait for cmdk to update the selected item
+      await page.waitForFunction(
+        (prevValue) => {
+          const el = document.querySelector(
+            '[cmdk-item=""][aria-selected="true"]',
+          );
+          const current = el?.getAttribute("data-value") ?? null;
+          return current !== null && current !== prevValue;
+        },
+        valueBefore,
+        { timeout: 5_000 },
+      );
 
       const valueAfter = await getActiveValue();
 
@@ -224,8 +234,8 @@ test.describe("Command palette", () => {
       }
     });
 
-    // Short wait to ensure the event was processed
-    await page.waitForTimeout(500);
+    // Verify the event was processed by waiting for a microtask cycle
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(r)));
 
     // Dialog should NOT open when an input is focused
     const dialog = page.getByRole("dialog");

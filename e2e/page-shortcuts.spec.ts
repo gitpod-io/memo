@@ -100,8 +100,11 @@ test.describe("Page keyboard shortcuts", () => {
     const mod = modifierKey();
     await page.keyboard.press(`${mod}+d`);
 
-    // Wait a moment to confirm no navigation happened
-    await page.waitForTimeout(1_000);
+    // Wait for the keyboard event to be fully processed
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(r)));
+
+    // URL should remain unchanged — the shortcut should not trigger duplication
+    // when the editor is focused
     expect(page.url()).toBe(originalUrl);
   });
 

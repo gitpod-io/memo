@@ -178,11 +178,16 @@ test.describe("Table editor portals", () => {
     for (let i = 0; i < 6; i++) {
       await addRowBtn.scrollIntoViewIfNeeded();
       await addRowBtn.click();
-      await page.waitForTimeout(600);
+      // Wait for the new row to appear before adding the next one
+      await expect(
+        page.locator(`[data-testid="db-table-row-${i + 1}"]`),
+      ).toBeVisible({ timeout: 5_000 });
     }
 
-    // Wait for rows to settle
-    await page.waitForTimeout(1000);
+    // Wait for all 7 rows to be present (use CSS regex to exclude checkbox testids)
+    await expect(
+      page.locator('[data-testid="db-table-row-6"]'),
+    ).toBeVisible({ timeout: 5_000 });
 
     // Scroll to the bottom of the page so the last row is near the viewport edge
     await addRowBtn.scrollIntoViewIfNeeded();

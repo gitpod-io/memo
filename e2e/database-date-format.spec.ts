@@ -163,8 +163,10 @@ test.describe("Database date format picker", () => {
     });
     await expect(header.first()).toBeVisible({ timeout: 5_000 });
 
-    // Wait for the grid to be fully loaded before interacting
-    await page.waitForTimeout(1_000);
+    // Wait for the grid cells in the date column to be ready
+    await expect(
+      page.locator('[role="gridcell"][data-col]'),
+    ).not.toHaveCount(0, { timeout: 5_000 });
 
     // Click the last property cell to open the date picker and set today's date
     await clickLastPropertyCell(page);
