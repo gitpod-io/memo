@@ -640,7 +640,7 @@ export const TableView = memo(function TableView({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {selectedIds.size} row{selectedIds.size !== 1 ? "s" : ""}?</AlertDialogTitle>
+            <AlertDialogTitle>Delete {pendingDeleteIds.current.length} row{pendingDeleteIds.current.length !== 1 ? "s" : ""}?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone.
             </AlertDialogDescription>
