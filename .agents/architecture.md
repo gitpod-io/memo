@@ -234,6 +234,7 @@ Pin to a specific version to avoid breaking changes.
 | CollapsibleContentNode | ElementNode | Content area for toggle blocks | Implemented |
 | PageLinkNode | DecoratorNode | Inline page link pill (stores pageId, renders title + icon) | Implemented |
 | DatabaseNode | DecoratorNode | Inline database embed (stores databaseId + viewId, renders compact view) | Implemented |
+| TableOfContentsNode | DecoratorNode | Live-updating outline of all H1/H2/H3 headings with click-to-scroll | Implemented |
 | DividerNode | HorizontalRuleNode (`@lexical/react`) | Horizontal divider | Built-in |
 
 ### Skipped plugins (not needed for MVP)
@@ -485,6 +486,7 @@ src/
 │   │   ├── table-action-menu-plugin.tsx # Table cell context menu (add/delete rows/columns)
 │   │   ├── database-node.tsx        # DatabaseNode (DecoratorNode) — inline database embed
 │   │   ├── database-plugin.tsx      # Database insert command + inline rendering
+│   │   ├── table-of-contents-node.tsx # TableOfContentsNode (DecoratorNode) — live heading outline
 │   │   ├── turn-into-plugin.tsx     # Block transformation command (paragraph ↔ heading ↔ list ↔ quote ↔ code)
 │   │   ├── turn-into-menu.tsx       # Floating menu UI for turn-into transformations
 │   │   ├── auto-link-plugin.tsx     # Auto-detect URLs and emails, convert to links

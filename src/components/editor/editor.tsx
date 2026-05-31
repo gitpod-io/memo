@@ -55,6 +55,7 @@ import { PageLinkNode } from "@/components/editor/page-link-node";
 import { PageLinkPlugin } from "@/components/editor/page-link-plugin";
 import { DatabaseNode } from "@/components/editor/database-node";
 import { DatabasePlugin } from "@/components/editor/database-plugin";
+import { TableOfContentsNode } from "@/components/editor/table-of-contents-node";
 import { TableActionMenuPlugin } from "@/components/editor/table-action-menu-plugin";
 import { WordCountPlugin } from "@/components/editor/word-count-plugin";
 import { EditorAutoLinkPlugin } from "@/components/editor/auto-link-plugin";
@@ -353,6 +354,7 @@ export function Editor({ pageId, workspaceId, initialContent, editorRef, readOnl
       CollapsibleContentNode,
       PageLinkNode,
       DatabaseNode,
+      TableOfContentsNode,
       TableNode,
       TableRowNode,
       TableCellNode,
