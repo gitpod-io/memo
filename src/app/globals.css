@@ -339,7 +339,7 @@
   [data-testid="db-table-container"] [role="columnheader"],
   [data-testid="db-table-container"] [role="gridcell"],
   [data-testid="db-table-container"] [role="row"] > div {
-    border: 1px solid #d1d5db !important;
+    border: 1px solid hsl(var(--border)) !important;
   }
 
   /* Hide interactive-only database controls in print */
