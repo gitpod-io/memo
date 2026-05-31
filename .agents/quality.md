@@ -33,9 +33,9 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 
 | Category | Files | Tests |
 |---|---|---|
-| Unit/Integration (Vitest) | 151 | 2075 |
+| Unit/Integration (Vitest) | 152 | 2117 |
 | E2E (Playwright) | 102 | 484 |
-| **Total** | **253** | **2559** |
+| **Total** | **254** | **2601** |
 
 ### Test files by domain
 
@@ -51,7 +51,7 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 - **Feedback**: `feedback/route.test.ts` (22 tests), `feedback-form-design-spec.test.ts` (5 tests), `use-screenshot.test.ts` (2 tests), `e2e/feedback.spec.ts` (6 tests)
 - **API**: `health/route.test.ts` (11 tests), `search/route.test.ts` (14 tests), `account/route.test.ts` (9 tests), `cron/purge-trash/route.test.ts` (10 tests), `feedback/route.test.ts` (22 tests), `pages/[pageId]/versions/route.test.ts` (17 tests), `pages/[pageId]/versions/route.rate-limit.test.ts` (3 tests), `pages/[pageId]/versions/[versionId]/route.test.ts` (14 tests), `pages/[pageId]/versions/[versionId]/route.rate-limit.test.ts` (3 tests), `e2e/account-deletion.spec.ts` (4 tests), `e2e/account-settings.spec.ts` (5 tests)
 - **UI**: `overlay-opacity.test.ts` (2 tests), `toast-error-duration.test.ts` (1 test), `dialog-design-spec.test.ts` (3 tests), `design-spec-compliance.test.ts` (14 tests), `relative-time.test.ts` (7 tests), `reduced-motion.test.ts` (6 tests), `e2e/visual-regression.spec.ts` (1 test)
-- **Lib**: `sentry.test.ts` (4 tests), `sentry.unit.test.ts` (171 tests), `api-route-consistency.test.ts` (6 tests), `retry.test.ts` (16 tests), `rate-limit.test.ts` (17 tests), `track-event-server.test.ts` (9 tests), `track-event.test.ts` (4 tests), `usage-tracking-guard.test.ts` (5 tests), `use-roving-tabindex.test.ts` (13 tests)
+- **Lib**: `sentry.test.ts` (4 tests), `sentry.unit.test.ts` (180 tests), `classification-edge-cases.test.ts` (42 tests), `api-route-consistency.test.ts` (6 tests), `retry.test.ts` (16 tests), `rate-limit.test.ts` (17 tests), `track-event-server.test.ts` (9 tests), `track-event.test.ts` (4 tests), `usage-tracking-guard.test.ts` (5 tests), `use-roving-tabindex.test.ts` (13 tests)
 - **Infrastructure**: `migrations.test.ts` (33 tests), `build-timeseries.test.mjs` (6 tests), `supabase/client.test.ts` (7 tests), `supabase/proxy.test.ts` (2 tests)
 
 ## Known Gaps
@@ -204,3 +204,4 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | 2026-05-31 | Add table of contents block via /toc slash command (#1274). Added `TableOfContentsNode` (DecoratorNode) in `table-of-contents-node.tsx` with live heading scanning, click-to-scroll, empty state. Added keyword-based slash command matching. Registered node in editor config. Added 5 Storybook stories (Default, Empty, SingleHeading, FlatH1Only, DeeplyNested). Added 1 new Vitest file `table-of-contents-node.test.ts` (9 tests). Added 1 new E2E spec `e2e/editor-toc.spec.ts` (6 tests). Test totals: 151 Vitest files (2075 tests), 101 E2E specs (482 tests). |
 | 2026-05-31 | Extend design-spec compliance checks to scan CSS files (#1279). Extended hex color and CSS color function tests in `design-spec-compliance.test.ts` to also scan `src/app/globals.css`, excluding CSS variable definitions and color functions wrapping CSS variable references. No new tests added — existing tests expanded in scope. Test totals: 151 Vitest files (2075 tests), 101 E2E specs (482 tests). |
 | 2026-05-31 | Add E2E tests for print stylesheet (#1282). Added 1 new E2E spec `e2e/print-stylesheet.spec.ts` (2 tests): editor page verifies sidebar, mobile header, toolbar hidden and content expanded; database page verifies add-row/add-column/select-all hidden and cell borders visible. Fixed bug in print stylesheet where `hsl(var(--border))` was invalid (--border uses oklch) — changed to `var(--border)`. Test totals: 151 Vitest files (2075 tests), 102 E2E specs (484 tests). |
+| 2026-05-31 | Add Sentry error classification edge-case tests (#1286). Added 1 new Vitest file: `classification-edge-cases.test.ts` (42 tests) covering PostgREST errors with null details/hint, auth lock errors with non-standard messages, fetch TypeError variants, FK violations from page_versions, statement timeouts, captureApiError with undefined/null/string args, and isE2ETestRequest with empty event.request. Updated `sentry.unit.test.ts` count (171→180, drifted). Test totals: 152 Vitest files (2117 tests), 102 E2E specs (484 tests). |
