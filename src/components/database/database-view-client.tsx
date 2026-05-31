@@ -38,6 +38,7 @@ import { useDatabaseViews } from "@/components/database/hooks/use-database-views
 import { useDatabaseRows } from "@/components/database/hooks/use-database-rows";
 import { useDatabaseProperties } from "@/components/database/hooks/use-database-properties";
 import { useDatabaseFilters } from "@/components/database/hooks/use-database-filters";
+import type { SortRule } from "@/lib/database-filters";
 import type {
   DatabaseProperty,
   DatabaseRow,
@@ -258,6 +259,24 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
     handleSortToggle,
   } = useDatabaseFilters({ pageId, activeView, rows, properties, setViews });
 
+  // Set a specific sort direction for a column from the column header menu.
+  // Replaces any existing sort for the column with the requested direction.
+  const handleSortColumn = useCallback(
+    (propertyId: string, direction: "asc" | "desc") => {
+      const existing = activeSorts.find((s) => s.property_id === propertyId);
+      let newSorts: SortRule[];
+      if (existing) {
+        newSorts = activeSorts.map((s) =>
+          s.property_id === propertyId ? { ...s, direction } : s,
+        );
+      } else {
+        newSorts = [...activeSorts, { property_id: propertyId, direction }];
+      }
+      void handleSortsChange(newSorts);
+    },
+    [activeSorts, handleSortsChange],
+  );
+
   // Local search state — filters rows by title substring match (case-insensitive).
   // Keyed to activeViewId so it resets automatically on view switch.
   const [searchState, setSearchState] = useState({ viewId: activeViewId, query: "" });
@@ -475,6 +494,7 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
                   onBulkDeleteRows={handleBulkDeleteRows}
                   sorts={activeSorts}
                   onSortToggle={handleSortToggle}
+                  onSortColumn={handleSortColumn}
                   totalRowCount={rows.length}
                   hasActiveFilters={activeFilters.length > 0 || hasActiveSearch}
                   onClearFilters={() => {

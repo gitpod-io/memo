@@ -483,3 +483,101 @@ export const DuplicateHiddenForTitle: Story = {
     ).not.toBeInTheDocument();
   },
 };
+
+export const SortActionsMenu: Story = {
+  name: "Sort actions in menu",
+  args: {
+    property: selectProp,
+    onColumnHeaderClick: fn(),
+    onDeleteColumn: fn(),
+    onSortColumn: fn(),
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-48 bg-background" style={{ minHeight: 300 }}>
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const menuTrigger = canvas.getByLabelText("Status column menu");
+    await userEvent.click(menuTrigger);
+
+    await waitFor(() => {
+      expect(
+        within(document.body).getByText("Sort ascending"),
+      ).toBeInTheDocument();
+      expect(
+        within(document.body).getByText("Sort descending"),
+      ).toBeInTheDocument();
+    });
+  },
+};
+
+export const SortAscendingActive: Story = {
+  name: "Sort ascending active indicator",
+  args: {
+    property: selectProp,
+    sortRule: { property_id: selectProp.id, direction: "asc" },
+    onColumnHeaderClick: fn(),
+    onDeleteColumn: fn(),
+    onSortColumn: fn(),
+    onSortToggle: fn(),
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-48 bg-background" style={{ minHeight: 300 }}>
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const menuTrigger = canvas.getByLabelText("Status column menu");
+    await userEvent.click(menuTrigger);
+
+    // The ascending item should have a checkmark (Check icon)
+    await waitFor(() => {
+      const ascItem = within(document.body).getByTestId("sort-ascending");
+      expect(ascItem).toBeInTheDocument();
+      // Check icon is rendered inside the ascending item
+      expect(ascItem.querySelectorAll("svg").length).toBe(2);
+    });
+  },
+};
+
+export const SortDescendingActive: Story = {
+  name: "Sort descending active indicator",
+  args: {
+    property: numberProp,
+    sortRule: { property_id: numberProp.id, direction: "desc" },
+    onColumnHeaderClick: fn(),
+    onDeleteColumn: fn(),
+    onPropertyConfigChange: fn(),
+    onSortColumn: fn(),
+    onSortToggle: fn(),
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-48 bg-background" style={{ minHeight: 300 }}>
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const menuTrigger = canvas.getByLabelText("Amount column menu");
+    await userEvent.click(menuTrigger);
+
+    // The descending item should have a checkmark (Check icon)
+    await waitFor(() => {
+      const descItem = within(document.body).getByTestId("sort-descending");
+      expect(descItem).toBeInTheDocument();
+      expect(descItem.querySelectorAll("svg").length).toBe(2);
+    });
+  },
+};

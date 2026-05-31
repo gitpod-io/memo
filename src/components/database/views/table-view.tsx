@@ -122,6 +122,7 @@ export interface TableViewProps {
   ) => void;
   sorts?: SortRule[];
   onSortToggle?: (propertyId: string) => void;
+  onSortColumn?: (propertyId: string, direction: "asc" | "desc") => void;
   onDeleteRow?: (rowId: string) => void;
   onDuplicateRow?: (rowId: string) => void;
   /** Bulk duplicate handler — called with an array of row IDs to duplicate. */
@@ -160,6 +161,7 @@ export const TableView = memo(function TableView({
   onBulkDeleteRows,
   sorts = [],
   onSortToggle,
+  onSortColumn,
   loading = false,
   totalRowCount,
   hasActiveFilters = false,
@@ -505,6 +507,7 @@ export const TableView = memo(function TableView({
                   onDeleteColumn={onDeleteColumn}
                   onPropertyConfigChange={onPropertyConfigChange}
                   onSortToggle={onSortToggle}
+                  onSortColumn={onSortColumn}
                   onDragStart={handleColumnDragStart}
                   onDragEnd={handleColumnDragEnd}
                   onDragOver={handleColumnDragOver}

@@ -3,7 +3,9 @@
 import { useCallback, useState } from "react";
 import {
   ArrowDown,
+  ArrowDownWideNarrow,
   ArrowUp,
+  ArrowUpNarrowWide,
   Calendar,
   Check,
   Copy,
@@ -88,6 +90,7 @@ export interface TableColumnHeaderProps {
     config: Record<string, unknown>,
   ) => void;
   onSortToggle?: (propertyId: string) => void;
+  onSortColumn?: (propertyId: string, direction: "asc" | "desc") => void;
   onDragStart: (e: React.DragEvent, propertyId: string) => void;
   onDragEnd: (e: React.DragEvent) => void;
   onDragOver: (e: React.DragEvent, colIndex: number) => void;
@@ -110,6 +113,7 @@ export function TableColumnHeader({
   onDeleteColumn,
   onPropertyConfigChange,
   onSortToggle,
+  onSortColumn,
   onDragStart,
   onDragEnd,
   onDragOver,
@@ -191,8 +195,8 @@ export function TableColumnHeader({
             )}
           </button>
         )}
-        {/* Column header menu — rename / duplicate / format / delete */}
-        {(onColumnHeaderClick || onDuplicateColumn || onDeleteColumn || onPropertyConfigChange) && (
+        {/* Column header menu — rename / duplicate / sort / format / delete */}
+        {(onColumnHeaderClick || onDuplicateColumn || onDeleteColumn || onPropertyConfigChange || onSortColumn) && (
           <DropdownMenu>
             <DropdownMenuTrigger
               className="shrink-0 text-transparent outline-none group-hover/header:text-muted-foreground/50"
@@ -212,6 +216,32 @@ export function TableColumnHeader({
                   <Copy className="h-4 w-4" />
                   Duplicate property
                 </DropdownMenuItem>
+              )}
+              {onSortColumn && (
+                <>
+                  {(onColumnHeaderClick || (onDuplicateColumn && property.position !== 0)) && <DropdownMenuSeparator />}
+                  <DropdownMenuItem
+                    data-testid="sort-ascending"
+                    onClick={() => onSortColumn(property.id, "asc")}
+                  >
+                    <ArrowUpNarrowWide className="h-4 w-4" />
+                    Sort ascending
+                    {sortRule?.direction === "asc" && (
+                      <Check className="ml-auto h-4 w-4" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    data-testid="sort-descending"
+                    onClick={() => onSortColumn(property.id, "desc")}
+                  >
+                    <ArrowDownWideNarrow className="h-4 w-4" />
+                    Sort descending
+                    {sortRule?.direction === "desc" && (
+                      <Check className="ml-auto h-4 w-4" />
+                    )}
+                  </DropdownMenuItem>
+                </>
+
               )}
               {property.type === "number" && onPropertyConfigChange && (
                 <>
@@ -249,7 +279,7 @@ export function TableColumnHeader({
               )}
               {property.type === "date" && onPropertyConfigChange && (
                 <>
-                  {(onColumnHeaderClick || (onDuplicateColumn && property.position !== 0)) && <DropdownMenuSeparator />}
+                  {(onColumnHeaderClick || (onDuplicateColumn && property.position !== 0) || onSortColumn) && <DropdownMenuSeparator />}
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
                       <Calendar className="h-4 w-4" />
@@ -284,6 +314,7 @@ export function TableColumnHeader({
                 <>
                   {(onColumnHeaderClick ||
                     onDuplicateColumn ||
+                    onSortColumn ||
                     ((property.type === "number" || property.type === "date") &&
                       onPropertyConfigChange)) && (
                     <DropdownMenuSeparator />
