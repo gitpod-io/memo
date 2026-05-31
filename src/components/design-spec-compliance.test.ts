@@ -10,10 +10,15 @@ import { join, relative } from "path";
  * found post-merge by the UI Verifier automation.
  *
  * Excluded: src/components/ui/ (shadcn managed), stories, and test files.
+ *
+ * Also scans CSS files in src/app/ (e.g., globals.css) for hardcoded color
+ * values, excluding CSS variable definitions which legitimately use color
+ * values. See #1279.
  */
 
 const COMPONENTS_DIR = join(__dirname);
 const UI_DIR = join(COMPONENTS_DIR, "ui");
+const GLOBALS_CSS_PATH = join(__dirname, "..", "app", "globals.css");
 
 function collectComponentFiles(dir: string): string[] {
   const results: string[] = [];
@@ -36,6 +41,42 @@ function collectComponentFiles(dir: string): string[] {
 
 function label(filePath: string): string {
   return relative(COMPONENTS_DIR, filePath);
+}
+
+/**
+ * Matches CSS variable definition lines (e.g., `--border: oklch(...)`)
+ * inside :root, [data-theme], or .dark blocks. These legitimately define
+ * color token values and must be excluded from hardcoded color checks.
+ */
+const CSS_VAR_DEFINITION_RE = /^\s*--[\w-]+\s*:/;
+
+/**
+ * Matches color functions that wrap a CSS variable reference rather than
+ * a hardcoded value, e.g., `hsl(var(--border))`. These are legitimate
+ * token usages, not hardcoded colors.
+ */
+const COLOR_FN_VAR_REF_RE = /\b(?:rgb|rgba|hsl|hsla)\s*\(\s*var\s*\(/gi;
+
+/**
+ * Reads a CSS file and returns lines that are NOT CSS variable definitions.
+ * Also skips comment lines (starting with * or //).
+ * Returns {lines, filePath} for consistent violation reporting.
+ */
+function collectCssNonVarLines(cssPath: string): { line: string; lineNum: number }[] {
+  const content = readFileSync(cssPath, "utf-8");
+  const lines = content.split("\n");
+  const result: { line: string; lineNum: number }[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trimStart();
+    // Skip comments
+    if (trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/*")) continue;
+    // Skip CSS variable definitions — they legitimately define token values
+    if (CSS_VAR_DEFINITION_RE.test(line)) continue;
+    result.push({ line, lineNum: i + 1 });
+  }
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -158,6 +199,16 @@ describe("design spec: no hardcoded color values", () => {
       }
     }
 
+    // Also scan globals.css (excluding CSS variable definitions) — see #1279
+    const cssLabel = relative(COMPONENTS_DIR, GLOBALS_CSS_PATH);
+    for (const { line, lineNum } of collectCssNonVarLines(GLOBALS_CSS_PATH)) {
+      for (const match of line.matchAll(HEX_COLOR_RE)) {
+        violations.push(
+          `${cssLabel}:${lineNum} — "${match[0].trim()}"`
+        );
+      }
+    }
+
     expect(
       violations,
       `Found ${violations.length} hardcoded hex color(s). Use design tokens instead:\n${violations.join("\n")}`
@@ -185,6 +236,23 @@ describe("design spec: no hardcoded color values", () => {
             `${label(filePath)}:${i + 1} — "${match[0].trim()}"`
           );
         }
+      }
+    }
+
+    // Also scan globals.css (excluding CSS variable definitions) — see #1279
+    // Skip color functions that wrap CSS variable references (e.g., hsl(var(--border)))
+    const cssLabel = relative(COMPONENTS_DIR, GLOBALS_CSS_PATH);
+    for (const { line, lineNum } of collectCssNonVarLines(GLOBALS_CSS_PATH)) {
+      for (const match of line.matchAll(CSS_COLOR_FN_RE)) {
+        // Allow color functions wrapping CSS variables: hsl(var(--token))
+        const fromMatch = line.substring(match.index!);
+        if (COLOR_FN_VAR_REF_RE.test(fromMatch)) {
+          COLOR_FN_VAR_REF_RE.lastIndex = 0;
+          continue;
+        }
+        violations.push(
+          `${cssLabel}:${lineNum} — "${match[0].trim()}"`
+        );
       }
     }
 
