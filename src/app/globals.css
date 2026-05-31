@@ -254,6 +254,110 @@
 }
 
 /*
+ * Print stylesheet: hide app chrome and let page content fill the page.
+ * Users expect ⌘+P / File → Print to produce a clean document with just
+ * the page title and content, no sidebar or toolbar UI.
+ */
+@media print {
+  /* Force background colors to print (select/status badges, covers) */
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Hide sidebar (desktop aside and mobile sheet) */
+  aside[data-testid="as-sidebar"],
+  [data-testid="as-sidebar"] {
+    display: none !important;
+  }
+
+  /* Hide mobile header bar (sidebar toggle + title) */
+  header:has([data-testid="as-sidebar-toggle"]) {
+    display: none !important;
+  }
+
+  /* Hide workspace switcher, search, user menu */
+  [data-testid="as-workspace-switcher"],
+  [data-testid="as-search-input"],
+  [data-testid="as-user-menu"] {
+    display: none !important;
+  }
+
+  /* Hide floating toolbar and slash command menu */
+  [data-testid="editor-toolbar"],
+  [data-testid="editor-slash-menu"] {
+    display: none !important;
+  }
+
+  /* Hide command palette */
+  [data-testid="command-palette-input"] {
+    display: none !important;
+  }
+
+  /* Hide focus mode hint */
+  .fixed.right-4.top-4.z-50 {
+    display: none !important;
+  }
+
+  /* Hide page count status bar */
+  [data-testid="wh-page-count-status-bar"] {
+    display: none !important;
+  }
+
+  /* Hide skip-to-content link */
+  a[href="#main-content"] {
+    display: none !important;
+  }
+
+  /* Remove fixed height / overflow constraints so content flows naturally */
+  [data-testid="as-shell"] {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Main content area: expand to full width, remove scroll constraints */
+  #main-content {
+    overflow: visible !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Parent flex container: allow content to flow for print */
+  [data-testid="as-shell"] > div {
+    overflow: visible !important;
+  }
+
+  /* Database tables: add visible grid lines for print */
+  [data-testid="db-table-container"] {
+    overflow: visible !important;
+  }
+
+  [data-testid="db-table-scroll"] {
+    overflow: visible !important;
+  }
+
+  [data-testid="db-table-container"] [role="columnheader"],
+  [data-testid="db-table-container"] [role="gridcell"],
+  [data-testid="db-table-container"] [role="row"] > div {
+    border: 1px solid #d1d5db !important;
+  }
+
+  /* Hide interactive-only database controls in print */
+  [data-testid="db-table-add-row"],
+  [data-testid="db-table-add-column"],
+  [data-testid="db-table-select-all"] {
+    display: none !important;
+  }
+
+  /* Hide any open dialogs, sheets, or popovers */
+  [data-slot="sheet"],
+  [data-slot="popover-content"],
+  [role="dialog"] {
+    display: none !important;
+  }
+}
+
+/*
  * Lexical checklist checkbox rendering.
  * Lexical's CheckListPlugin expects ::before pseudo-elements to render checkboxes.
  * Tailwind cannot generate these, so raw CSS is required here.
