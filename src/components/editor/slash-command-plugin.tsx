@@ -53,13 +53,15 @@ import {
   TURN_INTO_COMMAND,
   TURN_INTO_OPTIONS,
 } from "@/components/editor/turn-into-plugin";
-import { ArrowRightLeft, Table2 } from "lucide-react";
+import { ArrowRightLeft, List as ListIcon, Table2 } from "lucide-react";
+import { $createTableOfContentsNode } from "@/components/editor/table-of-contents-node";
 
 class SlashCommandOption extends MenuOption {
   title: string;
   description: string;
   icon: ReactElement;
   shortcut?: string;
+  keywords: string[];
   onSelect: (queryString: string) => void;
 
   constructor(
@@ -68,6 +70,7 @@ class SlashCommandOption extends MenuOption {
       description: string;
       icon: ReactElement;
       shortcut?: string;
+      keywords?: string[];
       onSelect: (queryString: string) => void;
     }
   ) {
@@ -76,6 +79,7 @@ class SlashCommandOption extends MenuOption {
     this.description = options.description;
     this.icon = options.icon;
     this.shortcut = options.shortcut;
+    this.keywords = options.keywords ?? [];
     this.onSelect = options.onSelect;
   }
 }
@@ -263,6 +267,20 @@ export function SlashCommandPlugin({ onExport, onImport }: SlashCommandPluginPro
           editor.dispatchCommand(OPEN_DATABASE_MENU_COMMAND, undefined);
         },
       }),
+      new SlashCommandOption("Table of Contents", {
+        description: "Live outline of all headings",
+        icon: <ListIcon className="h-5 w-5" />,
+        keywords: ["toc"],
+        onSelect: () => {
+          editor.update(() => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+              const node = $createTableOfContentsNode();
+              selection.insertNodes([node]);
+            }
+          });
+        },
+      }),
       // "Turn into" options — appear when user types /turn
       ...TURN_INTO_OPTIONS.map(
         (opt) =>
@@ -309,8 +327,10 @@ export function SlashCommandPlugin({ onExport, onImport }: SlashCommandPluginPro
   const options = useMemo(() => {
     if (queryString) {
       const lower = queryString.toLowerCase();
-      return baseOptions.filter((option) =>
-        option.title.toLowerCase().includes(lower)
+      return baseOptions.filter(
+        (option) =>
+          option.title.toLowerCase().includes(lower) ||
+          option.keywords.some((kw) => kw.includes(lower)),
       );
     }
     return baseOptions;
