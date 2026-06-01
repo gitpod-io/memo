@@ -33,9 +33,9 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 
 | Category | Files | Tests |
 |---|---|---|
-| Unit/Integration (Vitest) | 152 | 2117 |
-| E2E (Playwright) | 102 | 484 |
-| **Total** | **254** | **2601** |
+| Unit/Integration (Vitest) | 151 | 2117 |
+| E2E (Playwright) | 102 | 466 |
+| **Total** | **253** | **2583** |
 
 ### Test files by domain
 
@@ -205,3 +205,4 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | 2026-05-31 | Extend design-spec compliance checks to scan CSS files (#1279). Extended hex color and CSS color function tests in `design-spec-compliance.test.ts` to also scan `src/app/globals.css`, excluding CSS variable definitions and color functions wrapping CSS variable references. No new tests added — existing tests expanded in scope. Test totals: 151 Vitest files (2075 tests), 101 E2E specs (482 tests). |
 | 2026-05-31 | Add E2E tests for print stylesheet (#1282). Added 1 new E2E spec `e2e/print-stylesheet.spec.ts` (2 tests): editor page verifies sidebar, mobile header, toolbar hidden and content expanded; database page verifies add-row/add-column/select-all hidden and cell borders visible. Fixed bug in print stylesheet where `hsl(var(--border))` was invalid (--border uses oklch) — changed to `var(--border)`. Test totals: 151 Vitest files (2075 tests), 102 E2E specs (484 tests). |
 | 2026-05-31 | Add Sentry error classification edge-case tests (#1286). Added 1 new Vitest file: `classification-edge-cases.test.ts` (42 tests) covering PostgREST errors with null details/hint, auth lock errors with non-standard messages, fetch TypeError variants, FK violations from page_versions, statement timeouts, captureApiError with undefined/null/string args, and isE2ETestRequest with empty event.request. Updated `sentry.unit.test.ts` count (171→180, drifted). Test totals: 152 Vitest files (2117 tests), 102 E2E specs (484 tests). |
+| 2026-06-01 | W23 audit: corrected Vitest file count (152→151, overcounted by 1). Corrected E2E test count (484→466, grep-based count is more accurate than accumulated increments). Corrected summary totals accordingly. No grade changes — all domains remain at A. |

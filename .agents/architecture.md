@@ -446,9 +446,10 @@ src/
 │   │   ├── oauth-buttons.tsx    # GitHub + Google OAuth sign-in buttons (signInWithOAuth)
 │   │   └── sign-out-button.tsx  # Sign-out button (clears session, redirects to /sign-in)
 │   ├── sidebar/             # App shell sidebar components
-│   │   ├── app-shell.tsx        # Client wrapper: SidebarProvider + sidebar + main layout
+│   │   ├── app-shell.tsx        # Client wrapper: SidebarProvider + WorkspaceProvider + sidebar + main layout
 │   │   ├── app-sidebar.tsx      # Sidebar (desktop: collapsible aside, mobile: Sheet)
 │   │   ├── sidebar-context.tsx  # React context for sidebar open/close state + ⌘+\ shortcut
+│   │   ├── workspace-context.tsx # React context: resolves workspaceSlug→ID once, consumed by sidebar children via useWorkspace()
 │   │   ├── workspace-switcher.tsx # Dropdown listing all workspaces, create workspace trigger
 │   │   ├── create-workspace-dialog.tsx # Dialog for creating a new workspace
 │   │   ├── page-search.tsx      # Full-text search input + results dropdown (debounced, 300ms)
