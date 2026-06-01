@@ -587,6 +587,16 @@ When a database row is opened as a full page, properties display above the Lexic
 | Gallery | Already responsive: `grid-cols-2 md:grid-cols-3 lg:grid-cols-4` | — | — |
 | List | Inherently mobile-friendly (single column) | — | — |
 
+### Print Stylesheet
+
+`@media print` rules in `src/app/globals.css` produce clean printouts of page content.
+
+- **Hidden in print:** sidebar, mobile header, workspace switcher, search, user menu, floating toolbar, slash command menu, command palette, focus mode hint, page count status bar, skip-to-content link, database interactive controls (add row, add column, select-all checkbox).
+- **Layout:** `overflow: visible` and `height: auto` on the app shell so content flows naturally. Main content expands to full width.
+- **Database tables:** visible grid lines via `border: 1px solid var(--border)` on cells and headers. Scroll containers set to `overflow: visible`.
+- **Colors:** `print-color-adjust: exact` on body so select/status badge backgrounds print correctly.
+- **All print styles must use CSS variables** — no hardcoded hex values, even in `@media print` blocks.
+
 ---
 
 ## Accessibility
