@@ -5,16 +5,16 @@ import { NextResponse } from "next/server";
  * avoid GoTrue/Realtime initialization overhead on serverless cold starts.
  *
  * Latency reduction techniques:
- * - GET instead of POST: avoids request body parsing in PostgREST
- * - Connection: keep-alive: reuses TCP+TLS connections within the instance
+ * - HEAD instead of GET: avoids response body serialization in PostgREST
+ * - Sequential sampling with connection reuse: first ping warms DNS+TCP+TLS,
+ *   second ping reuses the connection and measures actual DB round-trip
+ *   latency without cold-start overhead
+ * - Connection: keep-alive: ensures TCP+TLS reuse between sequential pings
  * - Prefer: return=minimal: skips response body serialization in PostgREST
- * - Concurrent sampling: runs pings in parallel and takes the minimum to
- *   filter out cold-start outliers without doubling total response time
  *
- * Region co-location: Vercel (fra1) and Supabase (eu-central-1) are both in
- * Frankfurt. Expected latency floor is ~50–150ms for the full round-trip
- * (DNS + TCP + TLS + PostgREST processing). The 500ms threshold accounts
- * for cold-start overhead and connection pool contention.
+ * Region co-location is computed dynamically from the VERCEL_REGION env var.
+ * Supabase is deployed in eu-central-1 (Frankfurt). Vercel regions starting
+ * with common EU prefixes (fra, cdg, lhr, arn, dub) are considered co-located.
  */
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -23,11 +23,23 @@ const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 /** Abort health-check fetch after this many milliseconds. */
 const TIMEOUT_MS = 2000;
 
-/** Number of pings to take — report the minimum latency. */
+/** Number of sequential pings — report the last (warm) latency. */
 const SAMPLE_COUNT = 2;
 
 /** Latency threshold in ms for monitoring. */
 const LATENCY_THRESHOLD_MS = 500;
+
+/** Supabase region identifier. */
+const SUPABASE_REGION = "eu-central-1";
+
+/** Vercel region prefixes that are co-located with eu-central-1. */
+const EU_REGION_PREFIXES = ["fra", "cdg", "lhr", "arn", "dub"];
+
+/** Check if the Vercel region is co-located with the Supabase region. */
+function isColocated(vercelRegion: string): boolean {
+  const region = vercelRegion.toLowerCase();
+  return EU_REGION_PREFIXES.some((prefix) => region.startsWith(prefix));
+}
 
 /** Shared headers for the health-check fetch. */
 function healthHeaders(): Record<string, string> {
@@ -48,7 +60,7 @@ async function ping(
 ): Promise<{ latency: number; ok: boolean }> {
   const start = performance.now();
   const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/health_check`, {
-    method: "GET",
+    method: "HEAD",
     headers: healthHeaders(),
     signal,
     cache: "no-store",
@@ -75,44 +87,36 @@ export async function GET() {
 
   const start = performance.now();
   try {
-    // Run pings concurrently to avoid sequential cold-start penalty.
-    // Promise.allSettled ensures one failure doesn't abort the other.
-    const results = await Promise.allSettled(
-      Array.from({ length: SAMPLE_COUNT }, () => ping(controller.signal)),
-    );
-
-    let bestLatency = Infinity;
+    // Sequential pings: first warms DNS+TCP+TLS, subsequent pings reuse
+    // the connection and measure actual DB round-trip latency.
     let anyOk = false;
     let allFailed = true;
 
-    for (const result of results) {
-      if (result.status === "fulfilled") {
+    for (let i = 0; i < SAMPLE_COUNT; i++) {
+      try {
+        const result = await ping(controller.signal);
         allFailed = false;
-        sampleLatencies.push(result.value.latency);
-        if (result.value.ok) {
+        sampleLatencies.push(result.latency);
+        if (result.ok) {
           anyOk = true;
         }
-        if (result.value.latency < bestLatency) {
-          bestLatency = result.value.latency;
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") {
+          throw err;
         }
+        // Individual ping failed; continue to next sample
       }
     }
 
-    dbLatency = bestLatency === Infinity ? 0 : bestLatency;
+    // Use the last successful sample (warm connection) as the reported latency.
+    // Fall back to the first sample if only one succeeded.
+    if (sampleLatencies.length > 0) {
+      dbLatency = sampleLatencies[sampleLatencies.length - 1];
+    }
 
     if (allFailed) {
-      const firstError =
-        results[0].status === "rejected" ? results[0].reason : null;
-      if (
-        firstError instanceof DOMException &&
-        firstError.name === "AbortError"
-      ) {
-        dbStatus = "degraded";
-        dbLatency = Math.round(performance.now() - start);
-      } else {
-        dbStatus = "down";
-        dbLatency = Math.round(performance.now() - start);
-      }
+      dbStatus = "down";
+      dbLatency = Math.round(performance.now() - start);
     } else if (!anyOk) {
       dbStatus = "degraded";
     }
@@ -128,6 +132,7 @@ export async function GET() {
   }
 
   const status = dbStatus === "down" ? "down" : "ok";
+  const vercelRegion = process.env.VERCEL_REGION ?? "unknown";
 
   return NextResponse.json({
     status,
@@ -138,9 +143,9 @@ export async function GET() {
       samples: sampleLatencies,
     },
     region: {
-      vercel: process.env.VERCEL_REGION ?? "unknown",
-      supabase: "eu-central-1",
-      colocated: true,
+      vercel: vercelRegion,
+      supabase: SUPABASE_REGION,
+      colocated: isColocated(vercelRegion),
     },
     timestamp: new Date().toISOString(),
   });
