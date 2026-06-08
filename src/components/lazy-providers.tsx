@@ -1,11 +1,12 @@
 "use client";
 
 import { lazy, Suspense } from "react";
-import { useTheme } from "@/lib/theme";
+import { ThemeProvider, useTheme } from "@/lib/theme";
 
 // Lazy-load TooltipProvider and Toaster. This file is a separate chunk from
 // the root Providers so the chunk-loading manifests for these dependencies
-// don't inflate the shared framework baseline.
+// don't inflate the shared framework baseline. ThemeProvider is also here
+// because its only consumers (useTheme) are in lazy-loaded components.
 const TooltipProvider = lazy(() =>
   import("@/components/ui/tooltip").then((mod) => ({
     default: mod.TooltipProvider,
@@ -33,11 +34,13 @@ function ThemedToaster() {
 
 export function LazyProviders({ children }: { children: React.ReactNode }) {
   return (
-    <Suspense>
-      <TooltipProvider>
-        {children}
-        <ThemedToaster />
-      </TooltipProvider>
-    </Suspense>
+    <ThemeProvider>
+      <Suspense>
+        <TooltipProvider>
+          {children}
+          <ThemedToaster />
+        </TooltipProvider>
+      </Suspense>
+    </ThemeProvider>
   );
 }
