@@ -1,10 +1,12 @@
 "use client";
 
 import { lazy, Suspense } from "react";
-import { ThemeProvider } from "@/lib/theme";
 
 // LazyProviders is in a separate file so its chunk-loading manifests
-// (TooltipProvider, Toaster) don't inflate the shared framework baseline.
+// (ThemeProvider, TooltipProvider, Toaster) don't inflate the shared
+// framework baseline. The inline theme script in layout.tsx handles
+// the visual theme before React hydrates, so deferring ThemeProvider
+// to the lazy chunk does not cause a flash of wrong theme.
 const LazyProviders = lazy(() =>
   import("@/components/lazy-providers").then((mod) => ({
     default: mod.LazyProviders,
@@ -13,10 +15,8 @@ const LazyProviders = lazy(() =>
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider>
-      <Suspense>
-        <LazyProviders>{children}</LazyProviders>
-      </Suspense>
-    </ThemeProvider>
+    <Suspense>
+      <LazyProviders>{children}</LazyProviders>
+    </Suspense>
   );
 }

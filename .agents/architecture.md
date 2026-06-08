@@ -548,8 +548,8 @@ src/
 │   │   └── feedback-form.tsx        # User feedback form with type selector, screenshot capture, and submission
 │   ├── command-palette.tsx           # ⌘+P command palette for quick page switching (uses cmdk via shadcn Command)
 │   ├── keyboard-shortcuts-dialog.tsx # ⌘+? keyboard shortcuts reference dialog
-│   ├── providers.tsx                # Client-side providers wrapper (ThemeProvider + lazy LazyProviders)
-│   ├── lazy-providers.tsx           # Lazy-loaded TooltipProvider + Toaster (keeps chunk manifests out of shared baseline)
+│   ├── providers.tsx                # Client-side providers wrapper (Suspense + lazy LazyProviders)
+│   ├── lazy-providers.tsx           # Lazy-loaded ThemeProvider + TooltipProvider + Toaster (keeps chunk manifests out of shared baseline)
 │   ├── landing-demo-editor.tsx      # Client wrapper: lazy-loads DemoEditor via next/dynamic for landing page
 │   ├── account-page-client.tsx   # Client wrapper: lazy-loads ChangePasswordSection + DeleteAccountSection via React.lazy
 │   ├── account-settings-form.tsx # Account settings: display name edit, avatar upload (saves to profiles + auth metadata)

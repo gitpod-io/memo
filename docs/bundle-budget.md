@@ -5,7 +5,7 @@ Framework baseline budget: **160 kB** gzipped (shared by all routes).
 
 Enforced by `pnpm test:bundle` (runs `scripts/check-bundle.mjs`).
 
-## Current state (2026-05-26)
+## Current state (2026-06-08)
 
 All 12 routes are within budget. The heaviest route is `/account` at ~184 kB.
 
@@ -14,12 +14,12 @@ All 12 routes are within budget. The heaviest route is `/account` at ~184 kB.
 | /account | 184 kB | 16 kB |
 | /sign-up | 180 kB | 20 kB |
 | /sign-in | 180 kB | 20 kB |
-| /reset-password | 179 kB | 21 kB |
-| /forgot-password | 179 kB | 21 kB |
-| /[workspaceSlug]/[pageId] | 177 kB | 23 kB |
-| /[workspaceSlug]/settings/members | 173 kB | 27 kB |
-| /[workspaceSlug]/settings | 173 kB | 27 kB |
-| /[workspaceSlug] | 172 kB | 28 kB |
+| /reset-password | 178 kB | 22 kB |
+| /forgot-password | 178 kB | 22 kB |
+| /[workspaceSlug]/[pageId] | 178 kB | 22 kB |
+| /[workspaceSlug]/settings/members | 175 kB | 25 kB |
+| /[workspaceSlug]/settings | 174 kB | 26 kB |
+| /[workspaceSlug] | 174 kB | 26 kB |
 | /invite/[token] | 170 kB | 30 kB |
 | / | 155 kB | 45 kB |
 | /_not-found | 150 kB | 50 kB |
@@ -42,9 +42,9 @@ the Next.js runtime, React, and the minimal app shell loaded by the root layout.
 | Next.js navigation | ~7 kB | Link, router hooks, navigation utilities |
 | Next.js server utils | ~7 kB | URL handling, bot detection, headers |
 | Turbopack runtime | ~4 kB | Module loading, chunk resolution |
-| Next.js error page | ~3 kB | Error boundary, lazy Sentry shim |
+| Next.js error page | ~3 kB | Error boundary, inline Sentry capture |
 | Next.js perf/routing | ~2 kB | Performance entries, route matching |
-| ThemeProvider + Providers | ~1 kB | Theme context, lazy-loaded TooltipProvider/Toaster |
+| Providers shell | ~0.5 kB | Suspense wrapper, lazy-loaded ThemeProvider/TooltipProvider/Toaster |
 
 ### Route-group shared chunks
 
@@ -73,6 +73,7 @@ first-load JS:
 - **Supabase client** (~59 kB): lazy-loaded via `getClient()` in `src/lib/supabase/lazy-client.ts`
 - **Lexical editor** (~200 kB): dynamically imported in `page-view-client.tsx` and `landing-demo-editor.tsx`
 - **Database view** (~100 kB): dynamically imported in `page-content-client.tsx`
+- **ThemeProvider**: lazy-loaded via `React.lazy` in `lazy-providers.tsx` (inline script handles initial theme)
 - **Sonner toaster**: lazy-loaded via `React.lazy` in `lazy-providers.tsx`
 - **TooltipProvider**: lazy-loaded via `React.lazy` in `lazy-providers.tsx`
 - **OAuth buttons**: dynamically imported in auth form components
@@ -110,5 +111,5 @@ Before merging, verify your changes don't regress bundle size:
 - **Importing `@sentry/nextjs` directly** in client code — use `lazyCaptureException()` from `src/lib/capture.ts`
 - **Importing `@supabase/supabase-js` directly** in client code — use `getClient()` from `src/lib/supabase/lazy-client.ts`
 - **Eager imports in error boundaries** — use `LazyRouteError` from `src/components/lazy-route-error.tsx`
-- **Adding providers to root layout** — every provider in `providers.tsx` adds to the framework baseline for all routes
+- **Adding providers to root layout** — every provider in `providers.tsx` adds to the framework baseline for all routes; add new providers to `lazy-providers.tsx` instead
 - **`import { X } from "large-package"` in a `"use client"` file** — even if tree-shaken, the package's shared code may be pulled in
