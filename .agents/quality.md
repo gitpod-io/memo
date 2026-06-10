@@ -34,8 +34,8 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | Category | Files | Tests |
 |---|---|---|
 | Unit/Integration (Vitest) | 152 | 2119 |
-| E2E (Playwright) | 102 | 466 |
-| **Total** | **254** | **2585** |
+| E2E (Playwright) | 103 | 467 |
+| **Total** | **255** | **2586** |
 
 ### Test files by domain
 
@@ -50,7 +50,7 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 - **Members**: `invite-form.test.ts` (4 tests), `member-list.test.tsx` (14 tests), `pending-invite-list.test.tsx` (8 tests), `role-select.test.tsx` (8 tests), `e2e/members.spec.ts` (7 tests)
 - **Feedback**: `feedback/route.test.ts` (22 tests), `feedback-form-design-spec.test.ts` (5 tests), `use-screenshot.test.ts` (2 tests), `e2e/feedback.spec.ts` (6 tests)
 - **API**: `health/route.test.ts` (13 tests), `search/route.test.ts` (14 tests), `account/route.test.ts` (9 tests), `cron/purge-trash/route.test.ts` (10 tests), `feedback/route.test.ts` (22 tests), `pages/[pageId]/versions/route.test.ts` (17 tests), `pages/[pageId]/versions/route.rate-limit.test.ts` (3 tests), `pages/[pageId]/versions/[versionId]/route.test.ts` (14 tests), `pages/[pageId]/versions/[versionId]/route.rate-limit.test.ts` (3 tests), `e2e/account-deletion.spec.ts` (4 tests), `e2e/account-settings.spec.ts` (5 tests)
-- **UI**: `overlay-opacity.test.ts` (2 tests), `toast-error-duration.test.ts` (1 test), `dialog-design-spec.test.ts` (3 tests), `design-spec-compliance.test.ts` (14 tests), `relative-time.test.ts` (7 tests), `reduced-motion.test.ts` (6 tests), `e2e/visual-regression.spec.ts` (1 test)
+- **UI**: `overlay-opacity.test.ts` (2 tests), `toast-error-duration.test.ts` (1 test), `dialog-design-spec.test.ts` (3 tests), `design-spec-compliance.test.ts` (14 tests), `relative-time.test.ts` (7 tests), `reduced-motion.test.ts` (6 tests), `e2e/visual-regression.spec.ts` (1 test), `e2e/live-visual-regression.spec.ts` (1 test)
 - **Lib**: `sentry.test.ts` (4 tests), `sentry.unit.test.ts` (180 tests), `classification-edge-cases.test.ts` (42 tests), `api-route-consistency.test.ts` (6 tests), `retry.test.ts` (16 tests), `rate-limit.test.ts` (17 tests), `track-event-server.test.ts` (9 tests), `track-event.test.ts` (4 tests), `usage-tracking-guard.test.ts` (5 tests), `use-roving-tabindex.test.ts` (13 tests)
 - **Infrastructure**: `migrations.test.ts` (33 tests), `build-timeseries.test.mjs` (6 tests), `supabase/client.test.ts` (7 tests), `supabase/proxy.test.ts` (2 tests)
 
@@ -209,4 +209,5 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | 2026-06-01 | Reduce health endpoint DB latency (#1295, #1296). Changed health endpoint from concurrent GET pings to sequential HEAD pings (first warms connection, second measures warm latency). Added dynamic region co-location detection. Updated 2 existing tests, added 2 new tests in `health/route.test.ts` (11→13). Test totals: 152 Vitest files (2119 tests), 102 E2E specs (466 tests). |
 | 2026-06-08 | W24 audit: no test count changes. Verified Vitest actual: 152 files, 2119 tests (matches). E2E grep-based count shows 473 `test(` calls but undercounts loop-generated tests (e.g., public-routes.spec.ts generates 4 tests from a loop). Keeping 466 as the conservative baseline. No grade changes — all domains remain at A. |
 | 2026-06-08 | Bundle size regression fix (#1328). Moved ThemeProvider from shared framework baseline to lazy-loaded chunk in `lazy-providers.tsx`. Inlined Sentry capture in `global-error.tsx` to avoid pulling `capture.ts` into shared base. Framework baseline reduced from 150.3 kB to 149.8 kB gzip. No test count changes. |
+| 2026-06-10 | Add live-app visual regression E2E tests (#1287). Added 1 new E2E spec `e2e/live-visual-regression.spec.ts` (1 test) that screenshots workspace home, page editor, database table view, and workspace settings. Added `live-visual-regression` Playwright project and `test:visual-live` script. Baselines committed to `e2e/live-visual-regression.spec.ts-snapshots/`. Test totals: 152 Vitest files (2119 tests), 103 E2E specs (467 tests). |
 
