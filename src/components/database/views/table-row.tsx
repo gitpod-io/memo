@@ -146,8 +146,13 @@ export const TableRow = memo(function TableRow({
     </>
   );
 
+  // The title column sticks after the checkbox column (32px) when selection
+  // is enabled, otherwise at the left edge.
+  const stickyTitleLeft = onToggleSelect ? 32 : 0;
+
   const titleCellClass = cn(
-    "group/row flex border-b border-overlay-border p-2 hover:bg-overlay-subtle",
+    "group/row sticky z-10 flex border-b border-overlay-border bg-background p-2 hover:bg-overlay-subtle",
+    "shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_4px_-2px_rgba(0,0,0,0.3)]",
     wrapCells ? "items-start" : "items-center",
     isSelected && "bg-overlay-active",
     rowHeightClass,
@@ -161,12 +166,12 @@ export const TableRow = memo(function TableRow({
       data-testid={`db-table-row-${rowIndex}`}
       data-row-id={row.page.id}
     >
-      {/* Selection checkbox cell */}
+      {/* Selection checkbox cell — sticky for horizontal scroll */}
       {onToggleSelect && (
         <div
           className={cn(
-            "flex items-center justify-center border-b border-overlay-border",
-            isSelected ? "bg-overlay-active" : "hover:bg-overlay-subtle",
+            "sticky left-0 z-10 flex items-center justify-center border-b border-overlay-border",
+            isSelected ? "bg-overlay-active" : "bg-background hover:bg-overlay-subtle",
             rowHeightClass,
           )}
           role="gridcell"
@@ -185,11 +190,12 @@ export const TableRow = memo(function TableRow({
         </div>
       )}
 
-      {/* Title cell — wrapped in ContextMenu when actions are available */}
+      {/* Title cell — sticky for horizontal scroll, wrapped in ContextMenu when actions are available */}
       {hasContextMenu ? (
         <ContextMenu>
           <ContextMenuTrigger
             className={titleCellClass}
+            style={{ left: stickyTitleLeft }}
             role="gridcell"
             data-testid={`db-table-cell-${rowIndex}-title`}
           >
@@ -221,6 +227,7 @@ export const TableRow = memo(function TableRow({
       ) : (
         <div
           className={titleCellClass}
+          style={{ left: stickyTitleLeft }}
           role="gridcell"
           data-testid={`db-table-cell-${rowIndex}-title`}
         >

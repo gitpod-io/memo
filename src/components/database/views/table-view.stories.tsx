@@ -340,6 +340,55 @@ export const ManyColumns: Story = {
   },
 };
 
+export const StickyTitleColumn: Story = {
+  name: "Sticky Title Column (scroll horizontally)",
+  decorators: [
+    (Story) => (
+      <div className="max-w-lg bg-background p-6">
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    rows: mockRows,
+    properties: [
+      ...mockProperties,
+      {
+        id: "prop-email",
+        database_id: "db-1",
+        name: "Email",
+        type: "email" as const,
+        config: {},
+        position: 7,
+        created_at: "2026-04-01T00:00:00Z",
+        updated_at: "2026-04-01T00:00:00Z",
+      },
+      {
+        id: "prop-phone",
+        database_id: "db-1",
+        name: "Phone",
+        type: "phone" as const,
+        config: {},
+        position: 8,
+        created_at: "2026-04-01T00:00:00Z",
+        updated_at: "2026-04-01T00:00:00Z",
+      },
+      {
+        id: "prop-number",
+        database_id: "db-1",
+        name: "Score",
+        type: "number" as const,
+        config: {},
+        position: 9,
+        created_at: "2026-04-01T00:00:00Z",
+        updated_at: "2026-04-01T00:00:00Z",
+      },
+    ],
+    viewConfig: defaultConfig,
+    onBulkDeleteRows: fn(),
+  },
+};
+
 export const ReadOnlyNoActions: Story = {
   args: {
     rows: mockRows,
