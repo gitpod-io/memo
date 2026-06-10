@@ -39,6 +39,7 @@ import { useTableShortcuts } from "@/components/database/views/table-shortcuts";
 
 const TITLE_COLUMN_WIDTH = 260;
 const DEFAULT_COLUMN_WIDTH = 180;
+const CHECKBOX_COLUMN_WIDTH = 32;
 
 // On mobile, enforce minimum row height of 44px for touch targets
 const ROW_HEIGHT_CLASS: Record<NonNullable<DatabaseViewConfig["row_height"]>, string> = {
@@ -292,7 +293,7 @@ export const TableView = memo(function TableView({
   }, [visibleProperties, columnWidths, selectionEnabled]);
 
   // Scroll shadow for horizontal overflow (must be called before early returns)
-  const { scrollRef, canScrollLeft, canScrollRight } = useScrollShadow();
+  const { scrollRef, canScrollRight } = useScrollShadow();
 
   // --- Row virtualization ---
   const useVirtual = rows.length > VIRTUALIZATION_THRESHOLD;
@@ -338,11 +339,17 @@ export const TableView = memo(function TableView({
     return (
       <div className="w-full">
         <div className="grid w-full" style={{ gridTemplateColumns }}>
-          {/* Empty checkbox column placeholder in empty state */}
+          {/* Empty checkbox column placeholder in empty state — sticky */}
           {selectionEnabled && (
-            <div className="border-b border-overlay-border" />
+            <div className="sticky left-0 z-10 border-b border-overlay-border bg-background" />
           )}
-          <div className="border-b border-overlay-border p-2">
+          <div
+            className={cn(
+              "sticky z-10 border-b border-overlay-border bg-background p-2",
+              "shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_4px_-2px_rgba(0,0,0,0.3)]",
+            )}
+            style={{ left: selectionEnabled ? CHECKBOX_COLUMN_WIDTH : 0 }}
+          >
             <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
               Title
             </span>
@@ -419,14 +426,6 @@ export const TableView = memo(function TableView({
 
   return (
     <div className="relative w-full" data-testid="db-table-container">
-      {/* Left scroll shadow */}
-      <div
-        className={cn(
-          "pointer-events-none absolute inset-y-0 left-0 z-20 w-4 bg-gradient-to-r from-background to-transparent transition-opacity",
-          canScrollLeft ? "opacity-100" : "opacity-0",
-        )}
-        aria-hidden="true"
-      />
       {/* Right scroll shadow */}
       <div
         className={cn(
@@ -448,14 +447,14 @@ export const TableView = memo(function TableView({
           {/* Header row */}
           <div
             role="row"
-            className="sticky top-0 z-10 grid"
+            className="sticky top-0 z-20 grid"
             style={{ gridTemplateColumns }}
           >
-            {/* Select-all checkbox header */}
+            {/* Select-all checkbox header — sticky for horizontal scroll */}
             {selectionEnabled && (
               <div
                 role="columnheader"
-                className="flex items-center justify-center border-b border-overlay-border bg-background"
+                className="sticky left-0 z-30 flex items-center justify-center border-b border-overlay-border bg-background"
               >
                 <Checkbox
                   checked={isAllSelected}
@@ -467,9 +466,13 @@ export const TableView = memo(function TableView({
               </div>
             )}
 
-            {/* Title column header */}
+            {/* Title column header — sticky for horizontal scroll */}
             <div
-              className="border-b border-overlay-border bg-background p-2"
+              className={cn(
+                "sticky z-30 border-b border-overlay-border bg-background p-2",
+                "shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_4px_-2px_rgba(0,0,0,0.3)]",
+              )}
+              style={{ left: selectionEnabled ? CHECKBOX_COLUMN_WIDTH : 0 }}
               role="columnheader"
             >
               <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">

@@ -403,6 +403,7 @@ Database views render structured data within the existing page layout. When a pa
 ### Table View
 
 - Full-width spreadsheet grid within `max-w-3xl` content area (can overflow with horizontal scroll).
+- Sticky title column: the checkbox column (when bulk selection is enabled) and title column use `position: sticky` with `left: 0` / `left: 32px` so they remain visible during horizontal scroll. Both have `bg-background` to prevent content showing through and a right-side `box-shadow` (`2px 0 4px -2px`) as a visual separator. Header sticky cells use `z-30`, data row sticky cells use `z-10`, header row uses `z-20`.
 - Column headers: `bg-background` (same as data rows), `text-xs font-medium text-muted-foreground`, `uppercase tracking-widest`, `p-2`, `border-b border-white/[0.06]`. Trailing column uses `minmax(48px, 1fr)` to fill remaining width.
 - Column resize: drag handle on right edge of header, `cursor-col-resize`, 2px `bg-accent` indicator while dragging.
 - Cells: `p-2 text-sm`, `border-b border-white/[0.06]`. Click to edit inline.
@@ -575,13 +576,13 @@ When a database row is opened as a full page, properties display above the Lexic
 
 - Editor max-width stays `max-w-3xl` on all breakpoints.
 - Touch targets: minimum 44px on mobile.
-- No horizontal scroll on any breakpoint (except database table view, which uses scroll shadows).
+- No horizontal scroll on any breakpoint (except database table view, which uses a sticky title column and right-edge scroll shadow).
 
 ### Database View Responsive Adaptations
 
 | View | Mobile (<768px) | Tablet (768–1023px) | Desktop (≥1024px) |
 |---|---|---|---|
-| Table | Horizontal scroll with gradient shadow indicators on edges; rows enforce `min-h-[44px]` for touch targets | Same as desktop | Default layout |
+| Table | Horizontal scroll with sticky title column and right-edge gradient shadow; rows enforce `min-h-[44px]` for touch targets | Same as desktop | Default layout |
 | Board | Columns are `w-[85vw]` with `snap-x snap-mandatory` for swipe navigation; dot indicator + "N of M" label below | Default `w-72` columns | Default layout |
 | Calendar | Compact day list showing only days with items + today; no 7-column grid | Full month grid | Full month grid |
 | Gallery | Already responsive: `grid-cols-2 md:grid-cols-3 lg:grid-cols-4` | — | — |
