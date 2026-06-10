@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test --project=chromium --project=firefox",
     "test:visual": "playwright test --project=visual-regression",
+    "test:visual-live": "playwright test --project=live-visual-regression",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "test:bundle": "node scripts/check-bundle.mjs"

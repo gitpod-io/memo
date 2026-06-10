@@ -25,7 +25,15 @@ export default defineConfig({
     },
     {
       name: "visual-regression",
-      testMatch: /visual-regression/,
+      testMatch: /[/\\]visual-regression/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1280, height: 800 },
+      },
+    },
+    {
+      name: "live-visual-regression",
+      testMatch: /live-visual-regression/,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1280, height: 800 },
