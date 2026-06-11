@@ -136,8 +136,12 @@ export const EmptyFilterResult: Story = {
         className="w-64 rounded-sm border border-overlay-border bg-popover p-1 shadow-md"
         role="listbox"
         aria-label="Slash commands"
+        data-testid="editor-slash-menu"
       >
-        <div className="px-2 py-3 text-center text-xs text-muted-foreground">
+        <div
+          className="px-2 py-3 text-center text-xs text-muted-foreground"
+          data-testid="editor-slash-menu-empty"
+        >
           No matching commands
         </div>
       </div>
