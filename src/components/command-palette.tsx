@@ -1,8 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { FileText, Table2 } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
+import {
+  Download,
+  FileText,
+  Maximize2,
+  Moon,
+  PanelLeft,
+  Plus,
+  Settings,
+  Sun,
+  Table2,
+  Upload,
+  Users,
+} from "lucide-react";
 import { getClient } from "@/lib/supabase/lazy-client";
 import {
   captureSupabaseError,
@@ -11,6 +23,9 @@ import {
 } from "@/lib/sentry";
 import { retryOnNetworkError } from "@/lib/retry";
 import { useWorkspace } from "@/components/sidebar/workspace-context";
+import { useSidebar } from "@/components/sidebar/sidebar-context";
+import { useTheme } from "@/lib/theme";
+import { useMarkdownImport } from "@/lib/use-markdown-import";
 import {
   pageVisitsWithPages,
   asPageVisitRows,
@@ -22,6 +37,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandShortcut,
 } from "@/components/ui/command";
 import {
   Dialog,
@@ -42,6 +58,27 @@ interface RecentVisitItem {
 interface CommandPaletteProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+interface QuickAction {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  shortcut?: string;
+  onSelect: () => void;
+  /** When true, the action is only shown when on a page route. */
+  requiresPage?: boolean;
+}
+
+/**
+ * Extract the pageId from the current pathname.
+ * URL pattern: /{workspaceSlug}/{pageId} where pageId is a UUID.
+ */
+function extractPageId(pathname: string): string | null {
+  const match = pathname.match(
+    /^\/[^/]+\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i,
+  );
+  return match ? match[1] : null;
 }
 
 /** Build a map from page ID to its parent title chain (e.g. "Parent → Child"). */
@@ -92,11 +129,17 @@ function getParentBreadcrumb(
 
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { workspaceId, workspaceSlug } = useWorkspace();
+  const { toggle: toggleSidebar, toggleFocusMode, isMac } = useSidebar();
+  const { resolved: resolvedTheme, setPreference: setThemePreference } =
+    useTheme();
+  const currentPageId = extractPageId(pathname);
 
   const [pages, setPages] = useState<SidebarPage[]>([]);
   const [recentVisits, setRecentVisits] = useState<RecentVisitItem[]>([]);
   const [query, setQuery] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
@@ -119,7 +162,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      const userId = user?.id;
+      const fetchedUserId = user?.id;
+
+      if (!cancelled && fetchedUserId) {
+        setUserId(fetchedUserId);
+      }
 
       // Fetch all workspace pages (excluding trashed)
       const { data: pageData, error: pageError } = await retryOnNetworkError(
@@ -147,13 +194,13 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       }
 
       // Fetch recent visits
-      if (userId) {
+      if (fetchedUserId) {
         const { data: visitData, error: visitError } =
           await retryOnNetworkError(async () => {
             const s = await getClient();
             return pageVisitsWithPages(s)
               .eq("workspace_id", workspaceId)
-              .eq("user_id", userId)
+              .eq("user_id", fetchedUserId)
               .is("pages.deleted_at", null)
               .order("visited_at", { ascending: false })
               .limit(8);
@@ -206,6 +253,174 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     [workspaceSlug, router, handleOpenChange],
   );
 
+  // Markdown import hook for the "Import Markdown" action
+  const {
+    fileInputRef: importRef,
+    triggerFileInput: triggerImport,
+    handleFileChange: handleImportFileChange,
+  } = useMarkdownImport({
+    workspaceId: workspaceId ?? "",
+    workspaceSlug: workspaceSlug ?? "",
+    userId: userId ?? "",
+    source: "command-palette",
+  });
+
+  const mod = isMac ? "⌘" : "Ctrl+";
+
+  const quickActions = useMemo<QuickAction[]>(() => {
+    const actions: QuickAction[] = [
+      {
+        id: "new-page",
+        label: "New Page",
+        icon: <Plus className="h-4 w-4 text-muted-foreground" />,
+        shortcut: `${mod}N`,
+        onSelect: () => {
+          handleOpenChange(false);
+          // Dispatch ⌘+N to trigger the existing new page shortcut handler
+          window.dispatchEvent(
+            new KeyboardEvent("keydown", {
+              key: "n",
+              code: "KeyN",
+              metaKey: true,
+              ctrlKey: true,
+              bubbles: true,
+              cancelable: true,
+            }),
+          );
+        },
+      },
+      {
+        id: "new-database",
+        label: "New Database",
+        icon: <Table2 className="h-4 w-4 text-muted-foreground" />,
+        onSelect: () => {
+          handleOpenChange(false);
+          // Click the sidebar "New Database" button programmatically
+          const btn = document.querySelector<HTMLButtonElement>(
+            '[data-testid="sb-new-database-btn"]',
+          );
+          if (btn) {
+            btn.click();
+          }
+        },
+      },
+      {
+        id: "export-markdown",
+        label: "Export as Markdown",
+        icon: <Download className="h-4 w-4 text-muted-foreground" />,
+        shortcut: `${mod}⇧E`,
+        requiresPage: true,
+        onSelect: () => {
+          handleOpenChange(false);
+          // Dispatch ⌘+Shift+E to trigger the existing export shortcut handler
+          requestAnimationFrame(() => {
+            window.dispatchEvent(
+              new KeyboardEvent("keydown", {
+                key: "E",
+                code: "KeyE",
+                metaKey: true,
+                ctrlKey: true,
+                shiftKey: true,
+                bubbles: true,
+                cancelable: true,
+              }),
+            );
+          });
+        },
+      },
+      {
+        id: "import-markdown",
+        label: "Import Markdown",
+        icon: <Upload className="h-4 w-4 text-muted-foreground" />,
+        onSelect: () => {
+          handleOpenChange(false);
+          // Delay to allow dialog to close before file picker opens
+          requestAnimationFrame(() => {
+            triggerImport();
+          });
+        },
+      },
+      {
+        id: "workspace-settings",
+        label: "Workspace Settings",
+        icon: <Settings className="h-4 w-4 text-muted-foreground" />,
+        onSelect: () => {
+          if (!workspaceSlug) return;
+          router.push(`/${workspaceSlug}/settings`);
+          handleOpenChange(false);
+        },
+      },
+      {
+        id: "members",
+        label: "Members",
+        icon: <Users className="h-4 w-4 text-muted-foreground" />,
+        onSelect: () => {
+          if (!workspaceSlug) return;
+          router.push(`/${workspaceSlug}/settings/members`);
+          handleOpenChange(false);
+        },
+      },
+      {
+        id: "toggle-theme",
+        label:
+          resolvedTheme === "dark"
+            ? "Switch to Light Mode"
+            : "Switch to Dark Mode",
+        icon:
+          resolvedTheme === "dark" ? (
+            <Sun className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <Moon className="h-4 w-4 text-muted-foreground" />
+          ),
+        onSelect: () => {
+          setThemePreference(resolvedTheme === "dark" ? "light" : "dark");
+          handleOpenChange(false);
+        },
+      },
+      {
+        id: "toggle-sidebar",
+        label: "Toggle Sidebar",
+        icon: <PanelLeft className="h-4 w-4 text-muted-foreground" />,
+        shortcut: `${mod}\\`,
+        onSelect: () => {
+          toggleSidebar();
+          handleOpenChange(false);
+        },
+      },
+      {
+        id: "toggle-focus-mode",
+        label: "Toggle Focus Mode",
+        icon: <Maximize2 className="h-4 w-4 text-muted-foreground" />,
+        shortcut: `${mod}⇧F`,
+        onSelect: () => {
+          toggleFocusMode();
+          handleOpenChange(false);
+        },
+      },
+    ];
+
+    return actions;
+  }, [
+    mod,
+    resolvedTheme,
+    workspaceSlug,
+    handleOpenChange,
+    toggleSidebar,
+    toggleFocusMode,
+    setThemePreference,
+    triggerImport,
+    router,
+  ]);
+
+  // Filter actions based on context (page-dependent actions)
+  const visibleActions = useMemo(
+    () =>
+      quickActions.filter(
+        (action) => !action.requiresPage || currentPageId !== null,
+      ),
+    [quickActions, currentPageId],
+  );
+
   const hasQuery = query.trim().length > 0;
 
   return (
@@ -213,7 +428,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       <DialogHeader className="sr-only">
         <DialogTitle>Command palette</DialogTitle>
         <DialogDescription>
-          Search for a page to navigate to
+          Search for a page or run a quick action
         </DialogDescription>
       </DialogHeader>
       <DialogContent
@@ -225,13 +440,33 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
           shouldFilter={hasQuery}
         >
           <CommandInput
-            placeholder="Search pages…"
+            placeholder={`Search pages… ${isMac ? "⌘" : "Ctrl+"}P`}
             value={query}
             onValueChange={setQuery}
             data-testid="command-palette-input"
           />
           <CommandList>
-            <CommandEmpty>No pages found.</CommandEmpty>
+            <CommandEmpty>No results found.</CommandEmpty>
+
+            {/* Quick Actions — shown when no query or when query matches */}
+            {!hasQuery && visibleActions.length > 0 && (
+              <CommandGroup heading="Quick Actions">
+                {visibleActions.map((action) => (
+                  <CommandItem
+                    key={action.id}
+                    value={action.label}
+                    onSelect={action.onSelect}
+                    data-testid={`command-palette-action-${action.id}`}
+                  >
+                    {action.icon}
+                    <span className="flex-1 truncate">{action.label}</span>
+                    {action.shortcut && (
+                      <CommandShortcut>{action.shortcut}</CommandShortcut>
+                    )}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
 
             {!hasQuery && recentVisits.length > 0 && (
               <CommandGroup heading="Recent">
@@ -259,28 +494,48 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             )}
 
             {hasQuery && (
-              <CommandGroup heading="Pages">
-                {navigablePages.map((page) => (
-                  <CommandItem
-                    key={page.id}
-                    value={`${page.title || "Untitled"} ${getParentBreadcrumb(page.id, breadcrumbMap) ?? ""}`}
-                    onSelect={() => handleSelect(page.id)}
-                    data-testid={`command-palette-page-${page.id}`}
-                  >
-                    <PageIcon
-                      icon={page.icon}
-                      isDatabase={page.is_database}
-                    />
-                    <span className="flex-1 truncate">
-                      {page.title || "Untitled"}
-                    </span>
-                    <ParentBreadcrumb
-                      pageId={page.id}
-                      breadcrumbMap={breadcrumbMap}
-                    />
-                  </CommandItem>
-                ))}
-              </CommandGroup>
+              <>
+                {/* Show matching actions when searching */}
+                <CommandGroup heading="Quick Actions">
+                  {visibleActions.map((action) => (
+                    <CommandItem
+                      key={action.id}
+                      value={action.label}
+                      onSelect={action.onSelect}
+                      data-testid={`command-palette-action-${action.id}`}
+                    >
+                      {action.icon}
+                      <span className="flex-1 truncate">{action.label}</span>
+                      {action.shortcut && (
+                        <CommandShortcut>{action.shortcut}</CommandShortcut>
+                      )}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+
+                <CommandGroup heading="Pages">
+                  {navigablePages.map((page) => (
+                    <CommandItem
+                      key={page.id}
+                      value={`${page.title || "Untitled"} ${getParentBreadcrumb(page.id, breadcrumbMap) ?? ""}`}
+                      onSelect={() => handleSelect(page.id)}
+                      data-testid={`command-palette-page-${page.id}`}
+                    >
+                      <PageIcon
+                        icon={page.icon}
+                        isDatabase={page.is_database}
+                      />
+                      <span className="flex-1 truncate">
+                        {page.title || "Untitled"}
+                      </span>
+                      <ParentBreadcrumb
+                        pageId={page.id}
+                        breadcrumbMap={breadcrumbMap}
+                      />
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </>
             )}
 
             {!hasQuery && navigablePages.length > 0 && (
@@ -309,6 +564,16 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             )}
           </CommandList>
         </Command>
+
+        {/* Hidden file input for markdown import */}
+        <input
+          ref={importRef}
+          type="file"
+          accept=".md,.markdown"
+          className="hidden"
+          onChange={handleImportFileChange}
+          data-testid="command-palette-import-input"
+        />
       </DialogContent>
     </Dialog>
   );

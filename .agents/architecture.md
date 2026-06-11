@@ -546,7 +546,7 @@ src/
 │   │   └── row-properties-header.tsx    # Properties displayed above editor when row opened as page
 │   ├── feedback/
 │   │   └── feedback-form.tsx        # User feedback form with type selector, screenshot capture, and submission
-│   ├── command-palette.tsx           # ⌘+P command palette for quick page switching (uses cmdk via shadcn Command)
+│   ├── command-palette.tsx           # ⌘+P command palette for quick page switching and quick actions (uses cmdk via shadcn Command)
 │   ├── keyboard-shortcuts-dialog.tsx # ⌘+? keyboard shortcuts reference dialog
 │   ├── providers.tsx                # Client-side providers wrapper (Suspense + lazy LazyProviders)
 │   ├── lazy-providers.tsx           # Lazy-loaded ThemeProvider + TooltipProvider + Toaster (keeps chunk manifests out of shared baseline)

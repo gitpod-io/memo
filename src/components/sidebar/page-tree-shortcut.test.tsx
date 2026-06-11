@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom/vitest";
+import React from "react";
 import { render, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
@@ -81,6 +82,15 @@ vi.mock("@sentry/nextjs", () => ({
 
 vi.mock("sonner", () => ({
   toast: { error: vi.fn(), success: vi.fn() },
+}));
+
+vi.mock("@/lib/theme", () => ({
+  useTheme: () => ({
+    preference: "dark" as const,
+    resolved: "dark" as const,
+    setPreference: vi.fn(),
+  }),
+  ThemeProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 import { PageTree } from "./page-tree";
