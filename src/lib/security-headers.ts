@@ -3,9 +3,10 @@
  *
  * CSP notes:
  * - `style-src 'unsafe-inline'` is required because Tailwind and Lexical inject inline styles.
- * - `script-src 'self'` only — no `'unsafe-eval'` or `'unsafe-inline'` for scripts.
- *   Next.js injects inline scripts with nonces in production, but the framework
- *   handles nonce injection automatically; we don't need `'unsafe-inline'` here.
+ * - `script-src 'self' 'unsafe-inline'` — Next.js emits inline `<script>` tags
+ *   for hydration, chunk loading, and router state. Nonce-based CSP would require
+ *   middleware-level integration that the static `headers()` config cannot provide,
+ *   so `'unsafe-inline'` is the pragmatic choice. `'unsafe-eval'` is still excluded.
  * - `connect-src` includes the Supabase project URL for API/auth/realtime calls.
  * - `img-src` includes the Supabase project URL for storage-hosted images, plus
  *   `blob:` and `data:` for client-side image handling (screenshots, CSV export).
@@ -26,7 +27,7 @@ export function buildCsp(supabaseUrl?: string): string {
 
   const directives = [
     "default-src 'self'",
-    "script-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
     `style-src 'self' 'unsafe-inline'`,
     "font-src 'self'",
     `img-src 'self'${supabase} blob: data:`,
