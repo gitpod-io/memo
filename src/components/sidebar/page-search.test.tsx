@@ -33,11 +33,37 @@ vi.mock("@/lib/supabase/client", () => ({
 vi.mock("@/lib/sentry", () => ({
   captureApiError: vi.fn(),
   captureSupabaseError: vi.fn(),
+  isInsufficientPrivilegeError: vi.fn().mockReturnValue(false),
   isTransientNetworkError: vi.fn().mockReturnValue(false),
 }));
 
 vi.mock("@sentry/nextjs", () => ({
   captureException: vi.fn(),
+}));
+
+// Mock lazy-client used by the breadcrumb page fetch
+const mockSupabasePages = vi.fn().mockResolvedValue({
+  data: [],
+  error: null,
+});
+
+vi.mock("@/lib/supabase/lazy-client", () => ({
+  getClient: vi.fn().mockResolvedValue({
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          is: () => ({
+            order: mockSupabasePages,
+          }),
+        }),
+      }),
+    }),
+  }),
+}));
+
+// Mock retry to pass through the function call directly
+vi.mock("@/lib/retry", () => ({
+  retryOnNetworkError: vi.fn().mockImplementation((fn: () => Promise<unknown>) => fn()),
 }));
 
 vi.mock("@/components/sidebar/sidebar-context", () => ({

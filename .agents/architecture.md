@@ -612,6 +612,7 @@ src/
 │   ├── column-helpers.ts    # Pure helpers for column-add flow: name generation, config seeding, concurrency guard
 │   ├── csv-export.ts       # CSV serialization (RFC 4180) and download trigger for database export
 │   ├── csv-import.ts       # CSV parsing (RFC 4180), column mapping, type coercion for database import
+│   ├── breadcrumb.ts       # Shared breadcrumb utilities: buildBreadcrumbMap, getParentBreadcrumb (used by command palette and sidebar search)
 │   ├── database.ts         # Database CRUD: create/delete databases, property/row/view CRUD, data loading
 │   ├── database-cache.ts   # In-memory cache for database data and workspace members
 │   ├── database-filters.ts # Client-side filter engine for database views (text, number, date, select, etc.)
