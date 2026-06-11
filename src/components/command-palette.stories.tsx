@@ -1,6 +1,18 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
-import { FileText, Table2 } from "lucide-react";
+import {
+  Download,
+  FileText,
+  Maximize2,
+  Moon,
+  PanelLeft,
+  Plus,
+  Settings,
+  Sun,
+  Table2,
+  Upload,
+  Users,
+} from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -8,6 +20,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandShortcut,
 } from "@/components/ui/command";
 import {
   Dialog,
@@ -38,6 +51,28 @@ const MOCK_PAGES = [
   { id: "p8", title: "Sprint Planning", icon: "📋", isDatabase: false, parent: null },
 ];
 
+interface MockAction {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  shortcut?: string;
+}
+
+const MOCK_ACTIONS: MockAction[] = [
+  { id: "new-page", label: "New Page", icon: <Plus className="h-4 w-4 text-muted-foreground" />, shortcut: "⌘N" },
+  { id: "new-database", label: "New Database", icon: <Table2 className="h-4 w-4 text-muted-foreground" /> },
+  { id: "export-markdown", label: "Export as Markdown", icon: <Download className="h-4 w-4 text-muted-foreground" />, shortcut: "⌘⇧E" },
+  { id: "import-markdown", label: "Import Markdown", icon: <Upload className="h-4 w-4 text-muted-foreground" /> },
+  { id: "workspace-settings", label: "Workspace Settings", icon: <Settings className="h-4 w-4 text-muted-foreground" /> },
+  { id: "members", label: "Members", icon: <Users className="h-4 w-4 text-muted-foreground" /> },
+  { id: "toggle-theme", label: "Switch to Light Mode", icon: <Sun className="h-4 w-4 text-muted-foreground" /> },
+  { id: "toggle-sidebar", label: "Toggle Sidebar", icon: <PanelLeft className="h-4 w-4 text-muted-foreground" />, shortcut: "⌘\\" },
+  { id: "toggle-focus-mode", label: "Toggle Focus Mode", icon: <Maximize2 className="h-4 w-4 text-muted-foreground" />, shortcut: "⌘⇧F" },
+];
+
+/** Actions without page-context-dependent items (e.g. Export). */
+const MOCK_ACTIONS_NO_PAGE = MOCK_ACTIONS.filter((a) => a.id !== "export-markdown");
+
 function PageIcon({ icon, isDatabase }: { icon: string | null; isDatabase: boolean }) {
   if (icon) {
     return (
@@ -61,12 +96,34 @@ function ParentBreadcrumb({ parent }: { parent: string | null }) {
   );
 }
 
+function ActionItems({ actions }: { actions: MockAction[] }) {
+  return (
+    <>
+      {actions.map((action) => (
+        <CommandItem key={action.id} value={action.label}>
+          {action.icon}
+          <span className="flex-1 truncate">{action.label}</span>
+          {action.shortcut && (
+            <CommandShortcut>{action.shortcut}</CommandShortcut>
+          )}
+        </CommandItem>
+      ))}
+    </>
+  );
+}
+
 function PaletteContent({
   showRecent = true,
+  showActions = true,
+  actions = MOCK_ACTIONS,
   initialQuery = "",
+  placeholder = "Search pages… ⌘P",
 }: {
   showRecent?: boolean;
+  showActions?: boolean;
+  actions?: MockAction[];
   initialQuery?: string;
+  placeholder?: string;
 }) {
   const [query, setQuery] = useState(initialQuery);
   const hasQuery = query.trim().length > 0;
@@ -74,12 +131,18 @@ function PaletteContent({
   return (
     <Command className="rounded-none bg-popover" shouldFilter={hasQuery}>
       <CommandInput
-        placeholder="Search pages…"
+        placeholder={placeholder}
         value={query}
         onValueChange={setQuery}
       />
       <CommandList>
-        <CommandEmpty>No pages found.</CommandEmpty>
+        <CommandEmpty>No results found.</CommandEmpty>
+
+        {!hasQuery && showActions && (
+          <CommandGroup heading="Quick Actions">
+            <ActionItems actions={actions} />
+          </CommandGroup>
+        )}
 
         {!hasQuery && showRecent && (
           <CommandGroup heading="Recent">
@@ -94,18 +157,23 @@ function PaletteContent({
         )}
 
         {hasQuery && (
-          <CommandGroup heading="Pages">
-            {MOCK_PAGES.map((page) => (
-              <CommandItem
-                key={page.id}
-                value={`${page.title} ${page.parent ?? ""}`}
-              >
-                <PageIcon icon={page.icon} isDatabase={page.isDatabase} />
-                <span className="flex-1 truncate">{page.title}</span>
-                <ParentBreadcrumb parent={page.parent} />
-              </CommandItem>
-            ))}
-          </CommandGroup>
+          <>
+            <CommandGroup heading="Quick Actions">
+              <ActionItems actions={actions} />
+            </CommandGroup>
+            <CommandGroup heading="Pages">
+              {MOCK_PAGES.map((page) => (
+                <CommandItem
+                  key={page.id}
+                  value={`${page.title} ${page.parent ?? ""}`}
+                >
+                  <PageIcon icon={page.icon} isDatabase={page.isDatabase} />
+                  <span className="flex-1 truncate">{page.title}</span>
+                  <ParentBreadcrumb parent={page.parent} />
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
         )}
 
         {!hasQuery && (
@@ -138,7 +206,7 @@ export { meta as default };
 
 type Story = StoryObj;
 
-/** Default state with recent pages and all pages visible. */
+/** Default state with quick actions, recent pages, and all pages visible. */
 export const Default: Story = {
   render: () => (
     <div className="w-[512px] border border-overlay-border bg-popover shadow-md">
@@ -147,22 +215,47 @@ export const Default: Story = {
   ),
 };
 
-/** With a search query filtering results. */
+/** With a search query filtering both actions and pages. */
 export const WithQuery: Story = {
   render: () => (
     <div className="w-[512px] border border-overlay-border bg-popover shadow-md">
-      <PaletteContent initialQuery="API" />
+      <PaletteContent initialQuery="export" />
     </div>
   ),
 };
 
-/** Without recent visits — shows all pages directly. */
+/** Without recent visits — shows quick actions and all pages. */
 export const NoRecentVisits: Story = {
   render: () => (
     <div className="w-[512px] border border-overlay-border bg-popover shadow-md">
       <PaletteContent showRecent={false} />
     </div>
   ),
+};
+
+/** Quick actions when not on a page — Export is hidden. */
+export const ActionsNoPageContext: Story = {
+  render: () => (
+    <div className="w-[512px] border border-overlay-border bg-popover shadow-md">
+      <PaletteContent actions={MOCK_ACTIONS_NO_PAGE} />
+    </div>
+  ),
+};
+
+/** Quick actions with light theme toggle variant. */
+export const ActionsLightTheme: Story = {
+  render: () => {
+    const lightActions = MOCK_ACTIONS.map((a) =>
+      a.id === "toggle-theme"
+        ? { ...a, label: "Switch to Dark Mode", icon: <Moon className="h-4 w-4 text-muted-foreground" /> }
+        : a,
+    );
+    return (
+      <div className="w-[512px] border border-overlay-border bg-popover shadow-md">
+        <PaletteContent actions={lightActions} />
+      </div>
+    );
+  },
 };
 
 /** Inside a dialog, matching the real usage. */
@@ -178,7 +271,7 @@ export const InDialog: Story = {
           <DialogHeader className="sr-only">
             <DialogTitle>Command palette</DialogTitle>
             <DialogDescription>
-              Search for a page to navigate to
+              Search for a page or run a quick action
             </DialogDescription>
           </DialogHeader>
           <DialogContent
@@ -193,14 +286,14 @@ export const InDialog: Story = {
   },
 };
 
-/** Empty state when no pages match the query. */
+/** Empty state when no pages or actions match the query. */
 export const EmptyState: Story = {
   render: () => (
     <div className="w-[512px] border border-overlay-border bg-popover shadow-md">
       <Command className="rounded-none bg-popover">
-        <CommandInput placeholder="Search pages…" value="zzzznonexistent" />
+        <CommandInput placeholder="Search pages… ⌘P" value="zzzznonexistent" />
         <CommandList>
-          <CommandEmpty>No pages found.</CommandEmpty>
+          <CommandEmpty>No results found.</CommandEmpty>
         </CommandList>
       </Command>
     </div>
