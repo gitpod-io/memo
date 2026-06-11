@@ -50,10 +50,15 @@ describe("buildCsp", () => {
     expect(csp).toContain("default-src 'self'");
   });
 
-  it("allows self and unsafe-inline for script-src without unsafe-eval", () => {
+  it("excludes unsafe-eval from script-src in production (isDev=false)", () => {
     const csp = buildCsp();
     expect(csp).toContain("script-src 'self' 'unsafe-inline'");
     expect(csp).not.toContain("unsafe-eval");
+  });
+
+  it("includes unsafe-eval in script-src in development (isDev=true)", () => {
+    const csp = buildCsp(undefined, true);
+    expect(csp).toContain("script-src 'self' 'unsafe-inline' 'unsafe-eval'");
   });
 
   it("allows unsafe-inline for style-src (required by Tailwind/Lexical)", () => {

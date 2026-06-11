@@ -21,13 +21,18 @@ type HeaderEntry = { key: string; value: string };
  * Build the Content-Security-Policy header value.
  * Accepts the Supabase URL so it can be included in connect-src and img-src.
  * Falls back to an empty string if the env var is not set (dev without Supabase).
+ *
+ * @param supabaseUrl - Supabase project URL for connect-src and img-src.
+ * @param isDev - When true, adds 'unsafe-eval' to script-src. React uses eval()
+ *   in development for debugging features like callstack reconstruction.
  */
-export function buildCsp(supabaseUrl?: string): string {
+export function buildCsp(supabaseUrl?: string, isDev = false): string {
   const supabase = supabaseUrl ? ` ${supabaseUrl}` : "";
+  const evalPolicy = isDev ? " 'unsafe-eval'" : "";
 
   const directives = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
+    `script-src 'self' 'unsafe-inline'${evalPolicy}`,
     `style-src 'self' 'unsafe-inline'`,
     "font-src 'self'",
     `img-src 'self'${supabase} blob: data:`,
@@ -44,7 +49,10 @@ export function buildCsp(supabaseUrl?: string): string {
 }
 
 /** All security headers applied to every response. */
-export function getSecurityHeaders(supabaseUrl?: string): HeaderEntry[] {
+export function getSecurityHeaders(
+  supabaseUrl?: string,
+  isDev = false,
+): HeaderEntry[] {
   return [
     { key: "X-Content-Type-Options", value: "nosniff" },
     { key: "X-Frame-Options", value: "DENY" },
@@ -60,7 +68,7 @@ export function getSecurityHeaders(supabaseUrl?: string): HeaderEntry[] {
     },
     {
       key: "Content-Security-Policy",
-      value: buildCsp(supabaseUrl),
+      value: buildCsp(supabaseUrl, isDev),
     },
   ];
 }

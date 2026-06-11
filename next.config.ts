@@ -22,7 +22,10 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/:path*",
-        headers: getSecurityHeaders(process.env.NEXT_PUBLIC_SUPABASE_URL),
+        headers: getSecurityHeaders(
+          process.env.NEXT_PUBLIC_SUPABASE_URL,
+          process.env.NODE_ENV !== "production",
+        ),
       },
     ];
   },
