@@ -130,6 +130,63 @@ test.describe("Editor slash commands", () => {
     await expect(options.nth(stepsToNavigate - 1)).toHaveClass(/bg-overlay-active/);
   });
 
+  test("slash menu shows empty state when no commands match", async ({
+    authenticatedPage: page,
+  }) => {
+    const editor = page.locator('[contenteditable="true"]');
+    await expect(editor).toBeVisible({ timeout: 10_000 });
+
+    await editor.click();
+    await page.keyboard.press("End");
+    await page.keyboard.press("Enter");
+    await page.keyboard.type("/xyz");
+
+    // The slash command menu should show the empty state message
+    const emptyState = page.getByTestId("editor-slash-menu-empty");
+    await expect(emptyState).toBeVisible({ timeout: 3_000 });
+    await expect(emptyState).toHaveText("No matching commands");
+
+    // The menu container should still be present
+    const menu = page.getByTestId("editor-slash-menu");
+    await expect(menu).toBeVisible();
+
+    // No option items should be visible
+    const options = page.locator('[role="option"]');
+    await expect(options).toHaveCount(0);
+
+    // Escape should still close the menu
+    await page.keyboard.press("Escape");
+    await expect(menu).not.toBeVisible({ timeout: 2_000 });
+  });
+
+  test("slash menu empty state disappears when query matches again", async ({
+    authenticatedPage: page,
+  }) => {
+    const editor = page.locator('[contenteditable="true"]');
+    await expect(editor).toBeVisible({ timeout: 10_000 });
+
+    await editor.click();
+    await page.keyboard.press("End");
+    await page.keyboard.press("Enter");
+    await page.keyboard.type("/xyz");
+
+    // Empty state should appear
+    const emptyState = page.getByTestId("editor-slash-menu-empty");
+    await expect(emptyState).toBeVisible({ timeout: 3_000 });
+
+    // Delete the non-matching characters to get back to "/"
+    await page.keyboard.press("Backspace");
+    await page.keyboard.press("Backspace");
+    await page.keyboard.press("Backspace");
+
+    // Options should reappear
+    const options = page.locator('[role="option"]');
+    await expect(options.first()).toBeVisible({ timeout: 3_000 });
+
+    // Empty state should be gone
+    await expect(emptyState).not.toBeVisible();
+  });
+
   test("selected item scrolls into view when navigating with arrow keys", async ({
     authenticatedPage: page,
   }) => {

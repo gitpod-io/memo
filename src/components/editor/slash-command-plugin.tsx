@@ -379,8 +379,28 @@ export function SlashCommandPlugin({ onExport, onImport }: SlashCommandPluginPro
         anchorElementRef,
         { selectedIndex, selectOptionAndCleanUp, setHighlightedIndex, options: items }
       ) => {
-        if (items.length === 0 || !anchorElementRef.current) {
+        if (!anchorElementRef.current) {
           return null;
+        }
+
+        // Show empty state when the user typed a query that matched nothing
+        if (items.length === 0) {
+          return createPortal(
+            <div
+              className="fixed z-50 w-64 rounded-sm border border-overlay-border bg-popover p-1 shadow-md"
+              role="listbox"
+              aria-label="Slash commands"
+              data-testid="editor-slash-menu"
+            >
+              <div
+                className="px-2 py-3 text-center text-xs text-muted-foreground"
+                data-testid="editor-slash-menu-empty"
+              >
+                No matching commands
+              </div>
+            </div>,
+            anchorElementRef.current
+          );
         }
 
         // Scroll the newly highlighted item into view when the index changes.
