@@ -1,12 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, Search, Table2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { captureApiError } from "@/lib/sentry";
+import { captureApiError, captureSupabaseError, isInsufficientPrivilegeError } from "@/lib/sentry";
 import { useSidebar } from "@/components/sidebar/sidebar-context";
 import { useWorkspace } from "@/components/sidebar/workspace-context";
+import { getClient } from "@/lib/supabase/lazy-client";
+import { retryOnNetworkError } from "@/lib/retry";
+import { buildBreadcrumbMap, getParentBreadcrumb } from "@/lib/breadcrumb";
+import type { SidebarPage } from "@/lib/types";
 
 interface SearchResult {
   id: string;
@@ -39,10 +43,12 @@ export function PageSearch() {
   const [searchStatus, setSearchStatus] = useState<SearchStatus>("idle");
   const [open, setOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [pages, setPages] = useState<SidebarPage[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const pagesFetchedForRef = useRef<string | null>(null);
   // Cancelled flag: set to true by the effect cleanup so stale async
   // callbacks (from aborted fetches) never update state. Unlike the
   // generation counter this replaces, a boolean flag cannot be
@@ -55,6 +61,49 @@ export function PageSearch() {
   useEffect(() => {
     registerSearchRef(inputRef);
   }, [registerSearchRef]);
+
+  // Fetch workspace pages for breadcrumb context when search opens.
+  // Only fetches once per workspace — subsequent opens reuse cached data.
+  useEffect(() => {
+    if (!open || !workspaceId || pagesFetchedForRef.current === workspaceId) return;
+
+    let cancelled = false;
+
+    async function fetchPages() {
+      const { data, error } = await retryOnNetworkError(
+        async () => {
+          const s = await getClient();
+          return s
+            .from("pages")
+            .select(
+              "id, workspace_id, parent_id, title, icon, cover_url, is_database, position, created_by, created_at, updated_at, deleted_at",
+            )
+            .eq("workspace_id", workspaceId!)
+            .is("deleted_at", null)
+            .order("position", { ascending: true });
+        },
+      );
+
+      if (cancelled) return;
+
+      if (error) {
+        if (!isInsufficientPrivilegeError(error)) {
+          captureSupabaseError(error, "page-search:fetch-pages");
+        }
+      } else if (data) {
+        setPages(data);
+        pagesFetchedForRef.current = workspaceId!;
+      }
+    }
+
+    fetchPages();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, workspaceId]);
+
+  const breadcrumbMap = useMemo(() => buildBreadcrumbMap(pages), [pages]);
 
   // Stable search function — accepts wsId as a parameter so the
   // callback identity never changes. Uses cancelledRef to discard
@@ -336,37 +385,45 @@ export function PageSearch() {
             </div>
           )}
 
-          {results.map((result, index) => (
-            <button
-              key={result.id}
-              id={`search-result-${result.id}`}
-              role="option"
-              aria-selected={index === selectedIndex}
-              className={`flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-none ${
-                index === selectedIndex
-                  ? "bg-overlay-active"
-                  : "hover:bg-overlay-hover"
-              }`}
-              onClick={() => handleNavigate(result)}
-              onMouseEnter={() => setSelectedIndex(index)}
-            >
-              <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-                {result.icon ? (
-                  <span className="shrink-0 text-sm">{result.icon}</span>
-                ) : result.is_database ? (
-                  <Table2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-                ) : (
-                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                )}
-                <span className="truncate">
-                  {result.title || "Untitled"}
+          {results.map((result, index) => {
+            const parentPath = getParentBreadcrumb(result.id, breadcrumbMap);
+            return (
+              <button
+                key={result.id}
+                id={`search-result-${result.id}`}
+                role="option"
+                aria-selected={index === selectedIndex}
+                className={`flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-none ${
+                  index === selectedIndex
+                    ? "bg-overlay-active"
+                    : "hover:bg-overlay-hover"
+                }`}
+                onClick={() => handleNavigate(result)}
+                onMouseEnter={() => setSelectedIndex(index)}
+              >
+                <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  {result.icon ? (
+                    <span className="shrink-0 text-sm">{result.icon}</span>
+                  ) : result.is_database ? (
+                    <Table2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  ) : (
+                    <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  )}
+                  <span className="truncate">
+                    {result.title || "Untitled"}
+                  </span>
                 </span>
-              </span>
-              <span className="line-clamp-2 text-xs text-muted-foreground pl-6">
-                {renderSnippet(result.snippet)}
-              </span>
-            </button>
-          ))}
+                {parentPath && (
+                  <span className="truncate text-xs text-muted-foreground pl-6 max-w-full">
+                    {parentPath}
+                  </span>
+                )}
+                <span className="line-clamp-2 text-xs text-muted-foreground pl-6">
+                  {renderSnippet(result.snippet)}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

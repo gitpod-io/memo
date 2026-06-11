@@ -20,6 +20,7 @@ const mockResults = [
     title: "Meeting Notes",
     isDatabase: false,
     snippet: "Weekly <<standup>> notes from the engineering team",
+    parentBreadcrumb: "Engineering → Weekly",
   },
   {
     id: "r2",
@@ -27,6 +28,7 @@ const mockResults = [
     title: "Project Roadmap",
     isDatabase: false,
     snippet: "Q1 milestones and <<standup>> deliverables",
+    parentBreadcrumb: null,
   },
   {
     id: "r3",
@@ -34,6 +36,7 @@ const mockResults = [
     title: "Bug Tracker",
     isDatabase: true,
     snippet: "Track all <<standup>> blockers and issues",
+    parentBreadcrumb: "Engineering",
   },
 ];
 
@@ -119,6 +122,43 @@ export const Open: Story = {
   render: () => <SearchShell query="" showClear={false} />,
 };
 
+function ResultItem({
+  result,
+  selected,
+}: {
+  result: (typeof mockResults)[number];
+  selected: boolean;
+}) {
+  return (
+    <button
+      role="option"
+      aria-selected={selected}
+      className={`flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-none ${
+        selected ? "bg-overlay-active" : "hover:bg-overlay-hover"
+      }`}
+    >
+      <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+        {result.icon ? (
+          <span className="shrink-0 text-sm">{result.icon}</span>
+        ) : result.isDatabase ? (
+          <Table2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+        ) : (
+          <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+        )}
+        <span className="truncate">{result.title}</span>
+      </span>
+      {result.parentBreadcrumb && (
+        <span className="truncate text-xs text-muted-foreground pl-6 max-w-full">
+          {result.parentBreadcrumb}
+        </span>
+      )}
+      <span className="line-clamp-2 text-xs text-muted-foreground pl-6">
+        {renderSnippet(result.snippet)}
+      </span>
+    </button>
+  );
+}
+
 export const WithResults: Story = {
   render: () => (
     <SearchShell query="standup" showClear>
@@ -127,30 +167,11 @@ export const WithResults: Story = {
         className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] overflow-y-auto border border-overlay-border bg-muted rounded-sm shadow-md"
       >
         {mockResults.map((result, index) => (
-          <button
+          <ResultItem
             key={result.id}
-            role="option"
-            aria-selected={index === 0}
-            className={`flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-none ${
-              index === 0
-                ? "bg-overlay-active"
-                : "hover:bg-overlay-hover"
-            }`}
-          >
-            <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-              {result.icon ? (
-                <span className="shrink-0 text-sm">{result.icon}</span>
-              ) : result.isDatabase ? (
-                <Table2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-              ) : (
-                <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-              )}
-              <span className="truncate">{result.title}</span>
-            </span>
-            <span className="line-clamp-2 text-xs text-muted-foreground pl-6">
-              {renderSnippet(result.snippet)}
-            </span>
-          </button>
+            result={result}
+            selected={index === 0}
+          />
         ))}
       </div>
     </SearchShell>
@@ -190,6 +211,61 @@ export const Loading: Story = {
             </div>
           ))}
         </div>
+      </div>
+    </SearchShell>
+  ),
+};
+
+const breadcrumbResults = [
+  {
+    id: "b1",
+    icon: "📝",
+    title: "Untitled",
+    isDatabase: false,
+    snippet: "Some content in this <<untitled>> page",
+    parentBreadcrumb: "Engineering → Weekly Standups",
+  },
+  {
+    id: "b2",
+    icon: "📝",
+    title: "Untitled",
+    isDatabase: false,
+    snippet: "Different content in another <<untitled>> page",
+    parentBreadcrumb: "Design → Feedback",
+  },
+  {
+    id: "b3",
+    icon: null,
+    title: "Untitled",
+    isDatabase: false,
+    snippet: "A root-level <<untitled>> page with no parent",
+    parentBreadcrumb: null,
+  },
+  {
+    id: "b4",
+    icon: null,
+    title: "Notes",
+    isDatabase: false,
+    snippet: "Deeply nested <<notes>> page",
+    parentBreadcrumb: "Company → Engineering → Backend → API Design",
+  },
+];
+
+export const WithBreadcrumbs: Story = {
+  name: "With Breadcrumb Context",
+  render: () => (
+    <SearchShell query="untitled" showClear>
+      <div
+        role="listbox"
+        className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] overflow-y-auto border border-overlay-border bg-muted rounded-sm shadow-md"
+      >
+        {breadcrumbResults.map((result, index) => (
+          <ResultItem
+            key={result.id}
+            result={result}
+            selected={index === 0}
+          />
+        ))}
       </div>
     </SearchShell>
   ),
