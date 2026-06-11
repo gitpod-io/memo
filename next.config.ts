@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import { getSecurityHeaders } from "@/lib/security-headers";
 
 // Bundle splitting strategy: see docs/bundle-budget.md for the full chunk
 // inventory and guidelines. Key points:
@@ -16,6 +17,14 @@ const nextConfig: NextConfig = {
     staleTimes: {
       dynamic: 30,
     },
+  },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: getSecurityHeaders(process.env.NEXT_PUBLIC_SUPABASE_URL),
+      },
+    ];
   },
 };
 

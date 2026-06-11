@@ -620,6 +620,7 @@ src/
 │   ├── property-icons.ts   # Shared PropertyType → icon + label mapping for database components
 │   ├── rate-limit.ts       # In-memory sliding window rate limiter (withRateLimit wrapper for API routes)
 │   ├── retry.ts            # retryOnNetworkError helper (exponential backoff for transient failures)
+│   ├── security-headers.ts # Security response headers (CSP, HSTS, X-Frame-Options, etc.) for next.config.ts
 │   ├── sentry/             # Sentry error handling (split into focused modules)
 │   │   ├── index.ts        # Barrel re-exports for backward-compatible @/lib/sentry imports
 │   │   ├── e2e-detection.ts    # isE2ETestSession, isE2ETestRequest

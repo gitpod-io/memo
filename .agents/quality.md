@@ -14,7 +14,7 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 
 | Domain | Grade | Notes |
 |---|---|---|
-| Infrastructure | A | Sentry (client + server + edge), proxy with session refresh, health endpoint with tests (13 tests), PWA manifest, global error boundary, Supabase clients (browser + server + proxy). JetBrains Mono font correctly configured. Dark-only oklch theme tokens. Migration validation tests (33 tests). API route error-handling consistency tests (6 tests). |
+| Infrastructure | A | Sentry (client + server + edge), proxy with session refresh, health endpoint with tests (13 tests), PWA manifest, global error boundary, Supabase clients (browser + server + proxy). JetBrains Mono font correctly configured. Dark-only oklch theme tokens. Migration validation tests (33 tests). API route error-handling consistency tests (6 tests). Security response headers (CSP, HSTS, X-Frame-Options, etc.) via next.config.ts with unit tests (18 tests). |
 | Auth | A | Sign-in, sign-up, invite accept pages. OAuth sign-in with GitHub and Google fully functional. Auth guard in app layout with redirect. Error boundaries on all auth routes (5 error.tsx files, 22 tests). Loading state for invite page. Typography regression test (2 tests). Sign-in unit tests (10 tests): form validation, error handling, redirect logic, loading state. Sign-up unit tests (11 tests): form validation, error handling, redirect logic, loading state. Auth callback route tests (7 tests). Root page tests (4 tests). OAuth buttons unit tests (10 tests). E2E spec covers form rendering, redirect, and sign-in flow (8 tests). |
 | Workspaces | A | Workspace home, settings (name/slug/delete), workspace switcher with create dialog. Slug generation utility with unit tests (12 tests). Settings form unit tests (17 tests): validation, save, slug sanitization, delete confirmation flow, error handling. Create workspace dialog unit tests (5 tests). E2E specs cover workspace creation (3 tests), workspace settings (3 tests), and workspace limit enforcement (2 tests). Max 3 workspace limit enforced via DB trigger. |
 | Pages | A | Page view with title + editor, page tree with CRUD + drag-and-drop + nest/unnest + keyboard navigation (WAI-ARIA Treeview pattern with roving tabindex) + inline rename via context menu. Page menu with export/import markdown. Page icon picker with emoji support. Cover images, backlinks, version history, favorites, trash/soft-delete with undo, page duplication, inline page link search. Keyboard shortcuts for duplicate (⌘D) and export (⌘⇧E). Tree logic extracted to `src/lib/page-tree.ts` with 46 unit tests covering build, reorder, nest, unnest, drop computation, visible item traversal, and parent lookup. Page tree actions hook tests (39 tests): create, create-database, duplicate (regular + database), delete with undo (toast action, restore RPC, navigate-back, error handling) and descendant cleanup, move up/down, nest/unnest, toggle favorite with optimistic updates and error rollback. Page tree keyboard shortcut tests (5 tests). Page icon design spec tests (1 test). Page visit error handling tests (2 tests). Persisted tree expansion tests (9 tests). 14 E2E specs: page CRUD (5), sidebar drag (2), sidebar keyboard nav (10), sidebar rename (5), page icon (4), page cover (5), page duplicate (4), favorites (7), trash (9), version history (5), page link search (4), page shortcuts (4), backlinks (1), title advance (3) — 68 tests total. |
@@ -33,9 +33,9 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 
 | Category | Files | Tests |
 |---|---|---|
-| Unit/Integration (Vitest) | 152 | 2119 |
+| Unit/Integration (Vitest) | 153 | 2137 |
 | E2E (Playwright) | 103 | 467 |
-| **Total** | **255** | **2586** |
+| **Total** | **256** | **2604** |
 
 ### Test files by domain
 
@@ -52,7 +52,7 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 - **API**: `health/route.test.ts` (13 tests), `search/route.test.ts` (14 tests), `account/route.test.ts` (9 tests), `cron/purge-trash/route.test.ts` (10 tests), `feedback/route.test.ts` (22 tests), `pages/[pageId]/versions/route.test.ts` (17 tests), `pages/[pageId]/versions/route.rate-limit.test.ts` (3 tests), `pages/[pageId]/versions/[versionId]/route.test.ts` (14 tests), `pages/[pageId]/versions/[versionId]/route.rate-limit.test.ts` (3 tests), `e2e/account-deletion.spec.ts` (4 tests), `e2e/account-settings.spec.ts` (5 tests)
 - **UI**: `overlay-opacity.test.ts` (2 tests), `toast-error-duration.test.ts` (1 test), `dialog-design-spec.test.ts` (3 tests), `design-spec-compliance.test.ts` (14 tests), `relative-time.test.ts` (7 tests), `reduced-motion.test.ts` (6 tests), `e2e/visual-regression.spec.ts` (1 test), `e2e/live-visual-regression.spec.ts` (1 test)
 - **Lib**: `sentry.test.ts` (4 tests), `sentry.unit.test.ts` (180 tests), `classification-edge-cases.test.ts` (42 tests), `api-route-consistency.test.ts` (6 tests), `retry.test.ts` (16 tests), `rate-limit.test.ts` (17 tests), `track-event-server.test.ts` (9 tests), `track-event.test.ts` (4 tests), `usage-tracking-guard.test.ts` (5 tests), `use-roving-tabindex.test.ts` (13 tests)
-- **Infrastructure**: `migrations.test.ts` (33 tests), `build-timeseries.test.mjs` (6 tests), `supabase/client.test.ts` (7 tests), `supabase/proxy.test.ts` (2 tests)
+- **Infrastructure**: `migrations.test.ts` (33 tests), `build-timeseries.test.mjs` (6 tests), `supabase/client.test.ts` (7 tests), `supabase/proxy.test.ts` (2 tests), `security-headers.test.ts` (18 tests)
 
 ## Known Gaps
 
@@ -210,4 +210,5 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | 2026-06-08 | W24 audit: no test count changes. Verified Vitest actual: 152 files, 2119 tests (matches). E2E grep-based count shows 473 `test(` calls but undercounts loop-generated tests (e.g., public-routes.spec.ts generates 4 tests from a loop). Keeping 466 as the conservative baseline. No grade changes — all domains remain at A. |
 | 2026-06-08 | Bundle size regression fix (#1328). Moved ThemeProvider from shared framework baseline to lazy-loaded chunk in `lazy-providers.tsx`. Inlined Sentry capture in `global-error.tsx` to avoid pulling `capture.ts` into shared base. Framework baseline reduced from 150.3 kB to 149.8 kB gzip. No test count changes. |
 | 2026-06-10 | Add live-app visual regression E2E tests (#1287). Added 1 new E2E spec `e2e/live-visual-regression.spec.ts` (1 test) that screenshots workspace home, page editor, database table view, and workspace settings. Added `live-visual-regression` Playwright project and `test:visual-live` script. Baselines committed to `e2e/live-visual-regression.spec.ts-snapshots/`. Test totals: 152 Vitest files (2119 tests), 103 E2E specs (467 tests). |
+| 2026-06-11 | Add security response headers (#1343). Added 1 new Vitest file: `security-headers.test.ts` (18 tests) covering CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy. Test totals: 153 Vitest files (2137 tests), 103 E2E specs (467 tests). |
 
