@@ -133,7 +133,7 @@ export function DeleteAccountSection({ userEmail }: DeleteAccountSectionProps) {
                 autoFocus
               />
             </div>
-            {error && <p className="text-xs text-destructive">{error}</p>}
+            {error && <p className="text-xs text-destructive" role="alert">{error}</p>}
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
@@ -162,7 +162,7 @@ export function DeleteAccountSection({ userEmail }: DeleteAccountSectionProps) {
                 immediately.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            {error && <p className="text-xs text-destructive">{error}</p>}
+            {error && <p className="text-xs text-destructive" role="alert">{error}</p>}
             <AlertDialogFooter>
               <AlertDialogCancel disabled={deleting}>
                 Cancel

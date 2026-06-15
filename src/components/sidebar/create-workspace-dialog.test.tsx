@@ -138,9 +138,11 @@ describe("CreateWorkspaceDialog", () => {
 
     await waitFor(() => {
       // User sees a generic message, NOT the raw RLS error
-      expect(
-        screen.getByText("Failed to create workspace. Please try again."),
-      ).toBeInTheDocument();
+      const el = screen.getByText(
+        "Failed to create workspace. Please try again."
+      );
+      expect(el).toBeInTheDocument();
+      expect(el).toHaveAttribute("role", "alert");
 
       // Sentry receives the real error
       expect(mockCaptureSupabaseError).toHaveBeenCalledWith(
@@ -183,9 +185,9 @@ describe("CreateWorkspaceDialog", () => {
     );
 
     await waitFor(() => {
-      expect(
-        screen.getByText("You can create at most 3 workspaces."),
-      ).toBeInTheDocument();
+      const el = screen.getByText("You can create at most 3 workspaces.");
+      expect(el).toBeInTheDocument();
+      expect(el).toHaveAttribute("role", "alert");
     });
 
     // Workspace limit is expected behavior, not a Sentry error

@@ -156,7 +156,9 @@ describe("WorkspaceSettingsForm", () => {
     await user.click(saveButton);
 
     await waitFor(() => {
-      expect(screen.getByText("Name is required.")).toBeInTheDocument();
+      const el = screen.getByText("Name is required.");
+      expect(el).toBeInTheDocument();
+      expect(el).toHaveAttribute("role", "alert");
     });
     expect(mockUpdate).not.toHaveBeenCalled();
   });
@@ -170,11 +172,11 @@ describe("WorkspaceSettingsForm", () => {
     await user.click(saveButton);
 
     await waitFor(() => {
-      expect(
-        screen.getByText(
-          "Slug must be 3–60 characters, lowercase alphanumeric and hyphens only."
-        )
-      ).toBeInTheDocument();
+      const el = screen.getByText(
+        "Slug must be 3–60 characters, lowercase alphanumeric and hyphens only."
+      );
+      expect(el).toBeInTheDocument();
+      expect(el).toHaveAttribute("role", "alert");
     });
     expect(mockUpdate).not.toHaveBeenCalled();
   });
@@ -280,7 +282,9 @@ describe("WorkspaceSettingsForm", () => {
     await user.click(saveButton);
 
     await waitFor(() => {
-      expect(screen.getByText("Settings saved.")).toBeInTheDocument();
+      const el = screen.getByText("Settings saved.");
+      expect(el).toBeInTheDocument();
+      expect(el).toHaveAttribute("role", "status");
     });
   });
 
@@ -325,11 +329,11 @@ describe("WorkspaceSettingsForm", () => {
     await user.click(saveButton);
 
     await waitFor(() => {
-      expect(
-        screen.getByText(
-          "This slug is already taken. Choose a different one."
-        )
-      ).toBeInTheDocument();
+      const el = screen.getByText(
+        "This slug is already taken. Choose a different one."
+      );
+      expect(el).toBeInTheDocument();
+      expect(el).toHaveAttribute("role", "alert");
     });
   });
 
@@ -348,9 +352,9 @@ describe("WorkspaceSettingsForm", () => {
     await user.click(saveButton);
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Failed to save settings. Please try again."),
-      ).toBeInTheDocument();
+      const el = screen.getByText("Failed to save settings. Please try again.");
+      expect(el).toBeInTheDocument();
+      expect(el).toHaveAttribute("role", "alert");
     });
     expect(mockRefresh).not.toHaveBeenCalled();
   });
@@ -415,9 +419,11 @@ describe("WorkspaceSettingsForm", () => {
     await user.click(confirmButton);
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Failed to delete workspace. Please try again."),
-      ).toBeInTheDocument();
+      const el = screen.getByText(
+        "Failed to delete workspace. Please try again."
+      );
+      expect(el).toBeInTheDocument();
+      expect(el).toHaveAttribute("role", "alert");
     });
     expect(mockPush).not.toHaveBeenCalled();
   });

@@ -83,9 +83,9 @@ export function ChangePasswordSection() {
             minLength={6}
           />
         </div>
-        {error && <p className="text-xs text-destructive">{error}</p>}
+        {error && <p className="text-xs text-destructive" role="alert">{error}</p>}
         {success && (
-          <p className="text-xs text-accent">Password updated.</p>
+          <p className="text-xs text-accent" role="status">Password updated.</p>
         )}
         <div>
           <Button type="submit" disabled={loading} size="sm">

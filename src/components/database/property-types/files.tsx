@@ -302,6 +302,7 @@ export function FilesEditor({ value, property, onChange, onBlur }: EditorProps) 
           accept={ACCEPTED_FILE_TYPES}
           multiple
           className="hidden"
+          aria-hidden="true"
           onChange={(e) => {
             if (e.target.files) {
               void handleUpload(e.target.files);

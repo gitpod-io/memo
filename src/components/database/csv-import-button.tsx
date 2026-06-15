@@ -327,6 +327,7 @@ export function CSVImportButton({
         type="file"
         accept=".csv"
         className="hidden"
+        aria-hidden="true"
         onChange={handleFileChange}
         data-testid="csv-import-file-input"
       />
