@@ -114,9 +114,9 @@ export function WorkspaceSettingsForm({
             Used in the URL: /{slug}
           </p>
         </div>
-        {error && <p className="text-xs text-destructive">{error}</p>}
+        {error && <p className="text-xs text-destructive" role="alert">{error}</p>}
         {success && (
-          <p className="text-xs text-accent">Settings saved.</p>
+          <p className="text-xs text-accent" role="status">Settings saved.</p>
         )}
         <div>
           <Button type="submit" disabled={saving}>

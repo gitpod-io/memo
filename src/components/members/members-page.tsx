@@ -119,7 +119,7 @@ export function MembersPage({
         </>
       )}
 
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p className="text-xs text-destructive" role="alert">{error}</p>}
 
       <MemberList
         members={initialMembers}

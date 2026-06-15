@@ -114,7 +114,7 @@ export function CreateWorkspaceDialog({
                 maxLength={60}
               />
             </div>
-            {error && <p className="text-xs text-destructive">{error}</p>}
+            {error && <p className="text-xs text-destructive" role="alert">{error}</p>}
             <DialogFooter>
               <Button type="submit" disabled={loading || !name.trim()}>
                 {loading ? "Creating…" : "Create workspace"}

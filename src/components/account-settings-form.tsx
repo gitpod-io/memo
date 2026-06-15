@@ -272,9 +272,9 @@ export function AccountSettingsForm({
             Email cannot be changed.
           </p>
         </div>
-        {error && <p className="text-xs text-destructive">{error}</p>}
+        {error && <p className="text-xs text-destructive" role="alert">{error}</p>}
         {success && (
-          <p className="text-xs text-accent">Settings saved.</p>
+          <p className="text-xs text-accent" role="status">Settings saved.</p>
         )}
         <div>
           <Button type="submit" disabled={saving} data-testid="account-save-button">

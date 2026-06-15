@@ -82,7 +82,7 @@ export function DeleteWorkspaceSection({
         Deleting this workspace will permanently remove all its pages and
         members. This action cannot be undone.
       </p>
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p className="text-xs text-destructive" role="alert">{error}</p>}
       <AlertDialog>
         <AlertDialogTrigger
           render={<Button variant="destructive" size="sm" />}

@@ -526,6 +526,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
           type="file"
           accept=".md,.markdown"
           className="hidden"
+          aria-hidden="true"
           onChange={handleImportFileChange}
           data-testid="command-palette-import-input"
         />

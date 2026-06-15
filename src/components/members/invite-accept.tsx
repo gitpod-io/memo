@@ -98,7 +98,7 @@ export function InviteAccept({
         You&apos;re signed in as{" "}
         <span className="font-medium text-foreground">{userEmail}</span>.
       </p>
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p className="text-xs text-destructive" role="alert">{error}</p>}
       <Button onClick={handleAccept} disabled={accepting}>
         {accepting ? "Joining…" : "Accept invite"}
       </Button>
