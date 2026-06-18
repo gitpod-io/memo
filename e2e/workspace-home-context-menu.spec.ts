@@ -56,12 +56,12 @@ async function waitForWorkspaceHome(
 }
 
 /**
- * Get the first page item button in the "All Pages" section.
+ * Get the first page item link in the "All Pages" section.
  */
 function getFirstPageItem(page: import("@playwright/test").Page) {
   const main = page.locator("#main-content");
   const section = main.locator('[data-testid="wh-all-pages"]');
-  return section.locator("button.text-left.text-sm").first();
+  return section.locator("a.text-left.text-sm").first();
 }
 
 test.describe("Workspace home context menu", () => {

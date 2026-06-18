@@ -85,9 +85,9 @@ test.describe("Page CRUD", () => {
       return;
     }
 
-    // Click the page title button
-    const titleBtn = treeItem.locator("button.flex-1").first();
-    await titleBtn.click();
+    // Click the page title link
+    const titleLink = treeItem.locator("a.flex-1").first();
+    await titleLink.click();
 
     // The page could be a regular page (contenteditable editor) or a
     // database page (grid view). Accept either as a successful navigation.

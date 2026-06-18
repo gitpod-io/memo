@@ -275,7 +275,7 @@ test.describe("Sidebar Favorites", () => {
       hasText: title,
     });
     await expect(favoriteItem).toBeVisible({ timeout: 3_000 });
-    await favoriteItem.locator("button.flex-1").click();
+    await favoriteItem.locator("a.flex-1").click();
 
     // URL should contain the page ID
     await page.waitForURL((url) => url.pathname.includes(pageId), {

@@ -39,7 +39,7 @@ test.describe("Sidebar page tree drag-and-drop", () => {
     }
 
     // Get initial order — read the page title button text inside each tree item
-    const secondText = await pageItems.nth(1).locator("button").last().textContent();
+    const secondText = await pageItems.nth(1).locator("a").first().textContent();
 
     // Hover first item to reveal drag handle
     await pageItems.first().hover();
@@ -70,7 +70,7 @@ test.describe("Sidebar page tree drag-and-drop", () => {
 
     // Verify order changed
     const updatedItems = page.locator('[role="treeitem"]');
-    const newFirstText = await updatedItems.nth(0).locator("button").last().textContent();
+    const newFirstText = await updatedItems.nth(0).locator("a").first().textContent();
 
     // The first item should now be what was previously second
     expect(newFirstText).toBe(secondText);

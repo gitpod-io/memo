@@ -414,12 +414,7 @@ export function PageTree({ userId }: PageTreeProps) {
                     focusedId={focusedId}
                     tabbableId={tabbableId}
                     renamingId={renamingId}
-                    onNavigate={(pageId) =>
-                      router.push(`/${workspaceSlug}/${pageId}`)
-                    }
-                    onPrefetch={(pageId) =>
-                      router.prefetch(`/${workspaceSlug}/${pageId}`)
-                    }
+                    href={`/${workspaceSlug}/${node.page.id}`}
                     onCreate={actions.handleCreate}
                     onDuplicate={actions.handleDuplicate}
                     onDelete={setDeleteTarget}

@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import { FileText, StarOff, Table2 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { getClient } from "@/lib/supabase/lazy-client";
@@ -20,7 +21,6 @@ interface FavoritesSectionProps {
 }
 
 export function FavoritesSection({ userId }: FavoritesSectionProps) {
-  const router = useRouter();
   const params = useParams<{ workspaceSlug?: string; pageId?: string }>();
   const { workspaceId, workspaceSlug } = useWorkspace();
   const [favorites, setFavorites] = useState<FavoriteWithPage[]>([]);
@@ -124,7 +124,6 @@ export function FavoritesSection({ userId }: FavoritesSectionProps) {
                 ? "bg-overlay-active font-medium text-label-subtle"
                 : "text-muted-foreground hover:bg-overlay-hover"
             }`}
-            onMouseEnter={() => router.prefetch(`/${workspaceSlug}/${fav.page_id}`)}
           >
             <span className="flex h-4 w-4 shrink-0 items-center justify-center">
               {fav.pages.icon ? (
@@ -136,14 +135,12 @@ export function FavoritesSection({ userId }: FavoritesSectionProps) {
               )}
             </span>
 
-            <button
+            <Link
+              href={`/${workspaceSlug}/${fav.page_id}`}
               className="flex-1 truncate text-left focus-visible:bg-overlay-active focus-visible:outline-none"
-              onClick={() =>
-                router.push(`/${workspaceSlug}/${fav.page_id}`)
-              }
             >
               {fav.pages.title || "Untitled"}
-            </button>
+            </Link>
 
             <button
               className="flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground opacity-0 hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring group-hover:opacity-100"

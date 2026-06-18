@@ -113,7 +113,7 @@ test.describe("Workspace home — Import Markdown", () => {
     await waitForWorkspaceHome(main);
 
     // The imported page should appear in the page list
-    const pageItem = main.locator("button.text-left.text-sm", {
+    const pageItem = main.locator("a.text-left.text-sm", {
       hasText: "verify-in-list",
     });
     await expect(pageItem.first()).toBeVisible({ timeout: 10_000 });
