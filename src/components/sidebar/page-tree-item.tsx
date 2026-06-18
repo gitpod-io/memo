@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   ChevronRight,
   Copy,
@@ -35,8 +36,7 @@ export interface PageTreeItemProps {
   focusedId?: string | null;
   tabbableId?: string | null;
   renamingId?: string | null;
-  onNavigate: (pageId: string) => void;
-  onPrefetch: (pageId: string) => void;
+  href: string;
   onCreate: (parentId: string | null) => void;
   onDuplicate: (page: SidebarPage) => void;
   onDelete: (node: TreeNode) => void;
@@ -64,8 +64,7 @@ export function PageTreeItem({
   expanded,
   toggleExpand,
   selectedPageId,
-  onNavigate,
-  onPrefetch,
+  href,
   onCreate,
   onDuplicate,
   onDelete,
@@ -154,7 +153,6 @@ export function PageTreeItem({
         } ${isDragged ? "opacity-50" : ""}`}
         style={{ paddingLeft: `${depth * 12 + 4}px` }}
         draggable
-        onMouseEnter={() => onPrefetch(page.id)}
         onDragStart={(e) => onDragStart(e, page.id)}
         onDragOver={(e) => onDragOver(e, page.id)}
         onDragLeave={onDragLeave}
@@ -229,14 +227,15 @@ export function PageTreeItem({
             data-testid="rename-input"
           />
         ) : (
-          <button
+          <Link
+            href={href}
             className="flex-1 truncate text-left focus-visible:bg-overlay-active focus-visible:outline-none"
-            onClick={() => onNavigate(page.id)}
             tabIndex={-1}
             title={page.title || "Untitled"}
+            onClick={(e) => e.stopPropagation()}
           >
             {page.title || "Untitled"}
-          </button>
+          </Link>
         )}
 
         <div className="flex shrink-0 items-center gap-0.5 opacity-0 group-hover:opacity-100">

@@ -9,12 +9,12 @@ function getAllPagesSection(main: Locator): Locator {
 }
 
 /**
- * Returns the page-list buttons inside the "All Pages" section only.
- * Excludes buttons from "Recently Visited" and the filter/sort toolbar.
+ * Returns the page-list links inside the "All Pages" section only.
+ * Excludes items from "Recently Visited" and the filter/sort toolbar.
  */
 function getPageListItems(main: Locator): Locator {
   const section = getAllPagesSection(main);
-  return section.locator("button.text-left.text-sm");
+  return section.locator("a.text-left.text-sm");
 }
 
 /**
@@ -316,7 +316,7 @@ test.describe("Workspace home page interactions", () => {
       const trimmedTitle = visitedTitle.trim();
       // The recently visited section container (has data-testid)
       const recentContainer = page.getByTestId("wh-recently-visited");
-      const recentItem = recentContainer.locator("button", {
+      const recentItem = recentContainer.locator("a", {
         hasText: trimmedTitle,
       });
       await expect(recentItem.first()).toBeVisible({ timeout: 5_000 });

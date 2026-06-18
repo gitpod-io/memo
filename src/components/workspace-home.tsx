@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { FileText, Plus, Search, Table2, Upload } from "lucide-react";
@@ -400,14 +401,14 @@ export function WorkspaceHome({
                   )
                 }
               >
-                <button
+                <Link
+                  href={`/${workspace.slug}/${visit.page_id}`}
                   role="option"
                   aria-selected={recentRoving.focusedId === visit.page_id}
                   data-item-id={visit.page_id}
                   data-testid={`wh-recent-item-${visit.page_id}`}
                   tabIndex={recentRoving.tabbableId === visit.page_id ? 0 : -1}
                   className="flex items-center gap-2 px-3 py-2 text-left text-sm transition-none hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
-                  onClick={() => navigateToPage(visit.page_id)}
                 >
                   <span className="flex h-4 w-4 shrink-0 items-center justify-center">
                     {visit.icon ? (
@@ -434,7 +435,7 @@ export function WorkspaceHome({
                     dateStr={visit.visited_at}
                     className="shrink-0 text-xs text-muted-foreground"
                   />
-                </button>
+                </Link>
               </PageItemContextMenu>
             ))}
           </div>
@@ -565,14 +566,14 @@ export function WorkspaceHome({
                         )
                       }
                     >
-                      <button
+                      <Link
+                        href={`/${workspace.slug}/${page.id}`}
                         role="option"
                         aria-selected={allPagesRoving.focusedId === page.id}
                         data-item-id={page.id}
                         data-testid={`wh-page-item-${page.id}`}
                         tabIndex={allPagesRoving.tabbableId === page.id ? 0 : -1}
                         className="flex h-full w-full items-center gap-2 px-3 text-left text-sm transition-none hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
-                        onClick={() => navigateToPage(page.id)}
                       >
                         <span className="flex h-4 w-4 shrink-0 items-center justify-center">
                           {page.icon ? (
@@ -599,7 +600,7 @@ export function WorkspaceHome({
                           dateStr={page.updated_at}
                           className="shrink-0 text-xs text-muted-foreground"
                         />
-                      </button>
+                      </Link>
                     </PageItemContextMenu>
                   </div>
                 );
