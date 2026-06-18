@@ -35,24 +35,32 @@ export const Loading: Story = {
   ),
 };
 
-/** Loaded state — full settings page content. */
+/** Loaded state — full settings page content with tab navigation. */
 export const Loaded: Story = {
   render: () => (
     <div className="mx-auto max-w-xl p-6">
-      <div className="flex items-center gap-4">
-        <h1 className="text-2xl font-semibold text-foreground">
-          Workspace settings
-        </h1>
-        <a
-          href="#"
-          className="text-sm text-accent underline-offset-4 hover:underline"
-        >
-          Members
-        </a>
-      </div>
+      <h1 className="text-2xl font-semibold text-foreground">
+        Workspace settings
+      </h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Manage your workspace name, URL, and other settings.
       </p>
+      <div className="mt-4">
+        <nav className="flex border-b border-overlay-border">
+          <a
+            href="#"
+            className="border-b-2 border-accent px-3 pb-2 text-sm text-foreground"
+          >
+            General
+          </a>
+          <a
+            href="#"
+            className="px-3 pb-2 text-sm text-muted-foreground hover:text-foreground"
+          >
+            Members
+          </a>
+        </nav>
+      </div>
       <div className="mt-6 space-y-4">
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">
