@@ -575,6 +575,7 @@ src/
 │   ├── page-count-announcer.tsx  # Screen-reader live region for page count changes (mirrors RowCountAnnouncer)
 │   ├── settings-page-client.tsx  # Client wrapper: lazy-loads SettingsPageContent via next/dynamic
 │   ├── settings-page-content.tsx # Settings page layout: form + change password + danger zone
+│   ├── settings-tab-nav.tsx      # Shared tab nav (General | Members) for settings sub-pages
 │   ├── workspace-settings-form.tsx # Edit workspace name/slug, lazy-loads delete workspace section
 │   ├── delete-workspace-section.tsx # Workspace deletion danger zone with AlertDialog confirmation
 │   ├── danger-zone-settings.tsx # Client wrapper: lazy-loads DeleteAccountSection via next/dynamic

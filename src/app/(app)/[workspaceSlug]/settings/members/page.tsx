@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MembersPageClient } from "@/components/members/members-page-client";
+import { SettingsTabNav } from "@/components/settings-tab-nav";
 import type { WorkspaceInviteWithInviter } from "@/lib/types";
 import {
   membersWithFullProfile,
@@ -101,6 +102,9 @@ export default async function WorkspaceMembersPage({
       <p className="mt-1 text-sm text-muted-foreground">
         Manage who has access to this workspace.
       </p>
+      <div className="mt-4">
+        <SettingsTabNav workspaceSlug={workspace.slug} />
+      </div>
       <div className="mt-6">
         <MembersPageClient
           workspace={workspace}
