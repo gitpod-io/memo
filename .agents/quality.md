@@ -33,9 +33,9 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 
 | Category | Files | Tests |
 |---|---|---|
-| Unit/Integration (Vitest) | 154 | 2147 |
+| Unit/Integration (Vitest) | 154 | 2160 |
 | E2E (Playwright) | 103 | 480 |
-| **Total** | **257** | **2627** |
+| **Total** | **257** | **2640** |
 
 ### Test files by domain
 
@@ -51,7 +51,7 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 - **Feedback**: `feedback/route.test.ts` (22 tests), `feedback-form-design-spec.test.ts` (5 tests), `use-screenshot.test.ts` (2 tests), `e2e/feedback.spec.ts` (6 tests)
 - **API**: `health/route.test.ts` (13 tests), `search/route.test.ts` (14 tests), `account/route.test.ts` (9 tests), `cron/purge-trash/route.test.ts` (10 tests), `feedback/route.test.ts` (22 tests), `pages/[pageId]/versions/route.test.ts` (17 tests), `pages/[pageId]/versions/route.rate-limit.test.ts` (3 tests), `pages/[pageId]/versions/[versionId]/route.test.ts` (14 tests), `pages/[pageId]/versions/[versionId]/route.rate-limit.test.ts` (3 tests), `e2e/account-deletion.spec.ts` (4 tests), `e2e/account-settings.spec.ts` (5 tests)
 - **UI**: `overlay-opacity.test.ts` (2 tests), `toast-error-duration.test.ts` (1 test), `dialog-design-spec.test.ts` (3 tests), `design-spec-compliance.test.ts` (14 tests), `relative-time.test.ts` (7 tests), `reduced-motion.test.ts` (6 tests), `e2e/visual-regression.spec.ts` (1 test), `e2e/live-visual-regression.spec.ts` (1 test)
-- **Lib**: `sentry.test.ts` (4 tests), `sentry.unit.test.ts` (180 tests), `classification-edge-cases.test.ts` (42 tests), `api-route-consistency.test.ts` (6 tests), `retry.test.ts` (16 tests), `rate-limit.test.ts` (17 tests), `track-event-server.test.ts` (9 tests), `track-event.test.ts` (4 tests), `usage-tracking-guard.test.ts` (5 tests), `use-roving-tabindex.test.ts` (13 tests)
+- **Lib**: `sentry.test.ts` (4 tests), `sentry.unit.test.ts` (193 tests), `classification-edge-cases.test.ts` (42 tests), `api-route-consistency.test.ts` (6 tests), `retry.test.ts` (16 tests), `rate-limit.test.ts` (17 tests), `track-event-server.test.ts` (9 tests), `track-event.test.ts` (4 tests), `usage-tracking-guard.test.ts` (5 tests), `use-roving-tabindex.test.ts` (13 tests)
 - **Infrastructure**: `migrations.test.ts` (33 tests), `build-timeseries.test.mjs` (6 tests), `supabase/client.test.ts` (7 tests), `supabase/proxy.test.ts` (2 tests), `security-headers.test.ts` (18 tests)
 
 ## Known Gaps
@@ -215,4 +215,5 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 | 2026-06-11 | Add empty state to slash command menu (#1349). Updated `e2e/editor-slash-commands.spec.ts` (6→8): 2 new tests for empty state display and recovery. Updated Storybook `EmptyFilterResult` story with data-testid attributes. Test totals: 153 Vitest files (2138 tests), 103 E2E specs (480 tests). |
 | 2026-06-11 | Show parent breadcrumb context in sidebar search results (#1350). Added 1 new Vitest file: `breadcrumb.test.ts` (9 tests). Extracted `buildBreadcrumbMap` and `getParentBreadcrumb` from `command-palette.tsx` into shared `src/lib/breadcrumb.ts`. Added `WithBreadcrumbs` Storybook story. Test totals: 154 Vitest files (2147 tests), 103 E2E specs (480 tests). |
 | 2026-06-15 | Add ARIA live region roles to app-side form feedback messages (#1372). Updated existing tests in `workspace-settings-form.test.tsx` and `create-workspace-dialog.test.tsx` to assert `role="alert"` on error messages and `role="status"` on success messages. No new test files. Test totals unchanged: 154 Vitest files (2147 tests), 103 E2E specs (480 tests). |
+| 2026-06-20 | Filter browser extension noise from Sentry (#1400). Updated `sentry.unit.test.ts` (180→193): 13 new tests for `isBrowserExtensionNoise` covering MetaMask inpage.js errors, chrome/moz/safari-extension frame detection, mixed extension sources, chained exceptions, and negative cases. Test totals: 154 Vitest files (2160 tests), 103 E2E specs (480 tests). |
 

@@ -31,6 +31,7 @@ import {
   captureApiError,
   isNextjsInternalNoise,
   isReactLexicalDomConflict,
+  isBrowserExtensionNoise,
   isE2ETestSession,
   isE2ETestRequest,
   shouldDropServerEvent,
@@ -1854,5 +1855,185 @@ describe("shouldDropServerEvent", () => {
     } as unknown as ErrorEvent;
     expect(shouldDropServerEvent(event)).toBe(true);
     mockScopeData = {};
+  });
+});
+
+describe("isBrowserExtensionNoise", () => {
+  it("detects MetaMask 'Failed to connect' error from inpage.js (MEMO-2M)", () => {
+    const event = {
+      type: undefined,
+      exception: {
+        values: [
+          {
+            type: "Error",
+            value: "MetaMask extension not found",
+            stacktrace: {
+              frames: [
+                { filename: "app:///scripts/inpage.js", lineno: 4 },
+              ],
+            },
+          },
+          {
+            type: "i",
+            value: "i: Failed to connect to MetaMask",
+            stacktrace: {
+              frames: [
+                { filename: "app:///scripts/inpage.js", lineno: 7 },
+              ],
+            },
+          },
+        ],
+      },
+    } as unknown as ErrorEvent;
+    expect(isBrowserExtensionNoise(event)).toBe(true);
+  });
+
+  it("detects error by message alone without stack frames", () => {
+    const event = makeSentryEvent([
+      { type: "Error", value: "i: Failed to connect to MetaMask" },
+    ]);
+    expect(isBrowserExtensionNoise(event)).toBe(true);
+  });
+
+  it("detects 'MetaMask extension not found' message", () => {
+    const event = makeSentryEvent([
+      { type: "Error", value: "MetaMask extension not found" },
+    ]);
+    expect(isBrowserExtensionNoise(event)).toBe(true);
+  });
+
+  it("detects errors with all frames from chrome-extension://", () => {
+    const event = {
+      type: undefined,
+      exception: {
+        values: [
+          {
+            type: "Error",
+            value: "Some extension error",
+            stacktrace: {
+              frames: [
+                { filename: "chrome-extension://abc123/content.js" },
+                { filename: "chrome-extension://abc123/background.js" },
+              ],
+            },
+          },
+        ],
+      },
+    } as unknown as ErrorEvent;
+    expect(isBrowserExtensionNoise(event)).toBe(true);
+  });
+
+  it("detects errors with all frames from moz-extension://", () => {
+    const event = {
+      type: undefined,
+      exception: {
+        values: [
+          {
+            type: "Error",
+            value: "Some extension error",
+            stacktrace: {
+              frames: [
+                { filename: "moz-extension://abc123/content.js" },
+              ],
+            },
+          },
+        ],
+      },
+    } as unknown as ErrorEvent;
+    expect(isBrowserExtensionNoise(event)).toBe(true);
+  });
+
+  it("detects errors with all frames from safari-extension://", () => {
+    const event = {
+      type: undefined,
+      exception: {
+        values: [
+          {
+            type: "Error",
+            value: "Some extension error",
+            stacktrace: {
+              frames: [
+                { filename: "safari-extension://abc123/content.js" },
+              ],
+            },
+          },
+        ],
+      },
+    } as unknown as ErrorEvent;
+    expect(isBrowserExtensionNoise(event)).toBe(true);
+  });
+
+  it("returns false when frames include first-party code", () => {
+    const event = {
+      type: undefined,
+      exception: {
+        values: [
+          {
+            type: "Error",
+            value: "Some error",
+            stacktrace: {
+              frames: [
+                { filename: "chrome-extension://abc123/content.js" },
+                { filename: "webpack-internal:///src/app/page.tsx" },
+              ],
+            },
+          },
+        ],
+      },
+    } as unknown as ErrorEvent;
+    expect(isBrowserExtensionNoise(event)).toBe(false);
+  });
+
+  it("returns false for unrelated errors without extension frames", () => {
+    const event = makeSentryEvent([
+      { type: "TypeError", value: "Cannot read properties of undefined" },
+    ]);
+    expect(isBrowserExtensionNoise(event)).toBe(false);
+  });
+
+  it("returns false when exception values are empty", () => {
+    const event = makeSentryEvent([]);
+    expect(isBrowserExtensionNoise(event)).toBe(false);
+  });
+
+  it("returns false when exception is missing", () => {
+    const event = { type: undefined } as ErrorEvent;
+    expect(isBrowserExtensionNoise(event)).toBe(false);
+  });
+
+  it("returns false for frameless events without extension messages", () => {
+    const event = makeSentryEvent([
+      { type: "Error", value: "Some random error" },
+    ]);
+    expect(isBrowserExtensionNoise(event)).toBe(false);
+  });
+
+  it("detects chained exceptions where one has extension message", () => {
+    const event = makeSentryEvent([
+      { type: "Error", value: "Wrapper error" },
+      { type: "Error", value: "MetaMask extension not found" },
+    ]);
+    expect(isBrowserExtensionNoise(event)).toBe(true);
+  });
+
+  it("detects mixed extension frame sources (chrome + inpage.js)", () => {
+    const event = {
+      type: undefined,
+      exception: {
+        values: [
+          {
+            type: "Error",
+            value: "Some error",
+            stacktrace: {
+              frames: [
+                { filename: "app:///scripts/inpage.js" },
+                { filename: "chrome-extension://def456/inject.js" },
+              ],
+            },
+          },
+        ],
+      },
+    } as unknown as ErrorEvent;
+    expect(isBrowserExtensionNoise(event)).toBe(true);
   });
 });
