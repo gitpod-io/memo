@@ -121,6 +121,52 @@ function matchTransientSupabaseNetworkEvent(event: ErrorEvent): boolean {
   );
 }
 
+/** Filenames that indicate a browser extension injected script. */
+const EXTENSION_PATH_PATTERNS = [
+  "chrome-extension://",
+  "moz-extension://",
+  "safari-extension://",
+  "app:///scripts/inpage.js",
+];
+
+/** Known error messages from browser extensions that are not actionable. */
+const EXTENSION_ERROR_MESSAGES = [
+  "Failed to connect to MetaMask",
+  "MetaMask extension not found",
+];
+
+function matchBrowserExtensionNoise(event: ErrorEvent): boolean {
+  const values = event.exception?.values;
+  if (!values || values.length === 0) return false;
+
+  // Match if any exception value contains a known extension error message
+  const hasExtensionMessage = values.some((ex) =>
+    EXTENSION_ERROR_MESSAGES.some(
+      (msg) => typeof ex.value === "string" && ex.value.includes(msg),
+    ),
+  );
+  if (hasExtensionMessage) return true;
+
+  // Match if ALL exceptions have stack frames exclusively from extension paths
+  const allFramesFromExtensions = values.every((ex) => {
+    const frames = ex.stacktrace?.frames;
+    if (!frames || frames.length === 0) return true;
+    return frames.every((frame) => {
+      const filename = frame.filename ?? frame.abs_path ?? "";
+      return EXTENSION_PATH_PATTERNS.some((pattern) =>
+        filename.includes(pattern),
+      );
+    });
+  });
+
+  // Only match if there are actual frames to check (avoid matching frameless events)
+  const hasAnyFrames = values.some(
+    (ex) => ex.stacktrace?.frames && ex.stacktrace.frames.length > 0,
+  );
+
+  return hasAnyFrames && allFramesFromExtensions;
+}
+
 function matchSupabaseAuthLockContention(event: ErrorEvent): boolean {
   const values = event.exception?.values;
   if (!values || values.length === 0) return false;
@@ -173,6 +219,14 @@ export const NOISE_REGISTRY: NoisePattern[] = [
       "from Supabase operations. Not actionable — caused by client connectivity.",
   },
   {
+    name: "browser-extension-noise",
+    scope: "client",
+    match: matchBrowserExtensionNoise,
+    reason:
+      "Errors from browser extensions (MetaMask, etc.) injected into the page. " +
+      "No application code involved — all stack frames originate from extension scripts.",
+  },
+  {
     name: "supabase-auth-lock-contention",
     scope: "both",
     match: matchSupabaseAuthLockContention,
@@ -196,3 +250,4 @@ export const isNextjsInternalNoise = matchNextjsInternalNoise;
 export const isReactLexicalDomConflict = matchReactLexicalDomConflict;
 export const isTransientSupabaseNetworkEvent = matchTransientSupabaseNetworkEvent;
 export const isSupabaseAuthLockContention = matchSupabaseAuthLockContention;
+export const isBrowserExtensionNoise = matchBrowserExtensionNoise;

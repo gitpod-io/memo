@@ -27,6 +27,7 @@ export {
   isReactLexicalDomConflict,
   isTransientSupabaseNetworkEvent,
   isSupabaseAuthLockContention,
+  isBrowserExtensionNoise,
   NOISE_REGISTRY,
 } from "./noise-registry";
 
