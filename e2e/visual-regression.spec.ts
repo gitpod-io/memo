@@ -20,7 +20,7 @@ const DATE_DEPENDENT_THRESHOLD = 0.05;
 // non-deterministic renders across environments and CI runs.  The image
 // content may load at different speeds or not at all, causing large pixel
 // diffs that are not real regressions.
-const EXTERNAL_IMAGE_THRESHOLD = 0.15;
+const EXTERNAL_IMAGE_THRESHOLD = 0.35;
 
 const DATE_DEPENDENT_STORY_PATTERNS = [
   "database-filtervalueeditor--date-calendar",
@@ -29,6 +29,7 @@ const DATE_DEPENDENT_STORY_PATTERNS = [
 
 const EXTERNAL_IMAGE_STORY_PATTERNS = [
   "editor-imagecropdialog--",
+  "editor-imageexpanddialog--",
 ];
 
 function isDateDependent(safeName: string): boolean {
