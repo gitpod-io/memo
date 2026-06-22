@@ -228,7 +228,7 @@ export function FilterBar({
             <button
               type="button"
               onClick={() => removeFilter(index)}
-              className="ml-0.5 text-muted-foreground hover:text-destructive"
+              className="ml-0.5 text-muted-foreground hover:text-destructive focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               aria-label={`Remove ${propName} filter`}
             >
               <X className="h-3 w-3" />

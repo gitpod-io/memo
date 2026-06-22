@@ -197,6 +197,7 @@ export const TableCell = memo(function TableCell({
             checked
               ? "border-primary bg-primary text-primary-foreground"
               : "border-input bg-transparent",
+            "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
           )}
           aria-label={checked ? "Uncheck" : "Check"}
         >

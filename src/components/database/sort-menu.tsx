@@ -129,7 +129,7 @@ export function SortMenu({
                     <button
                       type="button"
                       onClick={() => toggleDirection(index)}
-                      className="flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground"
+                      className="flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                       aria-label={`Sort ${sort.direction === "asc" ? "ascending" : "descending"}`}
                       data-testid={`db-sort-direction-${index}`}
                     >
@@ -143,7 +143,7 @@ export function SortMenu({
                     <button
                       type="button"
                       onClick={() => removeSort(index)}
-                      className="text-muted-foreground hover:text-destructive"
+                      className="text-muted-foreground hover:text-destructive focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                       aria-label={`Remove ${propName} sort`}
                     >
                       <Trash2 className="h-3 w-3" />
@@ -160,7 +160,7 @@ export function SortMenu({
               <button
                 type="button"
                 onClick={() => setPickingProperty(true)}
-                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground focus-visible:bg-overlay-active focus-visible:outline-none"
               >
                 <Plus className="h-3 w-3" />
                 Add sort
@@ -178,7 +178,7 @@ export function SortMenu({
                     key={prop.id}
                     type="button"
                     onClick={() => addSort(prop.id)}
-                    className="flex w-full items-center gap-2 px-2 py-1.5 text-sm hover:bg-overlay-hover"
+                    className="flex w-full items-center gap-2 px-2 py-1.5 text-sm hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
                   >
                     <Icon className="h-3.5 w-3.5 text-muted-foreground" />
                     <span>{prop.name}</span>

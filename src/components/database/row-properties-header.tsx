@@ -202,6 +202,7 @@ function PropertyValueCell({
       className={cn(
         "min-w-0 text-left",
         hasValue ? "cursor-text" : "cursor-text",
+        "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
       )}
       onClick={() => setEditing(true)}
     >
@@ -279,7 +280,7 @@ export function RowPropertiesHeader({
       {needsCollapse && (
         <button
           type="button"
-          className="mt-2 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-none"
+          className="mt-2 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           onClick={() => setExpanded((prev) => !prev)}
         >
           {expanded ? (

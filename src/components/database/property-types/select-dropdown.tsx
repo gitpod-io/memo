@@ -149,6 +149,7 @@ export function SelectDropdown({
                 className={cn(
                   "flex w-full items-center gap-2 px-2 py-1 text-sm",
                   "hover:bg-overlay-hover",
+                  "focus-visible:bg-overlay-active focus-visible:outline-none",
                 )}
               >
                 {multi && (
@@ -192,7 +193,7 @@ export function SelectDropdown({
           <button
             type="button"
             onClick={handleCreate}
-            className="flex w-full items-center gap-2 px-2 py-1 text-sm hover:bg-overlay-hover"
+            className="flex w-full items-center gap-2 px-2 py-1 text-sm hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
           >
             <Plus className="size-3.5 text-muted-foreground" />
             <span className="text-muted-foreground">Create</span>
@@ -224,6 +225,7 @@ function ColorDot({
         "flex size-4 shrink-0 items-center justify-center rounded-full",
         styles.bg,
         "hover:ring-1 hover:ring-accent",
+        "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
       )}
       aria-label="Change color"
     >
@@ -261,6 +263,7 @@ function ColorPicker({
               styles.bg,
               isActive && "ring-1 ring-accent",
               "hover:ring-1 hover:ring-accent",
+              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
             )}
             aria-label={`Color: ${color}`}
           >

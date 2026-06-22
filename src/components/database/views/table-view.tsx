@@ -403,7 +403,7 @@ export const TableView = memo(function TableView({
           <button
             type="button"
             onClick={() => onAddRow()}
-            className="w-full border-t border-overlay-border p-2 text-left text-sm text-muted-foreground hover:bg-overlay-subtle"
+            className="w-full border-t border-overlay-border p-2 text-left text-sm text-muted-foreground hover:bg-overlay-subtle focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             data-testid="db-table-add-row"
           >
             + New
@@ -614,7 +614,7 @@ export const TableView = memo(function TableView({
         <button
           type="button"
           onClick={() => onAddRow()}
-          className="w-full border-t border-overlay-border p-2 text-left text-sm text-muted-foreground hover:bg-overlay-subtle"
+          className="w-full border-t border-overlay-border p-2 text-left text-sm text-muted-foreground hover:bg-overlay-subtle focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           data-testid="db-table-add-row"
         >
           + New

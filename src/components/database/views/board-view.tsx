@@ -404,7 +404,7 @@ function BoardColumn({
           type="button"
           onClick={() => onAddCard(column.id)}
           aria-label={`Add card to ${column.label}`}
-          className="mt-1 w-full p-1.5 text-left text-xs text-muted-foreground hover:bg-overlay-hover"
+          className="mt-1 w-full p-1.5 text-left text-xs text-muted-foreground hover:bg-overlay-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         >
           + New
         </button>

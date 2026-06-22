@@ -306,6 +306,7 @@ export function PersonEditor({
                 className={cn(
                   "flex w-full items-center gap-2 px-2 py-1.5 text-sm",
                   "hover:bg-overlay-hover",
+                  "focus-visible:bg-overlay-active focus-visible:outline-none",
                 )}
               >
                 <span

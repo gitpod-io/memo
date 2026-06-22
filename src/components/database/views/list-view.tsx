@@ -101,7 +101,7 @@ export const ListView = memo(function ListView({
           <button
             type="button"
             onClick={handleAddRow}
-            className="flex w-full items-center gap-1.5 border-t border-overlay-border px-3 py-2 text-sm text-muted-foreground hover:bg-overlay-hover"
+            className="flex w-full items-center gap-1.5 border-t border-overlay-border px-3 py-2 text-sm text-muted-foreground hover:bg-overlay-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           >
             <Plus className="h-3.5 w-3.5" />
             New
@@ -137,7 +137,7 @@ export const ListView = memo(function ListView({
         <button
           type="button"
           onClick={handleAddRow}
-          className="flex w-full items-center gap-1.5 border-t border-overlay-border px-3 py-2 text-sm text-muted-foreground hover:bg-overlay-hover"
+          className="flex w-full items-center gap-1.5 border-t border-overlay-border px-3 py-2 text-sm text-muted-foreground hover:bg-overlay-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         >
           <Plus className="h-3.5 w-3.5" />
           New

@@ -137,7 +137,7 @@ export const TableRow = memo(function TableRow({
         <button
           type="button"
           onClick={() => onDeleteRow(row.page.id)}
-          className="ml-1 shrink-0 text-muted-foreground opacity-0 hover:text-destructive group-hover/row:opacity-100"
+          className="ml-1 shrink-0 text-muted-foreground opacity-0 hover:text-destructive group-hover/row:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:opacity-100"
           aria-label="Delete row"
         >
           <Trash2 className="h-3.5 w-3.5" />

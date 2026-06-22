@@ -345,6 +345,7 @@ export function ViewTabs({
                           ? "border-b-2 border-accent text-foreground"
                           : "text-muted-foreground hover:text-foreground",
                         isDragging && "opacity-50",
+                        "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                       )}
                     >
                       {onReorderViews && (

@@ -171,7 +171,7 @@ function FileListItem({
           e.stopPropagation();
           onRemove();
         }}
-        className="shrink-0 text-muted-foreground hover:text-destructive"
+        className="shrink-0 text-muted-foreground hover:text-destructive focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         aria-label={`Remove ${file.name}`}
       >
         <X className="size-3.5" />
