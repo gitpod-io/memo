@@ -439,7 +439,7 @@ function CalendarDayCell({
                 setShowAll(true);
               }}
               aria-label={`Show ${overflowCount} more items for ${cell.date}`}
-              className="w-full px-1 py-0.5 text-left text-xs text-muted-foreground hover:text-foreground"
+              className="w-full px-1 py-0.5 text-left text-xs text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               +{overflowCount} more
             </button>

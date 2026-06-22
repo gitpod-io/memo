@@ -158,6 +158,7 @@ export const GalleryView = memo(function GalleryView({
             className={cn(
               "flex items-center justify-center border border-dashed border-overlay-strong bg-muted/50",
               "text-muted-foreground hover:border-overlay-heavy hover:text-foreground",
+              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
               cardSizeClass,
             )}
           >

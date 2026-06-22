@@ -185,6 +185,7 @@ export function TableColumnHeader({
               sortRule
                 ? "text-muted-foreground"
                 : "text-transparent group-hover/header:text-muted-foreground/50",
+              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
             )}
             aria-label={`Sort by ${property.name}`}
           >

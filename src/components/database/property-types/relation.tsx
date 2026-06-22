@@ -66,7 +66,7 @@ function RelationPill({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex max-w-[160px] items-center gap-1 bg-muted px-1.5 py-0.5 text-sm text-foreground hover:bg-overlay-active align-baseline cursor-pointer"
+      className="inline-flex max-w-[160px] items-center gap-1 bg-muted px-1.5 py-0.5 text-sm text-foreground hover:bg-overlay-active align-baseline cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
       title={page.title}
       aria-label={`Navigate to ${page.title || "Untitled"}`}
     >
@@ -376,6 +376,7 @@ export function RelationEditor({
                 className={cn(
                   "flex w-full items-center gap-2 px-2 py-1 text-sm",
                   "hover:bg-overlay-hover",
+                  "focus-visible:bg-overlay-active focus-visible:outline-none",
                 )}
               >
                 {row.icon ? (

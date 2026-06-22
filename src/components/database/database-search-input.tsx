@@ -68,7 +68,7 @@ export function DatabaseSearchInput({
           onClick={handleClear}
           aria-label="Clear search"
           data-testid="db-search-clear"
-          className="absolute right-1.5 flex h-4 w-4 items-center justify-center text-muted-foreground hover:text-foreground"
+          className="absolute right-1.5 flex h-4 w-4 items-center justify-center text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         >
           <X className="h-3 w-3" />
         </button>

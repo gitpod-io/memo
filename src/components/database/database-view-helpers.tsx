@@ -127,7 +127,7 @@ export function WrapCellsToggle({ value, onChange }: WrapCellsToggleProps) {
     <button
       type="button"
       className={cn(
-        "inline-flex h-7 items-center gap-1 rounded-sm px-2 text-xs outline-none transition-colors",
+        "inline-flex h-7 items-center gap-1 rounded-sm px-2 text-xs outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring",
         value
           ? "bg-overlay-active text-foreground"
           : "text-muted-foreground hover:bg-overlay-border hover:text-foreground",

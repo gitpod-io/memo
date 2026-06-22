@@ -193,7 +193,7 @@ function SelectFilterValueEditor({
             role="option"
             aria-selected={false}
             onClick={() => onSelectValue(opt.id)}
-            className="flex w-full items-center gap-2 px-2 py-1 text-sm hover:bg-overlay-hover"
+            className="flex w-full items-center gap-2 px-2 py-1 text-sm hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
           >
             <SelectOptionBadge name={opt.name} color={opt.color} />
           </button>
@@ -261,7 +261,7 @@ export function PropertyPicker({
             role="option"
             aria-selected={false}
             onClick={() => onSelect(prop.id)}
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-overlay-hover"
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
           >
             <Icon className="h-3.5 w-3.5 text-muted-foreground" />
             <span>{prop.name}</span>
@@ -303,6 +303,7 @@ export function OperatorPicker({
           onClick={() => onSelect(op)}
           className={cn(
             "flex w-full items-center px-3 py-1.5 text-sm hover:bg-overlay-hover",
+            "focus-visible:bg-overlay-active focus-visible:outline-none",
           )}
           data-testid={`db-filter-operator-${op}`}
         >

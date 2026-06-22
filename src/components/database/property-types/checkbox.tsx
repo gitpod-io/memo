@@ -24,7 +24,7 @@ function CheckboxCell({
       aria-label={propertyName ? `Edit ${propertyName} checkbox property` : undefined}
       data-testid="db-cell-editor-checkbox"
       onClick={onToggle}
-      className="flex h-full w-full items-center justify-center"
+      className="flex h-full w-full items-center justify-center focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
     >
       <span
         className={cn(

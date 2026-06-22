@@ -249,6 +249,7 @@ export function DatePicker({
                 "hover:bg-overlay-hover",
                 isSelected && "bg-accent text-background font-medium",
                 isToday && !isSelected && "text-accent font-medium",
+                "focus-visible:bg-overlay-active focus-visible:outline-none",
               )}
             >
               {day}
