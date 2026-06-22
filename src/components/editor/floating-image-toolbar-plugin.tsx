@@ -268,7 +268,7 @@ function ToolbarButton({
   return (
     <button
       type="button"
-      className={`flex h-7 w-7 items-center justify-center text-xs ${
+      className={`flex h-7 w-7 items-center justify-center text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
         active
           ? "bg-overlay-active text-foreground"
           : "text-muted-foreground hover:bg-overlay-hover hover:text-foreground"

@@ -217,7 +217,7 @@ export function FloatingLinkEditorPlugin({
           />
           <button
             type="button"
-            className="flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center text-muted-foreground hover:text-foreground"
+            className="flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             onClick={handleSave}
             aria-label="Save link"
             data-testid="editor-link-save"
@@ -226,7 +226,7 @@ export function FloatingLinkEditorPlugin({
           </button>
           <button
             type="button"
-            className="flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center text-muted-foreground hover:text-foreground"
+            className="flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             onClick={() => {
               setIsEditing(false);
               setEditedUrl(linkUrl);
@@ -250,7 +250,7 @@ export function FloatingLinkEditorPlugin({
           </a>
           <button
             type="button"
-            className="flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center text-muted-foreground hover:text-foreground"
+            className="flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             onClick={() => window.open(linkUrl, "_blank", "noopener")}
             aria-label="Open link"
             data-testid="editor-link-open"
@@ -259,7 +259,7 @@ export function FloatingLinkEditorPlugin({
           </button>
           <button
             type="button"
-            className="flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center text-muted-foreground hover:text-foreground"
+            className="flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             onClick={() => setIsEditing(true)}
             aria-label="Edit link"
             data-testid="editor-link-edit"
@@ -268,7 +268,7 @@ export function FloatingLinkEditorPlugin({
           </button>
           <button
             type="button"
-            className="flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center text-destructive hover:text-destructive/80"
+            className="flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center text-destructive hover:text-destructive/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             onClick={handleRemove}
             aria-label="Remove link"
             data-testid="editor-link-remove"

@@ -332,7 +332,7 @@ function ToolbarButton({
           <button
             type="button"
             onMouseDown={(e) => e.preventDefault()}
-            className={`flex h-11 w-11 sm:h-7 sm:w-7 items-center justify-center text-sm ${
+            className={`flex h-11 w-11 sm:h-7 sm:w-7 items-center justify-center text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
               active
                 ? "bg-overlay-active text-foreground"
                 : "text-muted-foreground hover:bg-overlay-hover hover:text-foreground"

@@ -146,7 +146,7 @@ function LanguageDropdown({
       <button
         ref={triggerRef}
         type="button"
-        className="flex items-center gap-1 px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-overlay-hover rounded-sm transition-none"
+        className="flex items-center gap-1 px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-overlay-hover rounded-sm transition-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -180,7 +180,7 @@ function LanguageDropdown({
               type="button"
               role="option"
               aria-selected={opt.value === language}
-              className={`flex w-full items-center px-2 py-1 text-left text-xs ${
+              className={`flex w-full items-center px-2 py-1 text-left text-xs focus-visible:bg-overlay-active focus-visible:outline-none ${
                 opt.value === language
                   ? "text-foreground bg-overlay-active"
                   : focusedIndex === index
