@@ -274,7 +274,7 @@ function InlineDatabaseComponent({
                       e.stopPropagation();
                       handleViewChange(view.id);
                     }}
-                    className={`flex items-center gap-1 px-1.5 py-0.5 text-xs ${
+                    className={`flex items-center gap-1 px-1.5 py-0.5 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
                       view.id === activeViewId
                         ? "text-foreground"
                         : "text-muted-foreground hover:text-foreground"
@@ -291,7 +291,7 @@ function InlineDatabaseComponent({
 
         <button
           onClick={handleNavigate}
-          className="shrink-0 text-muted-foreground hover:text-foreground"
+          className="shrink-0 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           aria-label="Open full database"
         >
           <Maximize2 className="h-3.5 w-3.5" />

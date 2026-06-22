@@ -351,7 +351,7 @@ export function PageSearch() {
         {query && (
           <button
             onClick={handleClear}
-            className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-1.5 text-muted-foreground hover:text-foreground"
+            className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-1.5 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             aria-label="Clear search"
           >
             <X className="h-3.5 w-3.5" />
@@ -393,7 +393,7 @@ export function PageSearch() {
                 id={`search-result-${result.id}`}
                 role="option"
                 aria-selected={index === selectedIndex}
-                className={`flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-none ${
+                className={`flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-none focus-visible:bg-overlay-active focus-visible:outline-none ${
                   index === selectedIndex
                     ? "bg-overlay-active"
                     : "hover:bg-overlay-hover"

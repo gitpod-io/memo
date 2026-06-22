@@ -467,7 +467,7 @@ export function PageLinkPlugin(): JSX.Element | null {
             key={page.id}
             id={`page-link-option-${page.id}`}
             data-testid="pls-result-item"
-            className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm outline-none ${
+            className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm outline-none focus-visible:bg-overlay-active focus-visible:outline-none ${
               selectedIndex === index
                 ? "bg-overlay-active text-foreground"
                 : "text-muted-foreground hover:bg-overlay-hover"
