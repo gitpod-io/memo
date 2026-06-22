@@ -16,14 +16,30 @@ const STORYBOOK_URL = process.env.STORYBOOK_URL ?? "http://localhost:6099";
 // "today") get an even higher allowance.
 const DEFAULT_THRESHOLD = 0.02;
 const DATE_DEPENDENT_THRESHOLD = 0.05;
+// Stories that load images from external URLs (e.g. picsum.photos) produce
+// non-deterministic renders across environments and CI runs.  The image
+// content may load at different speeds or not at all, causing large pixel
+// diffs that are not real regressions.
+const EXTERNAL_IMAGE_THRESHOLD = 0.45;
 
 const DATE_DEPENDENT_STORY_PATTERNS = [
   "database-filtervalueeditor--date-calendar",
   "database-calendarview--",
 ];
 
+const EXTERNAL_IMAGE_STORY_PATTERNS = [
+  "editor-imagecropdialog--",
+  "editor-imageexpanddialog--",
+];
+
 function isDateDependent(safeName: string): boolean {
   return DATE_DEPENDENT_STORY_PATTERNS.some((pattern) =>
+    safeName.startsWith(pattern),
+  );
+}
+
+function usesExternalImages(safeName: string): boolean {
+  return EXTERNAL_IMAGE_STORY_PATTERNS.some((pattern) =>
     safeName.startsWith(pattern),
   );
 }
@@ -53,9 +69,11 @@ test.describe("visual regression", () => {
         .replace(/[^a-zA-Z0-9-]/g, "-")
         .toLowerCase();
 
-      const threshold = isDateDependent(safeName)
-        ? DATE_DEPENDENT_THRESHOLD
-        : DEFAULT_THRESHOLD;
+      const threshold = usesExternalImages(safeName)
+        ? EXTERNAL_IMAGE_THRESHOLD
+        : isDateDependent(safeName)
+          ? DATE_DEPENDENT_THRESHOLD
+          : DEFAULT_THRESHOLD;
 
       await expect(page).toHaveScreenshot(`${safeName}.png`, {
         maxDiffPixelRatio: threshold,
