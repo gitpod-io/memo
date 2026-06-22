@@ -432,7 +432,7 @@ export function SlashCommandPlugin({ onExport, onImport }: SlashCommandPluginPro
                 key={option.key}
                 id={`slash-cmd-option-${option.key}`}
                 ref={(el) => option.setRefElement(el)}
-                className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm outline-none ${
+                className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm outline-none focus-visible:bg-overlay-active focus-visible:outline-none ${
                   selectedIndex === index
                     ? "bg-overlay-active text-foreground"
                     : "text-muted-foreground hover:bg-overlay-hover"

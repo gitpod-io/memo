@@ -117,28 +117,28 @@ function TableActionMenu({
       style={{ top: anchorPosition.y, left: anchorPosition.x }}
     >
       <button
-        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-overlay-hover hover:text-foreground"
+        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-overlay-hover hover:text-foreground focus-visible:bg-overlay-active focus-visible:outline-none"
         onClick={insertRowAbove}
       >
         <ArrowDown className="h-4 w-4 rotate-180" />
         Insert row above
       </button>
       <button
-        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-overlay-hover hover:text-foreground"
+        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-overlay-hover hover:text-foreground focus-visible:bg-overlay-active focus-visible:outline-none"
         onClick={insertRowBelow}
       >
         <ArrowDown className="h-4 w-4" />
         Insert row below
       </button>
       <button
-        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-overlay-hover hover:text-foreground"
+        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-overlay-hover hover:text-foreground focus-visible:bg-overlay-active focus-visible:outline-none"
         onClick={insertColumnLeft}
       >
         <ArrowRight className="h-4 w-4 rotate-180" />
         Insert column left
       </button>
       <button
-        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-overlay-hover hover:text-foreground"
+        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-overlay-hover hover:text-foreground focus-visible:bg-overlay-active focus-visible:outline-none"
         onClick={insertColumnRight}
       >
         <ArrowRight className="h-4 w-4" />
@@ -146,21 +146,21 @@ function TableActionMenu({
       </button>
       <div className="my-1 border-t border-overlay-border" />
       <button
-        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-destructive hover:bg-overlay-hover"
+        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-destructive hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
         onClick={deleteRow}
       >
         <Trash2 className="h-4 w-4" />
         Delete row
       </button>
       <button
-        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-destructive hover:bg-overlay-hover"
+        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-destructive hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
         onClick={deleteColumn}
       >
         <Trash2 className="h-4 w-4" />
         Delete column
       </button>
       <button
-        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-destructive hover:bg-overlay-hover"
+        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-destructive hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
         onClick={deleteTable}
       >
         <Trash2 className="h-4 w-4" />
@@ -298,7 +298,7 @@ function TableCellMenuTrigger({
   return (
     <button
       ref={buttonRef}
-      className="fixed z-40 flex h-5 w-5 items-center justify-center text-muted-foreground opacity-60 hover:opacity-100 focus:opacity-100"
+      className="fixed z-40 flex h-5 w-5 items-center justify-center text-muted-foreground opacity-60 hover:opacity-100 focus:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
       onClick={onMenuOpen}
       aria-label="Table cell actions"
     >

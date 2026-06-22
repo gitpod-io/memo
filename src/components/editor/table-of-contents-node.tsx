@@ -132,7 +132,7 @@ function TableOfContentsComponent(): JSX.Element {
               <button
                 type="button"
                 onClick={() => handleClick(entry.key)}
-                className="w-full text-left text-sm text-muted-foreground hover:text-foreground transition-colors py-0.5"
+                className="w-full text-left text-sm text-muted-foreground hover:text-foreground transition-colors py-0.5 focus-visible:bg-overlay-active focus-visible:outline-none"
                 data-testid={`toc-entry-${entry.tag}`}
               >
                 {entry.text || "Untitled"}
