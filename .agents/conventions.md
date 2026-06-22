@@ -618,6 +618,31 @@ export default function GlobalError({
 - Layout, navigation structure → server component
 - Real-time subscriptions → client component
 
+### Navigation: `Link` vs `router.push`
+
+Use Next.js `<Link>` for declarative navigation (user clicks to go somewhere):
+
+```typescript
+import Link from "next/link";
+
+// Sidebar page items, workspace home page list, tab navigation
+<Link href={`/${workspaceSlug}/${page.id}`}>{page.title}</Link>
+```
+
+Use `router.push` for programmatic navigation (after an action completes):
+
+```typescript
+const router = useRouter();
+
+// After creating a page, after search selection, after sign-out
+const newPage = await createPage();
+router.push(`/${workspaceSlug}/${newPage.id}`);
+```
+
+`Link` enables prefetching and avoids full-page reloads. `router.push` is for
+navigation that follows a mutation or user action where the destination isn't
+known until the action completes.
+
 ## Theme (Light/Dark Mode)
 
 Theme is managed by `src/lib/theme.tsx` which provides `ThemeProvider` and `useTheme`.
