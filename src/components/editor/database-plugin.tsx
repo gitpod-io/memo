@@ -382,7 +382,7 @@ export function DatabasePlugin(): JSX.Element | null {
       <div className="max-h-[260px] overflow-y-auto p-1">
         {/* Create new database option — always first */}
         <button
-          className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm outline-none ${
+          className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm outline-none focus-visible:bg-overlay-active focus-visible:outline-none ${
             selectedIndex === 0
               ? "bg-overlay-active text-foreground"
               : "text-muted-foreground hover:bg-overlay-hover"
@@ -408,7 +408,7 @@ export function DatabasePlugin(): JSX.Element | null {
         {results.map((db, index) => (
           <button
             key={db.id}
-            className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm outline-none ${
+            className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm outline-none focus-visible:bg-overlay-active focus-visible:outline-none ${
               selectedIndex === index + 1
                 ? "bg-overlay-active text-foreground"
                 : "text-muted-foreground hover:bg-overlay-hover"

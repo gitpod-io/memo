@@ -198,7 +198,7 @@ export function AccountSettingsForm({
             type="button"
             onClick={handleAvatarClick}
             disabled={uploading}
-            className="group relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+            className="group relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             aria-label="Change avatar"
             data-testid="avatar-upload-button"
           >

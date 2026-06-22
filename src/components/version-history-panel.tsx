@@ -170,7 +170,7 @@ export function VersionHistoryPanel({
                     ? handleDeselect()
                     : handleSelectVersion(version.id)
                 }
-                className={`w-full border-b border-overlay-border px-4 py-3 text-left transition-none hover:bg-overlay-hover ${
+                className={`w-full border-b border-overlay-border px-4 py-3 text-left transition-none hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none ${
                   selectedId === version.id ? "bg-overlay-active" : ""
                 }`}
               >

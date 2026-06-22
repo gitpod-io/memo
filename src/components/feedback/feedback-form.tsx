@@ -275,7 +275,7 @@ export function FeedbackFormContent({
             <button
               type="button"
               onClick={screenshot.remove}
-              className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center bg-destructive text-destructive-foreground opacity-0 transition-opacity before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-[''] group-hover:opacity-100"
+              className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center bg-destructive text-destructive-foreground opacity-0 transition-opacity before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-[''] group-hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:opacity-100"
               aria-label="Remove screenshot"
             >
               <X className="h-3 w-3" />
@@ -285,7 +285,7 @@ export function FeedbackFormContent({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex h-20 items-center justify-center gap-2 border border-dashed border-overlay-border text-muted-foreground transition-colors hover:border-overlay-strong hover:text-foreground"
+            className="flex h-20 items-center justify-center gap-2 border border-dashed border-overlay-border text-muted-foreground transition-colors hover:border-overlay-strong hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           >
             <ImagePlus className="h-4 w-4" />
             <span className="text-xs">Upload screenshot</span>
@@ -303,7 +303,7 @@ export function FeedbackFormContent({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="self-start text-xs text-muted-foreground transition-colors hover:text-foreground"
+            className="self-start text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           >
             Replace image
           </button>

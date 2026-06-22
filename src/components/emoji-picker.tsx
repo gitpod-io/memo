@@ -197,7 +197,7 @@ export function EmojiPicker({
           {hasIcon && onRemove && (
             <button
               onClick={handleRemove}
-              className="mb-2 w-full px-2 py-1 text-left text-xs text-muted-foreground hover:bg-overlay-hover"
+              className="mb-2 w-full px-2 py-1 text-left text-xs text-muted-foreground hover:bg-overlay-hover focus-visible:bg-overlay-active focus-visible:outline-none"
             >
               Remove icon
             </button>
@@ -213,7 +213,7 @@ export function EmojiPicker({
                     <button
                       key={emoji}
                       onClick={() => handleSelect(emoji)}
-                      className="flex min-h-11 min-w-11 items-center justify-center text-lg hover:bg-overlay-hover sm:min-h-8 sm:min-w-8"
+                      className="flex min-h-11 min-w-11 items-center justify-center text-lg hover:bg-overlay-hover sm:min-h-8 sm:min-w-8 focus-visible:bg-overlay-active focus-visible:outline-none"
                       aria-label={`Select ${emoji}`}
                     >
                       {emoji}
