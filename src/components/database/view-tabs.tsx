@@ -225,7 +225,7 @@ export function ViewTabs({
     (e: React.KeyboardEvent<HTMLButtonElement>) => {
       const viewIds = views.map((v) => v.id);
       const currentIndex = viewIds.indexOf(
-        (e.currentTarget as HTMLElement).getAttribute("data-view-id") ?? "",
+        e.currentTarget.getAttribute("data-view-id") ?? "",
       );
       if (currentIndex === -1) return;
 
