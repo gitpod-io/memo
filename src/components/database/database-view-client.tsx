@@ -8,7 +8,7 @@ import { AlertCircle } from "lucide-react";
 import { PageTitle } from "@/components/page-title";
 import { PageIcon } from "@/components/page-icon";
 import { PageCover } from "@/components/page-cover";
-import { ViewTabs } from "@/components/database/view-tabs";
+import { ViewTabs, viewTabId, viewTabPanelId } from "@/components/database/view-tabs";
 import { SortMenu } from "@/components/database/sort-menu";
 import { FilterBar } from "@/components/database/filter-bar";
 import { DatabaseSearchInput } from "@/components/database/database-search-input";
@@ -472,7 +472,12 @@ export function DatabaseViewClient(props: DatabaseViewClientProps) {
               </div>
             )}
 
-            <div className="mt-0">
+            <div
+              className="mt-0"
+              role="tabpanel"
+              id={viewTabPanelId(activeViewId)}
+              aria-labelledby={viewTabId(activeViewId)}
+            >
               {activeView?.type === "table" ? (
                 <TableView
                   rows={searchFilteredRows}

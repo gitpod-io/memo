@@ -196,6 +196,22 @@ export const WithoutReorder: Story = {
   },
 };
 
+/** Keyboard navigation — focus the first tab and use Arrow keys, Home, End. */
+export const KeyboardNavigation: Story = {
+  args: {
+    views: allViewTypes,
+    activeViewId: "view-table",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Focus a tab and use Arrow Left/Right to move between tabs (wraps at edges). Home/End jump to first/last tab. Only the active tab has tabIndex=0; others use tabIndex=-1.",
+      },
+    },
+  },
+};
+
 /** Many views — tests horizontal overflow scrolling. */
 export const ManyViews: Story = {
   args: {

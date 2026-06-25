@@ -86,6 +86,20 @@ const VIEW_CHUNK_PRELOADERS: Record<DatabaseViewType, () => void> = {
 };
 
 // ---------------------------------------------------------------------------
+// ARIA ID helpers (exported for tabpanel aria-labelledby in consumers)
+// ---------------------------------------------------------------------------
+
+/** Stable DOM id for a tab element, used by tabpanel's aria-labelledby. */
+export function viewTabId(viewId: string): string {
+  return `db-view-tab-${viewId}`;
+}
+
+/** Stable DOM id for the tabpanel associated with a view tab. */
+export function viewTabPanelId(viewId: string): string {
+  return `db-view-tabpanel-${viewId}`;
+}
+
+// ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
 
@@ -204,6 +218,45 @@ export function ViewTabs({
   );
 
   // ---------------------------------------------------------------------------
+  // Arrow key navigation between tabs (WAI-ARIA Tabs pattern, manual activation)
+  // ---------------------------------------------------------------------------
+
+  const handleTabKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLButtonElement>) => {
+      const viewIds = views.map((v) => v.id);
+      const currentIndex = viewIds.indexOf(
+        e.currentTarget.getAttribute("data-view-id") ?? "",
+      );
+      if (currentIndex === -1) return;
+
+      let targetIndex: number | null = null;
+
+      switch (e.key) {
+        case "ArrowRight":
+          targetIndex = currentIndex < viewIds.length - 1 ? currentIndex + 1 : 0;
+          break;
+        case "ArrowLeft":
+          targetIndex = currentIndex > 0 ? currentIndex - 1 : viewIds.length - 1;
+          break;
+        case "Home":
+          targetIndex = 0;
+          break;
+        case "End":
+          targetIndex = viewIds.length - 1;
+          break;
+        default:
+          return;
+      }
+
+      e.preventDefault();
+      const targetId = viewTabId(viewIds[targetIndex]);
+      const targetEl = document.getElementById(targetId);
+      targetEl?.focus();
+    },
+    [views],
+  );
+
+  // ---------------------------------------------------------------------------
   // Context menu actions
   // ---------------------------------------------------------------------------
 
@@ -307,7 +360,7 @@ export function ViewTabs({
   return (
     <>
       <div className="flex items-center border-b border-overlay-border" data-testid="db-view-tabs">
-        <div className="flex items-center gap-0 overflow-x-auto">
+        <div className="flex items-center gap-0 overflow-x-auto" role="tablist" aria-label="Database views">
           {views.map((view, index) => {
             const Icon = VIEW_TYPE_ICON[view.type];
             const isActive = view.id === activeViewId;
@@ -335,9 +388,16 @@ export function ViewTabs({
 
                     <button
                       type="button"
+                      role="tab"
+                      id={viewTabId(view.id)}
+                      aria-selected={isActive}
+                      aria-controls={viewTabPanelId(view.id)}
+                      tabIndex={isActive ? 0 : -1}
+                      data-view-id={view.id}
                       onClick={() => handleTabClick(view.id)}
                       onDoubleClick={() => handleDoubleClick(view.id)}
                       onMouseEnter={() => VIEW_CHUNK_PRELOADERS[view.type]()}
+                      onKeyDown={renamingViewId === null ? handleTabKeyDown : undefined}
                       data-testid={`db-view-tab-${view.id}`}
                       className={cn(
                         "group/tab flex shrink-0 items-center gap-1.5 px-3 py-2 text-sm transition-colors",

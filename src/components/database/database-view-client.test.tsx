@@ -64,6 +64,8 @@ vi.mock("@/components/database/view-tabs", () => ({
     calendar: "Calendar",
     gallery: "Gallery",
   },
+  viewTabId: (id: string) => `db-view-tab-${id}`,
+  viewTabPanelId: (id: string) => `db-view-tabpanel-${id}`,
 }));
 
 vi.mock("@/components/database/sort-menu", () => ({

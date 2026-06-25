@@ -3,7 +3,7 @@ import { render, screen, fireEvent, within, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { DatabaseView } from "@/lib/types";
-import { ViewTabs, type ViewTabsProps } from "./view-tabs";
+import { ViewTabs, viewTabId, viewTabPanelId, type ViewTabsProps } from "./view-tabs";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -45,7 +45,7 @@ function defaultProps(overrides: Partial<ViewTabsProps> = {}): ViewTabsProps {
 
 /** Get the tab button for a view by its name text. */
 function getTab(name: string) {
-  return screen.getByRole("button", { name: new RegExp(name) });
+  return screen.getByRole("tab", { name: new RegExp(name) });
 }
 
 // ---------------------------------------------------------------------------
@@ -338,9 +338,7 @@ describe("ViewTabs — drag-and-drop reorder", () => {
     const props = defaultProps();
     render(<ViewTabs {...props} />);
 
-    const tabs = screen.getAllByRole("button").filter((btn) =>
-      defaultViews.some((v) => btn.textContent?.includes(v.name)),
-    );
+    const tabs = screen.getAllByRole("tab");
 
     // Find the context menu triggers (draggable elements wrapping the tabs)
     const draggables = screen
@@ -443,3 +441,132 @@ describe("ViewTabs — drag-and-drop reorder", () => {
     expect(props.onReorderViews).not.toHaveBeenCalled();
   });
 });
+
+// ---------------------------------------------------------------------------
+// ARIA tab pattern
+// ---------------------------------------------------------------------------
+
+describe("ViewTabs — ARIA attributes", () => {
+  it("renders a tablist with aria-label", () => {
+    render(<ViewTabs {...defaultProps()} />);
+    const tablist = screen.getByRole("tablist");
+    expect(tablist).toHaveAttribute("aria-label", "Database views");
+  });
+
+  it("renders each view as a tab with role='tab'", () => {
+    render(<ViewTabs {...defaultProps()} />);
+    const tabs = screen.getAllByRole("tab");
+    expect(tabs).toHaveLength(3);
+  });
+
+  it("sets aria-selected='true' on the active tab and 'false' on others", () => {
+    render(<ViewTabs {...defaultProps({ activeViewId: "view-2" })} />);
+
+    expect(getTab("Table View")).toHaveAttribute("aria-selected", "false");
+    expect(getTab("Board View")).toHaveAttribute("aria-selected", "true");
+    expect(getTab("List View")).toHaveAttribute("aria-selected", "false");
+  });
+
+  it("sets tabIndex=0 on the active tab and tabIndex=-1 on inactive tabs", () => {
+    render(<ViewTabs {...defaultProps({ activeViewId: "view-1" })} />);
+
+    expect(getTab("Table View")).toHaveAttribute("tabindex", "0");
+    expect(getTab("Board View")).toHaveAttribute("tabindex", "-1");
+    expect(getTab("List View")).toHaveAttribute("tabindex", "-1");
+  });
+
+  it("sets id and aria-controls on each tab", () => {
+    render(<ViewTabs {...defaultProps()} />);
+
+    const tab1 = getTab("Table View");
+    expect(tab1).toHaveAttribute("id", viewTabId("view-1"));
+    expect(tab1).toHaveAttribute("aria-controls", viewTabPanelId("view-1"));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Keyboard navigation
+// ---------------------------------------------------------------------------
+
+describe("ViewTabs — keyboard navigation", () => {
+  it("ArrowRight moves focus to the next tab", async () => {
+    const user = userEvent.setup();
+    render(<ViewTabs {...defaultProps()} />);
+
+    const tab1 = getTab("Table View");
+    tab1.focus();
+    expect(tab1).toHaveFocus();
+
+    await user.keyboard("{ArrowRight}");
+    expect(getTab("Board View")).toHaveFocus();
+  });
+
+  it("ArrowLeft moves focus to the previous tab", async () => {
+    const user = userEvent.setup();
+    render(<ViewTabs {...defaultProps({ activeViewId: "view-2" })} />);
+
+    const tab2 = getTab("Board View");
+    tab2.focus();
+
+    await user.keyboard("{ArrowLeft}");
+    expect(getTab("Table View")).toHaveFocus();
+  });
+
+  it("ArrowRight wraps from last tab to first tab", async () => {
+    const user = userEvent.setup();
+    render(<ViewTabs {...defaultProps({ activeViewId: "view-3" })} />);
+
+    const tab3 = getTab("List View");
+    tab3.focus();
+
+    await user.keyboard("{ArrowRight}");
+    expect(getTab("Table View")).toHaveFocus();
+  });
+
+  it("ArrowLeft wraps from first tab to last tab", async () => {
+    const user = userEvent.setup();
+    render(<ViewTabs {...defaultProps()} />);
+
+    const tab1 = getTab("Table View");
+    tab1.focus();
+
+    await user.keyboard("{ArrowLeft}");
+    expect(getTab("List View")).toHaveFocus();
+  });
+
+  it("Home moves focus to the first tab", async () => {
+    const user = userEvent.setup();
+    render(<ViewTabs {...defaultProps({ activeViewId: "view-3" })} />);
+
+    const tab3 = getTab("List View");
+    tab3.focus();
+
+    await user.keyboard("{Home}");
+    expect(getTab("Table View")).toHaveFocus();
+  });
+
+  it("End moves focus to the last tab", async () => {
+    const user = userEvent.setup();
+    render(<ViewTabs {...defaultProps()} />);
+
+    const tab1 = getTab("Table View");
+    tab1.focus();
+
+    await user.keyboard("{End}");
+    expect(getTab("List View")).toHaveFocus();
+  });
+
+  it("does not activate tab on arrow key (manual activation mode)", async () => {
+    const user = userEvent.setup();
+    const props = defaultProps();
+    render(<ViewTabs {...props} />);
+
+    const tab1 = getTab("Table View");
+    tab1.focus();
+
+    await user.keyboard("{ArrowRight}");
+    // Focus moved but onViewChange should NOT have been called
+    expect(props.onViewChange).not.toHaveBeenCalled();
+  });
+});
+
