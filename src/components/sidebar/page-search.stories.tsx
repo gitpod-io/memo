@@ -77,15 +77,25 @@ function renderSnippet(snippet: string) {
 function SearchShell({
   query,
   showClear,
+  announcement,
   children,
 }: {
   query: string;
   showClear: boolean;
+  announcement?: string;
   children?: React.ReactNode;
 }) {
   return (
     <div className="relative w-56 bg-muted p-2">
       <div className="relative px-1">
+        <span
+          className="sr-only"
+          aria-live="polite"
+          role="status"
+          data-testid="search-result-announcer"
+        >
+          {announcement ?? ""}
+        </span>
         <div className="relative">
           <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -161,7 +171,7 @@ function ResultItem({
 
 export const WithResults: Story = {
   render: () => (
-    <SearchShell query="standup" showClear>
+    <SearchShell query="standup" showClear announcement="3 results found">
       <div
         role="listbox"
         className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] overflow-y-auto border border-overlay-border bg-muted rounded-sm shadow-md"
@@ -180,7 +190,7 @@ export const WithResults: Story = {
 
 export const NoResults: Story = {
   render: () => (
-    <SearchShell query="xyznonexistent" showClear>
+    <SearchShell query="xyznonexistent" showClear announcement="No results found">
       <div
         role="listbox"
         className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] overflow-y-auto border border-overlay-border bg-muted rounded-sm shadow-md"
@@ -254,7 +264,7 @@ const breadcrumbResults = [
 export const WithBreadcrumbs: Story = {
   name: "With Breadcrumb Context",
   render: () => (
-    <SearchShell query="untitled" showClear>
+    <SearchShell query="untitled" showClear announcement="4 results found">
       <div
         role="listbox"
         className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] overflow-y-auto border border-overlay-border bg-muted rounded-sm shadow-md"
