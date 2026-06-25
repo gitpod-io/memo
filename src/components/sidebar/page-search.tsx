@@ -44,11 +44,13 @@ export function PageSearch() {
   const [open, setOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [pages, setPages] = useState<SidebarPage[]>([]);
+  const [announcement, setAnnouncement] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const pagesFetchedForRef = useRef<string | null>(null);
+  const announcerFirstRender = useRef(true);
   // Cancelled flag: set to true by the effect cleanup so stale async
   // callbacks (from aborted fetches) never update state. Unlike the
   // generation counter this replaces, a boolean flag cannot be
@@ -61,6 +63,32 @@ export function PageSearch() {
   useEffect(() => {
     registerSearchRef(inputRef);
   }, [registerSearchRef]);
+
+  // Announce search result count to screen readers when search completes.
+  // Debounced by 300ms to avoid rapid-fire announcements during typing.
+  // Skips the first render so opening the search doesn't trigger an announcement.
+  useEffect(() => {
+    if (announcerFirstRender.current) {
+      announcerFirstRender.current = false;
+      return;
+    }
+
+    if (searchStatus !== "done") return;
+
+    const count = results.length;
+    const text =
+      count === 0
+        ? "No results found"
+        : count === 1
+          ? "1 result found"
+          : `${count} results found`;
+
+    const timer = setTimeout(() => {
+      setAnnouncement(text);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchStatus, results.length]);
 
   // Fetch workspace pages for breadcrumb context when search opens.
   // Only fetches once per workspace — subsequent opens reuse cached data.
@@ -231,6 +259,7 @@ export function PageSearch() {
     setQuery("");
     setResults([]);
     setSearchStatus("idle");
+    setAnnouncement("");
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -267,6 +296,7 @@ export function PageSearch() {
     setQuery("");
     setResults([]);
     setSearchStatus("idle");
+    setAnnouncement("");
     setOpen(false);
     inputRef.current?.focus();
   }
@@ -321,6 +351,14 @@ export function PageSearch() {
 
   return (
     <div ref={containerRef} className="relative px-1">
+      <span
+        className="sr-only"
+        aria-live="polite"
+        role="status"
+        data-testid="search-result-announcer"
+      >
+        {announcement}
+      </span>
       <div className="relative">
         <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input

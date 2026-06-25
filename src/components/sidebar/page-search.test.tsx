@@ -802,4 +802,188 @@ describe("PageSearch", () => {
       expect.objectContaining({ signal: expect.any(AbortSignal) })
     );
   });
+
+  it("announces result count to screen readers after search completes", async () => {
+    const mockResults = {
+      results: [
+        {
+          id: "page-1",
+          workspace_id: "ws-uuid-123",
+          parent_id: null,
+          title: "Result One",
+          icon: null,
+          is_database: false,
+          snippet: "<<test>> content",
+          rank: 0.5,
+        },
+        {
+          id: "page-2",
+          workspace_id: "ws-uuid-123",
+          parent_id: null,
+          title: "Result Two",
+          icon: null,
+          is_database: false,
+          snippet: "<<test>> content two",
+          rank: 0.4,
+        },
+      ],
+    };
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify(mockResults), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime,
+    });
+
+    render(<PageSearch />);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(50);
+    });
+
+    const input = screen.getByRole("combobox", { name: /search pages/i });
+    await user.click(input);
+    await user.type(input, "test");
+
+    // Advance past the 300ms search debounce
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    // Advance past the 300ms announcer debounce
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    const announcer = screen.getByTestId("search-result-announcer");
+    expect(announcer).toHaveTextContent("2 results found");
+  });
+
+  it("announces 'No results found' when search returns empty", async () => {
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime,
+    });
+
+    render(<PageSearch />);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(50);
+    });
+
+    const input = screen.getByRole("combobox", { name: /search pages/i });
+    await user.click(input);
+    await user.type(input, "zzzyyyxxxnonexistent999");
+
+    // Advance past the 300ms search debounce
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    // Advance past the 300ms announcer debounce
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    const announcer = screen.getByTestId("search-result-announcer");
+    expect(announcer).toHaveTextContent("No results found");
+  });
+
+  it("does not announce on first render", async () => {
+    render(<PageSearch />);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    const announcer = screen.getByTestId("search-result-announcer");
+    expect(announcer).toHaveTextContent("");
+  });
+
+  it("does not announce during loading state", async () => {
+    // Hang the fetch so status stays at "loading"
+    fetchMock.mockImplementation(
+      () => new Promise(() => {})
+    );
+
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime,
+    });
+
+    render(<PageSearch />);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(50);
+    });
+
+    const input = screen.getByRole("combobox", { name: /search pages/i });
+    await user.click(input);
+    await user.type(input, "test");
+
+    // Advance past the 300ms search debounce (fetch hangs)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    // Advance past the 300ms announcer debounce
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    const announcer = screen.getByTestId("search-result-announcer");
+    expect(announcer).toHaveTextContent("");
+  });
+
+  it("announces '1 result found' for a single result", async () => {
+    const mockResults = {
+      results: [
+        {
+          id: "page-1",
+          workspace_id: "ws-uuid-123",
+          parent_id: null,
+          title: "Only Result",
+          icon: null,
+          is_database: false,
+          snippet: "<<single>> match",
+          rank: 0.5,
+        },
+      ],
+    };
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify(mockResults), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime,
+    });
+
+    render(<PageSearch />);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(50);
+    });
+
+    const input = screen.getByRole("combobox", { name: /search pages/i });
+    await user.click(input);
+    await user.type(input, "single");
+
+    // Advance past the 300ms search debounce
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    // Advance past the 300ms announcer debounce
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    const announcer = screen.getByTestId("search-result-announcer");
+    expect(announcer).toHaveTextContent("1 result found");
+  });
 });
