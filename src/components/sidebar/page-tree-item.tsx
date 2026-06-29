@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   ChevronRight,
   Copy,
+  ExternalLink,
   FileText,
   GripVertical,
   Link2,
@@ -272,6 +273,14 @@ export function PageTreeItem({
               <DropdownMenuItem onClick={() => onCreate(page.id)}>
                 <Plus className="h-4 w-4" />
                 Add sub-page
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  window.open(href, "_blank");
+                }}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Open in new tab
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onToggleFavorite(page.id)}>
                 {isFavorited ? (
