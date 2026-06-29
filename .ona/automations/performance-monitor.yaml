@@ -38,6 +38,11 @@ action:
                    Flag any route marked ❌ (over 200kB gzipped budget).
                    Do NOT estimate sizes from `pnpm build` console output — those numbers
                    use a different methodology and will not match CI.
+                   Do NOT manually sum chunks from `build-manifest.json` — that file
+                   includes a `polyfillFiles` entry (~39 kB gzipped) loaded with the
+                   `noModule` attribute, which modern browsers skip entirely. Including
+                   it overcounts first-load JS by ~39 kB. Always use `pnpm test:bundle`
+                   as the single source of truth. See docs/bundle-budget.md.
 
                 ## Output
 

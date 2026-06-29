@@ -9,6 +9,12 @@
  * per-route-group breakdown. This helps identify when a new dependency or
  * eager import inflates the shared chunks that affect all routes.
  *
+ * Note: route-bundle-stats.json excludes the legacy polyfill chunk (~39 kB
+ * gzipped) because it is loaded with the `noModule` HTML attribute. Modern
+ * browsers (all Next.js targets) skip noModule scripts entirely, so the
+ * polyfill does not contribute to first-load JS for real users.
+ * See docs/bundle-budget.md for the full measurement methodology.
+ *
  * Usage: node scripts/check-bundle.mjs
  * Requires: a prior `pnpm build` so .next/diagnostics exists.
  */

@@ -5,7 +5,7 @@ Framework baseline budget: **160 kB** gzipped (shared by all routes).
 
 Enforced by `pnpm test:bundle` (runs `scripts/check-bundle.mjs`).
 
-## Current state (2026-06-08)
+## Current state (2026-06-29)
 
 All 12 routes are within budget. The heaviest route is `/account` at ~184 kB.
 
@@ -14,10 +14,10 @@ All 12 routes are within budget. The heaviest route is `/account` at ~184 kB.
 | /account | 184 kB | 16 kB |
 | /sign-up | 180 kB | 20 kB |
 | /sign-in | 180 kB | 20 kB |
+| /[workspaceSlug]/settings/members | 178 kB | 22 kB |
 | /reset-password | 178 kB | 22 kB |
 | /forgot-password | 178 kB | 22 kB |
 | /[workspaceSlug]/[pageId] | 178 kB | 22 kB |
-| /[workspaceSlug]/settings/members | 175 kB | 25 kB |
 | /[workspaceSlug]/settings | 174 kB | 26 kB |
 | /[workspaceSlug] | 174 kB | 26 kB |
 | /invite/[token] | 170 kB | 30 kB |
@@ -113,3 +113,43 @@ Before merging, verify your changes don't regress bundle size:
 - **Eager imports in error boundaries** — use `LazyRouteError` from `src/components/lazy-route-error.tsx`
 - **Adding providers to root layout** — every provider in `providers.tsx` adds to the framework baseline for all routes; add new providers to `lazy-providers.tsx` instead
 - **`import { X } from "large-package"` in a `"use client"` file** — even if tree-shaken, the package's shared code may be pulled in
+- **Counting `polyfillFiles` from `build-manifest.json` as first-load JS** — the
+  polyfill chunk (~39 kB gzipped) is loaded with `noModule` attribute, meaning
+  modern browsers skip it entirely. See "Measurement methodology" below.
+
+## Measurement methodology
+
+The canonical measurement tool is `pnpm test:bundle` (`scripts/check-bundle.mjs`).
+It reads `.next/diagnostics/route-bundle-stats.json`, gzips each chunk file on disk,
+and sums per route. This is the same data source CI uses.
+
+### What counts as first-load JS
+
+First-load JS includes only chunks that modern browsers download before the page
+becomes interactive:
+
+- **rootMainFiles** from `build-manifest.json` — Next.js runtime, React, Turbopack
+- **Route-group shared chunks** — code shared by a subset of routes (e.g., auth UI)
+- **Route-specific chunks** — page components, form logic
+
+### What does NOT count
+
+- **polyfillFiles** — Next.js emits a legacy polyfill chunk (~39 kB gzipped, ~110 kB raw)
+  containing core-js polyfills for `Promise`, `Symbol`, `Array.from`, `Object.assign`,
+  `fetch`, `URL`, `URLSearchParams`, and `queueMicrotask`. This chunk is loaded with
+  the `noModule` HTML attribute (`<script src="..." noModule>`), which means only
+  browsers that do not support ES modules download it. All modern browsers (Chrome 61+,
+  Firefox 60+, Safari 11+, Edge 16+) ignore `noModule` scripts. Since Next.js targets
+  Chrome 111+ by default, no target browser loads this chunk.
+
+- **lowPriorityFiles** — `_buildManifest.js`, `_ssgManifest.js`,
+  `_clientMiddlewareManifest.js`. These are tiny metadata files (~0.5 kB total) that
+  `route-bundle-stats.json` already includes.
+
+### Incorrect methodology (avoid)
+
+Do NOT measure first-load JS by summing `rootMainFiles + polyfillFiles +
+lowPriorityFiles` from `build-manifest.json` plus page-specific chunks from
+`_client-reference-manifest.js`. This overcounts by ~39 kB because it includes the
+`noModule` polyfill that modern browsers never download. Always use
+`pnpm test:bundle` output as the source of truth.
