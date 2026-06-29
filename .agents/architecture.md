@@ -563,14 +563,14 @@ src/
 │   ├── page-backlinks.tsx        # Server component: backlinks section (queries page_links, shows linking pages)
 │   ├── page-content-client.tsx   # Client wrapper: lazy-loads DatabaseViewClient, RowPropertiesHeader, PageViewClient via next/dynamic
 │   ├── page-view-client.tsx     # Client wrapper for page view (holds editor ref, renders icon + title + menu + editor)
-│   ├── page-menu.tsx            # Page "..." dropdown: favorites, duplicate, version history, export/import markdown
+│   ├── page-menu.tsx            # Page "..." dropdown: favorites, duplicate, copy link, version history, export/import markdown
 │   ├── version-history-panel.tsx # Sheet panel: lists page versions, preview, restore
 │   ├── relative-time.tsx        # Client component for "2 hours ago" timestamps (avoids hydration mismatch)
 │   ├── route-error.tsx          # Reusable error boundary UI (Sentry capture + retry button)
 │   ├── lazy-route-error.tsx    # Dynamic-import wrapper for route-error (keeps error boundary JS out of first load)
 │   ├── workspace-home.tsx       # Workspace home: page list or empty state with create CTA
 │   ├── workspace-home-client.tsx # Client wrapper: lazy-loads WorkspaceHome via next/dynamic
-│   ├── page-item-context-menu.tsx # Right-click context menu for page items (Open, Favorite, Duplicate, Delete)
+│   ├── page-item-context-menu.tsx # Right-click context menu for page items (Open, Copy link, Favorite, Duplicate, Delete)
 │   ├── page-count-status-bar.tsx # "X of Y pages" status bar for workspace home (mirrors RowCountStatusBar)
 │   ├── page-count-announcer.tsx  # Screen-reader live region for page count changes (mirrors RowCountAnnouncer)
 │   ├── settings-page-client.tsx  # Client wrapper: lazy-loads SettingsPageContent via next/dynamic

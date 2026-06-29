@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, Download, History, Maximize2, MoreHorizontal, Star, StarOff, Upload } from "lucide-react";
+import { Copy, Download, History, Link2, Maximize2, MoreHorizontal, Star, StarOff, Upload } from "lucide-react";
 import { toast } from "@/lib/toast";
 import type { LexicalEditor } from "lexical";
 import { Button } from "@/components/ui/button";
@@ -182,6 +182,17 @@ export function PageMenu({
     }
   }, [editorRef, pageTitle, userId, workspaceId, pageId]);
 
+  const handleCopyLink = useCallback(async () => {
+    const url = `${window.location.origin}/${workspaceSlug}/${pageId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied");
+    } catch (error) {
+      lazyCaptureException(error);
+      toast.error("Failed to copy link", { duration: 8000 });
+    }
+  }, [workspaceSlug, pageId]);
+
   // ⌘D / Ctrl+D — duplicate page
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -255,6 +266,10 @@ export function PageMenu({
             <span className="ml-auto text-xs text-muted-foreground">
               {isMac ? "⌘D" : "Ctrl+D"}
             </span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleCopyLink}>
+            <Link2 className="h-4 w-4" />
+            Copy link
           </DropdownMenuItem>
           <DropdownMenuItem onClick={onVersionHistoryOpen}>
             <History className="h-4 w-4" />

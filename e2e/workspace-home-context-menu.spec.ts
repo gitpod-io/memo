@@ -90,6 +90,7 @@ test.describe("Workspace home context menu", () => {
     // Check for all expected items
     await expect(page.getByTestId("wh-ctx-open")).toBeVisible();
     await expect(page.getByTestId("wh-ctx-open-new-tab")).toBeVisible();
+    await expect(page.getByTestId("wh-ctx-copy-link")).toBeVisible();
     await expect(page.getByTestId("wh-ctx-toggle-favorite")).toBeVisible();
     await expect(page.getByTestId("wh-ctx-duplicate")).toBeVisible();
     await expect(page.getByTestId("wh-ctx-delete")).toBeVisible();

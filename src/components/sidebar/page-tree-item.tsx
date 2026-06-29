@@ -7,6 +7,7 @@ import {
   Copy,
   FileText,
   GripVertical,
+  Link2,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -15,6 +16,8 @@ import {
   Table2,
   Trash2,
 } from "lucide-react";
+import { toast } from "@/lib/toast";
+import { lazyCaptureException } from "@/lib/sentry";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -286,6 +289,21 @@ export function PageTreeItem({
               <DropdownMenuItem onClick={() => onDuplicate(page)}>
                 <Copy className="h-4 w-4" />
                 Duplicate
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={async () => {
+                  const url = `${window.location.origin}${href}`;
+                  try {
+                    await navigator.clipboard.writeText(url);
+                    toast.success("Link copied");
+                  } catch (error) {
+                    lazyCaptureException(error);
+                    toast.error("Failed to copy link", { duration: 8000 });
+                  }
+                }}
+              >
+                <Link2 className="h-4 w-4" />
+                Copy link
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onStartRename(page.id)}>
                 <Pencil className="h-4 w-4" />
