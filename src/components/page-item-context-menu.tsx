@@ -4,11 +4,14 @@ import type { ReactNode } from "react";
 import {
   Copy,
   ExternalLink,
+  Link2,
   MousePointerClick,
   Star,
   StarOff,
   Trash2,
 } from "lucide-react";
+import { toast } from "@/lib/toast";
+import { lazyCaptureException } from "@/lib/sentry";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -63,6 +66,22 @@ export function PageItemContextMenu({
         >
           <ExternalLink className="h-4 w-4" />
           Open in new tab
+        </ContextMenuItem>
+        <ContextMenuItem
+          onClick={async () => {
+            const url = `${window.location.origin}/${workspaceSlug}/${pageId}`;
+            try {
+              await navigator.clipboard.writeText(url);
+              toast.success("Link copied");
+            } catch (error) {
+              lazyCaptureException(error);
+              toast.error("Failed to copy link", { duration: 8000 });
+            }
+          }}
+          data-testid="wh-ctx-copy-link"
+        >
+          <Link2 className="h-4 w-4" />
+          Copy link
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem

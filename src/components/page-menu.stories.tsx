@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { Copy, Download, History, Maximize2, MoreHorizontal, Star, StarOff, Upload } from "lucide-react";
+import { Copy, Download, History, Link2, Maximize2, MoreHorizontal, Star, StarOff, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -42,6 +42,10 @@ function MenuItems({ favorited = false }: { favorited?: boolean }) {
         <Copy className="h-4 w-4" />
         Duplicate
         <span className="ml-auto text-xs text-muted-foreground">⌘D</span>
+      </DropdownMenuItem>
+      <DropdownMenuItem>
+        <Link2 className="h-4 w-4" />
+        Copy link
       </DropdownMenuItem>
       <DropdownMenuItem>
         <History className="h-4 w-4" />
