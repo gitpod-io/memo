@@ -603,7 +603,8 @@ When a database row is opened as a full page, properties display above the Lexic
 ## Accessibility
 
 - All interactive elements are keyboard-accessible.
-- Focus rings: `ring-2 ring-ring ring-offset-2` for buttons and inputs.
+- Focus rings (standalone/icon buttons): `focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring` — lightweight ring for custom buttons in toolbars, menus, and inline controls.
+- Focus rings (cards/items with keyboard nav): `ring-2 ring-ring ring-offset-2` — heavier ring applied via state (`isFocused`) for board cards, gallery cards, calendar cells, and list rows during arrow-key navigation.
 - Focus highlight for list items (sidebar tree, workspace home rows): `focus-visible:bg-overlay-active focus-visible:outline-none` — background highlight instead of ring to match hover style.
 - Color contrast: minimum 4.5:1 for text, 3:1 for UI elements.
 - Images: always have `alt` text.
@@ -615,7 +616,8 @@ When a database row is opened as a full page, properties display above the Lexic
 - Database table: `role="grid"` on table, `role="row"` on rows, `role="columnheader"` / `role="gridcell"` on cells. Arrow-key navigation between cells.
 - Database board/gallery/list: arrow-key navigation with `tabIndex` management. `aria-label` on each card/row describing the item.
 - Filter bar: `aria-label` on filter pills, keyboard-navigable dropdowns.
-- Live regions: `RowCountAnnouncer` uses `aria-live="polite"` to announce filter/sort result count changes to screen readers.
+- Database view tabs: WAI-ARIA Tabs pattern — `role="tablist"` on container, `role="tab"` with `aria-selected` on each tab, `role="tabpanel"` with `aria-labelledby` on content. Arrow Left/Right (wrapping), Home/End keyboard navigation with roving `tabIndex`.
+- Live regions: `RowCountAnnouncer` uses `aria-live="polite"` to announce filter/sort result count changes to screen readers. `PageSearch` uses a debounced `aria-live="polite"` region to announce search result counts (e.g., "3 results found", "No results found").
 - Callout blocks: `role="note"` with `aria-label` describing the callout variant.
 
 ---

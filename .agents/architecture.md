@@ -300,7 +300,7 @@ src/components/database/
   │   ├── use-database-properties.ts # Property CRUD: add, rename, delete (deferred with undo), reorder
   │   ├── use-database-filters.ts  # Sort/filter state and derived displayedRows
   │   └── use-row-selection.ts     # Row selection state: toggle, toggleAll, shift-range, clear, Escape
-  ├── view-tabs.tsx                # Horizontal tab bar for switching views
+  ├── view-tabs.tsx                # Horizontal tab bar (WAI-ARIA Tabs pattern: role=tablist/tab, aria-selected, Arrow/Home/End keyboard nav)
   ├── filter-bar.tsx               # Active filter pills + add filter UI (composition only)
   ├── filter-value-editor.tsx      # Type-specific filter value editors, property picker, operator picker
   ├── sort-menu.tsx                # Sort configuration dropdown
@@ -509,7 +509,7 @@ src/
 │   │   │   ├── use-database-properties.ts # Property CRUD (deferred delete with undo)
 │   │   │   ├── use-database-filters.ts  # Sort/filter state + displayedRows
 │   │   │   └── use-row-selection.ts     # Row selection state: toggle, toggleAll, shift-range, clear
-│   │   ├── view-tabs.tsx                # Horizontal tab bar for switching views
+│   │   ├── view-tabs.tsx                # Horizontal tab bar (WAI-ARIA Tabs pattern: role=tablist/tab, aria-selected, Arrow/Home/End keyboard nav)
 │   │   ├── filter-bar.tsx               # Active filter pills + add filter UI (composition only)
 │   │   ├── filter-value-editor.tsx      # Type-specific filter value editors, property picker, operator picker
 │   │   ├── sort-menu.tsx                # Sort configuration dropdown
