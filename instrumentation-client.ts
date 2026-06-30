@@ -6,6 +6,9 @@ let captureTransition: ((url: string, type: string) => void) | null = null;
 
 import("@sentry/nextjs").then(async (Sentry) => {
   const { shouldDropClientEvent } = await import("@/lib/sentry");
+  const { isReplayHydrationError } = await import(
+    "@/lib/sentry/replay-filter"
+  );
 
   Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -21,7 +24,13 @@ import("@sentry/nextjs").then(async (Sentry) => {
 
     enableLogs: true,
 
-    integrations: [Sentry.replayIntegration()],
+    integrations: [
+      Sentry.replayIntegration({
+        beforeAddRecordingEvent(event) {
+          return isReplayHydrationError(event) ? null : event;
+        },
+      }),
+    ],
 
     beforeSend(event) {
       return shouldDropClientEvent(event) ? null : event;
