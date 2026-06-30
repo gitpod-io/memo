@@ -43,3 +43,7 @@ export { shouldDropClientEvent } from "./client-filter";
 // Consolidated server-side beforeSend filter used by sentry.server.config.ts
 // and sentry.edge.config.ts.
 export { shouldDropServerEvent } from "./server-filter";
+
+// Replay recording event filter used by instrumentation-client.ts to drop
+// replay.hydrate-error events caused by external DOM modification.
+export { isReplayHydrationError } from "./replay-filter";
